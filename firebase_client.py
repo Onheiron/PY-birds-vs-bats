@@ -150,7 +150,7 @@ def sign_in_anonymous():
     return None, local_id
 
 
-def send_score(name: str, score: int) -> Optional[Dict[str, Any]]:
+def send_score(name: str, score: int, time_played_seconds: Optional[int] = None, time_played: Optional[str] = None) -> Optional[Dict[str, Any]]:
     global _db
     if _db is None:
         # best-effort: do nothing if Firestore client not available
@@ -162,6 +162,17 @@ def send_score(name: str, score: int) -> Optional[Dict[str, Any]]:
         uid = get_or_create_local_user_id()
         doc_ref = _db.collection('leaderboard').document(uid)
         payload = {'name': name, 'score': int(score), 'userId': uid, 'ts': int(time.time())}
+        # Attach optional play time information if provided
+        try:
+            if time_played_seconds is not None:
+                payload['time_played_seconds'] = int(time_played_seconds)
+        except Exception:
+            pass
+        try:
+            if time_played is not None:
+                payload['time_played'] = str(time_played)
+        except Exception:
+            pass
         # set() with the uid as document id performs an upsert (create or replace)
         doc_ref.set(payload)
         return {'id': doc_ref.id, **payload}
@@ -178,7 +189,14 @@ def get_leaderboard(limit: int = 10):
         entries = []
         for d in docs:
             data = d.to_dict() or {}
-            entries.append({'id': d.id, 'name': data.get('name'), 'score': int(data.get('score', 0)), 'ts': data.get('ts')})
+            entries.append({
+                'id': d.id,
+                'name': data.get('name'),
+                'score': int(data.get('score', 0)),
+                'ts': data.get('ts'),
+                'time_played_seconds': int(data.get('time_played_seconds')) if data.get('time_played_seconds') is not None else None,
+                'time_played': data.get('time_played')
+            })
         return entries
     except Exception:
         return []

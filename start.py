@@ -795,6 +795,11 @@ def handle_grey_auto_bounce():
 try:
     setup()
     init_achievements()
+    # Track start time for the play session (used for reporting total play time)
+    try:
+        game_start_time = time.time()
+    except Exception:
+        game_start_time = None
     # Initialize Firebase client (best-effort)
     try:
         if firebase_client:
@@ -2251,6 +2256,24 @@ try:
             print(f"  Final Score:      {int(score)}\r")
             print(f"  Level Reached:    {level}\r")
             print("\r")
+            # Calculate and display elapsed play time
+            try:
+                if game_start_time:
+                    elapsed = int(time.time() - game_start_time)
+                else:
+                    elapsed = 0
+            except Exception:
+                elapsed = 0
+
+            hours = elapsed // 3600
+            minutes = (elapsed % 3600) // 60
+            seconds = elapsed % 60
+            if hours > 0:
+                elapsed_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            else:
+                elapsed_str = f"{minutes:02d}:{seconds:02d}"
+
+            print(f"  Time Played:      {elapsed_str} ({elapsed} s)\r")
             print(f"{RED}{'=' * 50}{RESET}\r")
             print("\r")
             # Prompt for optional leaderboard name and submit score
@@ -2264,8 +2287,18 @@ try:
                 if firebase_client:
                     try:
                         if name:
-                            background_call(firebase_client.send_score, name, int(score))
-                        background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level})
+                            # Include time played when submitting leaderboard entry
+                            try:
+                                background_call(firebase_client.send_score, name, int(score), elapsed, elapsed_str)
+                            except Exception:
+                                # Fallback to original call if something goes wrong
+                                background_call(firebase_client.send_score, name, int(score))
+                        # Include time played in the game_over analytics event
+                        try:
+                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level, 'time_played_seconds': elapsed, 'time_played': elapsed_str})
+                        except Exception:
+                            # Fallback: log without time info
+                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level})
                         background_call(firebase_client.sync_achievements, achievements)
                     except Exception:
                         pass
