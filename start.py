@@ -49,16 +49,82 @@ def choose_loot_type(rarity):
     # Decide whether to drop an egg (based on empty lanes)
     if random.random() < egg_prob:
         # Egg selection by rarity (rare tier may include gold_egg)
+        # We must respect on-field limits per bird TYPE to avoid overspawning
+        # Map egg name -> bird color constant
+        egg_to_color = {
+            'yellow_egg': YELLOW,
+            'red_egg': RED,
+            'blue_egg': BLUE,
+            'white_egg': WHITE,
+            'grey_egg': GREY,
+            'gold_egg': GOLD,
+            'stealth_egg': STEALTH,
+            'patchwork_egg': PATCHWORK,
+            'purple_egg': PURPLE,
+            'orange_egg': ORANGE,
+        }
+
+        # Limits by category (None = unlimited)
+        color_limits = {
+            YELLOW: None,
+            RED: None,
+            BLUE: None,
+            PATCHWORK: 2,
+            PURPLE: 2,
+            GREY: 2,
+            GOLD: 1,
+            STEALTH: 1,
+            WHITE: 1,
+            ORANGE: 1,
+        }
+
+        def allowed(egg_name):
+            try:
+                bcol = egg_to_color.get(egg_name)
+                if bcol is None:
+                    return True
+                limit = color_limits.get(bcol)
+                if limit is None:
+                    return True
+                # Count active birds of that color
+                cnt = sum(1 for i in range(NUM_BALLS) if not ball_lost[i] and ball_colors[i] == bcol)
+                return cnt < limit
+            except Exception:
+                return True
+
+        # Candidate eggs and their base weights per rarity
         if rarity == 'common':
-            return random.choices(['yellow_egg', 'grey_egg'], weights=[70, 30])[0]
+            candidates = ['yellow_egg', 'grey_egg']
+            weights = [70, 30]
         elif rarity == 'uncommon':
-            # Uncommon may now include the new patchwork egg (rare-ish)
-            return random.choices(['red_egg', 'blue_egg', 'patchwork_egg'], weights=[40, 40, 20])[0]
+            candidates = ['red_egg', 'blue_egg', 'patchwork_egg', 'purple_egg']
+            weights = [30, 30, 20, 20]
         elif rarity == 'rare':
-            # include gold_egg and stealth_egg as rare low-probability outcomes
-            return random.choices(['blue_egg', 'grey_egg', 'purple_egg', 'gold_egg', 'stealth_egg'], weights=[40, 20, 20, 10, 10])[0]
+            candidates = ['blue_egg', 'grey_egg', 'gold_egg', 'stealth_egg']
+            weights = [40, 30, 15, 15]
         else:
-            return random.choices(['white_egg', 'orange_egg'], weights=[50, 50])[0]
+            candidates = ['white_egg', 'orange_egg']
+            weights = [50, 50]
+
+        # Filter by allowed eggs based on current field counts
+        allowed_candidates = []
+        allowed_weights = []
+        for e, w in zip(candidates, weights):
+            if allowed(e):
+                allowed_candidates.append(e)
+                allowed_weights.append(w)
+
+        # If there are allowed egg candidates, pick one with weights
+        if allowed_candidates:
+            # Use random.choices to pick respecting weights
+            return random.choices(allowed_candidates, weights=allowed_weights)[0]
+
+        # No egg candidate is allowed due to on-field limits — fallback to non-egg loot
+        non_egg = [p for p in loot_pool if p != 'egg']
+        if not non_egg:
+            # As ultimate fallback, return a safe common egg
+            return 'yellow_egg'
+        return random.choice(non_egg)
     else:
         # Return a non-egg loot (power-up)
         non_egg = [p for p in loot_pool if p != 'egg']
