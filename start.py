@@ -55,11 +55,12 @@ def choose_loot_type(rarity):
     # If egg, choose egg type by rarity
     if loot_type == 'egg':
         if rarity == 'common':
-            egg_type = random.choices(['yellow_egg', 'red_egg'], weights=[60, 40])[0]
+            egg_type = random.choices(['yellow_egg', 'red_egg'], weights=[55, 45])[0]
         elif rarity == 'uncommon':
-            egg_type = random.choices(['red_egg', 'blue_egg'], weights=[70, 30])[0]
+            egg_type = random.choices(['red_egg', 'blue_egg'], weights=[60, 40])[0]
         elif rarity == 'rare':
-            egg_type = random.choices(['blue_egg', 'grey_egg', 'purple_egg'], weights=[60, 20, 20])[0]
+            # Add a small chance for a gold egg in the rare tier
+            egg_type = random.choices(['blue_egg', 'grey_egg', 'purple_egg', 'gold_egg'], weights=[40, 25, 25, 10])[0]
         else:  # epic
             egg_type = random.choices(['white_egg', 'orange_egg'], weights=[50, 50])[0]
         return egg_type
@@ -113,6 +114,7 @@ WHITE = "\033[97m"  # Bright white for legendary birds
 DARK_GRAY = "\033[90m"
 GREY = "\033[38;5;244m"  # Medium grey
 RESET = "\033[0m"
+GOLD = "\033[38;5;228m"  # Bold truecolor gold (very bright) - falls back on terminals without truecolor
 
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
@@ -227,6 +229,8 @@ for color in ball_colors:
         ball_speeds.append(2)  # Come il giallo
     elif color == ORANGE:
         ball_speeds.append(5)  # Arancione = velocità 5
+    elif color == GOLD:
+        ball_speeds.append(6)  # Gold special bird = velocità 6
     else:
         ball_speeds.append(2)  # Default per colori non previsti
 
@@ -1260,6 +1264,8 @@ try:
                     output += f"\033[{y_pos};{loot['x_pos']}H{WHITE}⬯{RESET}"
                 elif loot_type == 'grey_egg':
                     output += f"\033[{y_pos};{loot['x_pos']}H{GREY}⬯{RESET}"
+                elif loot_type == 'gold_egg':
+                    output += f"\033[{y_pos};{loot['x_pos']}H{GOLD}⬯{RESET}"
                 elif loot_type == 'orange_egg':
                     output += f"\033[{y_pos};{loot['x_pos']}H{ORANGE}⬯{RESET}"
                 # Cursor power-ups
@@ -1414,6 +1420,7 @@ try:
                 'GREY': GREY,
                 'PURPLE': PURPLE,
                 'ORANGE': ORANGE,
+                'GOLD': GOLD,
             }
             for cname, cval in color_map.items():
                 count = sum(1 for i in range(NUM_BALLS) if not ball_lost[i] and ball_colors[i] == cval)
@@ -1888,7 +1895,12 @@ try:
             if not ball_lost[i] and frame_count % move_interval == 0:
                 # Calculate score for active bird based on speed and position
                 position_multiplier = 0.5 + (HEIGHT - ball_y[i]) / HEIGHT
-                add_score(ball_speeds[i] * position_multiplier)
+                # Gold bird scores a fixed 100 points instead of its speed
+                try:
+                    score_value = 100 if ball_colors[i] == GOLD else ball_speeds[i]
+                except Exception:
+                    score_value = ball_speeds[i]
+                add_score(score_value * position_multiplier)
                 
                 # Check collision with obstacles BEFORE moving (when moving up)
                 if ball_vy[i] == -1:  # Only check collision when bird is moving up
@@ -1915,9 +1927,13 @@ try:
                             if ball_colors[i] == ORANGE:
                                 bat['hp'] = 0
                             else:
-                                damage = current_speed
-                                if ball_colors[i] == BLUE and bird_power_used[i]:
-                                    damage += 1
+                                # GOLD bird deals fixed damage = 1
+                                if ball_colors[i] == GOLD:
+                                    damage = 1
+                                else:
+                                    damage = current_speed
+                                    if ball_colors[i] == BLUE and bird_power_used[i]:
+                                        damage += 1
                                 bat['hp'] -= damage
 
                             # Effetti sul bird
@@ -1974,9 +1990,13 @@ try:
                                 if ball_colors[i] == ORANGE:
                                     obs['hp'] = 0
                                 else:
-                                    damage = current_speed
-                                    if ball_colors[i] == BLUE and bird_power_used[i]:
-                                        damage += 1
+                                    # GOLD bird deals fixed damage = 1
+                                    if ball_colors[i] == GOLD:
+                                        damage = 1
+                                    else:
+                                        damage = current_speed
+                                        if ball_colors[i] == BLUE and bird_power_used[i]:
+                                            damage += 1
                                     obs['hp'] -= damage
 
                                 if obs['hp'] <= 0:
@@ -2079,6 +2099,17 @@ try:
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
                                     break
+                                elif loot_type == 'gold_egg':
+                                    for idx in range(NUM_BALLS):
+                                        if ball_lost[idx]:
+                                            ball_lost[idx] = False
+                                            ball_colors[idx] = GOLD
+                                            # Gold special bird = speed 6
+                                            ball_speeds[idx] = 6
+                                            ball_y[idx] = STARTING_LINE
+                                            ball_vy[idx] = -1
+                                            lives += 1  # Restore life
+                                            break
                         elif loot_type == 'orange_egg':
                             for idx in range(NUM_BALLS):
                                 if ball_lost[idx]:
