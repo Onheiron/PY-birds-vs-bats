@@ -1442,6 +1442,11 @@ try:
         if current_entities < MAX_ENTITIES and spawn_queue:
             entity = spawn_queue.pop(0)
             if entity['type'] == 'bat':
+                # stamp a spawn timestamp for despawn logic
+                try:
+                    entity['data']['spawn_ts'] = time.time()
+                except Exception:
+                    pass
                 bats.append(entity['data'])
             elif entity['type'] == 'obstacle':
                 obstacles.append(entity['data'])
@@ -1733,6 +1738,27 @@ try:
                 if horizontal_overlap and vertical_overlap:
                     obstacles.remove(obs)
         
+        # Despawn old bats and loot (older than 60 seconds)
+        try:
+            now_ts = time.time()
+            # Remove bats older than 60s
+            for bat in bats[:]:
+                try:
+                    if now_ts - float(bat.get('spawn_ts', now_ts)) > 60:
+                        bats.remove(bat)
+                except Exception:
+                    # If malformed spawn_ts, skip removal for safety
+                    continue
+            # Remove loot items older than 60s
+            for loot in loot_items[:]:
+                try:
+                    if now_ts - float(loot.get('spawn_ts', now_ts)) > 60:
+                        loot_items.remove(loot)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
         # Update speed boosts (decrease frame counter)
         for bird_idx in list(speed_boosts.keys()):
             if speed_boosts[bird_idx] > 0:
@@ -1834,7 +1860,8 @@ try:
                                 'x_pos': LANE_POSITIONS[closest_lane],
                                 'y_pos': bat['y_pos'],
                                 'type': loot_type,
-                                'rarity': rarity
+                                'rarity': rarity,
+                                'spawn_ts': time.time()
                             })
                             
                             tier = bat.get('tier', None)
@@ -1972,7 +1999,8 @@ try:
                                     'x_pos': LANE_POSITIONS[closest_lane],
                                     'y_pos': bat['y_pos'],
                                     'type': loot_type,
-                                    'rarity': rarity
+                                    'rarity': rarity,
+                                    'spawn_ts': time.time()
                                 })
                                 tier = bat.get('tier', None)
                                 # If this kill was caused by an orange bird, emit special event
@@ -2207,7 +2235,7 @@ try:
                         ball_vy[i] = 0
                         bird_power_used[i] = False
                         ball_speeds[i] = 0
-                        loot_items.append({'x_pos': LANE_POSITIONS[lane], 'y_pos': STARTING_LINE, 'type': 'orange_egg', 'rarity': 'epic'})
+                        loot_items.append({'x_pos': LANE_POSITIONS[lane], 'y_pos': STARTING_LINE, 'type': 'orange_egg', 'rarity': 'epic', 'spawn_ts': time.time()})
                         continue
                     ball_y[i] = 1
                     ball_vy[i] = 1
