@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 PURPLE = "\033[38;5;135m"  # Viola
 ORANGE = "\033[38;5;208m"  # Arancione
+PATCHWORK = "\033[38;5;202m"  # Patchwork bird color (distinct escape)
 import sys
 import time
 import os
@@ -45,33 +46,25 @@ def choose_loot_type(rarity):
         loot_pool = ['egg', 'wide_cursor++', 'bounce_boost++', 'suction++']
     else:  # epic
         loot_pool = ['egg', 'wide_cursor_max', 'bounce_boost_max', 'suction_max']
-    # Probabilities
-    if egg_prob == 0:
-        probs = [0] + [1/3]*3
-    else:
-        rest = 1 - egg_prob
-        probs = [egg_prob] + [rest/3]*3
-    loot_type = random.choices(loot_pool, weights=probs)[0]
-    # If egg, choose egg type by rarity
-    if loot_type == 'egg':
+    # Decide whether to drop an egg (based on empty lanes)
+    if random.random() < egg_prob:
+        # Egg selection by rarity (rare tier may include gold_egg)
         if rarity == 'common':
-            egg_type = random.choices(['yellow_egg', 'red_egg'], weights=[55, 45])[0]
+            return random.choices(['yellow_egg', 'grey_egg'], weights=[70, 30])[0]
         elif rarity == 'uncommon':
-            egg_type = random.choices(['red_egg', 'blue_egg'], weights=[60, 40])[0]
+            # Uncommon may now include the new patchwork egg (rare-ish)
+            return random.choices(['red_egg', 'blue_egg', 'patchwork_egg'], weights=[40, 40, 20])[0]
         elif rarity == 'rare':
-            # Add a small chance for a gold egg in the rare tier
-            egg_type = random.choices(['blue_egg', 'grey_egg', 'purple_egg', 'gold_egg'], weights=[40, 25, 25, 10])[0]
-        else:  # epic
-            egg_type = random.choices(['white_egg', 'orange_egg'], weights=[50, 50])[0]
-        return egg_type
-    return loot_type
-#!/usr/bin/env python3
-import sys
-import time
-import os
-import random
-
-# Windows-specific imports
+            # include gold_egg as a rare low-probability outcome
+            return random.choices(['blue_egg', 'grey_egg', 'purple_egg', 'gold_egg'], weights=[40, 25, 25, 10])[0]
+        else:
+            return random.choices(['white_egg', 'orange_egg'], weights=[50, 50])[0]
+    else:
+        # Return a non-egg loot (power-up)
+        non_egg = [p for p in loot_pool if p != 'egg']
+        if not non_egg:
+            return 'yellow_egg'
+        return random.choice(non_egg)
 if os.name == 'nt':
     import msvcrt
 else:
@@ -102,6 +95,24 @@ BIRD_DOWN_1 = [
 BIRD_DOWN_2 = [
     "_M_",
     " ' ",
+]
+
+# PATCHWORK bird sprites - mixes characters (. ' \ / M W) across frames
+BIRD_PATCH_UP_1 = [
+    " . ",
+    "\\M/",
+]
+BIRD_PATCH_UP_2 = [
+    " ' ",
+    "/W\\",
+]
+BIRD_PATCH_DOWN_1 = [
+    "\\M/",
+    " ' ",
+]
+BIRD_PATCH_DOWN_2 = [
+    "/W\\",
+    " . ",
 ]
 
 # ANSI colors
@@ -186,6 +197,24 @@ def _color_from_hp(base_rgb: tuple, hp: int, max_hp: int) -> str:
         r = g = b = 0
     return _rgb_escape(r, g, b)
 
+
+def _render_patchwork_line(line: str) -> str:
+    """Return a string where each character in `line` is colored in a repeating patchwork pattern.
+
+    The returned string does NOT include a cursor positioning escape; caller should place it.
+    A final RESET is appended.
+    """
+    try:
+        patch_colors = [RED, YELLOW, BLUE, GREEN, PURPLE, ORANGE, GOLD, CYAN, WHITE]
+        parts = []
+        for i, ch in enumerate(line):
+            # Color each character; keep spacing visible (coloring spaces is acceptable here)
+            parts.append(f"{patch_colors[i % len(patch_colors)]}{ch}")
+        return "".join(parts) + RESET
+    except Exception:
+        # Fallback: return unmodified line with default reset
+        return line + RESET
+
 # Base colors (full HP)
 _BATS_BASE_RGB = (255, 0, 255)   # magenta FF00FF
 _OBST_BASE_RGB = (0, 255, 0)     # green 00FF00
@@ -229,6 +258,8 @@ for color in ball_colors:
         ball_speeds.append(2)  # Come il giallo
     elif color == ORANGE:
         ball_speeds.append(5)  # Arancione = velocità 5
+    elif color == PATCHWORK:
+        ball_speeds.append(3)  # Patchwork bird = speed 3
     elif color == GOLD:
         ball_speeds.append(6)  # Gold special bird = velocità 6
     else:
@@ -994,7 +1025,7 @@ try:
                                             if adj_bird >= 0 and not ball_lost[adj_bird]:
                                                 # Check if bird is falling (moving down)
                                                 if ball_vy[adj_bird] == 1:
-                                                    if ball_colors[adj_bird] == YELLOW:
+                                                    if ball_colors[adj_bird] == YELLOW or ball_colors[adj_bird] == PATCHWORK:
                                                         # Yellow bird - bounce it up instead of slowing
                                                         ball_vy[adj_bird] = -1
                                                         bird_power_used[adj_bird] = False  # Reset power for bounced yellow
@@ -1007,17 +1038,18 @@ try:
                                                         # Non-yellow bird - apply slow effect
                                                         speed_boosts[adj_bird] = -int(3.0 / base_sleep)  # 3 seconds of slow
                                                         affected_count += 1
+                                                
 
                                 elif bird_color == RED or bird_color == PURPLE:
                                     # Red/Purple power: Launch projectile
-                                    # Count adjacent red/purple birds moving up for damage bonus
+                                    # Count adjacent red/purple/PATCHWORK birds moving up for damage bonus
                                     damage_bonus = 0
                                     for adj_offset in [-1, 1]:
                                         adj_lane = bird_lane + adj_offset
                                         if 0 <= adj_lane < 9:
                                             for idx in range(NUM_BALLS):
                                                 if random_lanes[idx] == adj_lane and not ball_lost[idx]:
-                                                    if (ball_colors[idx] == RED or ball_colors[idx] == PURPLE) and ball_vy[idx] == -1:
+                                                    if (ball_colors[idx] == RED or ball_colors[idx] == PURPLE or ball_colors[idx] == PATCHWORK) and ball_vy[idx] == -1:
                                                         damage_bonus += 1
                                                     break
                                     red_projectiles.append({
@@ -1051,12 +1083,17 @@ try:
                                             if adj_bird >= 0 and not ball_lost[adj_bird]:
                                                 if ball_vy[adj_bird] == 1:
                                                     # Bird is falling - bounce it up
-                                                    ball_vy[adj_bird] = -1
-                                                    bird_power_used[adj_bird] = False  # Reset their power
-                                                    try:
-                                                        append_recent_action('bounce', lane=adj_lane, color=ball_colors[adj_bird])
-                                                    except NameError:
+                                                    # But don't bounce scared birds (PURPLE exception)
+                                                    if adj_bird in scared_birds and ball_colors[adj_bird] != PURPLE:
+                                                        # ignore bounce for scared bird
                                                         pass
+                                                    else:
+                                                        ball_vy[adj_bird] = -1
+                                                        bird_power_used[adj_bird] = False  # Reset their power
+                                                        try:
+                                                            append_recent_action('bounce', lane=adj_lane, color=ball_colors[adj_bird])
+                                                        except NameError:
+                                                            pass
                                                 elif ball_vy[adj_bird] == -1:
                                                     # Bird is rising - activate its power (if not already used)
                                                     if not bird_power_used[adj_bird]:
@@ -1092,13 +1129,18 @@ try:
                                                                             y_bird = idx2
                                                                             break
                                                                     if y_bird >= 0 and not ball_lost[y_bird] and ball_vy[y_bird] == 1:
-                                                                        if ball_colors[y_bird] == YELLOW:
-                                                                            # Bounce yellow bird
-                                                                            ball_vy[y_bird] = -1
-                                                                            bird_power_used[y_bird] = False
+                                                                        # Respect scared state: scared birds ignore bounces (except PURPLE)
+                                                                        if y_bird in scared_birds and ball_colors[y_bird] != PURPLE:
+                                                                            # do nothing to scared bird
+                                                                            pass
                                                                         else:
-                                                                            # Slow non-yellow bird
-                                                                            speed_boosts[y_bird] = -int(3.0 / base_sleep)
+                                                                            if ball_colors[y_bird] == YELLOW:
+                                                                                # Bounce yellow bird
+                                                                                ball_vy[y_bird] = -1
+                                                                                bird_power_used[y_bird] = False
+                                                                            else:
+                                                                                # Slow non-yellow bird
+                                                                                speed_boosts[y_bird] = -int(3.0 / base_sleep)
 
                                                         elif adj_bird_color == RED:
                                                             # Red power on adjacent bird
@@ -1271,6 +1313,8 @@ try:
                     output += f"\033[{y_pos};{loot['x_pos']}H{GREY}⬯{RESET}"
                 elif loot_type == 'gold_egg':
                     output += f"\033[{y_pos};{loot['x_pos']}H{GOLD}⬯{RESET}"
+                elif loot_type == 'patchwork_egg':
+                    output += f"\033[{y_pos};{loot['x_pos']}H{PATCHWORK}⬯{RESET}"
                 elif loot_type == 'orange_egg':
                     output += f"\033[{y_pos};{loot['x_pos']}H{ORANGE}⬯{RESET}"
                 # Cursor power-ups
@@ -1319,7 +1363,12 @@ try:
                     if 3 <= y_pos < HEIGHT + 2:
                         # Center sprites - new sprites are 3 chars wide
                         x_offset = 1  # Offset for 3-char wide sprite
-                        output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{color}{line}{RESET}"
+                        if ball_colors[b] == PATCHWORK:
+                            # Render each character with a different color pattern
+                            colored = _render_patchwork_line(line)
+                            output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{colored}"
+                        else:
+                            output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{color}{line}{RESET}"
         
         # Check for level up
         if score >= calculate_level_threshold(level):
@@ -1971,14 +2020,14 @@ try:
                             # Effetti sul bird
                             bat_tier = bat['tier']
                             if bat_tier == 1:
-                                scared_birds[i] = int(0.5 / base_sleep)
+                                scared_birds[i] = max(1, int(2.0 / base_sleep))
                             elif bat_tier == 2:
-                                scared_birds[i] = int(1.0 / base_sleep)
+                                scared_birds[i] = max(1, int(2.0 / base_sleep))
                             elif bat_tier == 3:
-                                scared_birds[i] = int(1.5 / base_sleep)
+                                scared_birds[i] = max(1, int(2.0 / base_sleep))
                                 speed_boosts[i] = int(2.0 / base_sleep)
                             else:
-                                scared_birds[i] = int(2.0 / base_sleep)
+                                scared_birds[i] = max(1, int(2.0 / base_sleep))
                                 speed_boosts[i] = int(2.0 / base_sleep)
 
                             if bat['hp'] <= 0:
@@ -2139,22 +2188,33 @@ try:
                                 if ball_lost[idx]:
                                     ball_lost[idx] = False
                                     ball_colors[idx] = PURPLE
-                                    ball_speeds[idx] = 3  # Fastest bird
+                                    ball_speeds[idx] = 3
+                                    ball_y[idx] = STARTING_LINE
+                                    ball_vy[idx] = -1
+                                    lives += 1
+                                    break
+                        elif loot_type == 'gold_egg':
+                            for idx in range(NUM_BALLS):
+                                if ball_lost[idx]:
+                                    ball_lost[idx] = False
+                                    ball_colors[idx] = GOLD
+                                    # Gold special bird = speed 6
+                                    ball_speeds[idx] = 6
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
                                     break
-                                elif loot_type == 'gold_egg':
-                                    for idx in range(NUM_BALLS):
-                                        if ball_lost[idx]:
-                                            ball_lost[idx] = False
-                                            ball_colors[idx] = GOLD
-                                            # Gold special bird = speed 6
-                                            ball_speeds[idx] = 6
-                                            ball_y[idx] = STARTING_LINE
-                                            ball_vy[idx] = -1
-                                            lives += 1  # Restore life
-                                            break
+                        elif loot_type == 'patchwork_egg':
+                            for idx in range(NUM_BALLS):
+                                if ball_lost[idx]:
+                                    ball_lost[idx] = False
+                                    ball_colors[idx] = PATCHWORK
+                                    # Patchwork bird = speed 3 (per design)
+                                    ball_speeds[idx] = 3
+                                    ball_y[idx] = STARTING_LINE
+                                    ball_vy[idx] = -1
+                                    lives += 1  # Restore life
+                                    break
                         elif loot_type == 'orange_egg':
                             for idx in range(NUM_BALLS):
                                 if ball_lost[idx]:
