@@ -55,8 +55,8 @@ def choose_loot_type(rarity):
             # Uncommon may now include the new patchwork egg (rare-ish)
             return random.choices(['red_egg', 'blue_egg', 'patchwork_egg'], weights=[40, 40, 20])[0]
         elif rarity == 'rare':
-            # include gold_egg as a rare low-probability outcome
-            return random.choices(['blue_egg', 'grey_egg', 'purple_egg', 'gold_egg'], weights=[40, 25, 25, 10])[0]
+            # include gold_egg and stealth_egg as rare low-probability outcomes
+            return random.choices(['blue_egg', 'grey_egg', 'purple_egg', 'gold_egg', 'stealth_egg'], weights=[40, 20, 20, 10, 10])[0]
         else:
             return random.choices(['white_egg', 'orange_egg'], weights=[50, 50])[0]
     else:
@@ -122,10 +122,14 @@ BLUE = "\033[34m"
 CYAN = "\033[96m"  # Light blue for blue bird power
 YELLOW = "\033[38;5;220m"  # Darker yellow (256-color palette)
 WHITE = "\033[97m"  # Bright white for legendary birds
-DARK_GRAY = "\033[90m"
-GREY = "\033[38;5;244m"  # Medium grey
+# Use explicit 256/truecolor escapes to ensure consistent dark gray and black
+DARK_GRAY = "\033[38;5;240m"  # Dark gray (visible on dark backgrounds)
+GREY = "\033[38;5;244m"  # Medium grey (legacy name)
 RESET = "\033[0m"
 GOLD = "\033[38;5;228m"  # Bold truecolor gold (very bright) - falls back on terminals without truecolor
+# Use 256-color black to ensure compatibility (some terminals don't honor truecolor)
+BLACK = "\033[38;5;16m"
+STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
@@ -262,6 +266,8 @@ for color in ball_colors:
         ball_speeds.append(3)  # Patchwork bird = speed 3
     elif color == GOLD:
         ball_speeds.append(6)  # Gold special bird = velocità 6
+    elif color == STEALTH:
+        ball_speeds.append(3)  # Stealth bird = speed 3
     else:
         ball_speeds.append(2)  # Default per colori non previsti
 
@@ -297,6 +303,10 @@ speed_boosts = {}
 # Scared birds - track which birds are scared {bird_index: remaining_frames}
 # Scared birds: +1 speed when falling down, cannot be bounced up
 scared_birds = {}
+# Stealth timers - when a stealth bird activates its power it becomes tangible for N frames
+stealth_timers = {}
+# Store previous speeds for stealth birds when their power makes them temporarily faster
+stealth_prev_speeds = {}
 
 # Power-ups state (using dict to avoid scope issues)
 powerups = {
@@ -1003,6 +1013,8 @@ try:
                                     p_name = 'purple'
                                 elif bird_color == ORANGE:
                                     p_name = 'orange'
+                                elif bird_color == STEALTH:
+                                    p_name = 'stealth'
                                 else:
                                     p_name = 'unknown'
                                 bird_lane = random_lanes[bird_in_lane]
@@ -1062,7 +1074,7 @@ try:
 
                                 elif bird_color == BLUE:
                                     # Blue power: Speed boost + extra damage flag
-                                    boost_frames = int(5.0 / base_sleep)
+                                    boost_frames = int(3.0 / base_sleep)
                                     speed_boosts[bird_in_lane] = boost_frames
                                     # Mark this bird as having blue power active (for extra damage)
                                     if bird_in_lane not in speed_boosts:
@@ -1167,6 +1179,20 @@ try:
                                                             # Blue power on adjacent bird
                                                             boost_frames = int(5.0 / base_sleep)
                                                             speed_boosts[adj_bird] = boost_frames
+                                elif bird_color == STEALTH:
+                                    # Stealth power: become tangible for a short duration and deal heavy damage
+                                    # bird_power_used[bird_in_lane] is already True
+                                    stealth_timers[bird_in_lane] = max(1, int(2.0 / base_sleep))
+                                    # Save previous speed and apply temporary speed boost to 6
+                                    try:
+                                        stealth_prev_speeds[bird_in_lane] = ball_speeds[bird_in_lane]
+                                        ball_speeds[bird_in_lane] = 6
+                                    except Exception:
+                                        pass
+                                    try:
+                                        append_recent_action('stealth', lane=bird_lane, color=STEALTH)
+                                    except NameError:
+                                        pass
             elif key == 'DOWN':
                 # Suction: pull bird down if moving up
                 if powerups['suction_active']:
@@ -1313,6 +1339,8 @@ try:
                     output += f"\033[{y_pos};{loot['x_pos']}H{GREY}⬯{RESET}"
                 elif loot_type == 'gold_egg':
                     output += f"\033[{y_pos};{loot['x_pos']}H{GOLD}⬯{RESET}"
+                elif loot_type == 'stealth_egg':
+                    output += f"\033[{y_pos};{loot['x_pos']}H{DARK_GRAY}⬯{RESET}"
                 elif loot_type == 'patchwork_egg':
                     output += f"\033[{y_pos};{loot['x_pos']}H{PATCHWORK}⬯{RESET}"
                 elif loot_type == 'orange_egg':
@@ -1351,8 +1379,26 @@ try:
                     else:
                         sprite = BIRD_DOWN_1 if (frame_count // 3) % 2 == 0 else BIRD_DOWN_2
                 
-                # Choose color - blue birds turn cyan when power is active
-                if ball_colors[b] == BLUE and bird_power_used[b]:
+                # Choose color - handle STEALTH specially, blue birds turn cyan when power is active
+                if ball_colors[b] == STEALTH:
+                    # Tangible when a stealth timer is active for this bird
+                    tangible = b in stealth_timers and stealth_timers.get(b, 0) > 0
+                    # Pulse between DARK_GRAY (visible) and ANSI "conceal" (invisible) over a period
+                    # This makes the bird actually invisible on terminals that support SGR 8.
+                    try:
+                        # Use a faster visible pulse (~0.5s cycle) so the change is noticeable
+                        period = max(4, int(2 / base_sleep))
+                    except Exception:
+                        period = 8
+                    phase = (frame_count % period) / period
+                    # Use DARK_GRAY for first half, ANSI conceal for second half (hidden/invisible)
+                    # If the terminal doesn't support conceal, it'll appear as no-op; we can add
+                    # a fallback later if needed.
+                    color = DARK_GRAY if phase < 0.5 else "\033[8m"
+                    # When tangible, show as a brighter color so the player clearly sees the effect
+                    if tangible:
+                        color = WHITE
+                elif ball_colors[b] == BLUE and bird_power_used[b]:
                     color = CYAN  # Light blue when power active
                 else:
                     color = ball_colors[b]
@@ -1814,7 +1860,17 @@ try:
                 # Positive = speed boost
                 speed_boosts[bird_idx] -= 1
                 if speed_boosts[bird_idx] <= 0:
-                    del speed_boosts[bird_idx]
+                    try:
+                        del speed_boosts[bird_idx]
+                    except KeyError:
+                        pass
+                    # If a positive speed boost expired naturally, ensure the
+                    # bird's power-used flag is cleared so UI/colour returns to normal
+                    try:
+                        if 0 <= bird_idx < len(ball_colors) and ball_colors[bird_idx] == BLUE:
+                            bird_power_used[bird_idx] = False
+                    except Exception:
+                        pass
             else:
                 # Negative = slow effect (count up towards 0)
                 speed_boosts[bird_idx] += 1
@@ -1826,6 +1882,30 @@ try:
             scared_birds[bird_idx] -= 1
             if scared_birds[bird_idx] <= 0:
                 del scared_birds[bird_idx]
+
+        # Update stealth timers (decrease frame counter) - when expired, return to stealth
+        for bird_idx in list(stealth_timers.keys()):
+            stealth_timers[bird_idx] -= 1
+            if stealth_timers[bird_idx] <= 0:
+                try:
+                    del stealth_timers[bird_idx]
+                except Exception:
+                    pass
+                # IMPORTANT: do NOT reset bird_power_used here.
+                # bird_power_used should remain True until the bird finishes the ascent
+                # (e.g. bounces or starts descending). Resetting here would allow the
+                # player to re-activate the power again during the same rise.
+                # Restore previous speed if we saved one
+                try:
+                    if bird_idx in stealth_prev_speeds:
+                        prev = stealth_prev_speeds.pop(bird_idx)
+                        # Only restore if bird still exists
+                        try:
+                            ball_speeds[bird_idx] = prev
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
         
         # Blue birds lose fear when crossing yellow birds
         # (blue going down, yellow going up, in adjacent lanes, blue passes yellow)
@@ -1937,6 +2017,66 @@ try:
                         break
         
         # Update power-ups (decrease frame counters)
+        # Active STEALTH tangible damage: while a stealth bird is tangible, apply 24 damage
+        # to any bat/obstacle/loot in proximity so the power reliably has an effect.
+        for i in range(NUM_BALLS):
+            if ball_colors[i] == STEALTH and i in stealth_timers and stealth_timers.get(i, 0) > 0 and not ball_lost[i]:
+                bird_lane = random_lanes[i]
+                bird_x = LANE_POSITIONS[bird_lane]
+                bird_y = ball_y[i]
+
+                # Damage bats in proximity
+                for bat in bats[:]:
+                    if abs(bat.get('x_pos', 0) - bird_x) <= 6 and abs(bat.get('y_pos', 0) - bird_y) <= 2:
+                        bat['hp'] -= 24
+                        if bat.get('hp', 0) <= 0:
+                            add_score(bat.get('max_hp', 0))
+                            bat_center_x = bat.get('x_pos', 0) + 4
+                            closest_lane = min(range(9), key=lambda lane_idx: abs(LANE_POSITIONS[lane_idx] - bat_center_x))
+                            tier = bat.get('tier', None)
+                            if tier == 1:
+                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[60, 25, 10, 5])[0]
+                            elif tier == 2:
+                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[50, 30, 15, 5])[0]
+                            elif tier == 3:
+                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[40, 33, 17, 10])[0]
+                            else:
+                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[35, 25, 20, 15])[0]
+                            loot_type = choose_loot_type(rarity)
+                            loot_items.append({
+                                'x_pos': LANE_POSITIONS[closest_lane],
+                                'y_pos': bat.get('y_pos', 0),
+                                'type': loot_type,
+                                'rarity': rarity,
+                                'spawn_ts': time.time()
+                            })
+                            try:
+                                check_achievements_event('destroy_bat', tier=tier)
+                            except Exception:
+                                pass
+                            try:
+                                bats.remove(bat)
+                            except ValueError:
+                                pass
+
+                # Damage obstacles in same lane
+                for obs in obstacles[:]:
+                    if obs.get('lane') == bird_lane and abs(obs.get('y_pos', 0) - bird_y) <= 1:
+                        obs['hp'] -= 24
+                        if obs.get('hp', 0) <= 0:
+                            add_score(obs.get('tier', 0) * 2)
+                            try:
+                                obstacles.remove(obs)
+                            except ValueError:
+                                pass
+
+                # Destroy loot items in proximity (tangible destroys loot)
+                for loot in loot_items[:]:
+                    if abs(bird_x - loot.get('x_pos', 0)) <= 2 and abs(bird_y - loot.get('y_pos', 0)) <= 2:
+                        try:
+                            loot_items.remove(loot)
+                        except ValueError:
+                            pass
         if powerups['wide_cursor_active']:
             powerups['wide_cursor_frames'] -= 1
             if powerups['wide_cursor_frames'] <= 0:
@@ -1992,107 +2132,81 @@ try:
                     broken_through = False
                     
                     # Check collision with bats first - if bat enters bird's lane AT ALL, collision!
-                    for bat in bats[:]:
-                        bat_left = bat['x_pos']
-                        bat_right = bat['x_pos'] + 8
-                        bat_top = bat['y_pos']
-                        bat_bottom = bat['y_pos'] + 1
+                    # Stealth birds (when not tangible) pass through bats
+                    if not (ball_colors[i] == STEALTH and not (i in stealth_timers and stealth_timers.get(i, 0) > 0)):
+                        for bat in bats[:]:
+                            bat_left = bat['x_pos']
+                            bat_right = bat['x_pos'] + 8
+                            bat_top = bat['y_pos']
+                            bat_bottom = bat['y_pos'] + 1
 
-                        lane_left = bird_lane_x - 2
-                        lane_right = bird_lane_x + 2
-                        horizontal_overlap = not (bat_right < lane_left or bat_left > lane_right)
-                        vertical_overlap = not (next_y + 2 < bat_top or next_y > bat_bottom)
+                            lane_left = bird_lane_x - 2
+                            lane_right = bird_lane_x + 2
+                            horizontal_overlap = not (bat_right < lane_left or bat_left > lane_right)
+                            vertical_overlap = not (next_y + 2 < bat_top or next_y > bat_bottom)
 
-                        if horizontal_overlap and vertical_overlap:
-                            # Se arancione: distruggi subito il pipistrello
-                            if ball_colors[i] == ORANGE:
-                                bat['hp'] = 0
-                            else:
-                                # GOLD bird deals fixed damage = 1
-                                if ball_colors[i] == GOLD:
-                                    damage = 1
-                                else:
-                                    damage = current_speed
-                                    if ball_colors[i] == BLUE and bird_power_used[i]:
-                                        damage += 1
-                                bat['hp'] -= damage
-
-                            # Effetti sul bird
-                            bat_tier = bat['tier']
-                            if bat_tier == 1:
-                                scared_birds[i] = max(1, int(2.0 / base_sleep))
-                            elif bat_tier == 2:
-                                scared_birds[i] = max(1, int(2.0 / base_sleep))
-                            elif bat_tier == 3:
-                                scared_birds[i] = max(1, int(2.0 / base_sleep))
-                                speed_boosts[i] = int(2.0 / base_sleep)
-                            else:
-                                scared_birds[i] = max(1, int(2.0 / base_sleep))
-                                speed_boosts[i] = int(2.0 / base_sleep)
-
-                            if bat['hp'] <= 0:
-                                add_score(bat['max_hp'])
-                                bat_center_x = bat['x_pos'] + 4
-                                closest_lane = min(range(9), key=lambda lane_idx: abs(LANE_POSITIONS[lane_idx] - bat_center_x))
-                                tier = bat['tier']
-                                if tier == 1:
-                                    rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[60, 25, 10, 5])[0]
-                                elif tier == 2:
-                                    rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[50, 30, 15, 5])[0]
-                                elif tier == 3:
-                                    rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[40, 33, 17, 10])[0]
-                                else:
-                                    rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[35, 25, 20, 15])[0]
-                                loot_type = choose_loot_type(rarity)
-                                loot_items.append({
-                                    'x_pos': LANE_POSITIONS[closest_lane],
-                                    'y_pos': bat['y_pos'],
-                                    'type': loot_type,
-                                    'rarity': rarity,
-                                    'spawn_ts': time.time()
-                                })
-                                tier = bat.get('tier', None)
-                                # If this kill was caused by an orange bird, emit special event
+                            if horizontal_overlap and vertical_overlap:
+                                # Se arancione: distruggi subito il pipistrello
                                 if ball_colors[i] == ORANGE:
-                                    check_achievements_event('destroy_bat_with_orange')
-                                check_achievements_event('destroy_bat', tier=tier)
-                                bats.remove(bat)
-                                broken_through = True
-                            else:
-                                ball_vy[i] = 1
-                                ball_y[i] = bat_bottom + 1
-                                # If a blue bird was sprinting, stop its sprint when it bounces
-                                try:
-                                    if ball_colors[i] == BLUE:
-                                        bird_power_used[i] = False
-                                except Exception:
-                                    pass
-                                collided = True
-                            break
-                    
-                    # Check collision with obstacles if not hit bat
-                    if not collided and not broken_through:
-                        for obs in obstacles[:]:
-                            if obs['lane'] == bird_lane and abs(next_y - obs['y_pos']) <= 1:
-                                # Se arancione: distruggi subito il blocco
-                                if ball_colors[i] == ORANGE:
-                                    obs['hp'] = 0
+                                    bat['hp'] = 0
                                 else:
+                                    # STEALTH tangible: fixed high damage
+                                    if ball_colors[i] == STEALTH and (i in stealth_timers and stealth_timers.get(i, 0) > 0):
+                                        damage = 24
                                     # GOLD bird deals fixed damage = 1
-                                    if ball_colors[i] == GOLD:
+                                    elif ball_colors[i] == GOLD:
                                         damage = 1
                                     else:
                                         damage = current_speed
                                         if ball_colors[i] == BLUE and bird_power_used[i]:
                                             damage += 1
-                                    obs['hp'] -= damage
+                                    bat['hp'] -= damage
 
-                                if obs['hp'] <= 0:
-                                    add_score(obs['tier'] * 2)
-                                    obstacles.remove(obs)
+                                # Effects on the bird (only when NOT stealth-tangible)
+                                if not (ball_colors[i] == STEALTH and (i in stealth_timers and stealth_timers.get(i, 0) > 0)):
+                                    bat_tier = bat['tier']
+                                    if bat_tier == 1:
+                                        scared_birds[i] = max(1, int(2.0 / base_sleep))
+                                    elif bat_tier == 2:
+                                        scared_birds[i] = max(1, int(2.0 / base_sleep))
+                                    elif bat_tier == 3:
+                                        scared_birds[i] = max(1, int(2.0 / base_sleep))
+                                        speed_boosts[i] = int(2.0 / base_sleep)
+                                    else:
+                                        scared_birds[i] = max(1, int(2.0 / base_sleep))
+                                        speed_boosts[i] = int(2.0 / base_sleep)
+
+                                if bat['hp'] <= 0:
+                                    add_score(bat['max_hp'])
+                                    bat_center_x = bat['x_pos'] + 4
+                                    closest_lane = min(range(9), key=lambda lane_idx: abs(LANE_POSITIONS[lane_idx] - bat_center_x))
+                                    tier = bat['tier']
+                                    if tier == 1:
+                                        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[60, 25, 10, 5])[0]
+                                    elif tier == 2:
+                                        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[50, 30, 15, 5])[0]
+                                    elif tier == 3:
+                                        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[40, 33, 17, 10])[0]
+                                    else:
+                                        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[35, 25, 20, 15])[0]
+                                    loot_type = choose_loot_type(rarity)
+                                    loot_items.append({
+                                        'x_pos': LANE_POSITIONS[closest_lane],
+                                        'y_pos': bat['y_pos'],
+                                        'type': loot_type,
+                                        'rarity': rarity,
+                                        'spawn_ts': time.time()
+                                    })
+                                    tier = bat.get('tier', None)
+                                    # If this kill was caused by an orange bird, emit special event
+                                    if ball_colors[i] == ORANGE:
+                                        check_achievements_event('destroy_bat_with_orange')
+                                    check_achievements_event('destroy_bat', tier=tier)
+                                    bats.remove(bat)
                                     broken_through = True
                                 else:
                                     ball_vy[i] = 1
+                                    ball_y[i] = bat_bottom + 1
                                     # If a blue bird was sprinting, stop its sprint when it bounces
                                     try:
                                         if ball_colors[i] == BLUE:
@@ -2101,6 +2215,43 @@ try:
                                         pass
                                     collided = True
                                 break
+                    
+                    # Check collision with obstacles if not hit bat
+                    if not collided and not broken_through:
+                        # Stealth birds (when not tangible) pass through obstacles
+                        if not (ball_colors[i] == STEALTH and not (i in stealth_timers and stealth_timers.get(i, 0) > 0)):
+                            for obs in obstacles[:]:
+                                if obs['lane'] == bird_lane and abs(next_y - obs['y_pos']) <= 1:
+                                    # Se arancione: distruggi subito il blocco
+                                    if ball_colors[i] == ORANGE:
+                                        obs['hp'] = 0
+                                    else:
+                                        # STEALTH tangible: fixed high damage
+                                        if ball_colors[i] == STEALTH and (i in stealth_timers and stealth_timers.get(i, 0) > 0):
+                                            damage = 24
+                                        # GOLD bird deals fixed damage = 1
+                                        elif ball_colors[i] == GOLD:
+                                            damage = 1
+                                        else:
+                                            damage = current_speed
+                                            if ball_colors[i] == BLUE and bird_power_used[i]:
+                                                damage += 1
+                                        obs['hp'] -= damage
+
+                                    if obs['hp'] <= 0:
+                                        add_score(obs['tier'] * 2)
+                                        obstacles.remove(obs)
+                                        broken_through = True
+                                    else:
+                                        ball_vy[i] = 1
+                                        # If a blue bird was sprinting, stop its sprint when it bounces
+                                        try:
+                                            if ball_colors[i] == BLUE:
+                                                bird_power_used[i] = False
+                                        except Exception:
+                                            pass
+                                        collided = True
+                                    break
                     
                     # Only move if no collision OR broke through
                     if not collided:
@@ -2119,6 +2270,9 @@ try:
                 bird_lane = random_lanes[i]
                 bird_lane_x = LANE_POSITIONS[bird_lane]
                 for loot in loot_items[:]:
+                    # Stealth birds pass through loot unless their power is active (tangible)
+                    if ball_colors[i] == STEALTH and not (i in stealth_timers and stealth_timers.get(i, 0) > 0):
+                        continue
                     # Check if bird is near loot (within lane and vertically close)
                     if abs(bird_lane_x - loot['x_pos']) <= 2 and abs(ball_y[i] - loot['y_pos']) <= 2:
                         # Collect loot
@@ -2210,6 +2364,17 @@ try:
                                     ball_lost[idx] = False
                                     ball_colors[idx] = PATCHWORK
                                     # Patchwork bird = speed 3 (per design)
+                                    ball_speeds[idx] = 3
+                                    ball_y[idx] = STARTING_LINE
+                                    ball_vy[idx] = -1
+                                    lives += 1  # Restore life
+                                    break
+                        elif loot_type == 'stealth_egg':
+                            for idx in range(NUM_BALLS):
+                                if ball_lost[idx]:
+                                    ball_lost[idx] = False
+                                    ball_colors[idx] = STEALTH
+                                    # Stealth bird = speed 3 by default
                                     ball_speeds[idx] = 3
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
