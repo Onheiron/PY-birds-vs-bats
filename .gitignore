@@ -1,0 +1,44 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Firebase and local id
+firebase_user_id.txt
+# Common firebase service account filenames
+serviceAccountKey.json
+service-account.json
+firebase-adminsdk.json
+serviceAccount.json
+
+# Environment files
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Other
+*.pyc

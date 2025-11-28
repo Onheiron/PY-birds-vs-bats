@@ -1,0 +1,5 @@
+firebase-admin>=6.0.0
+requests>=2.20.0
+
+# Optional: lightweight audio playback for 8-bit music
+simpleaudio>=1.0.4
