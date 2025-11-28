@@ -154,3 +154,63 @@ License & credits
 - This project is provided as-is. See repository for license information and credits.
 
 Enjoy and let me know if you want any of these behaviours tuned or documented further.
+ 
+---
+
+## Visual highlights & quick reference ✨
+
+Below are compact, printable references that are easy to scan while playing.
+
+### Birds at a glance
+
+| Bird | Speed | Power (while rising) | Notes |
+|---:|:---:|:---|:---|
+| 📣 Yellow | 2 | Slow adjacent falling birds (except yellows) | Bounce other yellows instead of slowing |
+| 🔥 Red | 3 | Fire projectile (damage bonus with adjacent rising red/patchwork) | Great vs bats/obstacles |
+| ✈️ Blue | 4 | Temporary speed + damage (+1) — visual: CYAN | Sprint ends on bounce or timeout |
+| 💪🏻 White | 4 | Multi-lane effect (±2 lanes) — bounce or trigger adjacent powers | Utility / crowd control |
+| 🦸🏻‍♂️ Purple | 3 | Special obstacle/bat interactions | Lane-control specialist |
+| 🤖 Grey | 2 | Auto-bounce on floor/ceiling | Stable lane maintainer (survivor) |
+| ✂️ Patchwork | 3 | Visual multicolor (counts as other colors for synergy) | Decorative + synergy |
+| 🥇 Gold | 6 | High passive score | Fast and valuable |
+| 🕶️ Stealth | 3 (base) | Become tangible briefly — heavy damage, speed=6 while active | Invisible while stealth; pass-through mechanics |
+
+---
+
+### Loot rarity bar chart (approximate weights)
+
+```
+Rare/Epic egg weights (visual):
+common   ██████████████████████████████████  ~60
+uncommon ████████████████  ~25-35
+rare     ██████████  ~10-20  
+epic     ████  ~5-15
+```
+
+Below is a tiny ASCII breakdown for *rare* egg choices (weights):
+
+```
+blue_egg     : ██████████████████████████ (40)
+grey_egg     : ██████████ (20)
+purple_egg   : ██████████ (20)
+gold_egg     : ████ (10)
+stealth_egg  : ████ (10)
+```
+
+---
+
+## Formatting & color notes
+
+- This README uses emoji, **bold**, *italic* and tables for clarity.
+- Terminal color samples are shown in `start.py` as ANSI escapes; not all terminals honor every SGR code (notably SGR 8 "conceal").
+
+If you want more visual polish (SVG charts, images, or GitHub action-generated badges), tell me which graphs you prefer and I can add them.
+
+---
+
+## Full content (reference & details)
+
+> The rest of the README documents gameplay, developer notes and tuning pointers in plain English so you can
+> tune and run the game easily. See the source `start.py` for implementation specifics (timings derived from `base_sleep`).
+
+(See the file header in `start.py` for constants and exact code pointers.)
