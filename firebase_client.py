@@ -150,7 +150,7 @@ def sign_in_anonymous():
     return None, local_id
 
 
-def send_score(name: str, score: int, time_played_seconds: Optional[int] = None, time_played: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def send_score(name: str, score: int, time_played_seconds: Optional[int] = None, time_played: Optional[str] = None, version: Optional[str] = None, avg_ppm: Optional[float] = None) -> Optional[Dict[str, Any]]:
     global _db
     if _db is None:
         # best-effort: do nothing if Firestore client not available
@@ -171,6 +171,18 @@ def send_score(name: str, score: int, time_played_seconds: Optional[int] = None,
         try:
             if time_played is not None:
                 payload['time_played'] = str(time_played)
+        except Exception:
+            pass
+        # Optional version and average points-per-minute
+        try:
+            if version is not None:
+                payload['version'] = str(version)
+        except Exception:
+            pass
+        try:
+            if avg_ppm is not None:
+                # store as float (rounded to 3 decimals to save space)
+                payload['avg_ppm'] = float(round(float(avg_ppm), 3))
         except Exception:
             pass
         # set() with the uid as document id performs an upsert (create or replace)

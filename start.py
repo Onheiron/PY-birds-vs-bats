@@ -197,6 +197,9 @@ GOLD = "\033[38;5;228m"  # Bold truecolor gold (very bright) - falls back on ter
 BLACK = "\033[38;5;16m"
 STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
+# Game version (update this when releasing a new build)
+GAME_VERSION = "0.1.0"
+
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
 OBSTACLE_TIER1 = "\033[38;5;94m"   # Dark brown (low saturation, low brightness)
@@ -2606,18 +2609,41 @@ try:
                 if firebase_client:
                     try:
                         if name:
-                            # Include time played when submitting leaderboard entry
+                            # Include time played and version when submitting leaderboard entry
                             try:
-                                background_call(firebase_client.send_score, name, int(score), elapsed, elapsed_str)
+                                # Compute average points per minute (avg_ppm).
+                                try:
+                                    minutes = float(elapsed) / 60.0 if elapsed > 0 else 0.0
+                                    if minutes > 0:
+                                        avg_ppm = float(score) / minutes
+                                    else:
+                                        avg_ppm = float(score)
+                                except Exception:
+                                    avg_ppm = float(score)
+
+                                background_call(firebase_client.send_score, name, int(score), elapsed, elapsed_str, GAME_VERSION, avg_ppm)
                             except Exception:
                                 # Fallback to original call if something goes wrong
-                                background_call(firebase_client.send_score, name, int(score))
+                                try:
+                                    background_call(firebase_client.send_score, name, int(score))
+                                except Exception:
+                                    pass
                         # Include time played in the game_over analytics event
                         try:
-                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level, 'time_played_seconds': elapsed, 'time_played': elapsed_str})
+                            # Include version and avg_ppm in the game_over analytics event as well
+                            try:
+                                minutes = float(elapsed) / 60.0 if elapsed > 0 else 0.0
+                                if minutes > 0:
+                                    avg_ppm = float(score) / minutes
+                                else:
+                                    avg_ppm = float(score)
+                            except Exception:
+                                avg_ppm = float(score)
+
+                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level, 'time_played_seconds': elapsed, 'time_played': elapsed_str, 'version': GAME_VERSION, 'avg_ppm': avg_ppm})
                         except Exception:
                             # Fallback: log without time info
-                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level})
+                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level, 'version': GAME_VERSION})
                         background_call(firebase_client.sync_achievements, achievements)
                     except Exception:
                         pass
