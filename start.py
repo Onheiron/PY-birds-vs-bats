@@ -1979,6 +1979,12 @@ try:
                             else:
                                 ball_vy[i] = 1
                                 ball_y[i] = bat_bottom + 1
+                                # If a blue bird was sprinting, stop its sprint when it bounces
+                                try:
+                                    if ball_colors[i] == BLUE:
+                                        bird_power_used[i] = False
+                                except Exception:
+                                    pass
                                 collided = True
                             break
                     
@@ -2005,6 +2011,12 @@ try:
                                     broken_through = True
                                 else:
                                     ball_vy[i] = 1
+                                    # If a blue bird was sprinting, stop its sprint when it bounces
+                                    try:
+                                        if ball_colors[i] == BLUE:
+                                            bird_power_used[i] = False
+                                    except Exception:
+                                        pass
                                     collided = True
                                 break
                     
