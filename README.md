@@ -39,7 +39,7 @@ Standalone binary (if present):
   - Pass-through: while stealth (non-tangible) it passes through bats, obstacles and loot.
   - Power (press ↑ while rising): become tangible for a short window and deal heavy damage to nearby enemies.
   - Power also grants a short speed boost (speed = 6) for the power duration.
-- PATCHWORK bird and `patchwork_egg` (uncommon): per-character multicolor sprite for visual variety.
+- PATCHWORK bird and `patchwork_egg` (uncommon): triggers all synergy effects of other birds.
 - GOLD bird and `gold_egg` (rare): special scoring bird (higher passive score / fast speed).
 - Blue sprint behaviour fixed: sprint now times out correctly and the bird returns to its normal color when the boost ends.
 - Despawn: bats and loot older than 60 seconds are cleaned up automatically to avoid screen clutter.
@@ -64,13 +64,13 @@ Each bird has a base speed and a special power triggered while the bird is risin
   - Power: affects multiple lanes (±2 lanes). Can bounce falling birds or trigger rising birds' powers.
 
 - Purple (speed 3)
-  - Power: special interactions with obstacles/bats (useful for tile control).
+  - Knows no fear.
 
 - Grey (speed 2)
   - Auto-bounce on floor (helps keep lanes active). Does not die on floor like other birds.
 
 - PATCHWORK (speed 3)
-  - Visual-only special: per-character colored sprite. Counts for adjacency synergies like other colors.
+  - Triggers synergy effects of all other colors.
 
 - GOLD (speed 6)
   - High-scoring special bird. Scores larger passive points each frame when alive.
