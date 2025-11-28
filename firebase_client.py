@@ -156,11 +156,11 @@ def send_score(name: str, score: int, time_played_seconds: Optional[int] = None,
         # best-effort: do nothing if Firestore client not available
         return None
     try:
-        # Use stable local user id as the document id so each user has at most
-        # one leaderboard entry. Calling send_score will upsert that user's
-        # leaderboard document (create or overwrite), avoiding duplicate rows.
+        # Create a new leaderboard document for every submission (append mode).
+        # We still store a stable local user id in the payload so entries can be
+        # grouped or filtered by user, but we do NOT upsert by uid anymore.
         uid = get_or_create_local_user_id()
-        doc_ref = _db.collection('leaderboard').document(uid)
+        doc_ref = _db.collection('leaderboard').document()
         payload = {'name': name, 'score': int(score), 'userId': uid, 'ts': int(time.time())}
         # Attach optional play time information if provided
         try:
