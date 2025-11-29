@@ -329,7 +329,7 @@ _OBST_MAX_HP_BY_TIER = {1: 4, 2: 6, 3: 10, 4: 16}
 LANE_POSITIONS = [5, 9, 13, 17, 21, 25, 29, 33, 37]  # 9 lanes centered in game box
 
 # Ball positions and velocities
-ball_colors = [YELLOW, YELLOW, YELLOW, CLOCKWORK, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
+ball_colors = [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
 
 # Randomize which bird goes to which lane
 random.seed()
