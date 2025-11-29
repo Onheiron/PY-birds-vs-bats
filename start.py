@@ -39,13 +39,13 @@ def choose_loot_type(rarity):
         egg_prob = 0
     # Loot pool by rarity
     if rarity == 'common':
-        loot_pool = ['egg', 'wide_cursor', 'tailwind', 'suction']
+        loot_pool = ['egg', 'wide_cursor', 'tailwind', 'shuffle']
     elif rarity == 'uncommon':
-        loot_pool = ['egg', 'wide_cursor+', 'tailwind+', 'suction+']
+        loot_pool = ['egg', 'wide_cursor+', 'tailwind+', 'shuffle+']
     elif rarity == 'rare':
-        loot_pool = ['egg', 'wide_cursor++', 'tailwind++', 'suction++']
+        loot_pool = ['egg', 'wide_cursor++', 'tailwind++', 'shuffle++']
     else:  # epic
-        loot_pool = ['egg', 'wide_cursor_max', 'tailwind_max', 'suction_max']
+        loot_pool = ['egg', 'wide_cursor_max', 'tailwind_max', 'shuffle_max']
     # Decide whether to drop an egg (based on empty lanes)
     if random.random() < egg_prob:
         # Egg selection by rarity (rare tier may include gold_egg)
@@ -198,7 +198,7 @@ BLACK = "\033[38;5;16m"
 STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
 # Game version (update this when releasing a new build)
-GAME_VERSION = "0.3.0"
+GAME_VERSION = "0.4.0"
 
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
@@ -427,6 +427,115 @@ powerups.setdefault('tailwind_active', False)
 powerups.setdefault('tailwind_frames', 0)
 powerups.setdefault('tailwind_up_bonus', 0)
 powerups.setdefault('tailwind_down_penalty', 0)
+
+
+def perform_shuffle(count: int):
+    """Perform up to `count` smart swaps to compact birds toward the center.
+    Algorithm (greedy):
+    - Prefer moving outer birds into empty lanes close to center (lost slots)
+    - If no empty lanes, swap an outer bird with an inner bird (closer to center)
+    - If no better candidate exists, swap with a random other bird
+    """
+    try:
+        center = 4
+        moved_indices = set()
+        used_lost_slots = set()
+        for _ in range(max(0, int(count))):
+            # Living bird indices not yet moved in this shuffle
+            living = [i for i in range(NUM_BALLS) if not ball_lost[i]]
+            living_available = [i for i in living if i not in moved_indices]
+            if len(living_available) <= 1:
+                break
+
+            # Pick the living bird farthest from center among those not yet moved
+            living_sorted = sorted(living_available, key=lambda i: abs(random_lanes[i] - center), reverse=True)
+            src_idx = living_sorted[0]
+            src_lane = random_lanes[src_idx]
+
+            # Find lost slots (empty lanes) and prefer the empty lane closest to center
+            lost_slots = [i for i in range(NUM_BALLS) if ball_lost[i] and i not in used_lost_slots]
+            if lost_slots:
+                empty_lanes = sorted([random_lanes[i] for i in lost_slots], key=lambda l: abs(l - center))
+                target_lane = empty_lanes[0]
+                # find the lost slot index that holds this lane (and not used yet)
+                target_lost_idx = next((li for li in lost_slots if random_lanes[li] == target_lane), None)
+                if target_lost_idx is not None:
+                    # Swap lanes between the source bird and the lost slot
+                    random_lanes[src_idx], random_lanes[target_lost_idx] = random_lanes[target_lost_idx], random_lanes[src_idx]
+                    # Update rendering columns and reset moved bird to starting line facing up
+                    try:
+                        ball_cols[src_idx] = LANE_POSITIONS[random_lanes[src_idx]]
+                        ball_y[src_idx] = STARTING_LINE
+                        ball_vy[src_idx] = -1
+                        bird_power_used[src_idx] = False
+                    except Exception:
+                        pass
+                    try:
+                        ball_cols[target_lost_idx] = LANE_POSITIONS[random_lanes[target_lost_idx]]
+                    except Exception:
+                        pass
+                    # Mark both slot and source as used so we don't move them twice
+                    moved_indices.add(src_idx)
+                    used_lost_slots.add(target_lost_idx)
+                    moved_indices.add(target_lost_idx)
+                    continue
+
+            # No empty lanes: try to find an inner living bird to swap with
+            inner_candidates = [i for i in living if i != src_idx and i not in moved_indices and abs(random_lanes[i] - center) < abs(src_lane - center)]
+            if inner_candidates:
+                # Choose the one closest to center
+                tgt_idx = sorted(inner_candidates, key=lambda i: abs(random_lanes[i] - center))[0]
+                random_lanes[src_idx], random_lanes[tgt_idx] = random_lanes[tgt_idx], random_lanes[src_idx]
+                try:
+                    # Update both moved birds' rendering cols and reset positions to starting line
+                    ball_cols[src_idx] = LANE_POSITIONS[random_lanes[src_idx]]
+                    ball_y[src_idx] = STARTING_LINE
+                    ball_vy[src_idx] = -1
+                    bird_power_used[src_idx] = False
+                except Exception:
+                    pass
+                try:
+                    ball_cols[tgt_idx] = LANE_POSITIONS[random_lanes[tgt_idx]]
+                    ball_y[tgt_idx] = STARTING_LINE
+                    ball_vy[tgt_idx] = -1
+                    bird_power_used[tgt_idx] = False
+                except Exception:
+                    pass
+                # Mark moved indices so we don't select them again
+                moved_indices.add(src_idx)
+                moved_indices.add(tgt_idx)
+                continue
+
+            # Fallback: swap with a random different living bird
+            try:
+                other_candidates = [i for i in living if i != src_idx and i not in moved_indices]
+                if not other_candidates:
+                    # nothing left to pick uniquely
+                    break
+                other = random.choice(other_candidates)
+                random_lanes[src_idx], random_lanes[other] = random_lanes[other], random_lanes[src_idx]
+                try:
+                    ball_cols[src_idx] = LANE_POSITIONS[random_lanes[src_idx]]
+                    ball_y[src_idx] = STARTING_LINE
+                    ball_vy[src_idx] = -1
+                    bird_power_used[src_idx] = False
+                except Exception:
+                    pass
+                try:
+                    ball_cols[other] = LANE_POSITIONS[random_lanes[other]]
+                    ball_y[other] = STARTING_LINE
+                    ball_vy[other] = -1
+                    bird_power_used[other] = False
+                except Exception:
+                    pass
+                moved_indices.add(src_idx)
+                moved_indices.add(other)
+            except Exception:
+                # Nothing left to do
+                break
+    except Exception:
+        # Defensive: don't allow shuffle to crash the game
+        pass
 
 # Score system
 score = 0
@@ -1512,6 +1621,10 @@ try:
                 elif 'tailwind' in loot_type:
                     # Use a decorative wind/ornament symbol
                     output += f"\033[{y_pos};{loot['x_pos']}H{power_color}༄{RESET}"
+                # Shuffle power-ups (tiered)
+                elif 'shuffle' in loot_type:
+                    # Use the chosen decorative shuffle icon
+                    output += f"\033[{y_pos};{loot['x_pos']}H{power_color}𖦹{RESET}"
         
         # Draw red projectiles
         for proj in red_projectiles:
@@ -2704,7 +2817,7 @@ try:
                         elif loot_type == 'wide_cursor_max':
                             powerups['wide_cursor_active'] = True
                             powerups['wide_cursor_frames'] = int(50.0 / base_sleep)
-                            powerups['wide_cursor_lanes'] = 7
+                            powerups['wide_cursor_lanes'] = 5
                             check_achievements_event('power_used', power='wide_cursor')
                         elif loot_type == 'bounce_boost':
                             powerups['bounce_boost_active'] = True
@@ -2771,6 +2884,34 @@ try:
                             powerups['tailwind_up_bonus'] = 3
                             powerups['tailwind_down_penalty'] = 3
                             check_achievements_event('power_used', power='tailwind')
+                        elif loot_type == 'shuffle':
+                            # Shuffle 2 birds (basic)
+                            try:
+                                perform_shuffle(1)
+                                check_achievements_event('power_used', power='shuffle')
+                            except Exception:
+                                pass
+                        elif loot_type == 'shuffle+':
+                            # Shuffle 4 birds
+                            try:
+                                perform_shuffle(2)
+                                check_achievements_event('power_used', power='shuffle')
+                            except Exception:
+                                pass
+                        elif loot_type == 'shuffle++':
+                            # Shuffle 6 birds
+                            try:
+                                perform_shuffle(3)
+                                check_achievements_event('power_used', power='shuffle')
+                            except Exception:
+                                pass
+                        elif loot_type == 'shuffle_max':
+                            # Shuffle many (attempt to compact all outer birds)
+                            try:
+                                perform_shuffle(4)
+                                check_achievements_event('power_used', power='shuffle')
+                            except Exception:
+                                pass
                 
                 # Bounce off ceiling
                 if ball_y[i] <= 1:
