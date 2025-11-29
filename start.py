@@ -1920,6 +1920,23 @@ try:
             for loot in loot_items[:]:
                 try:
                     if now_ts - float(loot.get('spawn_ts', now_ts)) > 60:
+                        if loot.get('type') == 'orange_egg' and loot.get('y_pos') == STARTING_LINE:
+                                # find lane index from x_pos
+                                lane_x = loot.get('x_pos')
+                                lane = LANE_POSITIONS.index(lane_x)
+                                # find the bird that occupies that lane
+                                for bi in range(NUM_BALLS):
+                                    if random_lanes[bi] == lane:
+                                            # check for egg-state markers
+                                            if (ball_colors[bi] == ORANGE and ball_y[bi] == 999 and ball_speeds[bi] == 0 and not ball_lost[bi]):
+                                                # mark bird as lost and decrement lives
+                                                ball_lost[bi] = True
+                                                ball_y[bi] = HEIGHT - 1
+                                                lives -= 1
+                                                if lives <= 0:
+                                                    game_over = True
+                                            break
+                        # Finally, remove the loot item (best-effort)
                         loot_items.remove(loot)
                 except Exception:
                     continue
