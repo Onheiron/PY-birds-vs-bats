@@ -66,7 +66,7 @@ Each bird has a base speed and a special power triggered while the bird is risin
 - Purple (speed 3)
   - Knows no fear.
 
-- Grey (speed 2)
+- Clockwork (speed 2)
   - Auto-bounce on floor (helps keep lanes active). Does not die on floor like other birds.
 
 - PATCHWORK (speed 3)
@@ -95,7 +95,7 @@ Each bird has a base speed and a special power triggered while the bird is risin
   empty lanes available (to avoid unreachable eggs).
 - New egg: `stealth_egg` included in the "rare" egg pool with weight 10.
 
-Rare egg composition now includes: blue_egg, grey_egg, purple_egg, gold_egg, stealth_egg (weights: 40, 20, 20, 10, 10).
+Rare egg composition now includes: blue_egg, clockwork_egg, purple_egg, gold_egg, stealth_egg (weights: 40, 20, 20, 10, 10).
 
 When a `stealth_egg` is collected, it spawns a STEALTH bird in the first available (dead) bird slot.
 
@@ -170,7 +170,7 @@ Below are compact, printable references that are easy to scan while playing.
 | ✈️ Blue | 4 | Temporary speed + damage (+1) — visual: CYAN | Sprint ends on bounce or timeout |
 | 💪🏻 White | 4 | Multi-lane effect (±2 lanes) — bounce or trigger adjacent powers | Utility / crowd control |
 | 🦸🏻‍♂️ Purple | 3 | Special obstacle/bat interactions | Lane-control specialist |
-| 🤖 Grey | 2 | Auto-bounce on floor/ceiling | Stable lane maintainer (survivor) |
+| 🤖 Clockwork | 2 | Auto-bounce on floor/ceiling | Stable lane maintainer (survivor) |
 | ✂️ Patchwork | 3 | Visual multicolor (counts as other colors for synergy) | Decorative + synergy |
 | 🥇 Gold | 6 | High passive score | Fast and valuable |
 | 🕶️ Stealth | 3 (base) | Become tangible briefly — heavy damage, speed=6 while active | Invisible while stealth; pass-through mechanics |
@@ -191,7 +191,7 @@ Below is a tiny ASCII breakdown for *rare* egg choices (weights):
 
 ```
 blue_egg     : ██████████████████████████ (40)
-grey_egg     : ██████████ (20)
+clockwork_egg     : ██████████ (20)
 purple_egg   : ██████████ (20)
 gold_egg     : ████ (10)
 stealth_egg  : ████ (10)
