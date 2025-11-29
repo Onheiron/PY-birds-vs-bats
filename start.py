@@ -198,7 +198,7 @@ BLACK = "\033[38;5;16m"
 STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
 # Game version (update this when releasing a new build)
-GAME_VERSION = "0.1.0"
+GAME_VERSION = "0.2.0"
 
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
@@ -1319,7 +1319,6 @@ try:
                                         # When charge > 0, speed mirrors charge
                                         if newc > 0:
                                             ball_speeds[bird_in_lane] = newc
-                                        add_notification(f"Clockwork charge: {newc}")
                                     except Exception:
                                         pass
                                 elif bird_color == STEALTH:
