@@ -644,8 +644,8 @@ def init_achievements():
         'count_blue_7': {'name': 'Blue Horde', 'desc': 'Have 7 blue birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'BLUE', 'goal': 7},
         'count_white_5': {'name': 'White Flock', 'desc': 'Have 5 white birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'WHITE', 'goal': 5},
         'count_white_7': {'name': 'White Horde', 'desc': 'Have 7 white birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'WHITE', 'goal': 7},
-    'count_clockwork_5': {'name': 'Clockwork Flock', 'desc': 'Have 5 clockwork birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'CLOCKWORK', 'goal': 5},
-    'count_clockwork_7': {'name': 'Clockwork Horde', 'desc': 'Have 7 clockwork birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'CLOCKWORK', 'goal': 7},
+        'count_clockwork_5': {'name': 'Clockwork Flock', 'desc': 'Have 5 clockwork birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'CLOCKWORK', 'goal': 5},
+        'count_clockwork_7': {'name': 'Clockwork Horde', 'desc': 'Have 7 clockwork birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'CLOCKWORK', 'goal': 7},
         'count_purple_5': {'name': 'Purple Flock', 'desc': 'Have 5 purple birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'PURPLE', 'goal': 5},
         'count_purple_7': {'name': 'Purple Horde', 'desc': 'Have 7 purple birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'PURPLE', 'goal': 7},
         'count_orange_5': {'name': 'Orange Flock', 'desc': 'Have 5 orange birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'ORANGE', 'goal': 5},
@@ -661,13 +661,14 @@ def init_achievements():
         'destroy_bat_t3_10': {'name': 'Tier3 Slayer', 'desc': 'Destroy 10 tier3 bats', 'unlocked': False, 'type': 'counter', 'key': 'bats_destroyed_tier3', 'goal': 10, 'progress': 0},
         'destroy_bat_t4_1': {'name': 'Tier4 Hunter', 'desc': 'Destroy 1 tier4 bat', 'unlocked': False, 'type': 'counter', 'key': 'bats_destroyed_tier4', 'goal': 1, 'progress': 0},
         'destroy_bat_t4_10': {'name': 'Tier4 Slayer', 'desc': 'Destroy 10 tier4 bats', 'unlocked': False, 'type': 'counter', 'key': 'bats_destroyed_tier4', 'goal': 10, 'progress': 0},
-        # Power usage achievements for cursor/bounce/suction (use achievements)
+        # Power usage achievements for cursor and new powers (tailwind, shuffle)
         'power_wide_cursor_1': {'name': 'Cursor Novice', 'desc': 'Use Wide Cursor once', 'unlocked': False, 'type': 'counter', 'key': 'power_wide_cursor', 'goal': 1, 'progress': 0},
         'power_wide_cursor_10': {'name': 'Cursor Expert', 'desc': 'Use Wide Cursor 10 times', 'unlocked': False, 'type': 'counter', 'key': 'power_wide_cursor', 'goal': 10, 'progress': 0},
-        'power_bounce_boost_1': {'name': 'Bounce Novice', 'desc': 'Use Bounce Boost once', 'unlocked': False, 'type': 'counter', 'key': 'power_bounce_boost', 'goal': 1, 'progress': 0},
-        'power_bounce_boost_10': {'name': 'Bounce Expert', 'desc': 'Use Bounce Boost 10 times', 'unlocked': False, 'type': 'counter', 'key': 'power_bounce_boost', 'goal': 10, 'progress': 0},
-        'power_suction_1': {'name': 'Suction Novice', 'desc': 'Use Suction once', 'unlocked': False, 'type': 'counter', 'key': 'power_suction', 'goal': 1, 'progress': 0},
-        'power_suction_10': {'name': 'Suction Expert', 'desc': 'Use Suction 10 times', 'unlocked': False, 'type': 'counter', 'key': 'power_suction', 'goal': 10, 'progress': 0},
+        # Replaced bounce/suction achievements with tailwind and shuffle
+        'power_tailwind_1': {'name': 'Tailwind Novice', 'desc': 'Use Tailwind once', 'unlocked': False, 'type': 'counter', 'key': 'power_tailwind', 'goal': 1, 'progress': 0},
+        'power_tailwind_10': {'name': 'Tailwind Expert', 'desc': 'Use Tailwind 10 times', 'unlocked': False, 'type': 'counter', 'key': 'power_tailwind', 'goal': 10, 'progress': 0},
+        'power_shuffle_1': {'name': 'Shuffle Novice', 'desc': 'Use Shuffle once', 'unlocked': False, 'type': 'counter', 'key': 'power_shuffle', 'goal': 1, 'progress': 0},
+        'power_shuffle_10': {'name': 'Shuffle Expert', 'desc': 'Use Shuffle 10 times', 'unlocked': False, 'type': 'counter', 'key': 'power_shuffle', 'goal': 10, 'progress': 0},
         # Area hold smaller tiers
         'hold_top50_100': {'name': 'Sky Keepers I', 'desc': 'Keep all birds in top 50% for 100 frames', 'unlocked': False, 'type': 'area', 'key': 'top50', 'goal': 100},
         'hold_top30_200': {'name': 'Cloud Nine I', 'desc': 'Keep all birds in top 30% for 200 frames', 'unlocked': False, 'type': 'area', 'key': 'top30', 'goal': 200},

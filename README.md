@@ -25,7 +25,7 @@ Standalone binary (if present):
 
 - ← / → : Move cursor between lanes
 - ↑ : Bounce the bird in the selected lane (if already rising, activates that bird's power — once per ascent)
-- ↓ : Suction (if you have the suction power active) — pulls affected birds down
+- ↓ : (unused) — the Suction power has been removed; new loot-based power-ups (Tailwind, Shuffle) now change flock behavior when collected
 - SPACE : Swap mode (select a lane, press again to swap two birds). Swap costs points (200 × current level).
 - Q or Ctrl+C : Quit
 
@@ -45,6 +45,9 @@ Standalone binary (if present):
 - Despawn: bats and loot older than 60 seconds are cleaned up automatically to avoid screen clutter.
 - Firebase telemetry: total play time is now tracked and submitted with game-over events.
 - Misc: audio/music backend removed for determinism in terminal builds.
+ - Removed legacy power-ups: Bounce Boost and Suction. These were replaced with two new loot-based power-ups (Tailwind and Shuffle) to streamline gameplay and avoid input lag issues.
+ - New power-up — Tailwind (symbol: ༄): a tiered pickup that temporarily boosts rising birds and penalizes falling birds. While active the starting line is visually highlighted and bird vertical speeds are clamped for balance.
+ - New power-up — Shuffle (symbol: 𖦹): a tiered pickup that smartly swaps birds between lanes (2/4/6 birds depending on tier) to compact the formation toward the center. Moved birds are reset to the starting line and begin rising.
 
 ## Birds (summary)
 
@@ -98,6 +101,11 @@ Each bird has a base speed and a special power triggered while the bird is risin
 Rare egg composition now includes: blue_egg, clockwork_egg, purple_egg, gold_egg, stealth_egg (weights: 40, 20, 20, 10, 10).
 
 When a `stealth_egg` is collected, it spawns a STEALTH bird in the first available (dead) bird slot.
+
+New loot additions: Tailwind and Shuffle
+
+- Tailwind (symbol: '༄'): a loot pickup that applies a tiered modifier to bird vertical speeds. Rising birds receive a temporary upward speed bonus while falling birds receive a penalty; speeds are clamped to remain balanced (game clamps to a safe range). The starting line receives a visual indicator while Tailwind is active.
+- Shuffle (symbol: '𖦹'): a loot pickup that triggers an automatic lane reorganization. Depending on tier, it swaps a small group of birds (e.g. 2 / 4 / 6) and prefers compacting birds toward the center by moving outer birds into empty or inner lanes; birds moved by Shuffle are reset to the starting line and set to rise.
 
 ## Enemies & despawn
 
@@ -176,6 +184,12 @@ Below are compact, printable references that are easy to scan while playing.
 | 🕶️ Stealth | 3 (base) | Become tangible briefly — heavy damage, speed=6 while active | Invisible while stealth; pass-through mechanics |
 
 ---
+
+### Power-ups (loot) at a glance
+
+- ༄  Tailwind — Tiered pickup that boosts rising birds and penalizes falling birds. Visual starting-line indicator while active. Speeds are clamped for balance.
+- 𖦹  Shuffle — Tiered pickup that performs smart lane swaps (2/4/6 birds depending on tier) to compact the formation toward center; moved birds reset to the starting line and begin rising.
+
 
 ### Loot rarity bar chart (approximate weights)
 
