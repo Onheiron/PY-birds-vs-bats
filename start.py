@@ -56,7 +56,7 @@ def choose_loot_type(rarity):
             'red_egg': RED,
             'blue_egg': BLUE,
             'white_egg': WHITE,
-            'grey_egg': GREY,
+                'clockwork_egg': CLOCKWORK,
             'gold_egg': GOLD,
             'stealth_egg': STEALTH,
             'patchwork_egg': PATCHWORK,
@@ -71,7 +71,7 @@ def choose_loot_type(rarity):
             BLUE: None,
             PATCHWORK: 2,
             PURPLE: 2,
-            GREY: 2,
+            CLOCKWORK: 2,
             GOLD: 1,
             STEALTH: 1,
             WHITE: 1,
@@ -94,13 +94,13 @@ def choose_loot_type(rarity):
 
         # Candidate eggs and their base weights per rarity
         if rarity == 'common':
-            candidates = ['yellow_egg', 'grey_egg']
+            candidates = ['yellow_egg', 'clockwork_egg']
             weights = [70, 30]
         elif rarity == 'uncommon':
             candidates = ['red_egg', 'blue_egg', 'patchwork_egg', 'purple_egg']
             weights = [30, 30, 20, 20]
         elif rarity == 'rare':
-            candidates = ['blue_egg', 'grey_egg', 'gold_egg', 'stealth_egg']
+            candidates = ['blue_egg', 'clockwork_egg', 'gold_egg', 'stealth_egg']
             weights = [40, 30, 15, 15]
         else:
             candidates = ['white_egg', 'orange_egg']
@@ -190,7 +190,7 @@ YELLOW = "\033[38;5;220m"  # Darker yellow (256-color palette)
 WHITE = "\033[97m"  # Bright white for legendary birds
 # Use explicit 256/truecolor escapes to ensure consistent dark gray and black
 DARK_GRAY = "\033[38;5;240m"  # Dark gray (visible on dark backgrounds)
-GREY = "\033[38;5;244m"  # Medium grey (legacy name)
+CLOCKWORK = "\033[38;5;244m"  # Medium grey (CLOCKWORK color)
 RESET = "\033[0m"
 GOLD = "\033[38;5;228m"  # Bold truecolor gold (very bright) - falls back on terminals without truecolor
 # Use 256-color black to ensure compatibility (some terminals don't honor truecolor)
@@ -288,6 +288,35 @@ def _render_patchwork_line(line: str) -> str:
         # Fallback: return unmodified line with default reset
         return line + RESET
 
+
+def _render_clockwork_line(line: str, charge: int, blink_on: bool) -> str:
+    """Render a single sprite line for CLOCKWORK birds.
+
+    Only the characters '.' and "'" are colored according to charge and blink state.
+    Other characters are rendered in the CLOCKWORK base color. A RESET is appended.
+    """
+    try:
+        # Determine the active highlight color based on charge
+        if charge is None:
+            charge = 2
+        if charge > 1:
+            hl = GREEN
+        elif charge == 1:
+            hl = YELLOW
+        else:
+            hl = RED
+
+        parts = []
+        for ch in line:
+            if ch in ('.', "'"):
+                # Blink: when blink_on is False render as dark gray, else use highlight
+                parts.append((hl if blink_on else DARK_GRAY) + ch)
+            else:
+                parts.append(CLOCKWORK + ch)
+        return "".join(parts) + RESET
+    except Exception:
+        return CLOCKWORK + line + RESET
+
 # Base colors (full HP)
 _BATS_BASE_RGB = (255, 0, 255)   # magenta FF00FF
 _OBST_BASE_RGB = (0, 255, 0)     # green 00FF00
@@ -300,7 +329,7 @@ _OBST_MAX_HP_BY_TIER = {1: 4, 2: 6, 3: 10, 4: 16}
 LANE_POSITIONS = [5, 9, 13, 17, 21, 25, 29, 33, 37]  # 9 lanes centered in game box
 
 # Ball positions and velocities
-ball_colors = [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
+ball_colors = [YELLOW, YELLOW, YELLOW, CLOCKWORK, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
 
 # Randomize which bird goes to which lane
 random.seed()
@@ -327,8 +356,8 @@ for color in ball_colors:
         ball_speeds.append(4)  # Fastest
     elif color == WHITE:
         ball_speeds.append(4)  # Same as blue
-    elif color == GREY:
-        ball_speeds.append(2)  # Come il giallo
+    elif color == CLOCKWORK:
+        ball_speeds.append(2)  # Come il giallo (CLOCKWORK)
     elif color == ORANGE:
         ball_speeds.append(5)  # Arancione = velocità 5
     elif color == PATCHWORK:
@@ -376,6 +405,8 @@ scared_birds = {}
 stealth_timers = {}
 # Store previous speeds for stealth birds when their power makes them temporarily faster
 stealth_prev_speeds = {}
+# Clockwork bird charge state: maps bird_index -> charge (int)
+clockwork_charge = {}
 
 # Power-ups state (using dict to avoid scope issues)
 powerups = {
@@ -459,7 +490,7 @@ def init_achievements():
         'swap_100': {'name': 'OCD', 'desc': 'Use swap 100 times', 'unlocked': False, 'type': 'counter', 'key': 'swaps', 'goal': 100, 'progress': 0},
         # collect special eggs
         'collect_purple': {'name': 'The Fearless', 'desc': 'Collect a purple egg', 'unlocked': False, 'type': 'collect', 'loot': 'purple_egg'},
-        'collect_grey': {'name': 'The Bot', 'desc': 'Collect a grey egg', 'unlocked': False, 'type': 'collect', 'loot': 'grey_egg'},
+        'collect_clockwork': {'name': 'The Bot', 'desc': 'Collect a clockwork egg', 'unlocked': False, 'type': 'collect', 'loot': 'clockwork_egg'},
         'collect_white': {'name': 'The Phantom', 'desc': 'Collect a white egg', 'unlocked': False, 'type': 'collect', 'loot': 'white_egg'},
         'collect_orange': {'name': 'The Phoenix', 'desc': 'Collect an orange egg', 'unlocked': False, 'type': 'collect', 'loot': 'orange_egg'},
         # destroy counters
@@ -496,8 +527,8 @@ def init_achievements():
         'count_blue_7': {'name': 'Blue Horde', 'desc': 'Have 7 blue birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'BLUE', 'goal': 7},
         'count_white_5': {'name': 'White Flock', 'desc': 'Have 5 white birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'WHITE', 'goal': 5},
         'count_white_7': {'name': 'White Horde', 'desc': 'Have 7 white birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'WHITE', 'goal': 7},
-        'count_grey_5': {'name': 'Grey Flock', 'desc': 'Have 5 grey birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'GREY', 'goal': 5},
-        'count_grey_7': {'name': 'Grey Horde', 'desc': 'Have 7 grey birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'GREY', 'goal': 7},
+    'count_clockwork_5': {'name': 'Clockwork Flock', 'desc': 'Have 5 clockwork birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'CLOCKWORK', 'goal': 5},
+    'count_clockwork_7': {'name': 'Clockwork Horde', 'desc': 'Have 7 clockwork birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'CLOCKWORK', 'goal': 7},
         'count_purple_5': {'name': 'Purple Flock', 'desc': 'Have 5 purple birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'PURPLE', 'goal': 5},
         'count_purple_7': {'name': 'Purple Horde', 'desc': 'Have 7 purple birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'PURPLE', 'goal': 7},
         'count_orange_5': {'name': 'Orange Flock', 'desc': 'Have 5 orange birds on screen', 'unlocked': False, 'type': 'color_count', 'key': 'ORANGE', 'goal': 5},
@@ -886,21 +917,32 @@ def get_key():
             pass
         return None
 
-# --- Colore e sprite grigio ---
-GREY = "\033[38;5;244m"  # Medium grey
-GREY_BIRD_UP_1 = BIRD_UP_1
-GREY_BIRD_UP_2 = BIRD_UP_2
-GREY_BIRD_DOWN_1 = BIRD_DOWN_1
-GREY_BIRD_DOWN_2 = BIRD_DOWN_2
+# --- Colore e sprite CLOCKWORK ---
+CLOCKWORK_BIRD_UP_1 = BIRD_UP_1
+CLOCKWORK_BIRD_UP_2 = BIRD_UP_2
+CLOCKWORK_BIRD_DOWN_1 = BIRD_DOWN_1
+CLOCKWORK_BIRD_DOWN_2 = BIRD_DOWN_2
 
-# --- Gestione auto-bounce grigio ---
-def handle_grey_auto_bounce():
+# --- Gestione auto-bounce CLOCKWORK ---
+def handle_clockwork_auto_bounce():
     # Bounce esattamente dove spawnano gli uccelli (STARTING_LINE)
     for i, c in enumerate(ball_colors):
-        if c == GREY and not ball_lost[i] and ball_vy[i] == 1 and ball_y[i] >= STARTING_LINE:
-            ball_y[i] = STARTING_LINE
-            ball_vy[i] = -1
-            bird_power_used[i] = False
+        # Treat CLOCKWORK birds as special: only auto-bounce if they still have charge > 0
+        try:
+            if c == CLOCKWORK and not ball_lost[i] and ball_vy[i] == 1 and ball_y[i] >= STARTING_LINE:
+                charge = clockwork_charge.get(i, None)
+                # If charge is None, initialize to 2 (safe fallback)
+                if charge is None:
+                    charge = 2
+                    clockwork_charge[i] = 2
+                if charge > 0:
+                    ball_y[i] = STARTING_LINE
+                    ball_vy[i] = -1
+                    bird_power_used[i] = False
+                # if charge == 0, let it fall through (no auto-bounce)
+        except Exception:
+            # Defensive: in case of malformed data, skip
+            pass
 
 try:
     setup()
@@ -1057,6 +1099,21 @@ try:
                         elif ball_vy[bird_in_lane] == 1:  # Moving down - bounce it up
                             ball_vy[bird_in_lane] = -1
                             bird_power_used[bird_in_lane] = False  # Reset power when bird starts rising
+                            # Special: if this is a CLOCKWORK bird in freefall (charge == 0),
+                            # bouncing it restores charge to 1 and sets its speed accordingly.
+                            try:
+                                if ball_colors[bird_in_lane] == CLOCKWORK:
+                                    c = clockwork_charge.get(bird_in_lane, None)
+                                    if c is None:
+                                        # initialize if missing
+                                        clockwork_charge[bird_in_lane] = 2
+                                        c = 2
+                                    if c == 0:
+                                        clockwork_charge[bird_in_lane] = 1
+                                        # speed equals charge when >0
+                                        ball_speeds[bird_in_lane] = 1
+                            except Exception:
+                                pass
                             # Apply bounce boost if active
                             if powerups['bounce_boost_active'] and bird_in_lane not in speed_boosts:
                                 boost_frames = int(powerups['bounce_boost_duration'] / base_sleep)
@@ -1251,6 +1308,20 @@ try:
                                                             # Blue power on adjacent bird
                                                             boost_frames = int(5.0 / base_sleep)
                                                             speed_boosts[adj_bird] = boost_frames
+                                elif bird_color == CLOCKWORK:
+                                    # CLOCKWORK power: increase charge up to max 3.
+                                    try:
+                                        cur = clockwork_charge.get(bird_in_lane, 2)
+                                        if cur is None:
+                                            cur = 2
+                                        newc = min(3, cur + 1)
+                                        clockwork_charge[bird_in_lane] = newc
+                                        # When charge > 0, speed mirrors charge
+                                        if newc > 0:
+                                            ball_speeds[bird_in_lane] = newc
+                                        add_notification(f"Clockwork charge: {newc}")
+                                    except Exception:
+                                        pass
                                 elif bird_color == STEALTH:
                                     # Stealth power: become tangible for a short duration and deal heavy damage
                                     # bird_power_used[bird_in_lane] is already True
@@ -1407,8 +1478,8 @@ try:
                     output += f"\033[{y_pos};{loot['x_pos']}H{BLUE}⬯{RESET}"
                 elif loot_type == 'white_egg':
                     output += f"\033[{y_pos};{loot['x_pos']}H{WHITE}⬯{RESET}"
-                elif loot_type == 'grey_egg':
-                    output += f"\033[{y_pos};{loot['x_pos']}H{GREY}⬯{RESET}"
+                elif loot_type == 'clockwork_egg':
+                    output += f"\033[{y_pos};{loot['x_pos']}H{CLOCKWORK}⬯{RESET}"
                 elif loot_type == 'gold_egg':
                     output += f"\033[{y_pos};{loot['x_pos']}H{GOLD}⬯{RESET}"
                 elif loot_type == 'stealth_egg':
@@ -1442,14 +1513,42 @@ try:
                 is_slowed = b in speed_boosts and speed_boosts[b] < 0 and ball_vy[b] == 1
                 
                 # Choose sprite based on direction and animate with frame counter
-                # Freeze animation if bird is slowed
+                # Special: CLOCKWORK animation depends on charge:
+                #  - charge > 1: normal period
+                #  - charge == 1: slower period
+                #  - charge == 0: frozen (single frame)
+                # Freeze animation if bird is slowed (external slow effect)
                 if ball_vy[b] == -1:  # Moving up
-                    sprite = BIRD_UP_1 if (frame_count // 3) % 2 == 0 else BIRD_UP_2
+                    if ball_colors[b] == CLOCKWORK:
+                        try:
+                            c = clockwork_charge.get(b, 2)
+                        except Exception:
+                            c = 2
+                        if c == 0:
+                            sprite = BIRD_UP_2  # frozen
+                        elif c == 1:
+                            sprite = BIRD_UP_1 if (frame_count // 6) % 2 == 0 else BIRD_UP_2
+                        else:
+                            sprite = BIRD_UP_1 if (frame_count // 3) % 2 == 0 else BIRD_UP_2
+                    else:
+                        sprite = BIRD_UP_1 if (frame_count // 3) % 2 == 0 else BIRD_UP_2
                 else:  # Moving down
                     if is_slowed:
                         sprite = BIRD_DOWN_2 # Frozen frame when slowed
                     else:
-                        sprite = BIRD_DOWN_1 if (frame_count // 3) % 2 == 0 else BIRD_DOWN_2
+                        if ball_colors[b] == CLOCKWORK:
+                            try:
+                                c = clockwork_charge.get(b, 2)
+                            except Exception:
+                                c = 2
+                            if c == 0:
+                                sprite = BIRD_DOWN_2  # frozen
+                            elif c == 1:
+                                sprite = BIRD_DOWN_1 if (frame_count // 6) % 2 == 0 else BIRD_DOWN_2
+                            else:
+                                sprite = BIRD_DOWN_1 if (frame_count // 3) % 2 == 0 else BIRD_DOWN_2
+                        else:
+                            sprite = BIRD_DOWN_1 if (frame_count // 3) % 2 == 0 else BIRD_DOWN_2
                 
                 # Choose color - handle STEALTH specially, blue birds turn cyan when power is active
                 if ball_colors[b] == STEALTH:
@@ -1481,7 +1580,20 @@ try:
                     if 3 <= y_pos < HEIGHT + 2:
                         # Center sprites - new sprites are 3 chars wide
                         x_offset = 1  # Offset for 3-char wide sprite
-                        if ball_colors[b] == PATCHWORK:
+                        # CLOCKWORK: special per-char coloring and blinking for '.' and '\''
+                        if ball_colors[b] == CLOCKWORK:
+                            try:
+                                c = clockwork_charge.get(b, 2)
+                            except Exception:
+                                c = 2
+                            try:
+                                blink_period = max(1, int(0.6 / base_sleep))
+                            except Exception:
+                                blink_period = 3
+                            blink_on = ((frame_count // blink_period) % 2) == 0
+                            colored = _render_clockwork_line(line, c, blink_on)
+                            output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{colored}"
+                        elif ball_colors[b] == PATCHWORK:
                             # Render each character with a different color pattern
                             colored = _render_patchwork_line(line)
                             output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{colored}"
@@ -1550,6 +1662,31 @@ try:
         frame_count += 1
         obstacle_spawn_timer += 1
         bat_spawn_timer += 1
+        # CLOCKWORK decay: every 30s reduce charge by 1 (per bird)
+        try:
+            decay_frames = max(1, int(30.0 / base_sleep))
+            if decay_frames > 0 and frame_count % decay_frames == 0:
+                for i in range(NUM_BALLS):
+                    try:
+                        if ball_colors[i] == CLOCKWORK and not ball_lost[i]:
+                            c = clockwork_charge.get(i, None)
+                            if c is None:
+                                c = 2
+                                clockwork_charge[i] = 2
+                            if c > 0:
+                                clockwork_charge[i] = c - 1
+                                newc = clockwork_charge[i]
+                                if newc > 0:
+                                    ball_speeds[i] = newc
+                                else:
+                                    # Enter freefall: set very fast falling speed and ensure bird is falling
+                                    ball_speeds[i] = 6
+                                    ball_vy[i] = 1
+                                    add_notification('Clockwork freefall!')
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         # --- Per-frame achievement-related checks ---
         # Area hold: check if all active birds are in top X% areas
         # top50: y <= HEIGHT * 0.5, top30: y <= HEIGHT * 0.3
@@ -1589,7 +1726,7 @@ try:
                 'RED': RED,
                 'BLUE': BLUE,
                 'WHITE': WHITE,
-                'GREY': GREY,
+                'CLOCKWORK': CLOCKWORK,
                 'PURPLE': PURPLE,
                 'ORANGE': ORANGE,
                 'GOLD': GOLD,
@@ -2347,11 +2484,25 @@ try:
                         ball_y[i] += ball_vy[i]
                 else:
                     # Moving down, just move
-                    # Bounce immediato per il bird grigio
-                    if ball_colors[i] == GREY and ball_vy[i] == 1 and ball_y[i] + ball_vy[i] >= STARTING_LINE:
-                        ball_y[i] = STARTING_LINE
-                        ball_vy[i] = -1
-                        bird_power_used[i] = False
+                    # Bounce immediato per il bird clockwork (solo se ha carica)
+                    if ball_colors[i] == CLOCKWORK and ball_vy[i] == 1 and ball_y[i] + ball_vy[i] >= STARTING_LINE:
+                        try:
+                            c = clockwork_charge.get(i, None)
+                            if c is None:
+                                c = 2
+                                clockwork_charge[i] = 2
+                            if c > 0:
+                                ball_y[i] = STARTING_LINE
+                                ball_vy[i] = -1
+                                bird_power_used[i] = False
+                            else:
+                                # carica == 0: non rimbalzare qui, lasciare che cada
+                                ball_y[i] += ball_vy[i]
+                        except Exception:
+                            # fallback: comportamento precedente
+                            ball_y[i] = STARTING_LINE
+                            ball_vy[i] = -1
+                            bird_power_used[i] = False
                     else:
                         ball_y[i] += ball_vy[i]
                 
@@ -2416,16 +2567,21 @@ try:
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
                                     break
-                        elif loot_type == 'grey_egg':
+                        elif loot_type == 'clockwork_egg':
                             for idx in range(NUM_BALLS):
-                                if ball_lost[idx]:
-                                    ball_lost[idx] = False
-                                    ball_colors[idx] = GREY
-                                    ball_speeds[idx] = 2  # Fastest bird
-                                    ball_y[idx] = STARTING_LINE
-                                    ball_vy[idx] = -1
-                                    lives += 1  # Restore life
-                                    break
+                                    if ball_lost[idx]:
+                                        ball_lost[idx] = False
+                                        ball_colors[idx] = CLOCKWORK
+                                        # Initialize clockwork charge and speed
+                                        try:
+                                            clockwork_charge[idx] = 2
+                                            ball_speeds[idx] = 2
+                                        except Exception:
+                                            ball_speeds[idx] = 2
+                                        ball_y[idx] = STARTING_LINE
+                                        ball_vy[idx] = -1
+                                        lives += 1  # Restore life
+                                        break
                         elif loot_type == 'purple_egg':
                             for idx in range(NUM_BALLS):
                                 if ball_lost[idx]:
@@ -2557,11 +2713,31 @@ try:
                 
                 # Check if ball hits floor
                 if ball_y[i] >= HEIGHT - 1:
-                    if ball_colors[i] == GREY:
-                        # Bird grigio: rimbalza esattamente dove spawnano gli uccelli
-                        ball_y[i] = STARTING_LINE
-                        ball_vy[i] = -1
-                        bird_power_used[i] = False
+                    if ball_colors[i] == CLOCKWORK:
+                        # CLOCKWORK behaviour: only auto-bounce if charge > 0
+                        try:
+                            c = clockwork_charge.get(i, None)
+                            if c is None:
+                                c = 2
+                                clockwork_charge[i] = 2
+                            if c > 0:
+                                ball_y[i] = STARTING_LINE
+                                ball_vy[i] = -1
+                                bird_power_used[i] = False
+                            else:
+                                # charge == 0: behave like other birds hitting the floor -> die
+                                if not ball_lost[i]:
+                                    ball_lost[i] = True
+                                    ball_y[i] = HEIGHT - 1
+                                    lives -= 1
+                                    # Check for game over
+                                    if lives <= 0:
+                                        game_over = True
+                        except Exception:
+                            # Fallback: normal behaviour
+                            ball_y[i] = STARTING_LINE
+                            ball_vy[i] = -1
+                            bird_power_used[i] = False
                     elif ball_colors[i] == ORANGE:
                         continue
                     elif not ball_lost[i]:  # Solo gli altri muoiono
@@ -2677,9 +2853,9 @@ try:
                 pass
             break
         
-        # Gestione auto-bounce grigio
-        handle_grey_auto_bounce()
-        
+        # Gestione auto-bounce CLOCKWORK
+        handle_clockwork_auto_bounce()
+
         time.sleep(current_sleep)
 
 except KeyboardInterrupt:
