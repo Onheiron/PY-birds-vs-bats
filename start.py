@@ -39,13 +39,13 @@ def choose_loot_type(rarity):
         egg_prob = 0
     # Loot pool by rarity
     if rarity == 'common':
-        loot_pool = ['egg', 'wide_cursor', 'bounce_boost', 'suction']
+        loot_pool = ['egg', 'wide_cursor', 'slow_motion', 'suction']
     elif rarity == 'uncommon':
-        loot_pool = ['egg', 'wide_cursor+', 'bounce_boost+', 'suction+']
+        loot_pool = ['egg', 'wide_cursor+', 'slow_motion+', 'suction+']
     elif rarity == 'rare':
-        loot_pool = ['egg', 'wide_cursor++', 'bounce_boost++', 'suction++']
+        loot_pool = ['egg', 'wide_cursor++', 'slow_motion++', 'suction++']
     else:  # epic
-        loot_pool = ['egg', 'wide_cursor_max', 'bounce_boost_max', 'suction_max']
+        loot_pool = ['egg', 'wide_cursor_max', 'slow_motion_max', 'suction_max']
     # Decide whether to drop an egg (based on empty lanes)
     if random.random() < egg_prob:
         # Egg selection by rarity (rare tier may include gold_egg)
@@ -56,7 +56,7 @@ def choose_loot_type(rarity):
             'red_egg': RED,
             'blue_egg': BLUE,
             'white_egg': WHITE,
-                'clockwork_egg': CLOCKWORK,
+            'clockwork_egg': CLOCKWORK,
             'gold_egg': GOLD,
             'stealth_egg': STEALTH,
             'patchwork_egg': PATCHWORK,
@@ -198,7 +198,7 @@ BLACK = "\033[38;5;16m"
 STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
 # Game version (update this when releasing a new build)
-GAME_VERSION = "0.2.0"
+GAME_VERSION = "0.3.0"
 
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
@@ -420,6 +420,13 @@ powerups = {
     'suction_frames': 0,
     'suction_boost_duration': 0
 }
+
+# Slow motion power-up state (tiered). When active, multiply the per-frame sleep
+# by 'slow_motion_factor' (e.g. 1.5 = 50% slower). Duration expressed in frames
+# stored in 'slow_motion_frames'. Defaults provided here.
+powerups.setdefault('slow_motion_active', False)
+powerups.setdefault('slow_motion_frames', 0)
+powerups.setdefault('slow_motion_factor', 1.0)
 
 # Score system
 score = 0
@@ -1496,6 +1503,10 @@ try:
                 # Suction power-ups
                 elif 'suction' in loot_type:
                     output += f"\033[{y_pos};{loot['x_pos']}H{power_color}⥥{RESET}"
+                # Slow-motion power-ups (tiered)
+                elif 'slow_motion' in loot_type:
+                    # Use an hourglass/stopwatch symbol to indicate time-slow
+                    output += f"\033[{y_pos};{loot['x_pos']}H{power_color}⏱{RESET}"
         
         # Draw red projectiles
         for proj in red_projectiles:
@@ -1604,7 +1615,13 @@ try:
             level += 1
         
         # Calculate current speed based on level - more aggressive speed increase
-        current_sleep = max(min_sleep, base_sleep * (0.88 ** level))  # Changed from 0.92 to 0.88 for faster acceleration
+        # Apply slow-motion factor if the slow motion powerup is active.
+        try:
+            base_frame_sleep = base_sleep * (0.88 ** level)
+            slow_factor = powerups.get('slow_motion_factor', 1.0) if powerups.get('slow_motion_active') else 1.0
+            current_sleep = max(min_sleep, base_frame_sleep * slow_factor)
+        except Exception:
+            current_sleep = max(min_sleep, base_sleep * (0.88 ** level))  # Fallback
         # Music engine integration removed from main loop
         
         # Draw floor and player
@@ -2319,6 +2336,17 @@ try:
             if powerups['suction_frames'] <= 0:
                 powerups['suction_active'] = False
                 powerups['suction_boost_duration'] = 0
+
+        # Slow motion expiry handling
+        if powerups.get('slow_motion_active'):
+            try:
+                powerups['slow_motion_frames'] -= 1
+                if powerups['slow_motion_frames'] <= 0:
+                    powerups['slow_motion_active'] = False
+                    powerups['slow_motion_factor'] = 1.0
+            except Exception:
+                powerups['slow_motion_active'] = False
+                powerups['slow_motion_factor'] = 1.0
         
         for i in range(NUM_BALLS):
             current_speed = ball_speeds[i]
@@ -2694,6 +2722,30 @@ try:
                             powerups['suction_frames'] = int(50.0 / base_sleep)
                             powerups['suction_boost_duration'] = 8
                             check_achievements_event('power_used', power='suction')
+                        elif loot_type == 'slow_motion':
+                            # Small slow motion: moderate duration, small factor
+                            powerups['slow_motion_active'] = True
+                            powerups['slow_motion_frames'] = int(5.0 / base_sleep)
+                            powerups['slow_motion_factor'] = 1.5
+                            check_achievements_event('power_used', power='slow_motion')
+                        elif loot_type == 'slow_motion+':
+                            # Improved slow motion
+                            powerups['slow_motion_active'] = True
+                            powerups['slow_motion_frames'] = int(10.0 / base_sleep)
+                            powerups['slow_motion_factor'] = 1.9
+                            check_achievements_event('power_used', power='slow_motion')
+                        elif loot_type == 'slow_motion++':
+                            # Strong slow motion
+                            powerups['slow_motion_active'] = True
+                            powerups['slow_motion_frames'] = int(15.0 / base_sleep)
+                            powerups['slow_motion_factor'] = 2.6
+                            check_achievements_event('power_used', power='slow_motion')
+                        elif loot_type == 'slow_motion_max':
+                            # Max-tier slow motion: long duration and big slowdown
+                            powerups['slow_motion_active'] = True
+                            powerups['slow_motion_frames'] = int(25.0 / base_sleep)
+                            powerups['slow_motion_factor'] = 3.5
+                            check_achievements_event('power_used', power='slow_motion')
                 
                 # Bounce off ceiling
                 if ball_y[i] <= 1:
