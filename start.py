@@ -198,7 +198,7 @@ BLACK = "\033[38;5;16m"
 STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
 # Game version (update this when releasing a new build)
-GAME_VERSION = "0.4.0"
+GAME_VERSION = "0.5.0"
 
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
@@ -543,6 +543,7 @@ level = 1
 lives = 5
 game_over = False
 swaps_used = 0
+paused = False
 
 def calculate_level_threshold(level):
     """Calculate score threshold for given level"""
@@ -1116,6 +1117,14 @@ try:
         space_just_pressed = space_pressed_this_frame and not last_space_state
         last_space_state = space_pressed_this_frame
 
+        # When paused, ignore all input except P (toggle pause) and QUIT.
+        # Also prevent SPACE edge from triggering while paused.
+        if paused:
+            if key and key not in ('P', 'p', 'QUIT'):
+                key = None
+                space_pressed_this_frame = False
+                space_just_pressed = False
+
         if key:
             if key == 'SPACE' and space_just_pressed:
                 # Space pressed - toggle swap mode or execute swap
@@ -1125,6 +1134,7 @@ try:
                 elif selected_lane == player_lane:
                     # Pressed on same lane - cancel swap mode
                     selected_lane = None
+
                 else:
                     # Different lane - execute swap (costs 200 * level points)
                     swap_cost = 200 * level
@@ -1175,6 +1185,16 @@ try:
                         # Always reset swap mode after attempting swap (whether successful or not)
                         selected_lane = None
 
+            elif key == 'p' or key == 'P':
+                # Toggle pause (top-level handler)
+                try:
+                    paused = not paused
+                    if paused:
+                        add_notification('PAUSED')
+                    else:
+                        add_notification('RESUMED')
+                except Exception:
+                    paused = False
             elif key == 'LEFT':
                 player_lane = max(0, player_lane - 1)
             elif key == 'RIGHT':
@@ -1783,6 +1803,15 @@ try:
         swap_hint = " | Press SPACE again to swap or cancel" if selected_lane is not None else ""
         output += f"\033[{HEIGHT+4};1HUse ← → to move, ↑ to bounce, Ctrl+C to quit | Balls: {active_balls}/{NUM_BALLS}{swap_hint}"
         
+        # If paused, render a PAUSED overlay (keep input responsive)
+        if paused:
+            try:
+                pause_y = 2 + (HEIGHT // 2)
+                pause_x = max(1, (WIDTH // 2) - 3)
+                output += f"\033[{pause_y};{pause_x}H{YELLOW}\033[1mPAUSED{RESET}"
+            except Exception:
+                pass
+
         # Write all at once - handle blocking errors gracefully
         try:
             sys.stdout.write(output)
@@ -1790,6 +1819,14 @@ try:
         except BlockingIOError:
             # If output buffer is full, skip this frame
             pass
+
+        # If paused, skip per-frame updates but sleep to avoid tight-loop
+        if paused:
+            try:
+                time.sleep(current_sleep)
+            except Exception:
+                pass
+            continue
         
         # Update ball positions
         frame_count += 1
