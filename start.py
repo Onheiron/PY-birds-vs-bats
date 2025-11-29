@@ -300,7 +300,7 @@ _OBST_MAX_HP_BY_TIER = {1: 4, 2: 6, 3: 10, 4: 16}
 LANE_POSITIONS = [5, 9, 13, 17, 21, 25, 29, 33, 37]  # 9 lanes centered in game box
 
 # Ball positions and velocities
-ball_colors = [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
+ball_colors = [YELLOW, YELLOW, YELLOW, ORANGE, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
 
 # Randomize which bird goes to which lane
 random.seed()
@@ -1039,15 +1039,18 @@ try:
                     bird_in_lane = random_lanes.index(lane) if lane in random_lanes else -1
                     if bird_in_lane >= 0 and not ball_lost[bird_in_lane]:
                         if ball_colors[bird_in_lane] == ORANGE and ball_speeds[bird_in_lane] == 0:
-                            if random.random() > 0.025:  # 2.5% chance to recover
+                            if random.random() > 0.05:  # 5% chance to recover
                                 continue
                             lane = random_lanes[bird_in_lane]
                             ball_y[bird_in_lane] = STARTING_LINE
                             ball_vy[bird_in_lane] = -1
                             bird_power_used[bird_in_lane] = False
                             ball_speeds[bird_in_lane] = 5
-                            index = loot_items.index({'x_pos': LANE_POSITIONS[lane], 'y_pos': STARTING_LINE, 'type': 'orange_egg', 'rarity': 'epic'})
-                            loot_items.remove(loot_items[index])
+                            item = next((li for li in loot_items
+                                        if li.get('type') == 'orange_egg' and li.get('x_pos') == LANE_POSITIONS[lane]
+                                        and li.get('y_pos') == STARTING_LINE and li.get('rarity') == 'epic'), None)
+                            if item is not None:
+                                loot_items.remove(item)   # rimuove la prima occorrenza dell'oggetto trovato
                         # Can't bounce scared birds
                         elif bird_in_lane in scared_birds and ball_colors[bird_in_lane] != PURPLE:
                             continue  # Scared bird ignores bounce command (tranne purple)
