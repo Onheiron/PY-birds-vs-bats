@@ -1801,7 +1801,7 @@ try:
         # Count active balls
         active_balls = sum(1 for lost in ball_lost if not lost)
         swap_hint = " | Press SPACE again to swap or cancel" if selected_lane is not None else ""
-        output += f"\033[{HEIGHT+4};1HUse ← → to move, ↑ to bounce, Ctrl+C to quit | Balls: {active_balls}/{NUM_BALLS}{swap_hint}"
+        output += f"\033[{HEIGHT+4};1HUse ← → to move, ↑ to bounce, Ctrl+C to quit | Birds: {active_balls}/{NUM_BALLS}{swap_hint}"
         
         # If paused, render a PAUSED overlay (keep input responsive)
         if paused:
