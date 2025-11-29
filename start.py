@@ -39,13 +39,13 @@ def choose_loot_type(rarity):
         egg_prob = 0
     # Loot pool by rarity
     if rarity == 'common':
-        loot_pool = ['egg', 'wide_cursor', 'slow_motion', 'suction']
+        loot_pool = ['egg', 'wide_cursor', 'tailwind', 'suction']
     elif rarity == 'uncommon':
-        loot_pool = ['egg', 'wide_cursor+', 'slow_motion+', 'suction+']
+        loot_pool = ['egg', 'wide_cursor+', 'tailwind+', 'suction+']
     elif rarity == 'rare':
-        loot_pool = ['egg', 'wide_cursor++', 'slow_motion++', 'suction++']
+        loot_pool = ['egg', 'wide_cursor++', 'tailwind++', 'suction++']
     else:  # epic
-        loot_pool = ['egg', 'wide_cursor_max', 'slow_motion_max', 'suction_max']
+        loot_pool = ['egg', 'wide_cursor_max', 'tailwind_max', 'suction_max']
     # Decide whether to drop an egg (based on empty lanes)
     if random.random() < egg_prob:
         # Egg selection by rarity (rare tier may include gold_egg)
@@ -421,12 +421,12 @@ powerups = {
     'suction_boost_duration': 0
 }
 
-# Slow motion power-up state (tiered). When active, multiply the per-frame sleep
-# by 'slow_motion_factor' (e.g. 1.5 = 50% slower). Duration expressed in frames
-# stored in 'slow_motion_frames'. Defaults provided here.
-powerups.setdefault('slow_motion_active', False)
-powerups.setdefault('slow_motion_frames', 0)
-powerups.setdefault('slow_motion_factor', 1.0)
+# Tailwind power-up state (tiered). When active it boosts rising birds and
+# penalizes falling birds. Values stored here and used per-frame.
+powerups.setdefault('tailwind_active', False)
+powerups.setdefault('tailwind_frames', 0)
+powerups.setdefault('tailwind_up_bonus', 0)
+powerups.setdefault('tailwind_down_penalty', 0)
 
 # Score system
 score = 0
@@ -1398,8 +1398,13 @@ try:
         # Draw starting line (dashed line near bottom)
         starting_line_y = STARTING_LINE + 2  # +2 for header offset
         if 3 <= starting_line_y < HEIGHT + 2:
-            dashed_line = "- " * (WIDTH // 2)  # Create dashed pattern
-            output += f"\033[{starting_line_y};1H{DARK_GRAY}{dashed_line[:WIDTH]}{RESET}"
+            # When tailwind is active, render the starting line as blue carets '^'
+            if powerups.get('tailwind_active'):
+                dashed_line = "^ " * (WIDTH // 2)
+                output += f"\033[{starting_line_y};1H{BLUE}{dashed_line[:WIDTH]}{RESET}"
+            else:
+                dashed_line = "- " * (WIDTH // 2)  # Create dashed pattern
+                output += f"\033[{starting_line_y};1H{DARK_GRAY}{dashed_line[:WIDTH]}{RESET}"
             
             # Show power-up indicators on affected lanes
             # Calculate which lanes are affected by cursor
@@ -1503,10 +1508,10 @@ try:
                 # Suction power-ups
                 elif 'suction' in loot_type:
                     output += f"\033[{y_pos};{loot['x_pos']}H{power_color}⥥{RESET}"
-                # Slow-motion power-ups (tiered)
-                elif 'slow_motion' in loot_type:
-                    # Use an hourglass/stopwatch symbol to indicate time-slow
-                    output += f"\033[{y_pos};{loot['x_pos']}H{power_color}⏱{RESET}"
+                # Tailwind power-ups (tiered)
+                elif 'tailwind' in loot_type:
+                    # Use a decorative wind/ornament symbol
+                    output += f"\033[{y_pos};{loot['x_pos']}H{power_color}༄{RESET}"
         
         # Draw red projectiles
         for proj in red_projectiles:
@@ -1615,11 +1620,10 @@ try:
             level += 1
         
         # Calculate current speed based on level - more aggressive speed increase
-        # Apply slow-motion factor if the slow motion powerup is active.
         try:
             base_frame_sleep = base_sleep * (0.88 ** level)
-            slow_factor = powerups.get('slow_motion_factor', 1.0) if powerups.get('slow_motion_active') else 1.0
-            current_sleep = max(min_sleep, base_frame_sleep * slow_factor)
+            # slow-motion removed: main loop sleep is not modified by powerups
+            current_sleep = max(min_sleep, base_frame_sleep)
         except Exception:
             current_sleep = max(min_sleep, base_sleep * (0.88 ** level))  # Fallback
         # Music engine integration removed from main loop
@@ -2337,16 +2341,20 @@ try:
                 powerups['suction_active'] = False
                 powerups['suction_boost_duration'] = 0
 
-        # Slow motion expiry handling
-        if powerups.get('slow_motion_active'):
+        # Tailwind expiry handling
+        if powerups.get('tailwind_active'):
             try:
-                powerups['slow_motion_frames'] -= 1
-                if powerups['slow_motion_frames'] <= 0:
-                    powerups['slow_motion_active'] = False
-                    powerups['slow_motion_factor'] = 1.0
+                powerups['tailwind_frames'] -= 1
+                if powerups['tailwind_frames'] <= 0:
+                    powerups['tailwind_active'] = False
+                    powerups['tailwind_up_bonus'] = 0
+                    powerups['tailwind_down_penalty'] = 0
             except Exception:
-                powerups['slow_motion_active'] = False
-                powerups['slow_motion_factor'] = 1.0
+                powerups['tailwind_active'] = False
+                powerups['tailwind_up_bonus'] = 0
+                powerups['tailwind_down_penalty'] = 0
+
+        # (slow-motion powerup removed; no expiry handling required)
         
         for i in range(NUM_BALLS):
             current_speed = ball_speeds[i]
@@ -2363,6 +2371,22 @@ try:
             # Apply scared speed boost when going down
             if i in scared_birds and ball_vy[i] == 1:
                 current_speed += 1
+
+            # Apply tailwind powerup effects (tiered):
+            # - when rising (ball_vy == -1) apply up bonus (increase speed)
+            # - when falling (ball_vy == 1) apply down penalty (decrease speed)
+            # Clamp overall speed to [1, 6]
+            if powerups.get('tailwind_active'):
+                try:
+                    up_bonus = int(powerups.get('tailwind_up_bonus', 0))
+                    down_pen = int(powerups.get('tailwind_down_penalty', 0))
+                    if ball_vy[i] == -1 and up_bonus != 0:
+                        current_speed = min(6, current_speed + up_bonus)
+                    elif ball_vy[i] == 1 and down_pen != 0:
+                        current_speed = max(1, current_speed - down_pen)
+                except Exception:
+                    # On any unexpected issue, don't alter speed
+                    pass
             
             # Convert speed: higher number = faster, so invert for modulo
             move_interval = max(1, 6 - current_speed)
@@ -2722,30 +2746,31 @@ try:
                             powerups['suction_frames'] = int(50.0 / base_sleep)
                             powerups['suction_boost_duration'] = 8
                             check_achievements_event('power_used', power='suction')
-                        elif loot_type == 'slow_motion':
-                            # Small slow motion: moderate duration, small factor
-                            powerups['slow_motion_active'] = True
-                            powerups['slow_motion_frames'] = int(5.0 / base_sleep)
-                            powerups['slow_motion_factor'] = 1.5
-                            check_achievements_event('power_used', power='slow_motion')
-                        elif loot_type == 'slow_motion+':
-                            # Improved slow motion
-                            powerups['slow_motion_active'] = True
-                            powerups['slow_motion_frames'] = int(10.0 / base_sleep)
-                            powerups['slow_motion_factor'] = 1.9
-                            check_achievements_event('power_used', power='slow_motion')
-                        elif loot_type == 'slow_motion++':
-                            # Strong slow motion
-                            powerups['slow_motion_active'] = True
-                            powerups['slow_motion_frames'] = int(15.0 / base_sleep)
-                            powerups['slow_motion_factor'] = 2.6
-                            check_achievements_event('power_used', power='slow_motion')
-                        elif loot_type == 'slow_motion_max':
-                            # Max-tier slow motion: long duration and big slowdown
-                            powerups['slow_motion_active'] = True
-                            powerups['slow_motion_frames'] = int(25.0 / base_sleep)
-                            powerups['slow_motion_factor'] = 3.5
-                            check_achievements_event('power_used', power='slow_motion')
+                        elif loot_type == 'tailwind':
+                            # Basic tailwind: small up boost, small down penalty
+                            powerups['tailwind_active'] = True
+                            powerups['tailwind_frames'] = int(10.0 / base_sleep)
+                            powerups['tailwind_up_bonus'] = 1
+                            powerups['tailwind_down_penalty'] = 1
+                            check_achievements_event('power_used', power='tailwind')
+                        elif loot_type == 'tailwind+':
+                            powerups['tailwind_active'] = True
+                            powerups['tailwind_frames'] = int(15.0 / base_sleep)
+                            powerups['tailwind_up_bonus'] = 2
+                            powerups['tailwind_down_penalty'] = 1
+                            check_achievements_event('power_used', power='tailwind')
+                        elif loot_type == 'tailwind++':
+                            powerups['tailwind_active'] = True
+                            powerups['tailwind_frames'] = int(20.0 / base_sleep)
+                            powerups['tailwind_up_bonus'] = 3
+                            powerups['tailwind_down_penalty'] = 2
+                            check_achievements_event('power_used', power='tailwind')
+                        elif loot_type == 'tailwind_max':
+                            powerups['tailwind_active'] = True
+                            powerups['tailwind_frames'] = int(30.0 / base_sleep)
+                            powerups['tailwind_up_bonus'] = 3
+                            powerups['tailwind_down_penalty'] = 3
+                            check_achievements_event('power_used', power='tailwind')
                 
                 # Bounce off ceiling
                 if ball_y[i] <= 1:
