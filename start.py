@@ -393,6 +393,38 @@ def allow_consume_power(idx, allowed_uses=1):
         pass
     return False
 
+
+def get_scared_frames(bird_idx, base_seconds=2.0):
+    """Return number of frames for scared_birds for bird_idx.
+
+    Base_seconds is the default duration in seconds. Birds with grade B1 or
+    better (B1+, i.e. B1/B2/A1/A2/S) have the duration reduced by 1 second.
+    Result is at least 1 frame.
+    """
+    try:
+        # convert to int frames
+        base_frames = max(1, int(base_seconds / base_sleep))
+    except Exception:
+        try:
+            base_frames = max(1, int(float(base_seconds) / base_sleep))
+        except Exception:
+            base_frames = 1
+
+    try:
+        label, _ = compute_grade_from_xp(per_bird_xp[bird_idx])
+    except Exception:
+        label = None
+
+    try:
+        # reduce by 1 second worth of frames if grade is B1 or better
+        if isinstance(label, str) and (label.startswith('B') or label.startswith('A') or label == 'S'):
+            reduce_frames = max(0, int(1.0 / base_sleep))
+            base_frames = max(1, base_frames - reduce_frames)
+    except Exception:
+        pass
+
+    return base_frames
+
 # Assign speeds based on color (higher = faster)
 # Blue: 4 (fastest), Red: 3, Yellow: 2, Obstacles: 1 (slowest)
 ball_speeds = []
@@ -3087,14 +3119,14 @@ try:
                                 if not (ball_colors[i] == STEALTH and (i in stealth_timers and stealth_timers.get(i, 0) > 0)):
                                     bat_tier = bat['tier']
                                     if bat_tier == 1:
-                                        scared_birds[i] = max(1, int(2.0 / base_sleep))
+                                        scared_birds[i] = get_scared_frames(i, 2.0)
                                     elif bat_tier == 2:
-                                        scared_birds[i] = max(1, int(2.0 / base_sleep))
+                                        scared_birds[i] = get_scared_frames(i, 2.0)
                                     elif bat_tier == 3:
-                                        scared_birds[i] = max(1, int(2.0 / base_sleep))
+                                        scared_birds[i] = get_scared_frames(i, 2.0)
                                         speed_boosts[i] = int(2.0 / base_sleep)
                                     else:
-                                        scared_birds[i] = max(1, int(2.0 / base_sleep))
+                                        scared_birds[i] = get_scared_frames(i, 2.0)
                                         speed_boosts[i] = int(2.0 / base_sleep)
 
                                 if bat['hp'] <= 0:
