@@ -1,6 +1,9 @@
 # BVB - Bird vs Bat Juggling Game
 
 A roguelike arcade game where you juggle 9 colorful birds that bounce and battle against obstacles and bats!
+
+
+
 # BVB — Bird vs Bat (terminal arcade)
 
 Bird vs Bat (BVB) is a lightweight terminal arcade/roguelike where you juggle 9 birds, use per-bird powers,
@@ -8,6 +11,11 @@ manage lanes, and fight dynamically spawning bats and obstacles. This README doc
 what changed recently, developer notes and configuration.
 
 All content below is in English.
+
+<!-- Project media: replace the files in media/ with your real assets -->
+![Screenshot](media/screenshot.png)
+
+![Footage](media/footage.gif)
 
 ## Quick start
 
