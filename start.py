@@ -198,7 +198,7 @@ BLACK = "\033[38;5;16m"
 STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
 # Game version (update this when releasing a new build)
-GAME_VERSION = "0.5.0"
+GAME_VERSION = "0.6.0"
 
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
@@ -396,6 +396,11 @@ for color in ball_colors:
 
 # Red bird projectiles - list of {x_pos, y_pos, lane}
 red_projectiles = []
+
+# Per-bird experience points (persist per bird index)
+per_bird_xp = [0] * NUM_BALLS
+# Debug toggle: show per-bird XP/grade summary in the HUD when True
+show_xp_overlay = False
 
 # Background scroll offset
 bg_offset = 0
@@ -962,10 +967,163 @@ def compute_level_from_score(sc):
     return lvl
 
 
-def add_score(amount):
-    global score
-    score += amount
+def compute_grade_from_xp(xp):
+    """Return a (symbol, color) tuple for the given XP value.
+
+    Small, deterministic mapping so the floor shows the bird's current grade.
+    """
+    try:
+        xp = int(xp)
+    except Exception:
+        try:
+            xp = int(float(xp))
+        except Exception:
+            xp = 0
+
+    # New steep curve as requested. Base threshold and multiplicative exponent
+    base = 100.0
+
+    # If below base, D
+    if xp < int(base):
+        return ('D', GREEN)
+
+    # Build thresholds for C1, C2, B1, B2, A1, A2 using iterative exponentiation
+    labels = ['C1', 'C2', 'B1', 'B2', 'A1', 'A2']
+    exps = [ (1.15 ** n) for n in range(len(labels)) ]  # 1.0, 1.2, 1.44, ...
+    thresholds = [ int(round(base ** e)) for e in exps ]
+
+    # Find highest label satisfied
+    for lbl, thr in reversed(list(zip(labels, thresholds))):
+        if xp >= thr:
+            # Map letter to colour by prefix
+            prefix = lbl[0]
+            color_map = {'D': GREEN, 'C': ORANGE, 'B': WHITE, 'A': GOLD, 'S': RED}
+            return (lbl, color_map.get(prefix, DARK_GRAY))
+
+    # If not matched, fallback to C1
+    return ('C1', ORANGE)
+
+
+def add_score(amount, by_bird=None):
+    """Add to global score. If by_bird is provided (bird index), also award XP to that bird.
+
+    amount may be non-integer; XP is credited as int(amount).
+    """
+    global score, per_bird_xp
+    # Defensive parsing of amount: preserve original for XP awarding
+    try:
+        raw_amount = amount
+        # Try to interpret as float for score math
+        amt = float(amount)
+    except Exception:
+        try:
+            amt = float(int(amount))
+            raw_amount = amt
+        except Exception:
+            # Can't parse amount -> nothing to do
+            return
+
+    # Compute prestige multiplier (based on birds currently on field)
+    try:
+        prestige = compute_prestige()
+    except Exception:
+        prestige = 1.0
+
+    # Add multiplied score (only score is affected by prestige)
+    try:
+        score += amt * prestige
+    except Exception:
+        try:
+            score += float(amt * prestige)
+        except Exception:
+            pass
+
+    # Award XP when we know which bird earned it (XP not multiplied)
+    try:
+        if by_bird is not None and 0 <= int(by_bird) < len(per_bird_xp):
+            # simple XP model: 1 XP per point of raw amount
+            try:
+                xp_award = int(max(0, int(raw_amount)))
+            except Exception:
+                try:
+                    xp_award = int(max(0, int(amt)))
+                except Exception:
+                    xp_award = 0
+            per_bird_xp[int(by_bird)] += xp_award
+    except Exception:
+        pass
+
     check_achievements_event('score', score=score)
+
+
+def award_xp(bird_idx, xp_amount):
+    """Best-effort: credit XP to a bird without affecting global score.
+
+    bird_idx may be invalid; this function is defensive.
+    """
+    global per_bird_xp
+    try:
+        bi = int(bird_idx)
+        if bi < 0 or bi >= len(per_bird_xp):
+            return
+        per_bird_xp[bi] += int(max(0, int(xp_amount)))
+    except Exception:
+        pass
+
+
+def compute_prestige():
+    """Compute prestige multiplier based on grades of birds currently on the field.
+
+    Base prestige is 1. For each active (not-lost) bird, add the modifier for its grade:
+      D: 0
+      C1: 0.03125
+      C2: 0.0625
+      B1: 0.125
+      B2: 0.25
+      A1: 0.5
+      A2: 1
+      S: 5
+
+    Returns a float >= 1.0
+    """
+    total = 1.0
+    try:
+        # mapping for exact grade labels
+        mod_map = {
+            'D': 0.0,
+            'C1': 0.03125,
+            'C2': 0.0625,
+            'B1': 0.125,
+            'B2': 0.25,
+            'A1': 0.5,
+            'A2': 1.0,
+            'S': 5.0,
+        }
+
+        for i in range(len(per_bird_xp)):
+            try:
+                if ball_lost[i]:
+                    continue
+            except Exception:
+                # If ball_lost not available or malformed, assume active
+                pass
+
+            try:
+                label, _ = compute_grade_from_xp(per_bird_xp[i])
+            except Exception:
+                label = 'D'
+
+            # If compute_grade returned multi-char like 'C1' handle it, otherwise
+            # accept single-letter 'D'/'S'
+            add = mod_map.get(label, 0.0)
+            # If label is like 'C' fallback to C1 modifier (defensive)
+            if add == 0.0 and isinstance(label, str) and len(label) == 1:
+                add = mod_map.get(label, 0.0)
+            total += add
+    except Exception:
+        # On any error, fallback to neutral prestige
+        return 1.0
+    return float(total)
 
 
 def deduct_score(amount):
@@ -992,10 +1150,69 @@ def cleanup():
     except BlockingIOError:
         pass
     # Music engine removed: nothing to stop here
+    # Attempt to cleanly shutdown any network/client resources (best-effort).
+    # This prevents urllib3/requests atexit callbacks from raising during interpreter shutdown.
+    try:
+        if firebase_client:
+            # Prefer an explicit close() method if provided by the firebase wrapper
+            try:
+                closer = getattr(firebase_client, 'close', None)
+                if callable(closer):
+                    try:
+                        closer()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+            # Try common session attributes that wrappers might expose
+            try:
+                sess = getattr(firebase_client, 'session', None)
+                if sess is not None:
+                    try:
+                        sess.close()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+            try:
+                pool = getattr(firebase_client, 'pool', None)
+                if pool is not None:
+                    try:
+                        pool.close()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+            # As a last resort, attempt to close any 'requests' Session attributes
+            try:
+                for name in ('requests_session', 'req_session', 'session'):
+                    s = getattr(firebase_client, name, None)
+                    if s is not None:
+                        try:
+                            s.close()
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     if os.name != 'nt':
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-        fcntl.fcntl(sys.stdin, fcntl.F_SETFL, old_flags)
-    os.system('cls' if os.name == 'nt' else 'clear')
+        try:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+        except Exception:
+            pass
+        try:
+            fcntl.fcntl(sys.stdin, fcntl.F_SETFL, old_flags)
+        except Exception:
+            pass
+    try:
+        os.system('cls' if os.name == 'nt' else 'clear')
+    except Exception:
+        pass
 
 def setup():
     print("\033[?25l", end="", flush=True)
@@ -1228,6 +1445,16 @@ try:
                 player_lane = max(0, player_lane - 1)
             elif key == 'RIGHT':
                 player_lane = min(8, player_lane + 1)  # 9 lanes: 0-8
+            elif key == 'x' or key == 'X':
+                # Toggle XP overlay for debugging / verification
+                try:
+                    show_xp_overlay = not show_xp_overlay
+                    if show_xp_overlay:
+                        add_notification('XP overlay: ON')
+                    else:
+                        add_notification('XP overlay: OFF')
+                except Exception:
+                    pass
             elif key == 'UP':
                 # Determine which lanes to affect based on wide cursor
                 if powerups['wide_cursor_active']:
@@ -1246,7 +1473,7 @@ try:
                     bird_in_lane = random_lanes.index(lane) if lane in random_lanes else -1
                     if bird_in_lane >= 0 and not ball_lost[bird_in_lane]:
                         if ball_colors[bird_in_lane] == ORANGE and ball_speeds[bird_in_lane] == 0:
-                            if random.random() > 0.05:  # 5% chance to recover
+                            if random.random() > 0.1:  # 10% chance to recover
                                 continue
                             lane = random_lanes[bird_in_lane]
                             ball_y[bird_in_lane] = STARTING_LINE
@@ -1384,7 +1611,8 @@ try:
                                         'y_pos': ball_y[bird_in_lane],
                                         'lane': bird_lane,
                                         'damage': 1 + damage_bonus,
-                                        'powered': damage_bonus > 0
+                                        'powered': damage_bonus > 0,
+                                        'owner': bird_in_lane
                                     })
 
                                 elif bird_color == BLUE:
@@ -1487,7 +1715,8 @@ try:
                                                                 'y_pos': ball_y[adj_bird],
                                                                 'lane': adj_bird_lane,
                                                                 'damage': 1 + damage_bonus,
-                                                                'powered': damage_bonus > 0
+                                                                'powered': damage_bonus > 0,
+                                                                'owner': adj_bird
                                                             })
 
                                                         elif adj_bird_color == BLUE:
@@ -1558,10 +1787,24 @@ try:
         # Recompute level from current score so spending points can LOWER the level
         level = compute_level_from_score(score)
 
-        # Draw simple header with score, level, and lives
+        # Draw simple header with score, level, lives, and compact per-lane XP (trimmed to fit WIDTH)
         next_level_score = calculate_level_threshold(level + 1)
         lives_display = "●" * lives + "◌" * (5 - lives)
-        output += f"\033[1;1HSCORE: {int(score)}  |  LEVEL: {level}  |  NEXT: {next_level_score}  |  LIVES: {lives_display}\n"
+
+        # Compute prestige for display (safe fallback to 1.0)
+        try:
+            prestige_val = compute_prestige()
+            if prestige_val is None:
+                prestige_val = 1.0
+        except Exception:
+            prestige_val = 1.0
+        prestige_display = f"{prestige_val:.2f}x"
+
+        base_score_line = f"SCORE: {int(score)}  |  LEVEL: {level}  |  NEXT: {next_level_score}  |  LIVES: {lives_display}  |  PRESTIGE: {prestige_display}"
+
+        # XP and grade display removed from header per user request.
+        # Keep internal XP bookkeeping (per_bird_xp) intact, but do not render it.
+        output += f"\033[1;1H{base_score_line}\n"
         output += f"\033[2;1H{ceiling}\n"
         # Render single queued notification at the bottom (replace help/commands area)
         active_notifications = [n for n in notifications if n[1] > frame_count]
@@ -1609,6 +1852,7 @@ try:
                     # Suction: show red v if bird is rising
                     elif powerups['suction_active'] and ball_vy[bird_in_lane] == -1:
                         output += f"\033[{starting_line_y};{lane_x}H{RED}\033[1mv{RESET}"
+            
         
         # Draw obstacles
         for obs in obstacles:
@@ -1834,11 +2078,41 @@ try:
             if ball_lost[b]:
                 output += f"\033[{HEIGHT+2};{ball_cols[b]}H\033[90mX{RESET}"
         
+        
         # Draw player cursor - large and bright for visibility
         cursor_x = LANE_POSITIONS[player_lane] - 1  # Center on lane
-        # Change cursor color when in swap mode (lane selected)
-        cursor_color = YELLOW if selected_lane is not None else GREEN
-        
+        # Change fallback cursor color when in swap mode (lane selected)
+        fallback_cursor_color = YELLOW if selected_lane is not None else GREEN
+
+        # Helper: map grade letter to requested cursor color
+        def _grade_letter_color(letter):
+            # User-specified mapping:
+            # D: verde
+            # C: bronzo (use ORANGE)
+            # B: argento (use WHITE)
+            # A: oro (use GOLD)
+            # S: rosso (use RED)
+            try:
+                # compute_grade_from_xp returns labels like 'C1','B2' etc.
+                # Use the first character as the prefix to determine color.
+                if letter and isinstance(letter, str) and len(letter) > 0:
+                    prefix = letter[0]
+                else:
+                    prefix = None
+                if prefix == 'D':
+                    return GREEN
+                if prefix == 'C':
+                    return ORANGE
+                if prefix == 'B':
+                    return CLOCKWORK
+                if prefix == 'A':
+                    return GOLD
+                if prefix == 'S':
+                    return RED
+            except Exception:
+                pass
+            return fallback_cursor_color
+
         # Draw wide cursor if active
         if powerups['wide_cursor_active']:
             half_width = powerups['wide_cursor_lanes'] // 2
@@ -1847,16 +2121,47 @@ try:
                 lane = player_lane + offset
                 if 0 <= lane < 9:
                     lane_x = LANE_POSITIONS[lane] - 1
-                    if lane == player_lane:
-                        # Main cursor
-                        cursor_str += f"\033[{HEIGHT+3};{lane_x}H{cursor_color}\033[1m[^]{RESET}"
+                    # Determine grade color for this lane if a bird exists
+                    try:
+                        bird_idx = random_lanes.index(lane) if lane in random_lanes else -1
+                    except Exception:
+                        bird_idx = -1
+
+                    if bird_idx >= 0 and not ball_lost[bird_idx]:
+                        try:
+                            letter, _ = compute_grade_from_xp(per_bird_xp[bird_idx])
+                        except Exception:
+                            letter = None
+                        color = _grade_letter_color(letter)
                     else:
-                        # Extended cursor wings
-                        cursor_str += f"\033[{HEIGHT+3};{lane_x}H{cursor_color}\033[1m[-]{RESET}"
+                        color = fallback_cursor_color
+
+                    if lane == player_lane:
+                        # Main cursor: use glyph X1
+                        glyph = '^'
+                        cursor_str += f"\033[{HEIGHT+3};{lane_x}H{color}\033[1m[{glyph}]{RESET}"
+                    else:
+                        # Extended cursor wings: use glyph X2
+                        glyph = '^'
+                        cursor_str += f"\033[{HEIGHT+3};{lane_x}H{color}\033[1m[{glyph}]{RESET}"
             output += cursor_str + "\n"
         else:
-            # Normal cursor
-            output += f"\033[{HEIGHT+3};{cursor_x}H{cursor_color}\033[1m[^]{RESET}\n"  # Bold cursor
+            # Normal cursor: color by grade of bird in player_lane if present
+            try:
+                bird_idx = random_lanes.index(player_lane) if player_lane in random_lanes else -1
+            except Exception:
+                bird_idx = -1
+            if bird_idx >= 0 and not ball_lost[bird_idx]:
+                try:
+                    letter, _ = compute_grade_from_xp(per_bird_xp[bird_idx])
+                except Exception:
+                    letter = None
+                color = _grade_letter_color(letter)
+            else:
+                color = fallback_cursor_color
+
+            glyph = '^'
+            output += f"\033[{HEIGHT+3};{cursor_x}H{color}\033[1m[{glyph}]{RESET}\n"
         
         # Highlight selected lane if in swap mode
         if selected_lane is not None:
@@ -1867,6 +2172,20 @@ try:
         active_balls = sum(1 for lost in ball_lost if not lost)
         swap_hint = " | Press SPACE again to swap or cancel" if selected_lane is not None else ""
         output += f"\033[{HEIGHT+4};1HUse ← → to move, ↑ to bounce, Ctrl+C to quit | Birds: {active_balls}/{NUM_BALLS}{swap_hint}"
+        # Optional debug overlay: show per-bird XP and grade summary near footer
+        try:
+            if show_xp_overlay:
+                parts = []
+                for i in range(NUM_BALLS):
+                    try:
+                        label, _ = compute_grade_from_xp(per_bird_xp[i])
+                    except Exception:
+                        label = 'D'
+                    parts.append(f"{label}({int(per_bird_xp[i])})")
+                xp_summary = ' '.join(parts)
+                output += f"\033[{HEIGHT+5};1HXP: {xp_summary[:WIDTH]}{RESET}"
+        except Exception:
+            pass
         
         # If paused, render a PAUSED overlay (keep input responsive)
         if paused:
@@ -2422,17 +2741,36 @@ try:
                     if (bat_left <= proj['x_pos'] <= bat_right and 
                         bat_top <= proj['y_pos'] <= bat_bottom):
                         # Hit bat - deal damage based on projectile power
-                        bat['hp'] -= proj.get('damage', 1)
+                        dmg = int(proj.get('damage', 1))
+                        bat['hp'] -= dmg
                         hit_bat = True
-                        
+
+                        # Award XP equal to damage to projectile owner if present
+                        try:
+                            owner = proj.get('owner', None)
+                            if owner is not None:
+                                award_xp(owner, dmg)
+                        except Exception:
+                            pass
+
                         if bat['hp'] <= 0:
-                            # Bat defeated
-                            add_score(bat['max_hp'])
-                            
+                            # Bat defeated: award bonus XP based on tier to owner
+                            try:
+                                owner = proj.get('owner', None)
+                                tier = int(bat.get('tier', 1) or 1)
+                                bonus = 10 * tier
+                                if owner is not None:
+                                    award_xp(owner, bonus)
+                            except Exception:
+                                pass
+
+                            # Bat defeated - award score and drop loot
+                            add_score(bat.get('max_hp', 0))
+
                             # Find closest lane to bat center
                             bat_center_x = bat['x_pos'] + 4
                             closest_lane = min(range(9), key=lambda lane_idx: abs(LANE_POSITIONS[lane_idx] - bat_center_x))
-                            
+
                             # Loot drop logic (4 tiers with new percentages)
                             tier = bat['tier']
                             if tier == 1:
@@ -2443,9 +2781,9 @@ try:
                                 rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[40, 33, 17, 10])[0]
                             else:  # tier 4
                                 rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[35, 25, 20, 15])[0]
-                            
+
                             loot_type = choose_loot_type(rarity)
-                            
+
                             loot_items.append({
                                 'x_pos': LANE_POSITIONS[closest_lane],
                                 'y_pos': bat['y_pos'],
@@ -2453,7 +2791,7 @@ try:
                                 'rarity': rarity,
                                 'spawn_ts': time.time()
                             })
-                            
+
                             tier = bat.get('tier', None)
                             # notify achievements about bat destroy (with tier)
                             check_achievements_event('destroy_bat', tier=tier)
@@ -2468,12 +2806,29 @@ try:
                 for obs in obstacles[:]:
                     if obs['lane'] == proj['lane'] and abs(proj['y_pos'] - obs['y_pos']) <= 1:
                         # Hit obstacle - deal damage based on projectile power
-                        obs['hp'] -= proj.get('damage', 1)
-                        
+                        dmg = int(proj.get('damage', 1))
+                        obs['hp'] -= dmg
+
+                        # Award XP equal to damage to projectile owner if present
+                        try:
+                            owner = proj.get('owner', None)
+                            if owner is not None:
+                                award_xp(owner, dmg)
+                        except Exception:
+                            pass
+
                         if obs['hp'] <= 0:
+                            try:
+                                owner = proj.get('owner', None)
+                                tier = int(obs.get('tier', 1) or 1)
+                                bonus = 10 * tier
+                                if owner is not None:
+                                    award_xp(owner, bonus)
+                            except Exception:
+                                pass
                             add_score(obs['tier'] * 2)
                             obstacles.remove(obs)
-                        
+
                         red_projectiles.remove(proj)
                         break
         
@@ -2489,8 +2844,20 @@ try:
                 # Damage bats in proximity
                 for bat in bats[:]:
                     if abs(bat.get('x_pos', 0) - bird_x) <= 6 and abs(bat.get('y_pos', 0) - bird_y) <= 2:
-                        bat['hp'] -= 24
+                        dmg = 24
+                        bat['hp'] -= dmg
+                        # award XP for damage from this bird
+                        try:
+                            award_xp(i, dmg)
+                        except Exception:
+                            pass
                         if bat.get('hp', 0) <= 0:
+                            # bonus XP for kill
+                            try:
+                                tier = int(bat.get('tier', 1) or 1)
+                                award_xp(i, 10 * tier)
+                            except Exception:
+                                pass
                             add_score(bat.get('max_hp', 0))
                             bat_center_x = bat.get('x_pos', 0) + 4
                             closest_lane = min(range(9), key=lambda lane_idx: abs(LANE_POSITIONS[lane_idx] - bat_center_x))
@@ -2523,8 +2890,18 @@ try:
                 # Damage obstacles in same lane
                 for obs in obstacles[:]:
                     if obs.get('lane') == bird_lane and abs(obs.get('y_pos', 0) - bird_y) <= 1:
-                        obs['hp'] -= 24
+                        dmg = 24
+                        obs['hp'] -= dmg
+                        try:
+                            award_xp(i, dmg)
+                        except Exception:
+                            pass
                         if obs.get('hp', 0) <= 0:
+                            try:
+                                tier = int(obs.get('tier', 1) or 1)
+                                award_xp(i, 10 * tier)
+                            except Exception:
+                                pass
                             add_score(obs.get('tier', 0) * 2)
                             try:
                                 obstacles.remove(obs)
@@ -2613,7 +2990,8 @@ try:
                     score_value = 100 if ball_colors[i] == GOLD else ball_speeds[i]
                 except Exception:
                     score_value = ball_speeds[i]
-                add_score(score_value * position_multiplier)
+                # Credit the bird that generated this score with XP as well
+                add_score(score_value * position_multiplier, by_bird=i)
                 
                 # Check collision with obstacles BEFORE moving (when moving up)
                 if ball_vy[i] == -1:  # Only check collision when bird is moving up
@@ -2659,6 +3037,11 @@ try:
                                         if ball_colors[i] == BLUE and bird_power_used[i]:
                                             damage += 1
                                     bat['hp'] -= damage
+                                    # Award XP equal to damage inflicted
+                                    try:
+                                        award_xp(i, damage)
+                                    except Exception:
+                                        pass
 
                                 # Effects on the bird (only when NOT stealth-tangible)
                                 if not (ball_colors[i] == STEALTH and (i in stealth_timers and stealth_timers.get(i, 0) > 0)):
@@ -2675,6 +3058,12 @@ try:
                                         speed_boosts[i] = int(2.0 / base_sleep)
 
                                 if bat['hp'] <= 0:
+                                    # Bonus XP for destroying the bat
+                                    try:
+                                        tier = int(bat.get('tier', 1) or 1)
+                                        award_xp(i, 10 * tier)
+                                    except Exception:
+                                        pass
                                     add_score(bat['max_hp'])
                                     bat_center_x = bat['x_pos'] + 4
                                     closest_lane = min(range(9), key=lambda lane_idx: abs(LANE_POSITIONS[lane_idx] - bat_center_x))
@@ -2731,8 +3120,18 @@ try:
                                             if ball_colors[i] == BLUE and bird_power_used[i]:
                                                 damage += 1
                                         obs['hp'] -= damage
+                                        # Award XP equal to damage to this bird
+                                        try:
+                                            award_xp(i, damage)
+                                        except Exception:
+                                            pass
 
                                     if obs['hp'] <= 0:
+                                        try:
+                                            tier = int(obs.get('tier', 1) or 1)
+                                            award_xp(i, 10 * tier)
+                                        except Exception:
+                                            pass
                                         add_score(obs['tier'] * 2)
                                         obstacles.remove(obs)
                                         broken_through = True
