@@ -1680,7 +1680,12 @@ try:
                         else:
                             sprite = BIRD_UP_1 if (frame_count // 3) % 2 == 0 else BIRD_UP_2
                     else:
-                        sprite = BIRD_UP_1 if (frame_count // 3) % 2 == 0 else BIRD_UP_2
+                        # If a blue bird is sprinting (power active), lock the up-frame to BIRD_UP_1
+                        # This prevents the animation from toggling while sprint is active.
+                        if ball_colors[b] == BLUE and bird_power_used[b]:
+                            sprite = BIRD_UP_1
+                        else:
+                            sprite = BIRD_UP_1 if (frame_count // 3) % 2 == 0 else BIRD_UP_2
                 else:  # Moving down
                     if is_slowed:
                         sprite = BIRD_DOWN_2 # Frozen frame when slowed
