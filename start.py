@@ -41,11 +41,11 @@ def choose_loot_type(rarity):
     if rarity == 'common':
         loot_pool = ['egg', 'wide_cursor', 'tailwind', 'shuffle']
     elif rarity == 'uncommon':
-        loot_pool = ['egg', 'wide_cursor+', 'tailwind+', 'shuffle+']
+        loot_pool = ['egg', 'wide_cursor+', 'tailwind+', 'shuffle']
     elif rarity == 'rare':
-        loot_pool = ['egg', 'wide_cursor++', 'tailwind++', 'shuffle++']
+        loot_pool = ['egg', 'wide_cursor++', 'tailwind++', 'shuffle+']
     else:  # epic
-        loot_pool = ['egg', 'wide_cursor_max', 'tailwind_max', 'shuffle_max']
+        loot_pool = ['egg', 'wide_cursor_max', 'tailwind_max', 'shuffle++']
     # Decide whether to drop an egg (based on empty lanes)
     if random.random() < egg_prob:
         # Egg selection by rarity (rare tier may include gold_egg)
