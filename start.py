@@ -366,6 +366,32 @@ ball_y = [STARTING_LINE] * NUM_BALLS
 ball_vy = [-1] * NUM_BALLS
 ball_lost = [False] * NUM_BALLS
 bird_power_used = [False] * NUM_BALLS  # Track if bird used its special power while rising
+# Allow tracking how many times a bird used its power during the current ascent
+bird_power_uses = [0] * NUM_BALLS
+
+def reset_bird_power(idx):
+    try:
+        bird_power_used[idx] = False
+    except Exception:
+        pass
+    try:
+        bird_power_uses[idx] = 0
+    except Exception:
+        pass
+
+def allow_consume_power(idx, allowed_uses=1):
+    """Return True and consume one use if bird idx may use its power.
+
+    allowed_uses is normally 1; for A-grade birds allowed_uses will be 2.
+    """
+    try:
+        if bird_power_uses[idx] < allowed_uses:
+            bird_power_uses[idx] += 1
+            bird_power_used[idx] = True
+            return True
+    except Exception:
+        pass
+    return False
 
 # Assign speeds based on color (higher = faster)
 # Blue: 4 (fastest), Red: 3, Yellow: 2, Obstacles: 1 (slowest)
@@ -500,7 +526,7 @@ def perform_shuffle(count: int):
                         ball_cols[src_idx] = LANE_POSITIONS[random_lanes[src_idx]]
                         ball_y[src_idx] = STARTING_LINE
                         ball_vy[src_idx] = -1
-                        bird_power_used[src_idx] = False
+                        reset_bird_power(src_idx)
                     except Exception:
                         pass
                     try:
@@ -524,14 +550,14 @@ def perform_shuffle(count: int):
                     ball_cols[src_idx] = LANE_POSITIONS[random_lanes[src_idx]]
                     ball_y[src_idx] = STARTING_LINE
                     ball_vy[src_idx] = -1
-                    bird_power_used[src_idx] = False
+                    reset_bird_power(src_idx)
                 except Exception:
                     pass
                 try:
                     ball_cols[tgt_idx] = LANE_POSITIONS[random_lanes[tgt_idx]]
                     ball_y[tgt_idx] = STARTING_LINE
                     ball_vy[tgt_idx] = -1
-                    bird_power_used[tgt_idx] = False
+                    reset_bird_power(tgt_idx)
                 except Exception:
                     pass
                 # Mark moved indices so we don't select them again
@@ -551,14 +577,14 @@ def perform_shuffle(count: int):
                     ball_cols[src_idx] = LANE_POSITIONS[random_lanes[src_idx]]
                     ball_y[src_idx] = STARTING_LINE
                     ball_vy[src_idx] = -1
-                    bird_power_used[src_idx] = False
+                    reset_bird_power(src_idx)
                 except Exception:
                     pass
                 try:
                     ball_cols[other] = LANE_POSITIONS[random_lanes[other]]
                     ball_y[other] = STARTING_LINE
                     ball_vy[other] = -1
-                    bird_power_used[other] = False
+                    reset_bird_power(other)
                 except Exception:
                     pass
                 moved_indices.add(src_idx)
@@ -1301,7 +1327,7 @@ def handle_clockwork_auto_bounce():
                 if charge > 0:
                     ball_y[i] = STARTING_LINE
                     ball_vy[i] = -1
-                    bird_power_used[i] = False
+                    reset_bird_power(i)
                 # if charge == 0, let it fall through (no auto-bounce)
         except Exception:
             # Defensive: in case of malformed data, skip
@@ -1478,7 +1504,7 @@ try:
                             lane = random_lanes[bird_in_lane]
                             ball_y[bird_in_lane] = STARTING_LINE
                             ball_vy[bird_in_lane] = -1
-                            bird_power_used[bird_in_lane] = False
+                            reset_bird_power(bird_in_lane)
                             ball_speeds[bird_in_lane] = 5
                             item = next((li for li in loot_items
                                         if li.get('type') == 'orange_egg' and li.get('x_pos') == LANE_POSITIONS[lane]
@@ -1500,7 +1526,7 @@ try:
                                         ball_vy[bird_in_lane] = -1
                                         ball_speeds[bird_in_lane] = 4
                                         dinosaur_up_presses[bird_in_lane] = 0
-                                        bird_power_used[bird_in_lane] = False
+                                        reset_bird_power(bird_in_lane)
                                     else:
                                         # Reduce the fall speed by 1 (but keep >=1)
                                         try:
@@ -1511,7 +1537,7 @@ try:
                                 continue
                             # Normal behavior for non-DINOSAUR birds
                             ball_vy[bird_in_lane] = -1
-                            bird_power_used[bird_in_lane] = False  # Reset power when bird starts rising
+                            reset_bird_power(bird_in_lane)  # Reset power when bird starts rising
                             # Special: if this is a CLOCKWORK bird in freefall (charge == 0),
                             # bouncing it restores charge to 1 and sets its speed accordingly.
                             try:
@@ -1538,8 +1564,16 @@ try:
                                 pass
                         elif ball_vy[bird_in_lane] == -1:  # Already moving up - activate special power
                             # Only use power once per ascent
-                            if not bird_power_used[bird_in_lane]:
-                                bird_power_used[bird_in_lane] = True
+                            # Allow extra power use for A-grade birds (2 uses per ascent)
+                            try:
+                                grade_label, _ = compute_grade_from_xp(per_bird_xp[bird_in_lane])
+                                allowed_uses = 2 if (grade_label and grade_label.startswith('A')) else 1
+                            except Exception:
+                                allowed_uses = 1
+                            if not allow_consume_power(bird_in_lane, allowed_uses=allowed_uses):
+                                # already consumed allowed uses - do nothing
+                                pass
+                            else:
                                 bird_color = ball_colors[bird_in_lane]
                                 # Notify achievements about power use
                                 # map color escape to simple name
@@ -1582,7 +1616,7 @@ try:
                                                     if ball_colors[adj_bird] == YELLOW or ball_colors[adj_bird] == PATCHWORK:
                                                         # Yellow bird - bounce it up instead of slowing
                                                         ball_vy[adj_bird] = -1
-                                                        bird_power_used[adj_bird] = False  # Reset power for bounced yellow
+                                                        reset_bird_power(adj_bird)  # Reset power for bounced yellow
                                                         affected_count += 1
                                                         try:
                                                             append_recent_action('bounce', lane=adj_lane, color=ball_colors[adj_bird])
@@ -1644,15 +1678,21 @@ try:
                                                         pass
                                                     else:
                                                         ball_vy[adj_bird] = -1
-                                                        bird_power_used[adj_bird] = False  # Reset their power
+                                                        reset_bird_power(adj_bird)  # Reset their power
                                                         try:
                                                             append_recent_action('bounce', lane=adj_lane, color=ball_colors[adj_bird])
                                                         except NameError:
                                                             pass
                                                 elif ball_vy[adj_bird] == -1:
                                                     # Bird is rising - activate its power (if not already used)
-                                                    if not bird_power_used[adj_bird]:
-                                                        bird_power_used[adj_bird] = True
+                                                    # Allow extra power use for A-grade adjacent birds
+                                                    try:
+                                                        adj_grade, _ = compute_grade_from_xp(per_bird_xp[adj_bird])
+                                                        adj_allowed = 2 if (adj_grade and adj_grade.startswith('A')) else 1
+                                                    except Exception:
+                                                        adj_allowed = 1
+                                                    if not allow_consume_power(adj_bird, allowed_uses=adj_allowed):
+                                                        pass
                                                         adj_bird_color = ball_colors[adj_bird]
                                                         # Notify achievements about adjacent bird power use
                                                         if adj_bird_color == YELLOW:
@@ -1690,9 +1730,9 @@ try:
                                                                             pass
                                                                         else:
                                                                             if ball_colors[y_bird] == YELLOW:
-                                                                                # Bounce yellow bird
-                                                                                ball_vy[y_bird] = -1
-                                                                                bird_power_used[y_bird] = False
+                                                                                        # Bounce yellow bird
+                                                                                        ball_vy[y_bird] = -1
+                                                                                        reset_bird_power(y_bird)
                                                                             else:
                                                                                 # Slow non-yellow bird
                                                                                 speed_boosts[y_bird] = -int(3.0 / base_sleep)
@@ -2648,7 +2688,7 @@ try:
                     # bird's power-used flag is cleared so UI/colour returns to normal
                     try:
                         if 0 <= bird_idx < len(ball_colors) and ball_colors[bird_idx] == BLUE:
-                            bird_power_used[bird_idx] = False
+                            reset_bird_power(bird_idx)
                     except Exception:
                         pass
             else:
@@ -3095,7 +3135,7 @@ try:
                                     ball_y[i] = bat_bottom + 1
                                     try:
                                         if ball_colors[i] == BLUE:
-                                            bird_power_used[i] = False
+                                            reset_bird_power(i)
                                     except Exception:
                                         pass
                                     collided = True
@@ -3139,7 +3179,7 @@ try:
                                         ball_vy[i] = 1
                                         try:
                                             if ball_colors[i] == BLUE:
-                                                bird_power_used[i] = False
+                                                reset_bird_power(i)
                                         except Exception:
                                             pass
                                         collided = True
@@ -3159,13 +3199,13 @@ try:
                             if c > 0:
                                 ball_y[i] = STARTING_LINE
                                 ball_vy[i] = -1
-                                bird_power_used[i] = False
+                                reset_bird_power(i)
                             else:
                                 ball_y[i] += ball_vy[i]
                         except Exception:
                             ball_y[i] = STARTING_LINE
                             ball_vy[i] = -1
-                            bird_power_used[i] = False
+                            reset_bird_power(i)
                     else:
                         ball_y[i] += ball_vy[i]
                 
@@ -3419,13 +3459,13 @@ try:
                         ball_lost[i] = False
                         ball_y[i] = 999
                         ball_vy[i] = 0
-                        bird_power_used[i] = False
+                        reset_bird_power(i)
                         ball_speeds[i] = 0
                         loot_items.append({'x_pos': LANE_POSITIONS[lane], 'y_pos': STARTING_LINE, 'type': 'orange_egg', 'rarity': 'epic', 'spawn_ts': time.time()})
                         continue
                     ball_y[i] = 1
                     ball_vy[i] = 1
-                    bird_power_used[i] = False  # Reset power when starting to descend
+                    reset_bird_power(i)  # Reset power when starting to descend
                 
                 # Check if ball hits floor
                 if ball_y[i] >= HEIGHT - 1:
@@ -3439,7 +3479,7 @@ try:
                             if c > 0:
                                 ball_y[i] = STARTING_LINE
                                 ball_vy[i] = -1
-                                bird_power_used[i] = False
+                                reset_bird_power(i)
                             else:
                                 # charge == 0: behave like other birds hitting the floor -> die
                                 if not ball_lost[i]:
@@ -3453,7 +3493,7 @@ try:
                             # Fallback: normal behaviour
                             ball_y[i] = STARTING_LINE
                             ball_vy[i] = -1
-                            bird_power_used[i] = False
+                            reset_bird_power(i)
                     elif ball_colors[i] == ORANGE:
                         continue
                     elif not ball_lost[i]:  # Solo gli altri muoiono
