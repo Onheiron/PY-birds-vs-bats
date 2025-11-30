@@ -224,6 +224,29 @@ BAT_FRAME_2 = [
     " /(;;)\\",
 ]
 
+# DINOSAUR legendary bird sprites (3 lines × 5 chars)
+DINOSAUR = "\033[38;5;46m"  # bright green (legendary)
+DINOSAUR_UP_1 = [
+    ' .|. ',
+    '/\\O/\\',
+    '  "  '
+]
+DINOSAUR_UP_2 = [
+    '_.|._',
+    ' \\O/ ',
+    '  "  '
+]
+DINOSAUR_DOWN_1 = [
+    '  "  ',
+    '\\/O\\/',
+    " '|' "
+]
+DINOSAUR_DOWN_2 = [
+    '  "  ',
+    '_/O\\_',
+    " '|' "
+]
+
 # Background pattern
 BG_PATTERN = "/\\/\\/\\"
 
@@ -366,6 +389,8 @@ for color in ball_colors:
         ball_speeds.append(6)  # Gold special bird = velocità 6
     elif color == STEALTH:
         ball_speeds.append(3)  # Stealth bird = speed 3
+    elif color == DINOSAUR:
+        ball_speeds.append(4)  # DINOSAUR legendary = speed 5
     else:
         ball_speeds.append(2)  # Default per colori non previsti
 
@@ -397,6 +422,9 @@ MAX_ENTITIES = 50  # Max total entities on screen (excluding birds) - greatly in
 
 # Speed boosts - track which birds have temp speed boosts {bird_index: remaining_frames}
 speed_boosts = {}
+
+# DINOSAUR special counters: count UP presses while falling
+dinosaur_up_presses = {}
 
 # Scared birds - track which birds are scared {bird_index: remaining_frames}
 # Scared birds: +1 speed when falling down, cannot be bounced up
@@ -1234,6 +1262,27 @@ try:
                         elif bird_in_lane in scared_birds and ball_colors[bird_in_lane] != PURPLE:
                             continue  # Scared bird ignores bounce command (tranne purple)
                         elif ball_vy[bird_in_lane] == 1:  # Moving down - bounce it up
+                            # Special DINOSAUR behaviour: requires 10 UP presses to bounce.
+                            if ball_colors[bird_in_lane] == DINOSAUR:
+                                cnt = dinosaur_up_presses.get(bird_in_lane, 0) + 1
+                                dinosaur_up_presses[bird_in_lane] = cnt
+                                # Every three UP presses reduce current fall speed by 1
+                                if cnt % 3 == 0:
+                                    # If this is the final (15th) press, bounce up
+                                    if cnt >= 15:
+                                        ball_vy[bird_in_lane] = -1
+                                        ball_speeds[bird_in_lane] = 4
+                                        dinosaur_up_presses[bird_in_lane] = 0
+                                        bird_power_used[bird_in_lane] = False
+                                    else:
+                                        # Reduce the fall speed by 1 (but keep >=1)
+                                        try:
+                                            ball_speeds[bird_in_lane] = max(1, ball_speeds[bird_in_lane] - 1)
+                                        except Exception:
+                                            ball_speeds[bird_in_lane] = 1
+                                # Don't perform the normal immediate bounce
+                                continue
+                            # Normal behavior for non-DINOSAUR birds
                             ball_vy[bird_in_lane] = -1
                             bird_power_used[bird_in_lane] = False  # Reset power when bird starts rising
                             # Special: if this is a CLOCKWORK bird in freefall (charge == 0),
@@ -1680,9 +1729,12 @@ try:
                         else:
                             sprite = BIRD_UP_1 if (frame_count // 3) % 2 == 0 else BIRD_UP_2
                     else:
+                        # DINOSAUR has its own larger sprites
+                        if ball_colors[b] == DINOSAUR:
+                            sprite = DINOSAUR_UP_1 if (frame_count // 3) % 2 == 0 else DINOSAUR_UP_2
                         # If a blue bird is sprinting (power active), lock the up-frame to BIRD_UP_1
                         # This prevents the animation from toggling while sprint is active.
-                        if ball_colors[b] == BLUE and bird_power_used[b]:
+                        elif ball_colors[b] == BLUE and bird_power_used[b]:
                             sprite = BIRD_UP_1
                         else:
                             sprite = BIRD_UP_1 if (frame_count // 3) % 2 == 0 else BIRD_UP_2
@@ -1702,7 +1754,11 @@ try:
                             else:
                                 sprite = BIRD_DOWN_1 if (frame_count // 3) % 2 == 0 else BIRD_DOWN_2
                         else:
-                            sprite = BIRD_DOWN_1 if (frame_count // 3) % 2 == 0 else BIRD_DOWN_2
+                            # DINOSAUR falling sprites
+                            if ball_colors[b] == DINOSAUR:
+                                sprite = DINOSAUR_DOWN_1 if (frame_count // 3) % 2 == 0 else DINOSAUR_DOWN_2
+                            else:
+                                sprite = BIRD_DOWN_1 if (frame_count // 3) % 2 == 0 else BIRD_DOWN_2
                 
                 # Choose color - handle STEALTH specially, blue birds turn cyan when power is active
                 if ball_colors[b] == STEALTH:
@@ -1732,8 +1788,11 @@ try:
                 for line_idx, line in enumerate(sprite):
                     y_pos = ball_y[b] + line_idx + 2  # +2 for header offset
                     if 3 <= y_pos < HEIGHT + 2:
-                        # Center sprites - new sprites are 3 chars wide
-                        x_offset = 1  # Offset for 3-char wide sprite
+                        # Center sprites: compute offset from sprite width (works for 3- and 5-char sprites)
+                        try:
+                            x_offset = len(line) // 2
+                        except Exception:
+                            x_offset = 1
                         # CLOCKWORK: special per-char coloring and blinking for '.' and '\''
                         if ball_colors[b] == CLOCKWORK:
                             try:
@@ -2563,7 +2622,10 @@ try:
                     next_y = ball_y[i] + ball_vy[i]  # Calculate next position
                     collided = False
                     broken_through = False
-                    
+
+                    # Bird sprite height (2 lines default, 3 for DINOSAUR)
+                    bird_height = 3 if ball_colors[i] == DINOSAUR else 2
+
                     # Check collision with bats first - if bat enters bird's lane AT ALL, collision!
                     # Stealth birds (when not tangible) pass through bats
                     if not (ball_colors[i] == STEALTH and not (i in stealth_timers and stealth_timers.get(i, 0) > 0)):
@@ -2576,15 +2638,18 @@ try:
                             lane_left = bird_lane_x - 2
                             lane_right = bird_lane_x + 2
                             horizontal_overlap = not (bat_right < lane_left or bat_left > lane_right)
-                            vertical_overlap = not (next_y + 2 < bat_top or next_y > bat_bottom)
+                            vertical_overlap = not (next_y + bird_height < bat_top or next_y > bat_bottom)
 
                             if horizontal_overlap and vertical_overlap:
-                                # Se arancione: distruggi subito il pipistrello
+                                # Orange bird: destroy bat instantly
                                 if ball_colors[i] == ORANGE:
                                     bat['hp'] = 0
                                 else:
+                                    # DINOSAUR deals fixed damage
+                                    if ball_colors[i] == DINOSAUR:
+                                        damage = 16
                                     # STEALTH tangible: fixed high damage
-                                    if ball_colors[i] == STEALTH and (i in stealth_timers and stealth_timers.get(i, 0) > 0):
+                                    elif ball_colors[i] == STEALTH and (i in stealth_timers and stealth_timers.get(i, 0) > 0):
                                         damage = 24
                                     # GOLD bird deals fixed damage = 1
                                     elif ball_colors[i] == GOLD:
@@ -2631,7 +2696,6 @@ try:
                                         'spawn_ts': time.time()
                                     })
                                     tier = bat.get('tier', None)
-                                    # If this kill was caused by an orange bird, emit special event
                                     if ball_colors[i] == ORANGE:
                                         check_achievements_event('destroy_bat_with_orange')
                                     check_achievements_event('destroy_bat', tier=tier)
@@ -2640,7 +2704,6 @@ try:
                                 else:
                                     ball_vy[i] = 1
                                     ball_y[i] = bat_bottom + 1
-                                    # If a blue bird was sprinting, stop its sprint when it bounces
                                     try:
                                         if ball_colors[i] == BLUE:
                                             bird_power_used[i] = False
@@ -2648,21 +2711,19 @@ try:
                                         pass
                                     collided = True
                                 break
-                    
+
                     # Check collision with obstacles if not hit bat
                     if not collided and not broken_through:
-                        # Stealth birds (when not tangible) pass through obstacles
                         if not (ball_colors[i] == STEALTH and not (i in stealth_timers and stealth_timers.get(i, 0) > 0)):
                             for obs in obstacles[:]:
                                 if obs['lane'] == bird_lane and abs(next_y - obs['y_pos']) <= 1:
-                                    # Se arancione: distruggi subito il blocco
                                     if ball_colors[i] == ORANGE:
                                         obs['hp'] = 0
                                     else:
-                                        # STEALTH tangible: fixed high damage
-                                        if ball_colors[i] == STEALTH and (i in stealth_timers and stealth_timers.get(i, 0) > 0):
+                                        if ball_colors[i] == DINOSAUR:
+                                            damage = 16
+                                        elif ball_colors[i] == STEALTH and (i in stealth_timers and stealth_timers.get(i, 0) > 0):
                                             damage = 24
-                                        # GOLD bird deals fixed damage = 1
                                         elif ball_colors[i] == GOLD:
                                             damage = 1
                                         else:
@@ -2677,7 +2738,6 @@ try:
                                         broken_through = True
                                     else:
                                         ball_vy[i] = 1
-                                        # If a blue bird was sprinting, stop its sprint when it bounces
                                         try:
                                             if ball_colors[i] == BLUE:
                                                 bird_power_used[i] = False
@@ -2685,13 +2745,12 @@ try:
                                             pass
                                         collided = True
                                     break
-                    
+
                     # Only move if no collision OR broke through
                     if not collided:
                         ball_y[i] += ball_vy[i]
                 else:
                     # Moving down, just move
-                    # Bounce immediato per il bird clockwork (solo se ha carica)
                     if ball_colors[i] == CLOCKWORK and ball_vy[i] == 1 and ball_y[i] + ball_vy[i] >= STARTING_LINE:
                         try:
                             c = clockwork_charge.get(i, None)
@@ -2703,10 +2762,8 @@ try:
                                 ball_vy[i] = -1
                                 bird_power_used[i] = False
                             else:
-                                # carica == 0: non rimbalzare qui, lasciare che cada
                                 ball_y[i] += ball_vy[i]
                         except Exception:
-                            # fallback: comportamento precedente
                             ball_y[i] = STARTING_LINE
                             ball_vy[i] = -1
                             bird_power_used[i] = False
