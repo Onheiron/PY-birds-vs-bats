@@ -65,6 +65,8 @@ def choose_loot_type(rarity):
             'purple_egg': PURPLE,
             'orange_egg': ORANGE,
             'cookie_egg': COOKIE,
+            'dinosaur_egg': DINOSAUR,
+            'glitch_egg': GLITCH,
         }
 
         # Limits by category (None = unlimited)
@@ -80,6 +82,8 @@ def choose_loot_type(rarity):
             WHITE: 1,
             ORANGE: 1,
             COOKIE: 1,
+            DINOSAUR: 1,
+            GLITCH: 1,
         }
 
         def allowed(egg_name):
@@ -98,18 +102,19 @@ def choose_loot_type(rarity):
 
         # Candidate eggs and their base weights per rarity
         if rarity == 'common':
-            candidates = ['red_egg', 'blue_egg']
-            weights = [50, 50]
+            candidates = ['yellow_egg', 'red_egg', 'blue_egg', 'patchwork_egg', 'purple_egg']
+            weights = [30, 25, 20, 15, 10]
         elif rarity == 'uncommon':
-            candidates = ['patchwork_egg', 'purple_egg']
-            weights = [50, 50]
+            candidates = ['blue_egg', 'patchwork_egg', 'purple_egg', 'clockwork_egg', 'stealth_egg', 'cookie_egg']
+            weights = [33, 25, 20, 12, 7, 3]
         elif rarity == 'rare':
             # include COOKIE as a rare egg candidate
-            candidates = ['clockwork_egg', 'stealth_egg', 'cookie_egg']
-            weights = [45, 35, 20]
+            candidates = ['white_egg', 'orange_egg', 'gold_egg']
+            weights = [34, 33, 33]
         else:
-            candidates = ['white_egg', 'orange_egg',' gold_egg']
-            weights = [35, 35, 30]
+            # Epic tier: include special eggs (white/orange/gold + dinosaur/glitch)
+            candidates = ['dinosaur_egg', 'glitch_egg']
+            weights = [50, 50]
 
         # Filter by allowed eggs based on current field counts
         allowed_candidates = []
@@ -357,7 +362,7 @@ _OBST_MAX_HP_BY_TIER = {1: 4, 2: 6, 3: 10, 4: 16}
 LANE_POSITIONS = [5, 9, 13, 17, 21, 25, 29, 33, 37]  # 9 lanes centered in game box
 
 # Ball positions and velocities
-ball_colors = [YELLOW, YELLOW, YELLOW, GLITCH, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
+ball_colors = [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
 
 # Randomize which bird goes to which lane
 random.seed()
@@ -2342,6 +2347,10 @@ try:
                 elif loot_type == 'cookie_crumb':
                     # Small dot for crumb
                     output += f"\033[{y_pos};{loot['x_pos']}H{COOKIE}•{RESET}"
+                elif loot_type == 'dinosaur_egg':
+                    output += f"\033[{y_pos};{loot['x_pos']}H{DINOSAUR}⬯{RESET}"
+                elif loot_type == 'glitch_egg':
+                    output += f"\033[{y_pos};{loot['x_pos']}H{GLITCH}⬯{RESET}"
                 # Cursor power-ups
                 elif 'wide_cursor' in loot_type:
                     output += f"\033[{y_pos};{loot['x_pos']}H{power_color}↔{RESET}"
@@ -3223,13 +3232,13 @@ try:
                             tier = bat['tier']
                             prestige = compute_prestige()
                             if tier == 1:
-                                base = [60, 25, 10, 5]
+                                base = [60, 30, 10, 0]
                             elif tier == 2:
-                                base = [50, 30, 15, 5]
+                                base = [50, 35, 14, 1]
                             elif tier == 3:
-                                base = [40, 33, 17, 10]
+                                base = [43, 40, 15, 2]
                             else:  # tier 4
-                                base = [35, 25, 20, 15]
+                                base = [40, 35, 22, 3]
                             adj_weights = adjust_rarity_weights(base, prestige)
                             rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=adj_weights)[0]
 
