@@ -3442,6 +3442,88 @@ try:
             except Exception:
                 pass
 
+            # GLITCH additional chaotic behaviors requested by user:
+            # 1) 10% chance to swap lanes with another active bird
+            # 2) 10% chance to nudge the player cursor +/-1 lane
+            # 3) 1% chance to duplicate into another lane (resurrect or replace)
+            try:
+                if ball_colors[i] == GLITCH and not ball_lost[i]:
+                    # 1) swap lanes with another random active bird (10%)
+                    try:
+                        if random.random() < 0.10:
+                            others = [j for j in range(NUM_BALLS) if j != i and not ball_lost[j]]
+                            if others:
+                                j = random.choice(others)
+                                random_lanes[i], random_lanes[j] = random_lanes[j], random_lanes[i]
+                                # update rendered columns
+                                try:
+                                    ball_cols[i] = LANE_POSITIONS[random_lanes[i]]
+                                except Exception:
+                                    pass
+                                try:
+                                    ball_cols[j] = LANE_POSITIONS[random_lanes[j]]
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+
+                    # 2) nudge player cursor by -1 or +1 with 10% chance
+                    try:
+                        if random.random() < 0.10:
+                            delta = random.choice([-1, 1])
+                            # clamp between 0 and 8 (9 lanes)
+                            player_lane = max(0, min(8, player_lane + delta))
+                    except Exception:
+                        pass
+
+                    # 3) duplicate: 1% chance to spawn/replace a GLITCH in a random lane
+                    try:
+                        if random.random() < 0.01:
+                            target_lane = random.randint(0, 8)
+                            target_idx = next((idx for idx in range(NUM_BALLS) if random_lanes[idx] == target_lane), None)
+                            if target_idx is not None:
+                                # If the slot is empty (lost), resurrect it as GLITCH
+                                if ball_lost[target_idx]:
+                                    ball_lost[target_idx] = False
+                                    ball_colors[target_idx] = GLITCH
+                                    ball_speeds[target_idx] = random.randint(1, 6)
+                                    ball_y[target_idx] = STARTING_LINE
+                                    ball_vy[target_idx] = -1
+                                    try:
+                                        per_bird_xp[target_idx] = 0
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transformed_s[target_idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        ball_cols[target_idx] = LANE_POSITIONS[target_lane]
+                                    except Exception:
+                                        pass
+                                else:
+                                    # Replace existing bird in that lane with GLITCH
+                                    ball_colors[target_idx] = GLITCH
+                                    ball_speeds[target_idx] = random.randint(1, 6)
+                                    try:
+                                        per_bird_xp[target_idx] = 0
+                                    except Exception:
+                                        pass
+                                    ball_y[target_idx] = STARTING_LINE
+                                    ball_vy[target_idx] = -1
+                                    try:
+                                        transformed_s[target_idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        ball_cols[target_idx] = LANE_POSITIONS[target_lane]
+                                    except Exception:
+                                        pass
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
             # Apply tailwind powerup effects (tiered):
             # - when rising (ball_vy == -1) apply up bonus (increase speed)
             # - when falling (ball_vy == 1) apply down penalty (decrease speed)
