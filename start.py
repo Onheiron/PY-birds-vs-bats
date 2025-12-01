@@ -94,17 +94,17 @@ def choose_loot_type(rarity):
 
         # Candidate eggs and their base weights per rarity
         if rarity == 'common':
-            candidates = ['yellow_egg', 'clockwork_egg']
+            candidates = ['yellow_egg', 'red_egg']
             weights = [70, 30]
         elif rarity == 'uncommon':
             candidates = ['red_egg', 'blue_egg', 'patchwork_egg', 'purple_egg']
             weights = [30, 30, 20, 20]
         elif rarity == 'rare':
-            candidates = ['blue_egg', 'clockwork_egg', 'gold_egg', 'stealth_egg']
-            weights = [40, 30, 15, 15]
+            candidates = ['blue_egg', 'clockwork_egg', 'stealth_egg']
+            weights = [45, 35, 20]
         else:
-            candidates = ['white_egg', 'orange_egg']
-            weights = [50, 50]
+            candidates = ['white_egg', 'orange_egg',' gold_egg']
+            weights = [35, 35, 30]
 
         # Filter by allowed eggs based on current field counts
         allowed_candidates = []
@@ -425,6 +425,107 @@ def get_scared_frames(bird_idx, base_seconds=2.0):
 
     return base_frames
 
+
+def transform_bird_to_s(bi):
+    """If bird bi reached S grade, transform its color and mark it so it won't produce eggs.
+
+    Mapping implemented:
+      BLUE -> WHITE
+      RED  -> ORANGE
+      YELLOW -> GOLD
+
+    This function is idempotent and safe to call repeatedly.
+    """
+    try:
+        bi = int(bi)
+        if bi < 0 or bi >= NUM_BALLS:
+            return
+    except Exception:
+        return
+
+    try:
+        if transformed_s[bi]:
+            return
+    except Exception:
+        # ensure list exists; defensive
+        try:
+            transformed_s[bi] = False
+        except Exception:
+            pass
+
+    try:
+        label, _ = compute_grade_from_xp(per_bird_xp[bi])
+    except Exception:
+        label = None
+
+    try:
+        if label == 'S':
+            old = ball_colors[bi]
+            # Decide target color and speed
+            target_color = None
+            target_speed = None
+            if old == BLUE:
+                target_color = WHITE
+                target_speed = 4
+            elif old == RED:
+                target_color = ORANGE
+                target_speed = 5
+            elif old == YELLOW:
+                target_color = GOLD
+                target_speed = 6
+
+            # If we have a mapping, check limits before applying
+            if target_color is not None:
+                try:
+                    limit = TRANSFORM_LIMITS.get(target_color, None)
+                except Exception:
+                    limit = None
+
+                try:
+                    # Count active birds of target color (exclude this bird if it is not yet that color)
+                    cnt = 0
+                    for j in range(NUM_BALLS):
+                        try:
+                            if not ball_lost[j] and ball_colors[j] == target_color:
+                                cnt += 1
+                        except Exception:
+                            continue
+                    # If this bird itself is already the target color, include it in the count
+                    if ball_colors[bi] == target_color and not ball_lost[bi]:
+                        # cnt already includes it; nothing else to do
+                        pass
+                except Exception:
+                    cnt = 0
+
+                # If limit is None (unlimited) or cnt < limit we can transform
+                if limit is None or cnt < limit or (ball_colors[bi] == target_color):
+                    try:
+                        ball_colors[bi] = target_color
+                        if target_speed is not None:
+                            ball_speeds[bi] = target_speed
+                        transformed_s[bi] = True
+                        try:
+                            lane = random_lanes[bi]
+                            add_notification(f"BIRD {lane+1}: S-Tier TRANSFORM!")
+                        except Exception:
+                            pass
+                    except Exception:
+                        pass
+                else:
+                    # Cannot transform due to limit; leave transformed_s False
+                    try:
+                        add_notification("S-Tier limit reached for this color")
+                    except Exception:
+                        pass
+            else:
+                # No mapping for this color: mark as transformed but do not change color
+                try:
+                    transformed_s[bi] = True
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
 # Assign speeds based on color (higher = faster)
 # Blue: 4 (fastest), Red: 3, Yellow: 2, Obstacles: 1 (slowest)
 ball_speeds = []
@@ -457,8 +558,24 @@ red_projectiles = []
 
 # Per-bird experience points (persist per bird index)
 per_bird_xp = [0] * NUM_BALLS
+# Track whether a bird was transformed by reaching S grade (prevents egg loot)
+transformed_s = [False] * NUM_BALLS
 # Debug toggle: show per-bird XP/grade summary in the HUD when True
 show_xp_overlay = False
+
+# Limits by category for transformations/spawns (None = unlimited)
+TRANSFORM_LIMITS = {
+    YELLOW: None,
+    RED: None,
+    BLUE: None,
+    PATCHWORK: 2,
+    PURPLE: 2,
+    CLOCKWORK: 2,
+    GOLD: 1,
+    STEALTH: 1,
+    WHITE: 1,
+    ORANGE: 1,
+}
 
 # Background scroll offset
 bg_offset = 0
@@ -1045,9 +1162,9 @@ def compute_grade_from_xp(xp):
     if xp < int(base):
         return ('D', GREEN)
 
-    # Build thresholds for C1, C2, B1, B2, A1, A2 using iterative exponentiation
-    labels = ['C1', 'C2', 'B1', 'B2', 'A1', 'A2']
-    exps = [ (1.15 ** n) for n in range(len(labels)) ]  # 1.0, 1.2, 1.44, ...
+    # Build thresholds for C1, C2, B1, B2, A1, A2, S using iterative exponentiation
+    labels = ['C1', 'C2', 'B1', 'B2', 'A1', 'A2', 'S']
+    exps = [ (1.17 ** n) for n in range(len(labels)) ]  # 1.0, 1.2, 1.44, ...
     thresholds = [ int(round(base ** e)) for e in exps ]
 
     # Find highest label satisfied
@@ -1108,6 +1225,11 @@ def add_score(amount, by_bird=None):
                 except Exception:
                     xp_award = 0
             per_bird_xp[int(by_bird)] += xp_award
+            # Check for S-grade transformation after XP award
+            try:
+                transform_bird_to_s(int(by_bird))
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -1125,6 +1247,11 @@ def award_xp(bird_idx, xp_amount):
         if bi < 0 or bi >= len(per_bird_xp):
             return
         per_bird_xp[bi] += int(max(0, int(xp_amount)))
+        # After awarding XP, check for S-grade transformation
+        try:
+            transform_bird_to_s(bi)
+        except Exception:
+            pass
     except Exception:
         pass
 
@@ -3269,6 +3396,14 @@ try:
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
                                     break
                         elif loot_type == 'red_egg':
                             for idx in range(NUM_BALLS):
@@ -3280,6 +3415,14 @@ try:
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
                                     break
                         elif loot_type == 'blue_egg':
                             for idx in range(NUM_BALLS):
@@ -3291,6 +3434,14 @@ try:
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
                                     break
                         elif loot_type == 'white_egg':
                             for idx in range(NUM_BALLS):
@@ -3301,6 +3452,14 @@ try:
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
                                     break
                         elif loot_type == 'clockwork_egg':
                             for idx in range(NUM_BALLS):
@@ -3316,6 +3475,14 @@ try:
                                         ball_y[idx] = STARTING_LINE
                                         ball_vy[idx] = -1
                                         lives += 1  # Restore life
+                                        try:
+                                            transformed_s[idx] = False
+                                        except Exception:
+                                            pass
+                                        try:
+                                            transform_bird_to_s(idx)
+                                        except Exception:
+                                            pass
                                         break
                         elif loot_type == 'purple_egg':
                             for idx in range(NUM_BALLS):
@@ -3326,6 +3493,14 @@ try:
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
                                     break
                         elif loot_type == 'gold_egg':
                             for idx in range(NUM_BALLS):
@@ -3337,6 +3512,14 @@ try:
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
                                     break
                         elif loot_type == 'patchwork_egg':
                             for idx in range(NUM_BALLS):
@@ -3348,6 +3531,14 @@ try:
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
                                     break
                         elif loot_type == 'stealth_egg':
                             for idx in range(NUM_BALLS):
@@ -3359,6 +3550,14 @@ try:
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
                                     break
                         elif loot_type == 'orange_egg':
                             for idx in range(NUM_BALLS):
@@ -3369,6 +3568,14 @@ try:
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
                                     break
                         elif loot_type == 'wide_cursor':
                             powerups['wide_cursor_active'] = True
@@ -3493,7 +3700,13 @@ try:
                         ball_vy[i] = 0
                         reset_bird_power(i)
                         ball_speeds[i] = 0
-                        loot_items.append({'x_pos': LANE_POSITIONS[lane], 'y_pos': STARTING_LINE, 'type': 'orange_egg', 'rarity': 'epic', 'spawn_ts': time.time()})
+                        # Transformed S-birds do not produce egg loot
+                        try:
+                            if not transformed_s[i]:
+                                loot_items.append({'x_pos': LANE_POSITIONS[lane], 'y_pos': STARTING_LINE, 'type': 'orange_egg', 'rarity': 'epic', 'spawn_ts': time.time()})
+                        except Exception:
+                            # Defensive: if transformed_s is missing or error, still append
+                            loot_items.append({'x_pos': LANE_POSITIONS[lane], 'y_pos': STARTING_LINE, 'type': 'orange_egg', 'rarity': 'epic', 'spawn_ts': time.time()})
                         continue
                     ball_y[i] = 1
                     ball_vy[i] = 1
