@@ -3,6 +3,7 @@ PURPLE = "\033[38;5;135m"  # Viola
 ORANGE = "\033[38;5;208m"  # Arancione
 PATCHWORK = "\033[38;5;202m"  # Patchwork bird color (distinct escape)
 COOKIE = "\033[38;5;180m"  # Light brown "cookie" bird
+GLITCH = "\033[38;5;205m"  # Pink-ish glitch bird
 import sys
 import time
 import os
@@ -1369,19 +1370,27 @@ def compute_prestige():
             except Exception:
                 # If ball_lost not available or malformed, assume active
                 pass
+                try:
+                    # GLITCH birds contribute a random prestige between 1 and 7 each computation
+                    if ball_colors[i] == GLITCH:
+                        try:
+                            total += float(random.randint(1, 7))
+                            continue
+                        except Exception:
+                            # fallback to normal mapping
+                            pass
 
-            try:
-                label, _ = compute_grade_from_xp(per_bird_xp[i])
-            except Exception:
-                label = 'D'
+                    label, _ = compute_grade_from_xp(per_bird_xp[i])
+                except Exception:
+                    label = 'D'
 
-            # If compute_grade returned multi-char like 'C1' handle it, otherwise
-            # accept single-letter 'D'/'S'
-            add = mod_map.get(label, 0.0)
-            # If label is like 'C' fallback to C1 modifier (defensive)
-            if add == 0.0 and isinstance(label, str) and len(label) == 1:
+                # If compute_grade returned multi-char like 'C1' handle it, otherwise
+                # accept single-letter 'D'/'S'
                 add = mod_map.get(label, 0.0)
-            total += add
+                # If label is like 'C' fallback to C1 modifier (defensive)
+                if add == 0.0 and isinstance(label, str) and len(label) == 1:
+                    add = mod_map.get(label, 0.0)
+                total += add
     except Exception:
         # On any error, fallback to neutral prestige
         return 1.0
@@ -1818,7 +1827,15 @@ try:
                                 # Don't perform the normal immediate bounce
                                 continue
                             # Normal behavior for non-DINOSAUR birds
-                            ball_vy[bird_in_lane] = -1
+                            # GLITCH has a 20% chance to ignore the bounce and keep falling
+                            try:
+                                if ball_colors[bird_in_lane] == GLITCH and random.random() < 0.20:
+                                    # ignore bounce
+                                    pass
+                                else:
+                                    ball_vy[bird_in_lane] = -1
+                            except Exception:
+                                ball_vy[bird_in_lane] = -1
                             reset_bird_power(bird_in_lane)  # Reset power when bird starts rising
                             # Special: if this is a CLOCKWORK bird in freefall (charge == 0),
                             # bouncing it restores charge to 1 and sets its speed accordingly.
@@ -1893,38 +1910,48 @@ try:
                                                     break
 
                                             if adj_bird >= 0 and not ball_lost[adj_bird]:
-                                                # Check if bird is falling (moving down)
-                                                if ball_vy[adj_bird] == 1:
-                                                    if ball_colors[adj_bird] == YELLOW or ball_colors[adj_bird] == PATCHWORK:
-                                                        # Yellow bird - bounce it up instead of slowing
-                                                        ball_vy[adj_bird] = -1
-                                                        reset_bird_power(adj_bird)  # Reset power for bounced yellow
-                                                        affected_count += 1
-                                                        try:
-                                                            append_recent_action('bounce', lane=adj_lane, color=ball_colors[adj_bird])
-                                                        except NameError:
-                                                            pass
-                                                        # When a yellow is bounced, nearby SCARED blue birds that are falling
-                                                        # and occupying adjacent lanes should lose their scared state.
-                                                        try:
-                                                            for cross_offset in [-1, 1]:
-                                                                cross_lane = adj_lane + cross_offset
-                                                                if 0 <= cross_lane < 9:
-                                                                    for bi in range(NUM_BALLS):
-                                                                        try:
-                                                                            if random_lanes[bi] == cross_lane and not ball_lost[bi] and ball_colors[bi] == BLUE and bi in scared_birds and ball_vy[bi] == 1:
-                                                                                try:
-                                                                                    del scared_birds[bi]
-                                                                                except Exception:
-                                                                                    pass
-                                                                        except Exception:
-                                                                            continue
-                                                        except Exception:
-                                                            pass
-                                                    else:
-                                                        # Non-yellow bird - apply slow effect
-                                                        speed_boosts[adj_bird] = -int(3.0 / base_sleep)  # 3 seconds of slow
-                                                        affected_count += 1
+                                                    # Check if bird is falling (moving down)
+                                                    if ball_vy[adj_bird] == 1:
+                                                        # If the adjacent bird is a yellow/patchwork, bounce it
+                                                        if ball_colors[adj_bird] == YELLOW or ball_colors[adj_bird] == PATCHWORK:
+                                                            # GLITCH has a 20% chance to ignore the bounce
+                                                            try:
+                                                                if ball_colors[adj_bird] == GLITCH and random.random() < 0.20:
+                                                                    # ignore bounce
+                                                                    pass
+                                                                else:
+                                                                    ball_vy[adj_bird] = -1
+                                                            except Exception:
+                                                                ball_vy[adj_bird] = -1
+
+                                                            reset_bird_power(adj_bird)  # Reset power for bounced yellow
+                                                            affected_count += 1
+                                                            try:
+                                                                append_recent_action('bounce', lane=adj_lane, color=ball_colors[adj_bird])
+                                                            except NameError:
+                                                                pass
+
+                                                            # When a yellow is bounced, nearby SCARED blue birds that are falling
+                                                            # and occupying adjacent lanes should lose their scared state.
+                                                            try:
+                                                                for cross_offset in [-1, 1]:
+                                                                    cross_lane = adj_lane + cross_offset
+                                                                    if 0 <= cross_lane < 9:
+                                                                        for bi in range(NUM_BALLS):
+                                                                            try:
+                                                                                if random_lanes[bi] == cross_lane and not ball_lost[bi] and ball_colors[bi] == BLUE and bi in scared_birds and ball_vy[bi] == 1:
+                                                                                    try:
+                                                                                        del scared_birds[bi]
+                                                                                    except Exception:
+                                                                                        pass
+                                                                            except Exception:
+                                                                                continue
+                                                            except Exception:
+                                                                pass
+                                                        else:
+                                                            # Non-yellow bird - apply slow effect
+                                                            speed_boosts[adj_bird] = -int(3.0 / base_sleep)  # 3 seconds of slow
+                                                            affected_count += 1
                                                 
 
                                 elif bird_color == RED or bird_color == PURPLE:
@@ -2016,7 +2043,15 @@ try:
                                                         # ignore bounce for scared bird
                                                         pass
                                                     else:
-                                                        ball_vy[adj_bird] = -1
+                                                        # GLITCH has 20% chance to ignore the bounce
+                                                        try:
+                                                            if ball_colors[adj_bird] == GLITCH and random.random() < 0.20:
+                                                                # ignore bounce
+                                                                pass
+                                                            else:
+                                                                ball_vy[adj_bird] = -1
+                                                        except Exception:
+                                                            ball_vy[adj_bird] = -1
                                                         reset_bird_power(adj_bird)  # Reset their power
                                                         try:
                                                             append_recent_action('bounce', lane=adj_lane, color=ball_colors[adj_bird])
@@ -2388,6 +2423,34 @@ try:
                             else:
                                 sprite = BIRD_DOWN_1 if (frame_count // 3) % 2 == 0 else BIRD_DOWN_2
                 
+                            # GLITCH: mix sprite pieces each frame to create a glitched appearance
+                            try:
+                                if ball_colors[b] == GLITCH:
+                                    # Choose base frames depending on direction
+                                    if ball_vy[b] == -1:
+                                        f1 = BIRD_UP_1
+                                        f2 = BIRD_UP_2
+                                    else:
+                                        f1 = BIRD_DOWN_1
+                                        f2 = BIRD_DOWN_2
+
+                                    mixed = []
+                                    for li in range(min(len(f1), len(f2))):
+                                        line1 = f1[li]
+                                        line2 = f2[li]
+                                        # Pad to same length
+                                        maxlen = max(len(line1), len(line2))
+                                        line1 = line1.ljust(maxlen)
+                                        line2 = line2.ljust(maxlen)
+                                        chars = []
+                                        for c1, c2 in zip(line1, line2):
+                                            # randomly pick char from either frame
+                                            chars.append(random.choice([c1, c2]))
+                                        mixed.append(''.join(chars))
+                                    sprite = mixed
+                            except Exception:
+                                pass
+
                 # Choose color - handle STEALTH specially, blue birds turn cyan when power is active
                 if ball_colors[b] == STEALTH:
                     # Tangible when a stealth timer is active for this bird
@@ -3339,8 +3402,15 @@ try:
         # (slow-motion powerup removed; no expiry handling required)
         
         for i in range(NUM_BALLS):
+            # GLITCH birds pick a random speed each step
+            try:
+                if ball_colors[i] == GLITCH and not ball_lost[i]:
+                    # Random speed each step between 1 and 6
+                    ball_speeds[i] = random.randint(1, 6)
+            except Exception:
+                pass
             current_speed = ball_speeds[i]
-            
+
             # Apply speed boost if active (only when going up)
             if i in speed_boosts:
                 if speed_boosts[i] > 0 and ball_vy[i] == -1:
@@ -3353,6 +3423,14 @@ try:
             # Apply scared speed boost when going down
             if i in scared_birds and ball_vy[i] == 1:
                 current_speed += 1
+
+            # GLITCH: 20% chance to flip direction spontaneously each step
+            try:
+                if ball_colors[i] == GLITCH and not ball_lost[i]:
+                    if random.random() < 0.20:
+                        ball_vy[i] = -ball_vy[i]
+            except Exception:
+                pass
 
             # Apply tailwind powerup effects (tiered):
             # - when rising (ball_vy == -1) apply up bonus (increase speed)
@@ -3422,6 +3500,12 @@ try:
                                     # GOLD bird deals fixed damage = 1
                                     elif ball_colors[i] == GOLD:
                                         damage = 1
+                                    # GLITCH deals random damage between 1 and 32
+                                    elif ball_colors[i] == GLITCH:
+                                        try:
+                                            damage = int(random.randint(1, 32))
+                                        except Exception:
+                                            damage = 1
                                     else:
                                         damage = current_speed
                                         if ball_colors[i] == BLUE and bird_power_used[i]:
@@ -3508,6 +3592,11 @@ try:
                                             damage = 24
                                         elif ball_colors[i] == GOLD:
                                             damage = 1
+                                        elif ball_colors[i] == GLITCH:
+                                            try:
+                                                damage = int(random.randint(1, 32))
+                                            except Exception:
+                                                damage = 1
                                         else:
                                             damage = current_speed
                                             if ball_colors[i] == BLUE and bird_power_used[i]:
@@ -3575,6 +3664,26 @@ try:
                         loot_type = loot['type']
                         # Notify achievements about collected loot
                         check_achievements_event('collect', loot=loot_type)
+
+                        # GLITCH interaction with loot: 20% ignore, 20% tier-up
+                        try:
+                            if ball_colors[i] == GLITCH:
+                                r = random.random()
+                                if r < 0.20:
+                                    # ignore the loot entirely
+                                    continue
+                                elif r < 0.40:
+                                    # promote rarity one tier
+                                    rar = loot.get('rarity', 'common')
+                                    if rar == 'common':
+                                        loot['rarity'] = 'uncommon'
+                                    elif rar == 'uncommon':
+                                        loot['rarity'] = 'rare'
+                                    elif rar == 'rare':
+                                        loot['rarity'] = 'epic'
+                                    # otherwise epic stays epic
+                        except Exception:
+                            pass
 
                         # Cookie crumbs should NOT be collected by COOKIE birds themselves;
                         # if the nearest collector is the COOKIE that dropped it, skip collection.
@@ -3983,7 +4092,18 @@ try:
                             reset_bird_power(i)
                     elif ball_colors[i] == ORANGE:
                         continue
-                    elif not ball_lost[i]:  # Solo gli altri muoiono
+                    elif not ball_lost[i]:  # Solo gli altri muoiono (incl. GLITCH special-case)
+                        # GLITCH: 20% chance to survive and bounce instead of dying
+                        try:
+                            if ball_colors[i] == GLITCH and random.random() < 0.20:
+                                # Bounce instead of dying
+                                ball_y[i] = STARTING_LINE
+                                ball_vy[i] = -1
+                                reset_bird_power(i)
+                                continue
+                        except Exception:
+                            pass
+
                         ball_lost[i] = True
                         ball_y[i] = HEIGHT - 1
                         # Reset XP for this bird on death so a new spawn starts at 0
