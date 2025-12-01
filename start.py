@@ -94,14 +94,14 @@ def choose_loot_type(rarity):
 
         # Candidate eggs and their base weights per rarity
         if rarity == 'common':
-            candidates = ['yellow_egg', 'red_egg']
-            weights = [70, 30]
+            candidates = ['red_egg', 'blue_egg']
+            weights = [50, 50]
         elif rarity == 'uncommon':
-            candidates = ['red_egg', 'blue_egg', 'patchwork_egg', 'purple_egg']
-            weights = [30, 30, 20, 20]
+            candidates = ['patchwork_egg', 'purple_egg']
+            weights = [50, 50]
         elif rarity == 'rare':
-            candidates = ['blue_egg', 'clockwork_egg', 'stealth_egg']
-            weights = [45, 35, 20]
+            candidates = ['clockwork_egg', 'stealth_egg']
+            weights = [55, 45]
         else:
             candidates = ['white_egg', 'orange_egg',' gold_egg']
             weights = [35, 35, 30]
@@ -755,23 +755,7 @@ paused = False
 
 def calculate_level_threshold(level):
     """Calculate score threshold for given level"""
-    # Progressione più rapida ma equilibrata che continua all'infinito
-    # Level 1: 1000
-    # Level 2: 2500
-    # Level 3: 5000
-    # Level 4: 8500
-    # Level 5: 13000
-    # Level 6: 19000
-    # Level 7: 27000
-    # ecc...
-    if level == 1:
-        return 1000
-    
-    # Formula: ogni livello richiede (livello * 1500) punti in più rispetto al precedente
-    total = 1000
-    for i in range(2, level + 1):
-        total += i * 1200
-    return int(total)
+    return int(500 ** (1.07 ** (level + 1)))
 
 
 # ---------------- Achievements ----------------
@@ -783,7 +767,7 @@ notification_duration_seconds = 3.0
 
 # Additional achievement tracking state
 power_usage_counters = {}        # e.g. {'power_yellow': 3}
-recent_powers = []              # list of (power_name, frame_count) for synergy detection
+recent_powers = []              # list of (power_name, frame_count, lane) for synergy detection
 top50_hold_frames = 0
 top30_hold_frames = 0
 original_alive_frames = 0
@@ -924,6 +908,78 @@ def unlock_achievement(aid):
     return True
 
 
+def on_synergy_triggered(combo):
+    """Handle a true synergy event: award the weakest participating bird 10% of the XP gap.
+
+    combo: set/list of power names involved. The function inspects `recent_powers`
+    (expected entries as (power, frame, lane) where lane is an int) and maps lanes
+    to bird indices. Dead birds are ignored. If at least two participants are found,
+    the weakest receives ceil(10% * gap) XP (we use int(gap*0.10) with min 1).
+    """
+    try:
+        if not combo or not isinstance(combo, (set, list)):
+            return None
+        participants = []
+        for entry in recent_powers:
+            try:
+                if not entry:
+                    continue
+                if len(entry) >= 3:
+                    p, f, l = entry[0], entry[1], entry[2]
+                else:
+                    p, f = entry[0], entry[1]
+                    l = None
+                if p in combo and l is not None:
+                    try:
+                        if l in random_lanes:
+                            bidx = random_lanes.index(l)
+                        else:
+                            bidx = next((i for i in range(NUM_BALLS) if random_lanes[i] == l), None)
+                    except Exception:
+                        bidx = None
+                    if bidx is None or bidx < 0:
+                        continue
+                    try:
+                        if ball_lost and ball_lost[bidx]:
+                            continue
+                    except Exception:
+                        pass
+                    participants.append(bidx)
+            except Exception:
+                continue
+
+        participants = list(dict.fromkeys(participants))
+        if len(participants) < 2:
+            return None
+
+        xp_list = []
+        for b in participants:
+            try:
+                xp_list.append((b, int(per_bird_xp[b] or 0)))
+            except Exception:
+                xp_list.append((b, 0))
+
+        try:
+            strongest = max(xp_list, key=lambda t: t[1])
+            weakest = min(xp_list, key=lambda t: t[1])
+            gap = strongest[1] - weakest[1]
+            if gap > 0:
+                transfer = int(gap * 0.10)
+                if transfer <= 0:
+                    transfer = 1
+                award_xp(weakest[0], transfer)
+                try:
+                    wlane = random_lanes[weakest[0]]
+                    add_notification(f"Synergy: +{transfer} XP to lane {wlane+1}")
+                except Exception:
+                    pass
+                return transfer
+        except Exception:
+            return None
+    except Exception:
+        return None
+
+
 def check_achievements_event(event, **kwargs):
     """Handle simple achievement triggers.
 
@@ -996,13 +1052,13 @@ def check_achievements_event(event, **kwargs):
                 if a['progress'] >= a.get('goal', 0):
                     unlock_achievement(aid)
 
-        # record recent powers for synergy detection
-        recent_powers.append((power, frame_count))
+        # record recent powers for synergy detection (include lane)
+        recent_powers.append((power, frame_count, lane))
         # keep recent_powers short (last 300 frames)
-        recent_powers[:] = [(p, f) for (p, f) in recent_powers if frame_count - f <= 300]
+        recent_powers[:] = [(p, f, l) for (p, f, l) in recent_powers if frame_count - f <= 300]
 
-        # detect pair/triple synergies
-        distinct = set(p for (p, f) in recent_powers)
+        # detect pair/triple synergies (distinct power names)
+        distinct = set(p for (p, f, l) in recent_powers)
         if len(distinct) >= 2:
             check_achievements_event('synergy', combo=distinct)
         if len(distinct) >= 3:
@@ -1027,6 +1083,18 @@ def check_achievements_event(event, **kwargs):
             for aid, a in achievements.items():
                 if a.get('type') == 'special' and a.get('event') == 'synergy_pair' and not a.get('unlocked'):
                     unlock_achievement(aid)
+
+        # Synergy XP transfer is handled by the dedicated helper. Only trigger it when
+        # the caller explicitly requests it via explicit=True in kwargs.
+        try:
+            explicit = bool(kwargs.get('explicit', False))
+            if explicit and isinstance(combo, (set, list)) and len(combo) >= 2:
+                try:
+                    on_synergy_triggered(combo)
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     elif event == 'area_hold':
         # kwargs: area ('top50'|'top30'), frames
@@ -1164,7 +1232,7 @@ def compute_grade_from_xp(xp):
 
     # Build thresholds for C1, C2, B1, B2, A1, A2, S using iterative exponentiation
     labels = ['C1', 'C2', 'B1', 'B2', 'A1', 'A2', 'S']
-    exps = [ (1.17 ** n) for n in range(len(labels)) ]  # 1.0, 1.2, 1.44, ...
+    exps = [ (1.1 ** n) for n in range(len(labels)) ]  # 1.0, 1.2, 1.44, ...
     thresholds = [ int(round(base ** e)) for e in exps ]
 
     # Find highest label satisfied
@@ -1309,6 +1377,52 @@ def compute_prestige():
         # On any error, fallback to neutral prestige
         return 1.0
     return float(total)
+
+
+def adjust_rarity_weights(base_weights, prestige):
+    """Adjust and normalize rarity weights according to prestige.
+
+    Algorithm:
+    - Multiply each base weight by factor = (1 + prestige * 0.1).
+    - If the total exceeds 100, remove the excess starting from the most
+      common bucket (index 0) so higher rarities are preserved.
+    - If the total is below 100, add the missing amount to the common bucket.
+    Returns a new list of floats that sum to 100.
+    """
+    try:
+        factor = 1.0 + float(prestige) * 0.1
+    except Exception:
+        factor = 1.0
+
+    new = [float(w) * factor for w in base_weights]
+    total = sum(new)
+
+    # Defensive: if total is essentially zero, fallback to equal distribution
+    if total <= 0.0:
+        n = len(base_weights)
+        return [100.0 / n] * n
+
+    # If total greater than 100, subtract excess from common-first
+    if total > 100.0:
+        excess = total - 100.0
+        for i in range(len(new)):
+            if excess <= 0:
+                break
+            take = min(excess, new[i])
+            new[i] -= take
+            excess -= take
+    elif total < 100.0:
+        # Add deficit to common to ensure sum == 100
+        deficit = 100.0 - total
+        new[0] += deficit
+
+    # Final normalization (small float rounding adjustments)
+    tot = sum(new)
+    if abs(tot - 100.0) > 1e-6 and tot > 0:
+        scale = 100.0 / tot
+        new = [w * scale for w in new]
+
+    return new
 
 
 def deduct_score(amount):
@@ -1780,6 +1894,23 @@ try:
                                                         try:
                                                             append_recent_action('bounce', lane=adj_lane, color=ball_colors[adj_bird])
                                                         except NameError:
+                                                            pass
+                                                        # When a yellow is bounced, nearby SCARED blue birds that are falling
+                                                        # and occupying adjacent lanes should lose their scared state.
+                                                        try:
+                                                            for cross_offset in [-1, 1]:
+                                                                cross_lane = adj_lane + cross_offset
+                                                                if 0 <= cross_lane < 9:
+                                                                    for bi in range(NUM_BALLS):
+                                                                        try:
+                                                                            if random_lanes[bi] == cross_lane and not ball_lost[bi] and ball_colors[bi] == BLUE and bi in scared_birds and ball_vy[bi] == 1:
+                                                                                try:
+                                                                                    del scared_birds[bi]
+                                                                                except Exception:
+                                                                                    pass
+                                                                        except Exception:
+                                                                            continue
+                                                        except Exception:
                                                             pass
                                                     else:
                                                         # Non-yellow bird - apply slow effect
@@ -2972,14 +3103,17 @@ try:
 
                             # Loot drop logic (4 tiers with new percentages)
                             tier = bat['tier']
+                            prestige = compute_prestige()
                             if tier == 1:
-                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[60, 25, 10, 5])[0]
+                                base = [60, 25, 10, 5]
                             elif tier == 2:
-                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[50, 30, 15, 5])[0]
+                                base = [50, 30, 15, 5]
                             elif tier == 3:
-                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[40, 33, 17, 10])[0]
+                                base = [40, 33, 17, 10]
                             else:  # tier 4
-                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[35, 25, 20, 15])[0]
+                                base = [35, 25, 20, 15]
+                            adj_weights = adjust_rarity_weights(base, prestige)
+                            rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=adj_weights)[0]
 
                             loot_type = choose_loot_type(rarity)
 
@@ -3061,14 +3195,17 @@ try:
                             bat_center_x = bat.get('x_pos', 0) + 4
                             closest_lane = min(range(9), key=lambda lane_idx: abs(LANE_POSITIONS[lane_idx] - bat_center_x))
                             tier = bat.get('tier', None)
+                            prestige = compute_prestige()
                             if tier == 1:
-                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[60, 25, 10, 5])[0]
+                                base = [60, 25, 10, 5]
                             elif tier == 2:
-                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[50, 30, 15, 5])[0]
+                                base = [50, 30, 15, 5]
                             elif tier == 3:
-                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[40, 33, 17, 10])[0]
+                                base = [40, 33, 17, 10]
                             else:
-                                rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[35, 25, 20, 15])[0]
+                                base = [35, 25, 20, 15]
+                            adj_weights = adjust_rarity_weights(base, prestige)
+                            rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=adj_weights)[0]
                             loot_type = choose_loot_type(rarity)
                             loot_items.append({
                                 'x_pos': LANE_POSITIONS[closest_lane],
@@ -3267,14 +3404,17 @@ try:
                                     bat_center_x = bat['x_pos'] + 4
                                     closest_lane = min(range(9), key=lambda lane_idx: abs(LANE_POSITIONS[lane_idx] - bat_center_x))
                                     tier = bat['tier']
+                                    prestige = compute_prestige()
                                     if tier == 1:
-                                        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[60, 25, 10, 5])[0]
+                                        base = [60, 25, 10, 5]
                                     elif tier == 2:
-                                        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[50, 30, 15, 5])[0]
+                                        base = [50, 30, 15, 5]
                                     elif tier == 3:
-                                        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[40, 33, 17, 10])[0]
+                                        base = [40, 33, 17, 10]
                                     else:
-                                        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=[35, 25, 20, 15])[0]
+                                        base = [35, 25, 20, 15]
+                                    adj_weights = adjust_rarity_weights(base, prestige)
+                                    rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=adj_weights)[0]
                                     loot_type = choose_loot_type(rarity)
                                     loot_items.append({
                                         'x_pos': LANE_POSITIONS[closest_lane],
@@ -3730,6 +3870,11 @@ try:
                                 if not ball_lost[i]:
                                     ball_lost[i] = True
                                     ball_y[i] = HEIGHT - 1
+                                    # Reset XP for this bird on death so a new spawn starts at 0
+                                    try:
+                                        per_bird_xp[i] = 0
+                                    except Exception:
+                                        pass
                                     lives -= 1
                                     # Check for game over
                                     if lives <= 0:
@@ -3744,6 +3889,11 @@ try:
                     elif not ball_lost[i]:  # Solo gli altri muoiono
                         ball_lost[i] = True
                         ball_y[i] = HEIGHT - 1
+                        # Reset XP for this bird on death so a new spawn starts at 0
+                        try:
+                            per_bird_xp[i] = 0
+                        except Exception:
+                            pass
                         lives -= 1
                         # Check for game over
                         if lives <= 0:
