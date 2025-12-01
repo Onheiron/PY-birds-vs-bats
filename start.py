@@ -357,7 +357,7 @@ _OBST_MAX_HP_BY_TIER = {1: 4, 2: 6, 3: 10, 4: 16}
 LANE_POSITIONS = [5, 9, 13, 17, 21, 25, 29, 33, 37]  # 9 lanes centered in game box
 
 # Ball positions and velocities
-ball_colors = [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
+ball_colors = [YELLOW, YELLOW, YELLOW, GLITCH, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
 
 # Randomize which bird goes to which lane
 random.seed()
@@ -1370,27 +1370,28 @@ def compute_prestige():
             except Exception:
                 # If ball_lost not available or malformed, assume active
                 pass
-                try:
-                    # GLITCH birds contribute a random prestige between 1 and 7 each computation
-                    if ball_colors[i] == GLITCH:
-                        try:
-                            total += float(random.randint(1, 7))
-                            continue
-                        except Exception:
-                            # fallback to normal mapping
-                            pass
 
-                    label, _ = compute_grade_from_xp(per_bird_xp[i])
-                except Exception:
-                    label = 'D'
+            try:
+                # GLITCH birds contribute a random prestige between 1 and 7 each computation
+                if ball_colors[i] == GLITCH:
+                    try:
+                        total += float(random.randint(1, 7))
+                        continue
+                    except Exception:
+                        # fallback to normal mapping
+                        pass
 
-                # If compute_grade returned multi-char like 'C1' handle it, otherwise
-                # accept single-letter 'D'/'S'
+                label, _ = compute_grade_from_xp(per_bird_xp[i])
+            except Exception:
+                label = 'D'
+
+            # If compute_grade returned multi-char like 'C1' handle it, otherwise
+            # accept single-letter 'D'/'S'
+            add = mod_map.get(label, 0.0)
+            # If label is like 'C' fallback to C1 modifier (defensive)
+            if add == 0.0 and isinstance(label, str) and len(label) == 1:
                 add = mod_map.get(label, 0.0)
-                # If label is like 'C' fallback to C1 modifier (defensive)
-                if add == 0.0 and isinstance(label, str) and len(label) == 1:
-                    add = mod_map.get(label, 0.0)
-                total += add
+            total += add
     except Exception:
         # On any error, fallback to neutral prestige
         return 1.0
