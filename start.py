@@ -2,6 +2,7 @@
 PURPLE = "\033[38;5;135m"  # Viola
 ORANGE = "\033[38;5;208m"  # Arancione
 PATCHWORK = "\033[38;5;202m"  # Patchwork bird color (distinct escape)
+COOKIE = "\033[38;5;180m"  # Light brown "cookie" bird
 import sys
 import time
 import os
@@ -62,6 +63,7 @@ def choose_loot_type(rarity):
             'patchwork_egg': PATCHWORK,
             'purple_egg': PURPLE,
             'orange_egg': ORANGE,
+            'cookie_egg': COOKIE,
         }
 
         # Limits by category (None = unlimited)
@@ -76,6 +78,7 @@ def choose_loot_type(rarity):
             STEALTH: 1,
             WHITE: 1,
             ORANGE: 1,
+            COOKIE: 1,
         }
 
         def allowed(egg_name):
@@ -100,8 +103,9 @@ def choose_loot_type(rarity):
             candidates = ['patchwork_egg', 'purple_egg']
             weights = [50, 50]
         elif rarity == 'rare':
-            candidates = ['clockwork_egg', 'stealth_egg']
-            weights = [55, 45]
+            # include COOKIE as a rare egg candidate
+            candidates = ['clockwork_egg', 'stealth_egg', 'cookie_egg']
+            weights = [45, 35, 20]
         else:
             candidates = ['white_egg', 'orange_egg',' gold_egg']
             weights = [35, 35, 30]
@@ -352,7 +356,7 @@ _OBST_MAX_HP_BY_TIER = {1: 4, 2: 6, 3: 10, 4: 16}
 LANE_POSITIONS = [5, 9, 13, 17, 21, 25, 29, 33, 37]  # 9 lanes centered in game box
 
 # Ball positions and velocities
-ball_colors = [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
+ball_colors = [YELLOW, YELLOW, YELLOW, COOKIE, RED, RED, RED, BLUE, BLUE]  # 4 yellow, 3 red, 2 blue
 
 # Randomize which bird goes to which lane
 random.seed()
@@ -540,6 +544,8 @@ for color in ball_colors:
         ball_speeds.append(4)  # Same as blue
     elif color == CLOCKWORK:
         ball_speeds.append(2)  # Come il giallo (CLOCKWORK)
+    elif color == COOKIE:
+        ball_speeds.append(3)  # COOKIE = velocità 3
     elif color == ORANGE:
         ball_speeds.append(5)  # Arancione = velocità 5
     elif color == PATCHWORK:
@@ -615,6 +621,9 @@ stealth_timers = {}
 stealth_prev_speeds = {}
 # Clockwork bird charge state: maps bird_index -> charge (int)
 clockwork_charge = {}
+
+# Cookie bird crumb counter: maps bird_index -> crumbs left/created
+cookie_crumbs_made = {}
 
 # Power-ups state (using dict to avoid scope issues)
 powerups = {
@@ -1938,6 +1947,46 @@ try:
                                         'powered': damage_bonus > 0,
                                         'owner': bird_in_lane
                                     })
+                                elif bird_color == COOKIE:
+                                    # COOKIE power: drop a cookie crumb at current lane containing 3/4 of cookie's XP
+                                    try:
+                                        crumb_xp = int(max(0, int(per_bird_xp[bird_in_lane] * 0.75)))
+                                    except Exception:
+                                        crumb_xp = 0
+                                    try:
+                                        loot_items.append({
+                                            'x_pos': LANE_POSITIONS[bird_lane],
+                                            'y_pos': ball_y[bird_in_lane],
+                                            'type': 'cookie_crumb',
+                                            'rarity': 'rare',
+                                            'xp': crumb_xp,
+                                            'spawn_ts': time.time()
+                                        })
+                                    except Exception:
+                                        pass
+
+                                    # Track crumbs created by this cookie bird
+                                    try:
+                                        cookie_crumbs_made[bird_in_lane] = cookie_crumbs_made.get(bird_in_lane, 0) + 1
+                                        # After leaving 5 crumbs, the cookie bird disappears and should count as a loss
+                                        if cookie_crumbs_made.get(bird_in_lane, 0) >= 5:
+                                            try:
+                                                # Only count the loss once (guard against double-decrement)
+                                                if not ball_lost[bird_in_lane]:
+                                                    ball_lost[bird_in_lane] = True
+                                                    # place bird off-screen to indicate loss
+                                                    ball_y[bird_in_lane] = HEIGHT - 1
+                                                    per_bird_xp[bird_in_lane] = 0
+                                                    try:
+                                                        lives -= 1
+                                                        if lives <= 0:
+                                                            game_over = True
+                                                    except Exception:
+                                                        pass
+                                            except Exception:
+                                                pass
+                                    except Exception:
+                                        pass
 
                                 elif bird_color == BLUE:
                                     # Blue power: Speed boost + extra damage flag
@@ -2252,6 +2301,11 @@ try:
                     output += f"\033[{y_pos};{loot['x_pos']}H{PATCHWORK}⬯{RESET}"
                 elif loot_type == 'orange_egg':
                     output += f"\033[{y_pos};{loot['x_pos']}H{ORANGE}⬯{RESET}"
+                elif loot_type == 'cookie_egg':
+                    output += f"\033[{y_pos};{loot['x_pos']}H{COOKIE}⬯{RESET}"
+                elif loot_type == 'cookie_crumb':
+                    # Small dot for crumb
+                    output += f"\033[{y_pos};{loot['x_pos']}H{COOKIE}•{RESET}"
                 # Cursor power-ups
                 elif 'wide_cursor' in loot_type:
                     output += f"\033[{y_pos};{loot['x_pos']}H{power_color}↔{RESET}"
@@ -3522,6 +3576,14 @@ try:
                         # Notify achievements about collected loot
                         check_achievements_event('collect', loot=loot_type)
 
+                        # Cookie crumbs should NOT be collected by COOKIE birds themselves;
+                        # if the nearest collector is the COOKIE that dropped it, skip collection.
+                        try:
+                            if loot_type == 'cookie_crumb' and ball_colors[i] == COOKIE:
+                                continue
+                        except Exception:
+                            pass
+
                         loot_items.remove(loot)
 
                         # Apply loot effects
@@ -3533,6 +3595,25 @@ try:
                                     ball_lost[idx] = False
                                     # Ensure speed matches color
                                     ball_speeds[idx] = 2
+                                    ball_y[idx] = STARTING_LINE
+                                    ball_vy[idx] = -1
+                                    lives += 1  # Restore life
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
+                                    break
+                        elif loot_type == 'cookie_egg':
+                            for idx in range(NUM_BALLS):
+                                if ball_lost[idx]:
+                                    ball_colors[idx] = COOKIE
+                                    ball_lost[idx] = False
+                                    # Ensure speed matches color
+                                    ball_speeds[idx] = 3
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
                                     lives += 1  # Restore life
@@ -3717,6 +3798,22 @@ try:
                                     except Exception:
                                         pass
                                     break
+                        # Cookie crumb pickup: grant contained XP to non-COOKIE birds only
+                        elif loot_type == 'cookie_crumb':
+                            # Only non-COOKIE birds can collect crumbs
+                            try:
+                                if ball_colors[i] == COOKIE:
+                                    # Cookie birds ignore crumbs
+                                    pass
+                                else:
+                                    xp_val = int(loot.get('xp', 0) or 0)
+                                    if xp_val > 0:
+                                        try:
+                                            award_xp(i, xp_val)
+                                        except Exception:
+                                            pass
+                            except Exception:
+                                pass
                         elif loot_type == 'wide_cursor':
                             powerups['wide_cursor_active'] = True
                             powerups['wide_cursor_frames'] = int(10.0 / base_sleep)
