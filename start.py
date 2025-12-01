@@ -208,7 +208,7 @@ BLACK = "\033[38;5;16m"
 STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
 # Game version (update this when releasing a new build)
-GAME_VERSION = "0.6.0"
+GAME_VERSION = "0.7.0"
 
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
