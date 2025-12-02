@@ -1833,9 +1833,9 @@ try:
                                 # Don't perform the normal immediate bounce
                                 continue
                             # Normal behavior for non-DINOSAUR birds
-                            # GLITCH has a 20% chance to ignore the bounce and keep falling
+                            # GLITCH has a 5% chance to ignore the bounce and keep falling
                             try:
-                                if ball_colors[bird_in_lane] == GLITCH and random.random() < 0.20:
+                                if ball_colors[bird_in_lane] == GLITCH and random.random() < 0.05:
                                     # ignore bounce
                                     pass
                                 else:
@@ -1920,9 +1920,9 @@ try:
                                                     if ball_vy[adj_bird] == 1:
                                                         # If the adjacent bird is a yellow/patchwork, bounce it
                                                         if ball_colors[adj_bird] == YELLOW or ball_colors[adj_bird] == PATCHWORK:
-                                                            # GLITCH has a 20% chance to ignore the bounce
+                                                            # GLITCH has a 5% chance to ignore the bounce
                                                             try:
-                                                                if ball_colors[adj_bird] == GLITCH and random.random() < 0.20:
+                                                                if ball_colors[adj_bird] == GLITCH and random.random() < 0.05:
                                                                     # ignore bounce
                                                                     pass
                                                                 else:
@@ -2049,9 +2049,9 @@ try:
                                                         # ignore bounce for scared bird
                                                         pass
                                                     else:
-                                                        # GLITCH has 20% chance to ignore the bounce
+                                                        # GLITCH has 5% chance to ignore the bounce
                                                         try:
-                                                            if ball_colors[adj_bird] == GLITCH and random.random() < 0.20:
+                                                            if ball_colors[adj_bird] == GLITCH and random.random() < 0.05:
                                                                 # ignore bounce
                                                                 pass
                                                             else:
@@ -3434,23 +3434,23 @@ try:
             if i in scared_birds and ball_vy[i] == 1:
                 current_speed += 1
 
-            # GLITCH: 20% chance to flip direction spontaneously each step
+            # GLITCH: 1% chance to flip direction spontaneously each step
             try:
                 if ball_colors[i] == GLITCH and not ball_lost[i]:
-                    if random.random() < 0.20:
+                    if random.random() < 0.01:
                         ball_vy[i] = -ball_vy[i]
             except Exception:
                 pass
 
             # GLITCH additional chaotic behaviors requested by user:
-            # 1) 10% chance to swap lanes with another active bird
-            # 2) 10% chance to nudge the player cursor +/-1 lane
+            # 1) 1% chance to swap lanes with another active bird
+            # 2) 1% chance to nudge the player cursor +/-1 lane
             # 3) 1% chance to duplicate into another lane (resurrect or replace)
             try:
                 if ball_colors[i] == GLITCH and not ball_lost[i]:
-                    # 1) swap lanes with another random active bird (10%)
+                    # 1) swap lanes with another random active bird (1%)
                     try:
-                        if random.random() < 0.10:
+                        if random.random() < 0.01:
                             others = [j for j in range(NUM_BALLS) if j != i and not ball_lost[j]]
                             if others:
                                 j = random.choice(others)
@@ -3467,9 +3467,9 @@ try:
                     except Exception:
                         pass
 
-                    # 2) nudge player cursor by -1 or +1 with 10% chance
+                    # 2) nudge player cursor by -1 or +1 with 1% chance
                     try:
-                        if random.random() < 0.10:
+                        if random.random() < 0.01:
                             delta = random.choice([-1, 1])
                             # clamp between 0 and 8 (9 lanes)
                             player_lane = max(0, min(8, player_lane + delta))
@@ -3757,14 +3757,14 @@ try:
                         # Notify achievements about collected loot
                         check_achievements_event('collect', loot=loot_type)
 
-                        # GLITCH interaction with loot: 20% ignore, 20% tier-up
+                        # GLITCH interaction with loot: 5% ignore, 5% tier-up
                         try:
                             if ball_colors[i] == GLITCH:
                                 r = random.random()
-                                if r < 0.20:
+                                if r < 0.05:
                                     # ignore the loot entirely
                                     continue
-                                elif r < 0.40:
+                                elif r < 0.10:
                                     # promote rarity one tier
                                     rar = loot.get('rarity', 'common')
                                     if rar == 'common':
