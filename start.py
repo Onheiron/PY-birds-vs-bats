@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-PURPLE = "\033[38;5;135m"  # Viola
+# More saturated purple for better visibility (brighter magenta)
+PURPLE = "\033[38;5;201m"  # Viola (saturated)
 ORANGE = "\033[38;5;208m"  # Arancione
 PATCHWORK = "\033[38;5;202m"  # Patchwork bird color (distinct escape)
 COOKIE = "\033[38;5;180m"  # Light brown "cookie" bird
@@ -379,6 +380,27 @@ bird_power_used = [False] * NUM_BALLS  # Track if bird used its special power wh
 # Allow tracking how many times a bird used its power during the current ascent
 bird_power_uses = [0] * NUM_BALLS
 
+
+def set_ball_vy(idx, val):
+    """Safely set vertical velocity for bird idx.
+
+    When a PURPLE bird is actively charging (purple_state == 2) or is in the
+    immediate post-fire protection window (purple_just_fired_frames > 0), we
+    must avoid overwriting its stored vertical velocity to prevent flips and
+    unintended motion. This helper centralizes that guard.
+    """
+    try:
+        if 0 <= int(idx) < NUM_BALLS:
+            if purple_state[idx] == 2 or (purple_just_fired_frames and purple_just_fired_frames[idx] > 0):
+                return
+            ball_vy[idx] = val
+    except Exception:
+        try:
+            # best-effort fallback
+            ball_vy[idx] = val
+        except Exception:
+            pass
+
 def reset_bird_power(idx):
     try:
         bird_power_used[idx] = False
@@ -631,6 +653,24 @@ clockwork_charge = {}
 # Cookie bird crumb counter: maps bird_index -> crumbs left/created
 cookie_crumbs_made = {}
 
+# Purple bird charging state machine per bird:
+# 0 = idle, 1 = primed (waiting one frame), 2 = charging (active)
+purple_state = [0] * NUM_BALLS
+# frame when primed was set (used to transition to charging)
+purple_primed_frame = [0] * NUM_BALLS
+# frame when charging actually started (used to compute elapsed seconds)
+purple_charge_started_frame = [0] * NUM_BALLS
+# store previous vertical velocity when charging so we can freeze the bird
+purple_saved_vy = [None] * NUM_BALLS
+# Miss counters to debounce priming and fast release detection
+purple_miss_count = [0] * NUM_BALLS
+purple_just_fired_frames = [0] * NUM_BALLS
+purple_hold_counter = [0] * NUM_BALLS
+
+# Global UP hold/miss counters for debounced release detection
+up_hold_counter = 0
+up_miss_counter = 0
+
 # Power-ups state (using dict to avoid scope issues)
 powerups = {
     'wide_cursor_active': False,
@@ -689,7 +729,7 @@ def perform_shuffle(count: int):
                     try:
                         ball_cols[src_idx] = LANE_POSITIONS[random_lanes[src_idx]]
                         ball_y[src_idx] = STARTING_LINE
-                        ball_vy[src_idx] = -1
+                        set_ball_vy(src_idx, -1)
                         reset_bird_power(src_idx)
                     except Exception:
                         pass
@@ -713,14 +753,14 @@ def perform_shuffle(count: int):
                     # Update both moved birds' rendering cols and reset positions to starting line
                     ball_cols[src_idx] = LANE_POSITIONS[random_lanes[src_idx]]
                     ball_y[src_idx] = STARTING_LINE
-                    ball_vy[src_idx] = -1
+                    set_ball_vy(src_idx, -1)
                     reset_bird_power(src_idx)
                 except Exception:
                     pass
                 try:
                     ball_cols[tgt_idx] = LANE_POSITIONS[random_lanes[tgt_idx]]
                     ball_y[tgt_idx] = STARTING_LINE
-                    ball_vy[tgt_idx] = -1
+                    set_ball_vy(tgt_idx, -1)
                     reset_bird_power(tgt_idx)
                 except Exception:
                     pass
@@ -740,14 +780,14 @@ def perform_shuffle(count: int):
                 try:
                     ball_cols[src_idx] = LANE_POSITIONS[random_lanes[src_idx]]
                     ball_y[src_idx] = STARTING_LINE
-                    ball_vy[src_idx] = -1
+                    set_ball_vy(src_idx, -1)
                     reset_bird_power(src_idx)
                 except Exception:
                     pass
                 try:
                     ball_cols[other] = LANE_POSITIONS[random_lanes[other]]
                     ball_y[other] = STARTING_LINE
-                    ball_vy[other] = -1
+                    set_ball_vy(other, -1)
                     reset_bird_power(other)
                 except Exception:
                     pass
@@ -1461,6 +1501,7 @@ def deduct_score(amount):
 player_lane = 2
 selected_lane = None  # Lane selected when space is pressed
 last_space_state = False  # Track last frame's space state for edge detection
+last_up_state = False  # Track UP edge for charging detection
 
 # Frame counter and speed settings
 frame_count = 0
@@ -1571,37 +1612,58 @@ def get_key():
     else:
         # Unix/macOS version - truly non-blocking with fcntl
         try:
-            key = sys.stdin.read(1)
-            if key == '\x1b':  # Escape sequence
-                # Try to read the rest of the sequence
-                seq = key
-                try:
-                    seq += sys.stdin.read(2)
-                except:
-                    pass
-                if seq == '\x1b[D':
-                    return 'LEFT'
-                elif seq == '\x1b[C':
-                    return 'RIGHT'
-                elif seq == '\x1b[A':
-                    return 'UP'
-                elif seq == '\x1b[B':
-                    return 'DOWN'
-            elif key == ' ':  # Space
-                return 'SPACE'
-            elif key == '\x03' or key == 'q':  # Ctrl+C or 'q'
-                return 'QUIT'
-            else:
-                # Return other printable characters (letters, digits, etc.) so
-                # the main loop can handle toggles like 'm' for music.
-                try:
-                    if key and len(key) == 1:
-                        return key
-                except Exception:
-                    pass
-        except:
-            pass
-        return None
+            # Read all available input to avoid buffer buildup of repeated keys.
+            # Non-blocking read will return available bytes or '' if none.
+            try:
+                buf = sys.stdin.read(4096)
+            except Exception:
+                buf = ''
+
+            if not buf:
+                return None
+
+            # Parse the buffer and pick the last meaningful key event.
+            last = None
+            i = 0
+            L = len(buf)
+            while i < L:
+                ch = buf[i]
+                # Escape sequences (arrows) are 3 chars: \x1b[A etc.
+                if ch == '\x1b' and i + 2 < L:
+                    seq = buf[i:i+3]
+                    if seq == '\x1b[D':
+                        last = 'LEFT'
+                        i += 3
+                        continue
+                    elif seq == '\x1b[C':
+                        last = 'RIGHT'
+                        i += 3
+                        continue
+                    elif seq == '\x1b[A':
+                        last = 'UP'
+                        i += 3
+                        continue
+                    elif seq == '\x1b[B':
+                        last = 'DOWN'
+                        i += 3
+                        continue
+                # Single-char controls
+                if ch == ' ':
+                    last = 'SPACE'
+                elif ch == '\x03' or ch == 'q':
+                    last = 'QUIT'
+                else:
+                    # printable char
+                    try:
+                        if len(ch) == 1 and ch.isprintable():
+                            last = ch
+                    except Exception:
+                        pass
+                i += 1
+
+            return last
+        except Exception:
+            return None
 
 # --- Colore e sprite CLOCKWORK ---
 CLOCKWORK_BIRD_UP_1 = BIRD_UP_1
@@ -1623,7 +1685,7 @@ def handle_clockwork_auto_bounce():
                     clockwork_charge[i] = 2
                 if charge > 0:
                     ball_y[i] = STARTING_LINE
-                    ball_vy[i] = -1
+                    set_ball_vy(i, -1)
                     reset_bird_power(i)
                 # if charge == 0, let it fall through (no auto-bounce)
         except Exception:
@@ -1745,11 +1807,11 @@ try:
                             if not ball_lost[bird_in_selected]:
                                 if not (ball_colors[bird_in_selected] == ORANGE and ball_speeds[bird_in_selected] == 0 and ball_y[bird_in_selected] == 999):
                                     ball_y[bird_in_selected] = STARTING_LINE
-                                    ball_vy[bird_in_selected] = -1
+                                    set_ball_vy(bird_in_selected, -1)
                             if not ball_lost[bird_in_current]:
                                 if not (ball_colors[bird_in_current] == ORANGE and ball_speeds[bird_in_current] == 0 and ball_y[bird_in_current] == 999):
                                     ball_y[bird_in_current] = STARTING_LINE
-                                    ball_vy[bird_in_current] = -1
+                                    set_ball_vy(bird_in_current, -1)
 
                         # Always reset swap mode after attempting swap (whether successful or not)
                         selected_lane = None
@@ -1800,7 +1862,7 @@ try:
                                 continue
                             lane = random_lanes[bird_in_lane]
                             ball_y[bird_in_lane] = STARTING_LINE
-                            ball_vy[bird_in_lane] = -1
+                            set_ball_vy(bird_in_lane, -1)
                             reset_bird_power(bird_in_lane)
                             ball_speeds[bird_in_lane] = 5
                             item = next((li for li in loot_items
@@ -1820,7 +1882,7 @@ try:
                                 if cnt % 3 == 0:
                                     # If this is the final (15th) press, bounce up
                                     if cnt >= 15:
-                                        ball_vy[bird_in_lane] = -1
+                                        set_ball_vy(bird_in_lane, -1)
                                         ball_speeds[bird_in_lane] = 4
                                         dinosaur_up_presses[bird_in_lane] = 0
                                         reset_bird_power(bird_in_lane)
@@ -1839,7 +1901,7 @@ try:
                                     # ignore bounce
                                     pass
                                 else:
-                                    ball_vy[bird_in_lane] = -1
+                                    set_ball_vy(bird_in_lane, -1)
                             except Exception:
                                 ball_vy[bird_in_lane] = -1
                             reset_bird_power(bird_in_lane)  # Reset power when bird starts rising
@@ -1926,9 +1988,9 @@ try:
                                                                     # ignore bounce
                                                                     pass
                                                                 else:
-                                                                    ball_vy[adj_bird] = -1
+                                                                    set_ball_vy(adj_bird, -1)
                                                             except Exception:
-                                                                ball_vy[adj_bird] = -1
+                                                                set_ball_vy(adj_bird, -1)
 
                                                             reset_bird_power(adj_bird)  # Reset power for bounced yellow
                                                             affected_count += 1
@@ -1960,8 +2022,8 @@ try:
                                                             affected_count += 1
                                                 
 
-                                elif bird_color == RED or bird_color == PURPLE:
-                                    # Red/Purple power: Launch projectile
+                                elif bird_color == RED:
+                                    # Red power: Launch projectile immediately
                                     # Count adjacent red/purple/PATCHWORK birds moving up for damage bonus
                                     damage_bonus = 0
                                     for adj_offset in [-1, 1]:
@@ -1978,8 +2040,22 @@ try:
                                         'lane': bird_lane,
                                         'damage': 1 + damage_bonus,
                                         'powered': damage_bonus > 0,
-                                        'owner': bird_in_lane
+                                        'owner': bird_in_lane,
+                                        'speed': 1
                                     })
+
+                                elif bird_color == PURPLE:
+                                    # PURPLE: begin priming the charge when UP is held; actual charging starts next frame
+                                    try:
+                                                if purple_state[bird_in_lane] == 0:
+                                                    purple_state[bird_in_lane] = 1
+                                                    purple_primed_frame[bird_in_lane] = frame_count
+                                                    try:
+                                                        purple_hold_counter[bird_in_lane] = 0
+                                                    except Exception:
+                                                        pass
+                                    except Exception:
+                                        pass
                                 elif bird_color == COOKIE:
                                     # COOKIE power: drop a cookie crumb at current lane containing 3/4 of cookie's XP
                                     try:
@@ -2055,9 +2131,9 @@ try:
                                                                 # ignore bounce
                                                                 pass
                                                             else:
-                                                                ball_vy[adj_bird] = -1
+                                                                set_ball_vy(adj_bird, -1)
                                                         except Exception:
-                                                            ball_vy[adj_bird] = -1
+                                                            set_ball_vy(adj_bird, -1)
                                                         reset_bird_power(adj_bird)  # Reset their power
                                                         try:
                                                             append_recent_action('bounce', lane=adj_lane, color=ball_colors[adj_bird])
@@ -2111,7 +2187,7 @@ try:
                                                                         else:
                                                                             if ball_colors[y_bird] == YELLOW:
                                                                                         # Bounce yellow bird
-                                                                                        ball_vy[y_bird] = -1
+                                                                                        set_ball_vy(y_bird, -1)
                                                                                         reset_bird_power(y_bird)
                                                                             else:
                                                                                 # Slow non-yellow bird
@@ -2188,7 +2264,7 @@ try:
                         bird_in_lane = random_lanes.index(lane) if lane in random_lanes else -1
                         if bird_in_lane >= 0 and not ball_lost[bird_in_lane]:
                             if ball_vy[bird_in_lane] == -1:  # Moving up - pull it down
-                                ball_vy[bird_in_lane] = 1
+                                set_ball_vy(bird_in_lane, 1)
                                 # Apply suction boost if configured
                                 if powerups['suction_boost_duration'] > 0 and bird_in_lane not in speed_boosts:
                                     boost_frames = int(powerups['suction_boost_duration'] / base_sleep)
@@ -2369,13 +2445,14 @@ try:
                     # Use the chosen decorative shuffle icon
                     output += f"\033[{y_pos};{loot['x_pos']}H{power_color}𖦹{RESET}"
         
-        # Draw red projectiles
+        # Draw projectiles (red and others)
         for proj in red_projectiles:
             y_pos = proj['y_pos'] + 2  # +2 for header offset
             if 3 <= y_pos < HEIGHT + 2:
                 # Use • for powered (bonus damage), ⋅ for base
                 symbol = "•" if proj.get('powered', False) else "⋅"
-                output += f"\033[{y_pos};{proj['x_pos']}H{RED}{symbol}{RESET}"
+                proj_color = proj.get('color', RED)
+                output += f"\033[{y_pos};{proj['x_pos']}H{proj_color}{symbol}{RESET}"
         
         # Draw active birds
         for b in range(NUM_BALLS):
@@ -2513,7 +2590,36 @@ try:
                             output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{colored}"
                         else:
                             output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{color}{line}{RESET}"
-        
+                    # After drawing the sprite lines, render a PURPLE charging orb in front of the bird if applicable
+                    try:
+                        if ball_colors[b] == PURPLE and purple_state[b] == 2:
+                            start_frame = purple_charge_started_frame[b]
+                            # Only render after charging actually started
+                            if frame_count >= start_frame:
+                                try:
+                                    elapsed_seconds = int((frame_count - start_frame) * base_sleep)
+                                except Exception:
+                                    try:
+                                        elapsed_seconds = int(float(frame_count - start_frame) * float(base_sleep))
+                                    except Exception:
+                                        elapsed_seconds = 0
+                                s = max(0, min(3, elapsed_seconds))
+                                if s <= 0:
+                                    sym = '⋅'
+                                elif s == 1:
+                                    sym = '•'
+                                else:
+                                    sym = '●'
+                                # place orb in front of the bird (one line above the sprite)
+                                orb_y = ball_y[b] + 1 + 2 - 1
+                                if 3 <= orb_y < HEIGHT + 2:
+                                    try:
+                                        output += f"\033[{orb_y};{ball_cols[b]}H{PURPLE}{sym}{RESET}"
+                                    except Exception:
+                                        pass
+                    except Exception:
+                        pass
+
         # Check for level up
         if score >= calculate_level_threshold(level):
             level += 1
@@ -2692,7 +2798,7 @@ try:
                                 else:
                                     # Enter freefall: set very fast falling speed and ensure bird is falling
                                     ball_speeds[i] = 6
-                                    ball_vy[i] = 1
+                                    set_ball_vy(i, 1)
                                     add_notification('Clockwork freefall!')
                     except Exception:
                         pass
@@ -3176,17 +3282,180 @@ try:
             if bird_idx in scared_birds:
                 del scared_birds[bird_idx]
         
+        # Track UP hold/release state (edge detection) to support charging behavior
+        # Use prev_up_state to remember the previous-frame state so intermittent
+        # terminal key-repeat (missing frames) doesn't cancel primed charging.
+        # Debounced UP hold/release detection to avoid single-frame glitches
+        try:
+            up_pressed_this_frame = (key == 'UP')
+        except Exception:
+            up_pressed_this_frame = False
+
+        try:
+            if up_pressed_this_frame:
+                up_hold_counter = up_hold_counter + 1
+                up_miss_counter = 0
+            else:
+                up_miss_counter = up_miss_counter + 1
+        except Exception:
+            try:
+                up_hold_counter = 0
+                up_miss_counter = 0
+            except Exception:
+                up_hold_counter = 0
+                up_miss_counter = 0
+
+        # Consider a release only when UP has been missing for >=2 consecutive frames
+        try:
+            up_released = (up_hold_counter > 0 and up_miss_counter >= 2)
+            if up_released:
+                up_hold_counter = 0
+                up_miss_counter = 0
+        except Exception:
+            up_released = False
+
+        # Handle PURPLE charging state machine per bird
+        try:
+            for b in range(NUM_BALLS):
+                try:
+                    state = purple_state[b]
+                    # Transition primed -> charging on next frame if UP still held
+                    if state == 1:
+                        # Transition primed -> charging if UP is still considered held.
+                        # Use prev_up_state OR current up_pressed_this_frame to tolerate
+                        # intermittent key-repeat frames where the terminal doesn't
+                        # emit the arrow every single game frame.
+                        # Consider UP held only if currently pressed (debounced via miss count).
+                        held = up_pressed_this_frame
+
+                        # Enter charging if we've not seen too many misses since priming
+                        if frame_count > purple_primed_frame[b] and purple_miss_count[b] < 2 and not ball_lost[b] and ball_vy[b] == -1:
+                            # Enter charging: save current vy (do NOT change ball_vy so sprite/direction remains)
+                            try:
+                                purple_saved_vy[b] = ball_vy[b]
+                            except Exception:
+                                purple_saved_vy[b] = None
+                            purple_state[b] = 2
+                            purple_charge_started_frame[b] = frame_count
+                        else:
+                            # Debounced cancel: allow up to 1 missed frame before cancelling primed
+                            if not held:
+                                purple_miss_count[b] += 1
+                            else:
+                                purple_miss_count[b] = 0
+
+                            if purple_miss_count[b] >= 3:
+                                try:
+                                    if bird_power_uses[b] > 0:
+                                        bird_power_uses[b] = max(0, bird_power_uses[b] - 1)
+                                    bird_power_used[b] = False
+                                except Exception:
+                                    pass
+                                # ensure any saved vy is cleared
+                                try:
+                                    purple_saved_vy[b] = None
+                                except Exception:
+                                    pass
+                                purple_state[b] = 0
+                                purple_primed_frame[b] = 0
+                                purple_miss_count[b] = 0
+
+                    elif state == 2:
+                        # Charging: compute elapsed seconds
+                        start_frame = purple_charge_started_frame[b]
+                        elapsed_seconds = 0
+                        try:
+                            elapsed_seconds = int((frame_count - start_frame) * base_sleep)
+                        except Exception:
+                            try:
+                                elapsed_seconds = int(float(frame_count - start_frame) * float(base_sleep))
+                            except Exception:
+                                elapsed_seconds = 0
+                        s = max(0, min(3, elapsed_seconds))
+
+                        # Auto-fire at max charge
+                        if s >= 3:
+                            fire_now = True
+                        else:
+                            # Only fire when player releases UP or the bird is lost.
+                            # Do NOT treat changes to ball_vy as a trigger because we
+                            # intentionally set ball_vy=0 to freeze the bird while
+                            # charging; treating that as 'not -1' caused immediate
+                            # accidental firing.
+                            fire_now = bool(up_released or ball_lost[b])
+
+                        if fire_now:
+                            if s >= 1:
+                                dmg = int(pow(4, s))
+                                try:
+                                    red_projectiles.append({
+                                        'x_pos': LANE_POSITIONS[random_lanes[b]],
+                                        'y_pos': ball_y[b],
+                                        'lane': random_lanes[b],
+                                        'damage': dmg,
+                                        'powered': dmg > 1,
+                                        'owner': b,
+                                        'speed': 4,
+                                        'color': PURPLE
+                                    })
+                                    # Briefly protect the bird from immediate collision changes
+                                    try:
+                                        # Provide a slightly larger protection window (frames)
+                                        # so the per-bird decrement at loop start doesn't
+                                        # immediately clear the protection. Use a small
+                                        # safety margin (at least 3 frames).
+                                        purple_just_fired_frames[b] = max(3, int(0.2 / base_sleep) + 2)
+                                    except Exception:
+                                        purple_just_fired_frames[b] = 3
+                                except Exception:
+                                    pass
+                            else:
+                                # Cancelled before 1s: refund power
+                                try:
+                                    if bird_power_uses[b] > 0:
+                                        bird_power_uses[b] = max(0, bird_power_uses[b] - 1)
+                                    bird_power_used[b] = False
+                                except Exception:
+                                    pass
+
+                            # Restore bird vertical movement from saved vy
+                            try:
+                                if purple_saved_vy[b] is not None:
+                                    ball_vy[b] = purple_saved_vy[b]
+                            except Exception:
+                                pass
+                            try:
+                                purple_saved_vy[b] = None
+                            except Exception:
+                                pass
+
+                            # Reset charging state
+                            purple_state[b] = 0
+                            purple_charge_started_frame[b] = 0
+                            purple_primed_frame[b] = 0
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
         # Update red projectiles
         for proj in red_projectiles[:]:
-            # Move projectile up at speed 5
-            if frame_count % 1 == 0:  # Speed 5 = move every frame
+            # Move projectile upward by its speed (allow fast purple shots). We move step-by-step
+            # so collisions are checked for each unit traveled.
+            move_steps = int(max(1, proj.get('speed', 1)))
+            removed_proj = False
+            for _step in range(move_steps):
                 proj['y_pos'] -= 1
-                
+
                 # Remove if off screen
                 if proj['y_pos'] < 0:
-                    red_projectiles.remove(proj)
-                    continue
-                
+                    try:
+                        red_projectiles.remove(proj)
+                    except ValueError:
+                        pass
+                    removed_proj = True
+                    break
+
                 # Check collision with bats
                 hit_bat = False
                 for bat in bats[:]:
@@ -3194,7 +3463,7 @@ try:
                     bat_right = bat['x_pos'] + 8
                     bat_top = bat['y_pos']
                     bat_bottom = bat['y_pos'] + 1
-                    
+
                     if (bat_left <= proj['x_pos'] <= bat_right and 
                         bat_top <= proj['y_pos'] <= bat_bottom):
                         # Hit bat - deal damage based on projectile power
@@ -3255,13 +3524,19 @@ try:
                             tier = bat.get('tier', None)
                             # notify achievements about bat destroy (with tier)
                             check_achievements_event('destroy_bat', tier=tier)
-                            bats.remove(bat)
+                            try:
+                                bats.remove(bat)
+                            except ValueError:
+                                pass
                         break
-                
                 if hit_bat:
-                    red_projectiles.remove(proj)
-                    continue
-                
+                    try:
+                        red_projectiles.remove(proj)
+                    except ValueError:
+                        pass
+                    removed_proj = True
+                    break
+
                 # Check collision with obstacles
                 for obs in obstacles[:]:
                     if obs['lane'] == proj['lane'] and abs(proj['y_pos'] - obs['y_pos']) <= 1:
@@ -3279,18 +3554,18 @@ try:
 
                         if obs['hp'] <= 0:
                             try:
-                                owner = proj.get('owner', None)
-                                tier = int(obs.get('tier', 1) or 1)
-                                bonus = 10 * tier
-                                if owner is not None:
-                                    award_xp(owner, bonus)
-                            except Exception:
+                                obstacles.remove(obs)
+                            except ValueError:
                                 pass
-                            add_score(obs['tier'] * 2)
-                            obstacles.remove(obs)
-
-                        red_projectiles.remove(proj)
+                        # Projectile is consumed by hitting obstacle
+                        try:
+                            red_projectiles.remove(proj)
+                        except ValueError:
+                            pass
+                        removed_proj = True
                         break
+                if removed_proj:
+                    break
         
         # Update power-ups (decrease frame counters)
         # Active STEALTH tangible damage: while a stealth bird is tangible, apply 24 damage
@@ -3412,6 +3687,23 @@ try:
         # (slow-motion powerup removed; no expiry handling required)
         
         for i in range(NUM_BALLS):
+            # Decrement any just-fired protection timers
+            try:
+                if purple_just_fired_frames[i] > 0:
+                    purple_just_fired_frames[i] -= 1
+            except Exception:
+                pass
+
+            # If this bird is charging or under just-fired protection, keep it frozen
+            # and skip any behaviors that could change its vy (GLITCH flips, duplicates, etc.)
+            try:
+                if purple_state[i] == 2 or (purple_just_fired_frames[i] > 0):
+                    # Skip any behavior that could flip direction while charging
+                    # or during immediate post-fire protection. Do NOT modify
+                    # ball_vy here so rendering keeps the original direction.
+                    continue
+            except Exception:
+                pass
             # GLITCH birds pick a random speed each step
             try:
                 if ball_colors[i] == GLITCH and not ball_lost[i]:
@@ -3542,6 +3834,16 @@ try:
             
             # Convert speed: higher number = faster, so invert for modulo
             move_interval = max(1, 6 - current_speed)
+
+            # If this bird is actively charging (PURPLE state == 2) or was
+            # just fired, keep it frozen: skip physics, collisions and loot
+            # collection until charging finishes or protection expires.
+            try:
+                if purple_state[i] == 2 or (purple_just_fired_frames[i] > 0):
+                    continue
+            except Exception:
+                pass
+
             if not ball_lost[i] and frame_count % move_interval == 0:
                 # Calculate score for active bird based on speed and position
                 position_multiplier = 0.5 + (HEIGHT - ball_y[i]) / HEIGHT
@@ -3660,7 +3962,7 @@ try:
                                     bats.remove(bat)
                                     broken_through = True
                                 else:
-                                    ball_vy[i] = 1
+                                    set_ball_vy(i, 1)
                                     ball_y[i] = bat_bottom + 1
                                     try:
                                         if ball_colors[i] == BLUE:
@@ -3710,7 +4012,7 @@ try:
                                         obstacles.remove(obs)
                                         broken_through = True
                                     else:
-                                        ball_vy[i] = 1
+                                        set_ball_vy(i, 1)
                                         try:
                                             if ball_colors[i] == BLUE:
                                                 reset_bird_power(i)
@@ -3914,6 +4216,44 @@ try:
                                     ball_speeds[idx] = 3
                                     ball_y[idx] = STARTING_LINE
                                     ball_vy[idx] = -1
+                                    lives += 1
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
+                                    break
+                        elif loot_type == 'dinosaur_egg':
+                            for idx in range(NUM_BALLS):
+                                if ball_lost[idx]:
+                                    ball_lost[idx] = False
+                                    ball_colors[idx] = DINOSAUR
+                                    # DINOSAUR legendary: set a high base speed (4)
+                                    ball_speeds[idx] = 4
+                                    ball_y[idx] = STARTING_LINE
+                                    set_ball_vy(idx, -1)
+                                    lives += 1
+                                    try:
+                                        transformed_s[idx] = False
+                                    except Exception:
+                                        pass
+                                    try:
+                                        transform_bird_to_s(idx)
+                                    except Exception:
+                                        pass
+                                    break
+                        elif loot_type == 'glitch_egg':
+                            for idx in range(NUM_BALLS):
+                                if ball_lost[idx]:
+                                    ball_lost[idx] = False
+                                    ball_colors[idx] = GLITCH
+                                    # GLITCH bird: variable behavior; set medium speed
+                                    ball_speeds[idx] = 3
+                                    ball_y[idx] = STARTING_LINE
+                                    set_ball_vy(idx, -1)
                                     lives += 1
                                     try:
                                         transformed_s[idx] = False
@@ -4135,7 +4475,7 @@ try:
                         lane = random_lanes[i]
                         ball_lost[i] = False
                         ball_y[i] = 999
-                        ball_vy[i] = 0
+                        set_ball_vy(i, 0)
                         reset_bird_power(i)
                         ball_speeds[i] = 0
                         # Transformed S-birds do not produce egg loot
@@ -4147,7 +4487,7 @@ try:
                             loot_items.append({'x_pos': LANE_POSITIONS[lane], 'y_pos': STARTING_LINE, 'type': 'orange_egg', 'rarity': 'epic', 'spawn_ts': time.time()})
                         continue
                     ball_y[i] = 1
-                    ball_vy[i] = 1
+                    set_ball_vy(i, 1)
                     reset_bird_power(i)  # Reset power when starting to descend
                 
                 # Check if ball hits floor
@@ -4161,7 +4501,7 @@ try:
                                 clockwork_charge[i] = 2
                             if c > 0:
                                 ball_y[i] = STARTING_LINE
-                                ball_vy[i] = -1
+                                set_ball_vy(i, -1)
                                 reset_bird_power(i)
                             else:
                                 # charge == 0: behave like other birds hitting the floor -> die
@@ -4180,7 +4520,7 @@ try:
                         except Exception:
                             # Fallback: normal behaviour
                             ball_y[i] = STARTING_LINE
-                            ball_vy[i] = -1
+                            set_ball_vy(i, -1)
                             reset_bird_power(i)
                     elif ball_colors[i] == ORANGE:
                         continue
@@ -4190,7 +4530,7 @@ try:
                             if ball_colors[i] == GLITCH and random.random() < 0.20:
                                 # Bounce instead of dying
                                 ball_y[i] = STARTING_LINE
-                                ball_vy[i] = -1
+                                set_ball_vy(i, -1)
                                 reset_bird_power(i)
                                 continue
                         except Exception:
