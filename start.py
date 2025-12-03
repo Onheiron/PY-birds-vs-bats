@@ -272,7 +272,7 @@ try:
 except Exception:
     pass
 # Game version (update this when releasing a new build)
-GAME_VERSION = "0.7.0"
+GAME_VERSION = "0.8.0"
 
 # Obstacle tiers: brown to bright green (4 tiers)
 # HP: 4, 6, 10, 16
