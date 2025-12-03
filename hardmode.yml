@@ -1,0 +1,313 @@
+# BVB (Birds vs Bats) - Configuration File
+# Copy to "config.yml" or use --config to override defaults
+
+layout:
+  width: 45
+  height: 30
+  num_balls: 9
+  constraints:
+    num_lanes: 9
+    min_lane_index: 0
+    max_lane_index: 8
+
+eggs:
+  egg_probs:
+    0: 0.0
+    1: 0.25
+    2: 0.35
+    3: 0.45
+    4: 0.55
+
+  rarity_weights:
+    common:
+      yellow_egg: 30
+      red_egg: 25
+      blue_egg: 20
+      patchwork_egg: 15
+      purple_egg: 10
+    uncommon:
+      blue_egg: 33
+      patchwork_egg: 25
+      purple_egg: 20
+      clockwork_egg: 12
+      stealth_egg: 7
+      cookie_egg: 3
+    rare:
+      white_egg: 34
+      orange_egg: 33
+      gold_egg: 33
+    epic:
+      dinosaur_egg: 50
+      glitch_egg: 50
+
+birds:
+  formation: [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]
+  randomize_lanes: true
+
+bats:
+  spawn_interval_range: [120, 220]
+  max_on_screen: 3
+  hp_by_tier:
+    1: 16
+    2: 32
+    3: 64
+    4: 128
+  scared_seconds: 3.0
+  scared_speed_boost_seconds: 2.0
+  loot_base_weights:
+    1: [60, 25, 10, 5]
+    2: [50, 30, 15, 5]
+    3: [40, 33, 17, 10]
+    4: [35, 25, 20, 15]
+  
+  spawning:
+    wave_offset_min: 0
+    wave_offset_max: 10
+    target_y_min_low_level: 10
+    target_y_max_low_level: 12
+    target_y_min_high_level: 18
+    target_y_max_high_level: 22
+    target_y_level_threshold: 5
+    spawn_max_attempts: 20
+    spawn_x_min: 1
+    spawn_x_margin: 9
+    min_separation: 15
+    spawn_fail_retry_timer: 50
+    consecutive_spawn_limit: 2
+    consecutive_retry_timer: 20
+    spawn_y_start: 1
+  
+  tiers:
+    weights_level_0_2: [70, 20, 8, 2]
+    weights_level_3_4: [50, 30, 15, 5]
+    weights_level_5_7: [30, 35, 25, 10]
+    weights_level_8_plus: [15, 30, 35, 20]
+    level_threshold_1: 2
+    level_threshold_2: 4
+    level_threshold_3: 7
+    hp_tier_1: 16
+    hp_tier_2: 32
+    hp_tier_3: 64
+    hp_tier_4: 128
+
+obstacles:
+  max_hp_by_tier:
+    1: 4
+    2: 6
+    3: 10
+    4: 16
+  
+  spawning:
+    base_spawn_rate_base: 60
+    base_spawn_rate_min: 15
+    spawn_rate_level_multiplier: 4
+    spawn_variance_base: 30
+    spawn_variance_min: 10
+    spawn_variance_level_multiplier: 2
+    retry_timer_divisor: 2
+    retry_timer_min: 5
+    consecutive_spawn_limit: 2
+  
+  tiers:
+    weights_level_0_2: [70, 20, 8, 2]
+    weights_level_3_4: [55, 28, 13, 4]
+    weights_level_5_7: [35, 35, 20, 10]
+    weights_level_8_plus: [20, 30, 30, 20]
+    level_threshold_1: 2
+    level_threshold_2: 4
+    level_threshold_3: 7
+    hp_tier_1: 4
+    hp_tier_2: 6
+    hp_tier_3: 10
+    hp_tier_4: 16
+
+timing:
+  notification_duration_seconds: 3.0
+  base_sleep: 0.2
+  min_sleep: 0.02
+  frame_sleep_level_multiplier: 0.88
+
+limits:
+  max_entities: 50
+
+physics:
+  ball_speeds:
+    YELLOW: 2
+    RED: 3
+    BLUE: 4
+    ORANGE: 5
+    GOLD: 6
+    PATCHWORK: 3
+    CLOCKWORK: 2
+    COOKIE: 3
+    STEALTH: 3
+    DINOSAUR: 4
+  speed_min: 1
+  speed_max: 6
+
+powers:
+  wide_cursor:
+    base_seconds: 10.0
+    plus_seconds: 20.0
+    plusplus_seconds: 25.0
+    max_seconds: 50.0
+    lanes_base: 3
+    lanes_max: 5
+  bounce_boost:
+    base_seconds: 10.0
+    plus_seconds: 20.0
+    plusplus_seconds: 25.0
+    max_seconds: 50.0
+    duration_base: 4
+    duration_plus: 4
+    duration_plusplus: 8
+    duration_max: 12
+  suction:
+    base_seconds: 10.0
+    plus_seconds: 20.0
+    plusplus_seconds: 25.0
+    max_seconds: 50.0
+    boost_duration_base: 0
+    boost_duration_plus: 0
+    boost_duration_plusplus: 4
+    boost_duration_max: 8
+  tailwind:
+    base_seconds: 10.0
+    plus_seconds: 15.0
+    plusplus_seconds: 20.0
+    max_seconds: 30.0
+    up_bonus_base: 1
+    up_bonus_plus: 2
+    up_bonus_plusplus: 3
+    down_penalty_base: 1
+    down_penalty_plus: 1
+    down_penalty_plusplus: 2
+    down_penalty_max: 3
+
+special:
+  blue_adjacent_boost_seconds: 5.0
+  
+  dinosaur:
+    presses_to_bounce: 15
+    press_chunk: 3
+    recovery_chance_on_egg: 0.10
+    damage: 16
+  stealth:
+    damage: 24
+    tangible_seconds: 2.0
+  gold:
+    damage: 1
+    score_value: 100
+  clockwork:
+    decay_seconds: 30.0
+    initial_charge: 2
+    min_charge: 0
+    max_charge: 3
+  glitch:
+    bounce_ignore_chance: 0.05
+    loot_ignore_chance: 0.05
+    loot_promote_chance: 0.05
+    damage_min: 1
+    damage_max: 32
+    survive_on_floor_chance: 0.20
+    speed_min: 1
+    speed_max: 6
+    flip_chance: 0.01
+    swap_chance: 0.01
+    nudge_chance: 0.01
+    duplicate_chance: 0.01
+  orange_egg_recover_chance: 0.10
+  orange:
+    out_of_play_y: 999
+
+progression:
+  xp_base: 500.0
+  grade_exp_factor: 1.1
+  level_score_base: 500.0
+  level_score_factor: 1.1
+
+combo:
+  combo_window_frames: 200
+  yellow_blue_chain_window: 60
+
+combat:
+  bat_center_offset: 4
+  xp_bonus_per_tier: 10
+  obstacle_score_multiplier: 2
+
+collision:
+  lane_collision_half_width: 2
+  loot_collection_distance: 2
+  bat_sprite_width: 8
+
+rendering:
+  dinosaur_sprite_height: 3
+  normal_bird_sprite_height: 2
+
+shuffle:
+  level_base: 1
+  level_plus: 2
+  level_plusplus: 3
+  level_max: 4
+
+powerup_defaults:
+  wide_cursor:
+    base_seconds: 10.0
+    plus_seconds: 20.0
+    plusplus_seconds: 25.0
+    max_seconds: 50.0
+    lanes_base: 3
+    lanes_max: 5
+  bounce_boost:
+    base_seconds: 10.0
+    plus_seconds: 20.0
+    plusplus_seconds: 25.0
+    max_seconds: 50.0
+    duration_base: 4
+    duration_plus: 4
+    duration_plusplus: 8
+    duration_max: 12
+  suction:
+    base_seconds: 10.0
+    plus_seconds: 20.0
+    plusplus_seconds: 25.0
+    max_seconds: 50.0
+    boost_duration_base: 0
+    boost_duration_plus: 0
+    boost_duration_plusplus: 4
+    boost_duration_max: 8
+  tailwind:
+    base_seconds: 10.0
+    plus_seconds: 15.0
+    plusplus_seconds: 20.0
+    max_seconds: 30.0
+    up_bonus_base: 1
+    up_bonus_plus: 2
+    up_bonus_plusplus: 3
+    down_penalty_base: 1
+    down_penalty_plus: 1
+    down_penalty_plusplus: 2
+    down_penalty_max: 3
+
+despawn:
+  bat_despawn_time: 60
+  loot_despawn_time: 60
+
+game_over:
+  separator_width: 50
+  time_divider: 3600
+  time_remainder: 3600
+  minutes_divider: 60
+  leaderboard_name_max_length: 20
+
+controls:
+  key_move_left: LEFT
+  key_move_right: RIGHT
+  key_move_up: UP
+  key_move_down: DOWN
+  key_action: SPACE
+  key_pause: p
+  key_pause_alt: P
+  key_toggle_xp: x
+  key_toggle_xp_alt: X
+  key_quit: QUIT

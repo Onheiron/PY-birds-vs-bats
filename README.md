@@ -22,7 +22,14 @@ All content below is in English.
 From source (recommended for development):
 
 ```bash
+# Install dependencies
+pip install pyyaml jsonschema
+
+# Run with default config
 python3 start.py
+
+# Run with custom config
+python3 start.py --config myconfig.yml
 ```
 
 Standalone binary (if present):
@@ -131,8 +138,38 @@ New loot additions: Tailwind and Shuffle
 Run locally:
 
 ```bash
+pip install pyyaml jsonschema
 python3 start.py
 ```
+
+Configuration:
+
+The game supports extensive YAML-based configuration. Copy `config.sample.yml` to `config.yml` or use `--config`:
+
+```bash
+cp config.sample.yml config.yml
+# Edit config.yml with your settings
+python3 start.py
+
+# Or use a different file
+python3 start.py --config myconfig.yml
+```
+
+**Configuration validation:**
+- The game validates configuration files against `config.schema.json` if `jsonschema` is installed
+- Invalid configs will cause the game to exit with a descriptive error message
+- All config fields are optional with sensible defaults
+
+**Configurable settings include:**
+- Initial bird formation and lane randomization (`birds.formation`, `birds.randomize_lanes`)
+- Keyboard controls (`controls.*`)
+- Enemy spawning rates, HP, and tier weights
+- Power-up durations and effects
+- Physics speeds and timing
+- Collision detection parameters
+- And much more...
+
+See `config.sample.yml` for the complete list of tunables.
 
 Build a single-file executable with PyInstaller:
 

@@ -1,0 +1,430 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BVB Configuration Schema",
+  "description": "Configuration schema for Birds vs Bats game",
+  "type": "object",
+  "properties": {
+    "layout": {
+      "type": "object",
+      "properties": {
+        "width": {"type": "integer", "minimum": 1, "default": 45},
+        "height": {"type": "integer", "minimum": 1, "default": 30},
+        "num_balls": {"type": "integer", "minimum": 1, "default": 9},
+        "lane_positions": {
+          "type": "array",
+          "items": {"type": "integer"}
+        },
+        "constraints": {
+          "type": "object",
+          "properties": {
+            "num_lanes": {"type": "integer", "minimum": 1, "default": 9},
+            "min_lane_index": {"type": "integer", "minimum": 0, "default": 0},
+            "max_lane_index": {"type": "integer", "minimum": 0, "default": 8}
+          }
+        }
+      }
+    },
+    "eggs": {
+      "type": "object",
+      "properties": {
+        "egg_probs": {
+          "type": "object",
+          "patternProperties": {
+            "^[0-9]+$": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        },
+        "rarity_weights": {
+          "type": "object",
+          "properties": {
+            "common": {"$ref": "#/definitions/eggWeights"},
+            "uncommon": {"$ref": "#/definitions/eggWeights"},
+            "rare": {"$ref": "#/definitions/eggWeights"},
+            "epic": {"$ref": "#/definitions/eggWeights"}
+          }
+        }
+      }
+    },
+    "birds": {
+      "type": "object",
+      "properties": {
+        "formation": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["YELLOW", "RED", "BLUE", "WHITE", "ORANGE", "GOLD", "PATCHWORK", "PURPLE", "CLOCKWORK", "STEALTH", "COOKIE", "DINOSAUR", "GLITCH"]
+          },
+          "minItems": 1,
+          "maxItems": 9,
+          "default": ["YELLOW", "YELLOW", "YELLOW", "YELLOW", "RED", "RED", "RED", "BLUE", "BLUE"]
+        },
+        "randomize_lanes": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "bats": {
+      "type": "object",
+      "properties": {
+        "spawn_interval_range": {
+          "type": "array",
+          "items": {"type": "integer"},
+          "minItems": 2,
+          "maxItems": 2,
+          "default": [120, 220]
+        },
+        "max_on_screen": {"type": "integer", "minimum": 1, "default": 3},
+        "hp_by_tier": {"$ref": "#/definitions/tierHP"},
+        "scared_seconds": {"type": "number", "minimum": 0, "default": 2.0},
+        "scared_speed_boost_seconds": {"type": "number", "minimum": 0, "default": 2.0},
+        "loot_base_weights": {
+          "type": "object",
+          "patternProperties": {
+            "^[1-4]$": {
+              "type": "array",
+              "items": {"type": "number", "minimum": 0},
+              "minItems": 4,
+              "maxItems": 4
+            }
+          }
+        },
+        "spawning": {
+          "type": "object",
+          "properties": {
+            "wave_offset_min": {"type": "integer", "minimum": 0, "default": 0},
+            "wave_offset_max": {"type": "integer", "minimum": 0, "default": 10},
+            "target_y_min_low_level": {"type": "integer", "minimum": 0, "default": 10},
+            "target_y_max_low_level": {"type": "integer", "minimum": 0, "default": 12},
+            "target_y_min_high_level": {"type": "integer", "minimum": 0, "default": 18},
+            "target_y_max_high_level": {"type": "integer", "minimum": 0, "default": 22},
+            "target_y_level_threshold": {"type": "integer", "minimum": 0, "default": 5},
+            "spawn_max_attempts": {"type": "integer", "minimum": 1, "default": 20},
+            "spawn_x_min": {"type": "integer", "minimum": 0, "default": 1},
+            "spawn_x_margin": {"type": "integer", "minimum": 0, "default": 9},
+            "min_separation": {"type": "integer", "minimum": 0, "default": 15},
+            "spawn_fail_retry_timer": {"type": "integer", "minimum": 0, "default": 50},
+            "consecutive_spawn_limit": {"type": "integer", "minimum": 1, "default": 2},
+            "consecutive_retry_timer": {"type": "integer", "minimum": 0, "default": 20},
+            "spawn_y_start": {"type": "integer", "minimum": 0, "default": 1}
+          }
+        },
+        "tiers": {"$ref": "#/definitions/tierConfig"}
+      }
+    },
+    "obstacles": {
+      "type": "object",
+      "properties": {
+        "max_hp_by_tier": {"$ref": "#/definitions/tierHP"},
+        "spawning": {
+          "type": "object",
+          "properties": {
+            "base_spawn_rate_base": {"type": "integer", "minimum": 1, "default": 60},
+            "base_spawn_rate_min": {"type": "integer", "minimum": 1, "default": 15},
+            "spawn_rate_level_multiplier": {"type": "integer", "minimum": 0, "default": 4},
+            "spawn_variance_base": {"type": "integer", "minimum": 0, "default": 30},
+            "spawn_variance_min": {"type": "integer", "minimum": 0, "default": 10},
+            "spawn_variance_level_multiplier": {"type": "integer", "minimum": 0, "default": 2},
+            "retry_timer_divisor": {"type": "integer", "minimum": 1, "default": 2},
+            "retry_timer_min": {"type": "integer", "minimum": 0, "default": 5},
+            "consecutive_spawn_limit": {"type": "integer", "minimum": 1, "default": 2}
+          }
+        },
+        "tiers": {"$ref": "#/definitions/tierConfig"}
+      }
+    },
+    "timing": {
+      "type": "object",
+      "properties": {
+        "notification_duration_seconds": {"type": "number", "minimum": 0, "default": 3.0},
+        "base_sleep": {"type": "number", "minimum": 0, "default": 0.2},
+        "min_sleep": {"type": "number", "minimum": 0, "default": 0.02},
+        "frame_sleep_level_multiplier": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.88}
+      }
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "max_entities": {"type": "integer", "minimum": 1, "default": 50}
+      }
+    },
+    "physics": {
+      "type": "object",
+      "properties": {
+        "ball_speeds": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Z_]+$": {"type": "integer", "minimum": 1}
+          }
+        },
+        "speed_min": {"type": "integer", "minimum": 1, "default": 1},
+        "speed_max": {"type": "integer", "minimum": 1, "default": 6}
+      }
+    },
+    "powers": {
+      "type": "object",
+      "properties": {
+        "wide_cursor": {"$ref": "#/definitions/powerTiers"},
+        "bounce_boost": {"$ref": "#/definitions/powerTiersWithDuration"},
+        "suction": {"$ref": "#/definitions/powerTiersWithBoost"},
+        "tailwind": {"$ref": "#/definitions/tailwindConfig"}
+      }
+    },
+    "special": {
+      "type": "object",
+      "properties": {
+        "blue_adjacent_boost_seconds": {"type": "number", "minimum": 0, "default": 5.0},
+        "dinosaur": {
+          "type": "object",
+          "properties": {
+            "presses_to_bounce": {"type": "integer", "minimum": 1, "default": 15},
+            "press_chunk": {"type": "integer", "minimum": 1, "default": 3},
+            "recovery_chance_on_egg": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.10},
+            "damage": {"type": "integer", "minimum": 0, "default": 16}
+          }
+        },
+        "stealth": {
+          "type": "object",
+          "properties": {
+            "damage": {"type": "integer", "minimum": 0, "default": 24},
+            "tangible_seconds": {"type": "number", "minimum": 0, "default": 2.0}
+          }
+        },
+        "gold": {
+          "type": "object",
+          "properties": {
+            "damage": {"type": "integer", "minimum": 0, "default": 1},
+            "score_value": {"type": "integer", "minimum": 0, "default": 100}
+          }
+        },
+        "clockwork": {
+          "type": "object",
+          "properties": {
+            "decay_seconds": {"type": "number", "minimum": 0, "default": 30.0},
+            "initial_charge": {"type": "integer", "minimum": 0, "default": 2},
+            "min_charge": {"type": "integer", "minimum": 0, "default": 0},
+            "max_charge": {"type": "integer", "minimum": 0, "default": 3}
+          }
+        },
+        "glitch": {
+          "type": "object",
+          "properties": {
+            "bounce_ignore_chance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.05},
+            "loot_ignore_chance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.05},
+            "loot_promote_chance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.05},
+            "damage_min": {"type": "integer", "minimum": 0, "default": 1},
+            "damage_max": {"type": "integer", "minimum": 0, "default": 32},
+            "survive_on_floor_chance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.20},
+            "speed_min": {"type": "integer", "minimum": 1, "default": 1},
+            "speed_max": {"type": "integer", "minimum": 1, "default": 6},
+            "flip_chance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.01},
+            "swap_chance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.01},
+            "nudge_chance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.01},
+            "duplicate_chance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.01}
+          }
+        },
+        "orange_egg_recover_chance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.10},
+        "orange": {
+          "type": "object",
+          "properties": {
+            "out_of_play_y": {"type": "integer", "default": 999}
+          }
+        }
+      }
+    },
+    "progression": {
+      "type": "object",
+      "properties": {
+        "xp_base": {"type": "number", "minimum": 0, "default": 500.0},
+        "grade_exp_factor": {"type": "number", "minimum": 1, "default": 1.07},
+        "level_score_base": {"type": "number", "minimum": 0, "default": 500.0},
+        "level_score_factor": {"type": "number", "minimum": 1, "default": 1.07}
+      }
+    },
+    "combo": {
+      "type": "object",
+      "properties": {
+        "combo_window_frames": {"type": "integer", "minimum": 1, "default": 200},
+        "yellow_blue_chain_window": {"type": "integer", "minimum": 1, "default": 60}
+      }
+    },
+    "combat": {
+      "type": "object",
+      "properties": {
+        "bat_center_offset": {"type": "integer", "default": 4},
+        "xp_bonus_per_tier": {"type": "integer", "minimum": 0, "default": 10},
+        "obstacle_score_multiplier": {"type": "integer", "minimum": 0, "default": 2}
+      }
+    },
+    "collision": {
+      "type": "object",
+      "properties": {
+        "lane_collision_half_width": {"type": "integer", "minimum": 0, "default": 2},
+        "loot_collection_distance": {"type": "integer", "minimum": 0, "default": 2},
+        "bat_sprite_width": {"type": "integer", "minimum": 1, "default": 8}
+      }
+    },
+    "rendering": {
+      "type": "object",
+      "properties": {
+        "dinosaur_sprite_height": {"type": "integer", "minimum": 1, "default": 3},
+        "normal_bird_sprite_height": {"type": "integer", "minimum": 1, "default": 2}
+      }
+    },
+    "shuffle": {
+      "type": "object",
+      "properties": {
+        "level_base": {"type": "integer", "minimum": 1, "default": 1},
+        "level_plus": {"type": "integer", "minimum": 1, "default": 2},
+        "level_plusplus": {"type": "integer", "minimum": 1, "default": 3},
+        "level_max": {"type": "integer", "minimum": 1, "default": 4}
+      }
+    },
+    "powerup_defaults": {
+      "type": "object",
+      "properties": {
+        "wide_cursor": {"$ref": "#/definitions/powerTiers"},
+        "bounce_boost": {"$ref": "#/definitions/powerTiersWithDuration"},
+        "suction": {"$ref": "#/definitions/powerTiersWithBoost"},
+        "tailwind": {"$ref": "#/definitions/tailwindConfig"}
+      }
+    },
+    "despawn": {
+      "type": "object",
+      "properties": {
+        "bat_despawn_time": {"type": "integer", "minimum": 1, "default": 60},
+        "loot_despawn_time": {"type": "integer", "minimum": 1, "default": 60}
+      }
+    },
+    "game_over": {
+      "type": "object",
+      "properties": {
+        "separator_width": {"type": "integer", "minimum": 1, "default": 50},
+        "time_divider": {"type": "integer", "minimum": 1, "default": 3600},
+        "time_remainder": {"type": "integer", "minimum": 1, "default": 3600},
+        "minutes_divider": {"type": "integer", "minimum": 1, "default": 60},
+        "leaderboard_name_max_length": {"type": "integer", "minimum": 1, "default": 20}
+      }
+    },
+    "controls": {
+      "type": "object",
+      "properties": {
+        "key_move_left": {"type": "string", "default": "LEFT"},
+        "key_move_right": {"type": "string", "default": "RIGHT"},
+        "key_move_up": {"type": "string", "default": "UP"},
+        "key_move_down": {"type": "string", "default": "DOWN"},
+        "key_action": {"type": "string", "default": "SPACE"},
+        "key_pause": {"type": "string", "default": "p"},
+        "key_pause_alt": {"type": "string", "default": "P"},
+        "key_toggle_xp": {"type": "string", "default": "x"},
+        "key_toggle_xp_alt": {"type": "string", "default": "X"},
+        "key_quit": {"type": "string", "default": "QUIT"}
+      }
+    }
+  },
+  "definitions": {
+    "eggWeights": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z_]+$": {"type": "number", "minimum": 0}
+      }
+    },
+    "tierHP": {
+      "type": "object",
+      "properties": {
+        "1": {"type": "integer", "minimum": 1},
+        "2": {"type": "integer", "minimum": 1},
+        "3": {"type": "integer", "minimum": 1},
+        "4": {"type": "integer", "minimum": 1}
+      }
+    },
+    "tierConfig": {
+      "type": "object",
+      "properties": {
+        "weights_level_0_2": {
+          "type": "array",
+          "items": {"type": "number", "minimum": 0},
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "weights_level_3_4": {
+          "type": "array",
+          "items": {"type": "number", "minimum": 0},
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "weights_level_5_7": {
+          "type": "array",
+          "items": {"type": "number", "minimum": 0},
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "weights_level_8_plus": {
+          "type": "array",
+          "items": {"type": "number", "minimum": 0},
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "level_threshold_1": {"type": "integer", "minimum": 0},
+        "level_threshold_2": {"type": "integer", "minimum": 0},
+        "level_threshold_3": {"type": "integer", "minimum": 0},
+        "hp_tier_1": {"type": "integer", "minimum": 1},
+        "hp_tier_2": {"type": "integer", "minimum": 1},
+        "hp_tier_3": {"type": "integer", "minimum": 1},
+        "hp_tier_4": {"type": "integer", "minimum": 1}
+      }
+    },
+    "powerTiers": {
+      "type": "object",
+      "properties": {
+        "base_seconds": {"type": "number", "minimum": 0},
+        "plus_seconds": {"type": "number", "minimum": 0},
+        "plusplus_seconds": {"type": "number", "minimum": 0},
+        "max_seconds": {"type": "number", "minimum": 0},
+        "lanes_base": {"type": "integer", "minimum": 1},
+        "lanes_max": {"type": "integer", "minimum": 1}
+      }
+    },
+    "powerTiersWithDuration": {
+      "type": "object",
+      "properties": {
+        "base_seconds": {"type": "number", "minimum": 0},
+        "plus_seconds": {"type": "number", "minimum": 0},
+        "plusplus_seconds": {"type": "number", "minimum": 0},
+        "max_seconds": {"type": "number", "minimum": 0},
+        "duration_base": {"type": "integer", "minimum": 0},
+        "duration_plus": {"type": "integer", "minimum": 0},
+        "duration_plusplus": {"type": "integer", "minimum": 0},
+        "duration_max": {"type": "integer", "minimum": 0}
+      }
+    },
+    "powerTiersWithBoost": {
+      "type": "object",
+      "properties": {
+        "base_seconds": {"type": "number", "minimum": 0},
+        "plus_seconds": {"type": "number", "minimum": 0},
+        "plusplus_seconds": {"type": "number", "minimum": 0},
+        "max_seconds": {"type": "number", "minimum": 0},
+        "boost_duration_base": {"type": "integer", "minimum": 0},
+        "boost_duration_plus": {"type": "integer", "minimum": 0},
+        "boost_duration_plusplus": {"type": "integer", "minimum": 0},
+        "boost_duration_max": {"type": "integer", "minimum": 0}
+      }
+    },
+    "tailwindConfig": {
+      "type": "object",
+      "properties": {
+        "base_seconds": {"type": "number", "minimum": 0},
+        "plus_seconds": {"type": "number", "minimum": 0},
+        "plusplus_seconds": {"type": "number", "minimum": 0},
+        "max_seconds": {"type": "number", "minimum": 0},
+        "up_bonus_base": {"type": "integer", "minimum": 0},
+        "up_bonus_plus": {"type": "integer", "minimum": 0},
+        "up_bonus_plusplus": {"type": "integer", "minimum": 0},
+        "down_penalty_base": {"type": "integer", "minimum": 0},
+        "down_penalty_plus": {"type": "integer", "minimum": 0},
+        "down_penalty_plusplus": {"type": "integer", "minimum": 0},
+        "down_penalty_max": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
