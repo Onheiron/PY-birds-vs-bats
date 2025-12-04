@@ -526,11 +526,14 @@ SYNERGY_TRANSFER_RATIO = 0.10
 
 # Prestige modifiers per grade
 PRESTIGE_MODIFIERS = {
-    1: 1.1,
-    2: 1.2,
-    3: 1.35,
-    4: 1.5,
-    5: 1.75,
+    'D': 0.0,
+    'C1': 0.03125,
+    'C2': 0.0625,
+    'B1': 0.125,
+    'B2': 0.25,
+    'A1': 0.5,
+    'A2': 1.0,
+    'S': 5.0,
 }
 
 # Prestige rarity factor
