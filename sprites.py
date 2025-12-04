@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+"""
+Sprite definitions and rendering functions for BVB.
+Contains all ASCII art sprites for birds, bats, obstacles, and related rendering helpers.
+"""
+
+# ANSI colors
+RED = "\033[31m"
+GREEN = "\033[32m"
+BLUE = "\033[34m"
+CYAN = "\033[96m"  # Light blue for blue bird power
+YELLOW = "\033[38;5;220m"  # Darker yellow (256-color palette)
+WHITE = "\033[97m"  # Bright white for legendary birds
+DARK_GRAY = "\033[38;5;240m"  # Dark gray (visible on dark backgrounds)
+CLOCKWORK = "\033[38;5;244m"  # Medium grey (CLOCKWORK color)
+RESET = "\033[0m"
+GOLD = "\033[38;5;228m"  # Bold truecolor gold (very bright)
+BLACK = "\033[38;5;16m"  # 256-color black
+PURPLE = "\033[38;5;201m"  # Viola (saturated)
+ORANGE = "\033[38;5;208m"  # Arancione
+PATCHWORK = "\033[38;5;202m"  # Patchwork bird color
+COOKIE = "\033[38;5;180m"  # Light brown "cookie" bird
+GLITCH = "\033[38;5;205m"  # Pink-ish glitch bird
+DINOSAUR = "\033[38;5;46m"  # bright green (legendary)
+STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
+
+# Obstacle tiers: brown to bright green (4 tiers)
+OBSTACLE_TIER1 = "\033[38;5;94m"   # Dark brown
+OBSTACLE_TIER2 = "\033[38;5;100m"  # Brown-olive
+OBSTACLE_TIER3 = "\033[38;5;106m"  # Olive-green
+OBSTACLE_TIER4 = "\033[38;5;46m"   # Bright lime green
+
+# Bat tiers: dark blue-purple to shocking bright purple (4 tiers)
+BAT_TIER1 = "\033[38;5;54m"   # Dark blue-purple
+BAT_TIER2 = "\033[38;5;92m"   # Medium purple
+BAT_TIER3 = "\033[38;5;129m"  # Bright purple
+BAT_TIER4 = "\033[38;5;201m"  # Shocking magenta-purple
+
+# Bird sprites - two frames for animation (compact version)
+BIRD_UP_1 = [
+    " . ",
+    '/W\\',
+]
+BIRD_UP_2 = [
+    "_._",
+    " W ",
+]
+BIRD_DOWN_1 = [
+    "\\M/",
+    " ' ",
+]
+BIRD_DOWN_2 = [
+    "_M_",
+    " ' ",
+]
+
+# PATCHWORK bird sprites - mixes characters (. ' \ / M W) across frames
+BIRD_PATCH_UP_1 = [
+    " . ",
+    "\\M/",
+]
+BIRD_PATCH_UP_2 = [
+    " ' ",
+    "/W\\",
+]
+BIRD_PATCH_DOWN_1 = [
+    "\\M/",
+    " ' ",
+]
+BIRD_PATCH_DOWN_2 = [
+    "/W\\",
+    " . ",
+]
+
+# DINOSAUR legendary bird sprites (3 lines × 5 chars)
+DINOSAUR_UP_1 = [
+    ' .|. ',
+    '/\\O/\\',
+    '  "  '
+]
+DINOSAUR_UP_2 = [
+    '_.|._',
+    ' \\O/ ',
+    '  "  '
+]
+DINOSAUR_DOWN_1 = [
+    '  "  ',
+    '\\/O\\/',
+    " '|' "
+]
+DINOSAUR_DOWN_2 = [
+    '  "  ',
+    '_/O\\_',
+    " '|' "
+]
+
+# Bat sprites - two frames for animation (compact version)
+BAT_FRAME_1 = [
+    " _ ^^ _",
+    "/|(;;)|\\",
+]
+BAT_FRAME_2 = [
+    "__ ^^ __",
+    " /(;;)\\",
+]
+
+# Background pattern
+BG_PATTERN = "/\\/\\/\\"
+
+# Obstacle sprites - single line, compact
+OBSTACLE_SPRITE = [
+    "***"
+]
+
+# Base colors (full HP) for color interpolation
+BATS_BASE_RGB = (255, 0, 255)   # magenta FF00FF
+OBST_BASE_RGB = (0, 255, 0)     # green 00FF00
+
+
+# Rendering helper functions
+
+def render_patchwork_line(line: str) -> str:
+    """Return a string where each character in `line` is colored in a repeating patchwork pattern.
+
+    The returned string does NOT include a cursor positioning escape; caller should place it.
+    A final RESET is appended.
+    """
+    try:
+        patch_colors = [RED, YELLOW, BLUE, GREEN, PURPLE, ORANGE, GOLD, CYAN, WHITE]
+        parts = []
+        for i, ch in enumerate(line):
+            # Color each character; keep spacing visible (coloring spaces is acceptable here)
+            parts.append(f"{patch_colors[i % len(patch_colors)]}{ch}")
+        return "".join(parts) + RESET
+    except Exception:
+        # Fallback: return unmodified line with default reset
+        return line + RESET
+
+
+def render_clockwork_line(line: str, charge: int, blink_on: bool) -> str:
+    """Render a single sprite line for CLOCKWORK birds.
+
+    Only the characters '.' and "'" are colored according to charge and blink state.
+    Other characters are rendered in the CLOCKWORK base color. A RESET is appended.
+    """
+    try:
+        # Determine the active highlight color based on charge
+        if charge is None:
+            charge = 2
+        if charge > 1:
+            hl = GREEN
+        elif charge == 1:
+            hl = YELLOW
+        else:
+            hl = RED
+
+        parts = []
+        for ch in line:
+            if ch in ('.', "'"):
+                # Blink: when blink_on is False render as dark gray, else use highlight
+                parts.append((hl if blink_on else DARK_GRAY) + ch)
+            else:
+                parts.append(CLOCKWORK + ch)
+        return "".join(parts) + RESET
+    except Exception:
+        return CLOCKWORK + line + RESET
