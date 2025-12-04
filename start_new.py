@@ -1165,937 +1165,6 @@ def _load_config_file(path):
     
     return cfg
 
-
-# Parse CLI args (only config path here; allow other args to pass through)
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--config', help='Path to YAML config file to override defaults')
-args, _rest = parser.parse_known_args()
-_config = _load_config_file(args.config if args and args.config else None)
-
-# Apply config entries to known globals
-try:
-    if _config:
-        # Support both top-state.level keys and grouped sections (eggs, state.bats, timing, layout, limits)
-        # --- Eggs / rarity ---
-        if 'egg_probs' in _config:
-            ev = _config.get('egg_probs')
-            # Accept either legacy list [p0, p1, ...] or dict {empty_count: prob}
-            if isinstance(ev, (list, tuple)):
-                try:
-                    EGG_PROBS = {i: float(ev[i]) for i in range(len(ev))}
-                except Exception:
-                    EGG_PROBS = {i: ev[i] for i in range(len(ev))}
-            elif isinstance(ev, dict):
-                newmap = {}
-                for k, val in ev.items():
-                    try:
-                        ik = int(k)
-                    except Exception:
-                        # ignore non-integer keys
-                        continue
-                    try:
-                        newmap[ik] = float(val)
-                    except Exception:
-                        newmap[ik] = val
-                if newmap:
-                    EGG_PROBS = newmap
-        if 'rarity_weights' in _config and isinstance(_config.get('rarity_weights'), dict):
-            # expect mapping rarity -> mapping item -> weight
-            v.RARITY_WEIGHTS.update(_config.get('rarity_weights'))
-
-        # --- Bats & state.obstacles (support grouped 'bats') ---
-        bats_cfg = _config.get('bats') if isinstance(_config.get('bats'), dict) else _config
-        if 'spawn_interval_range' in bats_cfg and isinstance(bats_cfg.get('spawn_interval_range'), (list, tuple)):
-            BAT_SPAWN_INTERVAL_RANGE = list(bats_cfg.get('spawn_interval_range'))
-        if 'max_on_screen' in bats_cfg:
-            try:
-                BAT_MAX_ON_SCREEN = int(bats_cfg.get('max_on_screen'))
-            except Exception:
-                pass
-        if 'hp_by_tier' in bats_cfg and isinstance(bats_cfg.get('hp_by_tier'), dict):
-            BAT_HP_BY_TIER = dict(bats_cfg.get('hp_by_tier'))
-        # Bat scared timing and loot base weights
-        if 'scared_seconds' in bats_cfg:
-            try:
-                SCARED_BASE_SECONDS = float(bats_cfg.get('scared_seconds'))
-            except Exception:
-                pass
-        if 'scared_speed_boost_seconds' in bats_cfg:
-            try:
-                SCARED_SPEED_BOOST_SECONDS = float(bats_cfg.get('scared_speed_boost_seconds'))
-            except Exception:
-                pass
-        if 'loot_base_weights' in bats_cfg and isinstance(bats_cfg.get('loot_base_weights'), dict):
-            try:
-                # expect mapping tier -> list of 4 ints
-                v.BAT_LOOT_BASE_WEIGHTS = {int(k): list(val) for k, val in bats_cfg.getf('loot_base_weights').items()}
-            except Exception:
-                pass
-
-        obst_cfg = _config.get('obstacles') if isinstance(_config.get('obstacles'), dict) else _config
-        if 'max_hp_by_tier' in obst_cfg and isinstance(obst_cfg.get('max_hp_by_tier'), dict):
-            OBSTACLE_MAX_HP_BY_TIER = dict(obst_cfg.get('max_hp_by_tier'))
-
-        # --- Timing (grouped 'timing' or top-state.level keys) ---
-        timing_cfg = _config.get('timing') if isinstance(_config.get('timing'), dict) else _config
-        if 'notification_duration_seconds' in timing_cfg:
-            try:
-                notification_duration_seconds = float(timing_cfg.get('notification_duration_seconds'))
-            except Exception:
-                pass
-        if 'base_sleep' in timing_cfg:
-            try:
-                base_sleep = float(timing_cfg.get('base_sleep'))
-            except Exception:
-                pass
-        if 'min_sleep' in timing_cfg:
-            try:
-                min_sleep = float(timing_cfg.get('min_sleep'))
-            except Exception:
-                pass
-        # NOTE: clockwork decay seconds moved under special.clockwork for grouping
-
-        # --- Limits (grouped 'limits' or top-state.level) ---
-        limits_cfg = _config.get('limits') if isinstance(_config.get('limits'), dict) else _config
-        if 'max_entities' in limits_cfg:
-            try:
-                MAX_ENTITIES = int(limits_cfg.get('max_entities'))
-            except Exception:
-                pass
-
-        # --- Layout: width/height/num_balls/v.LANE_POSITIONS ---
-        layout_cfg = _config.get('layout') if isinstance(_config.get('layout'), dict) else _config
-        if 'width' in layout_cfg:
-            try:
-                v.WIDTH = int(layout_cfg.get('width'))
-            except Exception:
-                pass
-        if 'height' in layout_cfg:
-            try:
-                v.HEIGHT = int(layout_cfg.get('height'))
-            except Exception:
-                pass
-        if 'num_balls' in layout_cfg:
-            try:
-                NUM_BALLS = int(layout_cfg.get('num_balls'))
-            except Exception:
-                pass
-        if 'v.LANE_POSITIONS' in layout_cfg and isinstance(layout_cfg.get('v.LANE_POSITIONS'), (list, tuple)):
-            try:
-                v.LANE_POSITIONS = [int(x) for x in layout_cfg.get('v.LANE_POSITIONS')]
-            except Exception:
-                pass
-
-        # Backwards compatibility: accept top-state.level shorthand keys as well
-        if 'bat_spawn_interval_range' in _config and isinstance(_config.get('bat_spawn_interval_range'), (list, tuple)):
-            BAT_SPAWN_INTERVAL_RANGE = list(_config.get('bat_spawn_interval_range'))
-        if 'bat_max_on_screen' in _config:
-            try:
-                BAT_MAX_ON_SCREEN = int(_config.get('bat_max_on_screen'))
-            except Exception:
-                pass
-        if 'bat_hp_by_tier' in _config and isinstance(_config.get('bat_hp_by_tier'), dict):
-            BAT_HP_BY_TIER = dict(_config.get('bat_hp_by_tier'))
-        if 'obstacle_max_hp_by_tier' in _config and isinstance(_config.get('obstacle_max_hp_by_tier'), dict):
-            OBSTACLE_MAX_HP_BY_TIER = dict(_config.get('obstacle_max_hp_by_tier'))
-
-        # --- Special tunables (grouped 'special') ---
-        special_cfg = _config.get('special') if isinstance(_config.get('special'), dict) else _config
-        try:
-            # Dinosaur
-            if 'dinosaur' in special_cfg and isinstance(special_cfg.get('dinosaur'), dict):
-                dcfg = special_cfg.get('dinosaur')
-                if 'presses_to_bounce' in dcfg:
-                    try:
-                        DINOSAUR_PRESSES_TO_BOUNCE = int(dcfg.get('presses_to_bounce'))
-                    except Exception:
-                        pass
-                if 'press_chunk' in dcfg:
-                    try:
-                        DINOSAUR_PRESS_CHUNK = int(dcfg.get('press_chunk'))
-                    except Exception:
-                        pass
-                if 'recovery_chance_on_egg' in dcfg:
-                    try:
-                        DINOSAUR_RECOVERY_ON_EGG = float(dcfg.get('recovery_chance_on_egg'))
-                    except Exception:
-                        pass
-                if 'damage' in dcfg:
-                    try:
-                        DINOSAUR_DAMAGE = int(dcfg.get('damage'))
-                    except Exception:
-                        pass
-
-            # Stealth & gold damage overrides
-            if 'stealth' in special_cfg and isinstance(special_cfg.get('stealth'), dict):
-                try:
-                    dmg_val = special_cfg.get('stealth').get('damage')
-                    if dmg_val is not None:
-                        STEALTH_DAMAGE = int(dmg_val)
-                except Exception:
-                    pass
-                try:
-                    tv = special_cfg.get('stealth').get('tangible_seconds')
-                    if tv is not None:
-                        STEALTH_TANGIBLE_SECONDS = float(tv)
-                except Exception:
-                    pass
-            if 'gold' in special_cfg and isinstance(special_cfg.get('gold'), dict):
-                try:
-                    dmg_val = special_cfg.get('gold').get('damage')
-                    if dmg_val is not None:
-                        GOLD_DAMAGE = int(dmg_val)
-                except Exception:
-                    pass
-                try:
-                    sv = special_cfg.get('gold').get('score_value')
-                    if sv is not None:
-                        GOLD_SCORE_VALUE = int(sv)
-                except Exception:
-                    pass
-
-            # Glitch overrides
-            if 'glitch' in special_cfg and isinstance(special_cfg.get('glitch'), dict):
-                gcfg = special_cfg.get('glitch')
-                if 'bounce_ignore_chance' in gcfg:
-                    try:
-                        GLITCH_BOUNCE_IGNORE_CHANCE = float(gcfg.get('bounce_ignore_chance'))
-                    except Exception:
-                        pass
-                if 'loot_ignore_chance' in gcfg:
-                    try:
-                        GLITCH_LOOT_IGNORE_CHANCE = float(gcfg.get('loot_ignore_chance'))
-                    except Exception:
-                        pass
-                if 'loot_promote_chance' in gcfg:
-                    try:
-                        GLITCH_LOOT_PROMOTE_CHANCE = float(gcfg.get('loot_promote_chance'))
-                    except Exception:
-                        pass
-                if 'damage_min' in gcfg:
-                    try:
-                        GLITCH_DAMAGE_MIN = int(gcfg.get('damage_min'))
-                    except Exception:
-                        pass
-                if 'damage_max' in gcfg:
-                    try:
-                        GLITCH_DAMAGE_MAX = int(gcfg.get('damage_max'))
-                    except Exception:
-                        pass
-                if 'survive_on_floor_chance' in gcfg:
-                    try:
-                        GLITCH_SURVIVE_ON_FLOOR_CHANCE = float(gcfg.get('survive_on_floor_chance'))
-                    except Exception:
-                        pass
-                # Optional movement and chaotic behavior overrides
-                if 'speed_min' in gcfg:
-                    try:
-                        v.GLITCH_SPEED_MIN = int(gcfg.get('speed_min'))
-                    except Exception:
-                        pass
-                if 'speed_max' in gcfg:
-                    try:
-                        v.GLITCH_SPEED_MAX = int(gcfg.get('speed_max'))
-                    except Exception:
-                        pass
-                if 'flip_chance' in gcfg:
-                    try:
-                        GLITCH_FLIP_CHANCE = float(gcfg.get('flip_chance'))
-                    except Exception:
-                        pass
-                if 'swap_chance' in gcfg:
-                    try:
-                        GLITCH_SWAP_CHANCE = float(gcfg.get('swap_chance'))
-                    except Exception:
-                        pass
-                if 'nudge_chance' in gcfg:
-                    try:
-                        GLITCH_NUDGE_CHANCE = float(gcfg.get('nudge_chance'))
-                    except Exception:
-                        pass
-                if 'duplicate_chance' in gcfg:
-                    try:
-                        GLITCH_DUPLICATE_CHANCE = float(gcfg.get('duplicate_chance'))
-                    except Exception:
-                        pass
-
-            # Orange egg recover chance (top-state.level under special)
-            if 'orange_egg_recover_chance' in special_cfg:
-                try:
-                    ORANGE_RECOVER_CHANCE = float(special_cfg.get('orange_egg_recover_chance'))
-                except Exception:
-                    pass
-            # Orange-specific overrides (out-of-play sentinel)
-            if 'orange' in special_cfg and isinstance(special_cfg.get('orange'), dict):
-                try:
-                    oy = special_cfg.get('orange').get('out_of_play_y')
-                    if oy is not None:
-                        ORANGE_OUT_OF_PLAY_Y = int(oy)
-                except Exception:
-                    pass
-            # Clockwork-specific special settings (grouped under special.clockwork)
-            if 'clockwork' in special_cfg and isinstance(special_cfg.get('clockwork'), dict):
-                try:
-                    ccfg = special_cfg.get('clockwork')
-                    if 'decay_seconds' in ccfg:
-                        try:
-                            CLOCKWORK_DECAY_SECONDS = float(ccfg.get('decay_seconds'))
-                        except Exception:
-                            pass
-                    if 'initial_charge' in ccfg:
-                        try:
-                            CLOCKWORK_INITIAL_CHARGE = int(ccfg.get('initial_charge'))
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-        # Recompute derived runtime structures that depend on layout/num_balls
-        try:
-            n_lanes = len(v.LANE_POSITIONS) if isinstance(v.LANE_POSITIONS, (list, tuple)) else 9
-            # Ensure state.random_lanes has correct length and is shuffled
-            state.random_lanes = list(range(n_lanes))
-            random.shuffle(state.random_lanes)
-            # Cap NUM_BALLS to available lanes
-            if v.NUM_BALLS > n_lanes:
-                v.NUM_BALLS = n_lanes
-            
-            # Reinitialize state.ball_colors from formation (may have changed in config)
-            state.ball_colors = []
-            for bird_name in v.DEFAULT_BIRD_FORMATION[:v.NUM_BALLS]:
-                bird_name_upper = bird_name.upper()
-                if bird_name_upper == 'YELLOW':
-                    state.ball_colors.append(YELLOW)
-                elif bird_name_upper == 'RED':
-                    state.ball_colors.append(RED)
-                elif bird_name_upper == 'BLUE':
-                    state.ball_colors.append(BLUE)
-                elif bird_name_upper == 'WHITE':
-                    state.ball_colors.append(WHITE)
-                elif bird_name_upper == 'ORANGE':
-                    state.ball_colors.append(ORANGE)
-                elif bird_name_upper == 'GOLD':
-                    state.ball_colors.append(GOLD)
-                elif bird_name_upper == 'PATCHWORK':
-                    state.ball_colors.append(PATCHWORK)
-                elif bird_name_upper == 'PURPLE':
-                    state.ball_colors.append(PURPLE)
-                elif bird_name_upper == 'CLOCKWORK':
-                    state.ball_colors.append(CLOCKWORK)
-                elif bird_name_upper == 'STEALTH':
-                    state.ball_colors.append(STEALTH)
-                elif bird_name_upper == 'COOKIE':
-                    state.ball_colors.append(COOKIE)
-                elif bird_name_upper == 'DINOSAUR':
-                    state.ball_colors.append(DINOSAUR)
-                elif bird_name_upper == 'GLITCH':
-                    state.ball_colors.append(GLITCH)
-                else:
-                    state.ball_colors.append(YELLOW)
-            # Pad with YELLOW if formation is shorter than NUM_BALLS
-            while len(state.ball_colors) < v.NUM_BALLS:
-                state.ball_colors.append(YELLOW)
-            
-            # Recompute ball columns and starting positions/arrays
-            state.ball_cols = [v.LANE_POSITIONS[state.random_lanes[i]] for i in range(v.NUM_BALLS)]
-            v.STARTING_LINE = v.HEIGHT - 4
-            state.ball_y = [v.STARTING_LINE] * v.NUM_BALLS
-            state.ball_vy = [-1] * v.NUM_BALLS
-            state.ball_lost = [False] * v.NUM_BALLS
-            state.bird_power_used = [False] * v.NUM_BALLS
-            state.bird_power_uses = [0] * v.NUM_BALLS
-            # Note: per_bird_xp and transformed_s are NOT reset here to preserve progression
-            # Purple charge state arrays
-            state.purple_state = [0] * v.NUM_BALLS
-            state.purple_primed_frame = [0] * v.NUM_BALLS
-            state.purple_charge_started_frame = [0] * v.NUM_BALLS
-            state.purple_saved_vy = [None] * v.NUM_BALLS
-            state.purple_miss_count = [0] * v.NUM_BALLS
-            state.purple_just_fired_frames = [0] * v.NUM_BALLS
-            state.purple_hold_counter = [0] * v.NUM_BALLS
-        except Exception:
-            pass
-        # --- Physics / powers / progression overrides ---
-        physics_cfg = _config.get('physics') if isinstance(_config.get('physics'), dict) else _config
-        if 'ball_speeds' in physics_cfg and isinstance(physics_cfg.get('ball_speeds'), dict):
-            try:
-                # map string names to ints
-                v.BALL_SPEEDS_DEFAULT.update({str(k): int(val) for k, val in physics_cfg.get('ball_speeds').items()})
-            except Exception:
-                pass
-        # Global speed clamps
-        if 'speed_min' in physics_cfg:
-            try:
-                v.SPEED_MIN = int(physics_cfg.get('speed_min'))
-            except Exception:
-                pass
-        if 'speed_max' in physics_cfg:
-            try:
-                v.SPEED_MAX = int(physics_cfg.get('speed_max'))
-            except Exception:
-                pass
-        if 'combo_window_frames' in physics_cfg:
-            try:
-                COMBO_WINDOW_FRAMES = int(physics_cfg.get('combo_window_frames'))
-            except Exception:
-                pass
-        if 'yellow_blue_chain_window' in physics_cfg:
-            try:
-                YELLOW_BLUE_CHAIN_WINDOW = int(physics_cfg.get('yellow_blue_chain_window'))
-            except Exception:
-                pass
-
-        powers_cfg = _config.get('powers') if isinstance(_config.get('powers'), dict) else _config
-        if isinstance(powers_cfg, dict):
-            try:
-                # Merge provided powers mapping into v.POWERS_DEFAULT
-                for k, val_dict in powers_cfg.items():
-                    if isinstance(val_dict, dict):
-                        v.POWERS_DEFAULT.setdefault(k, {}).update(val_dict)
-            except Exception:
-                pass
-
-        prog_cfg = _config.get('progression') if isinstance(_config.get('progression'), dict) else _config
-        # Bird grade progression (XP-based)
-        if 'xp_base' in prog_cfg:
-            try:
-                XP_BASE = float(prog_cfg.get('xp_base'))
-            except Exception:
-                pass
-        if 'grade_exp_factor' in prog_cfg:
-            try:
-                GRADE_EXP_FACTOR = float(prog_cfg.get('grade_exp_factor'))
-            except Exception:
-                pass
-        # Game state.level progression (state.score-based)
-        if 'level_score_base' in prog_cfg:
-            try:
-                LEVEL_SCORE_BASE = float(prog_cfg.get('level_score_base'))
-            except Exception:
-                pass
-        if 'level_score_factor' in prog_cfg:
-            try:
-                LEVEL_SCORE_FACTOR = float(prog_cfg.get('level_score_factor'))
-            except Exception:
-                pass
-
-        # Achievements: allow overriding goals (merge shallowly)
-        ach_cfg = _config.get('achievements') if isinstance(_config.get('achievements'), dict) else None
-        if ach_cfg:
-            try:
-                # Achievements are now managed in the achievements module
-                # Config overrides would need to be applied there directly
-                pass
-            except Exception:
-                pass
-
-        # --- Newly added constants: spawning, collision, rendering, timers ---
-        # Collision/hitbox constants
-        collision_cfg = _config.get('collision') if isinstance(_config.get('collision'), dict) else _config
-        if 'lane_collision_half_width' in collision_cfg:
-            try:
-                LANE_COLLISION_HALF_WIDTH = int(collision_cfg.get('lane_collision_half_width'))
-            except Exception:
-                pass
-        if 'loot_collection_distance' in collision_cfg:
-            try:
-                LOOT_COLLECTION_DISTANCE = int(collision_cfg.get('loot_collection_distance'))
-            except Exception:
-                pass
-        if 'bat_sprite_width' in collision_cfg:
-            try:
-                BAT_SPRITE_WIDTH = int(collision_cfg.get('bat_sprite_width'))
-            except Exception:
-                pass
-
-        # Sprite heights
-        rendering_cfg = _config.get('rendering') if isinstance(_config.get('rendering'), dict) else _config
-        if 'dinosaur_sprite_height' in rendering_cfg:
-            try:
-                DINOSAUR_SPRITE_HEIGHT = int(rendering_cfg.get('dinosaur_sprite_height'))
-            except Exception:
-                pass
-        if 'normal_bird_sprite_height' in rendering_cfg:
-            try:
-                NORMAL_BIRD_SPRITE_HEIGHT = int(rendering_cfg.get('normal_bird_sprite_height'))
-            except Exception:
-                pass
-
-        # Shuffle power levels
-        shuffle_cfg = _config.get('shuffle') if isinstance(_config.get('shuffle'), dict) else powers_cfg
-        if 'level_base' in shuffle_cfg:
-            try:
-                SHUFFLE_LEVEL_BASE = int(shuffle_cfg.get('level_base'))
-            except Exception:
-                pass
-        if 'level_plus' in shuffle_cfg:
-            try:
-                SHUFFLE_LEVEL_PLUS = int(shuffle_cfg.get('level_plus'))
-            except Exception:
-                pass
-        if 'level_plusplus' in shuffle_cfg:
-            try:
-                SHUFFLE_LEVEL_PLUSPLUS = int(shuffle_cfg.get('level_plusplus'))
-            except Exception:
-                pass
-        if 'level_max' in shuffle_cfg:
-            try:
-                SHUFFLE_LEVEL_MAX = int(shuffle_cfg.get('level_max'))
-            except Exception:
-                pass
-
-        # Powerup defaults (wide_cursor, bounce_boost, suction, tailwind)
-        powerup_defaults_cfg = _config.get('powerup_defaults') if isinstance(_config.get('powerup_defaults'), dict) else _config
-        for powerup_name in ['wide_cursor', 'bounce_boost', 'suction', 'tailwind']:
-            pcfg = powerup_defaults_cfg.get(powerup_name) if isinstance(powerup_defaults_cfg.get(powerup_name), dict) else {}
-            const_prefix = powerup_name.upper().replace('_', '_')
-            for tier in ['base', 'plus', 'plusplus', 'max']:
-                sec_key = f'{tier}_seconds'
-                const_name = f'{const_prefix}_{tier.upper()}_SECONDS'
-                if sec_key in pcfg:
-                    try:
-                        globals()[const_name] = float(pcfg.get(sec_key))
-                    except Exception:
-                        pass
-            # Additional tier-specific values
-            if powerup_name == 'wide_cursor':
-                if 'lanes_base' in pcfg:
-                    try:
-                        WIDE_CURSOR_LANES_BASE = int(pcfg.get('lanes_base'))
-                    except Exception:
-                        pass
-                if 'lanes_max' in pcfg:
-                    try:
-                        WIDE_CURSOR_LANES_MAX = int(pcfg.get('lanes_max'))
-                    except Exception:
-                        pass
-            elif powerup_name == 'bounce_boost':
-                for tier in ['base', 'plus', 'plusplus', 'max']:
-                    dur_key = f'duration_{tier}'
-                    const_name = f'BOUNCE_BOOST_DURATION_{tier.upper()}'
-                    if dur_key in pcfg:
-                        try:
-                            globals()[const_name] = int(pcfg.get(dur_key))
-                        except Exception:
-                            pass
-            elif powerup_name == 'suction':
-                for tier in ['base', 'plus', 'plusplus', 'max']:
-                    boost_key = f'boost_duration_{tier}'
-                    const_name = f'SUCTION_BOOST_DURATION_{tier.upper()}'
-                    if boost_key in pcfg:
-                        try:
-                            globals()[const_name] = int(pcfg.get(boost_key))
-                        except Exception:
-                            pass
-            elif powerup_name == 'tailwind':
-                for tier in ['base', 'plus', 'plusplus']:
-                    up_key = f'up_bonus_{tier}'
-                    const_name = f'TAILWIND_UP_BONUS_{tier.upper()}'
-                    if up_key in pcfg:
-                        try:
-                            globals()[const_name] = int(pcfg.get(up_key))
-                        except Exception:
-                            pass
-                for tier in ['base', 'plus', 'plusplus', 'max']:
-                    down_key = f'down_penalty_{tier}'
-                    const_name = f'TAILWIND_DOWN_PENALTY_{tier.upper()}'
-                    if down_key in pcfg:
-                        try:
-                            globals()[const_name] = int(pcfg.get(down_key))
-                        except Exception:
-                            pass
-
-        # Bat spawning tunables
-        bat_spawning_cfg = bats_cfg.get('spawning') if isinstance(bats_cfg.get('spawning'), dict) else bats_cfg
-        if 'wave_offset_min' in bat_spawning_cfg:
-            try:
-                BAT_WAVE_OFFSET_MIN = int(bat_spawning_cfg.get('wave_offset_min'))
-            except Exception:
-                pass
-        if 'wave_offset_max' in bat_spawning_cfg:
-            try:
-                BAT_WAVE_OFFSET_MAX = int(bat_spawning_cfg.get('wave_offset_max'))
-            except Exception:
-                pass
-        if 'target_y_min_low_level' in bat_spawning_cfg:
-            try:
-                BAT_TARGET_Y_MIN_LOW_LEVEL = int(bat_spawning_cfg.get('target_y_min_low_level'))
-            except Exception:
-                pass
-        if 'target_y_max_low_level' in bat_spawning_cfg:
-            try:
-                BAT_TARGET_Y_MAX_LOW_LEVEL = int(bat_spawning_cfg.get('target_y_max_low_level'))
-            except Exception:
-                pass
-        if 'target_y_min_high_level' in bat_spawning_cfg:
-            try:
-                BAT_TARGET_Y_MIN_HIGH_LEVEL = int(bat_spawning_cfg.get('target_y_min_high_level'))
-            except Exception:
-                pass
-        if 'target_y_max_high_level' in bat_spawning_cfg:
-            try:
-                BAT_TARGET_Y_MAX_HIGH_LEVEL = int(bat_spawning_cfg.get('target_y_max_high_level'))
-            except Exception:
-                pass
-        if 'target_y_level_threshold' in bat_spawning_cfg:
-            try:
-                BAT_TARGET_Y_LEVEL_THRESHOLD = int(bat_spawning_cfg.get('target_y_level_threshold'))
-            except Exception:
-                pass
-        if 'spawn_max_attempts' in bat_spawning_cfg:
-            try:
-                v.BAT_SPAWN_MAX_ATTEMPTS = int(bat_spawning_cfg.get('spawn_max_attempts'))
-            except Exception:
-                pass
-        if 'spawn_x_min' in bat_spawning_cfg:
-            try:
-                v.BAT_SPAWN_X_MIN = int(bat_spawning_cfg.get('spawn_x_min'))
-            except Exception:
-                pass
-        if 'spawn_x_margin' in bat_spawning_cfg:
-            try:
-                v.BAT_SPAWN_X_MARGIN = int(bat_spawning_cfg.get('spawn_x_margin'))
-            except Exception:
-                pass
-        if 'min_separation' in bat_spawning_cfg:
-            try:
-                v.BAT_MIN_SEPARATION = int(bat_spawning_cfg.get('min_separation'))
-            except Exception:
-                pass
-        if 'spawn_fail_retry_timer' in bat_spawning_cfg:
-            try:
-                BAT_SPAWN_FAIL_RETRY_TIMER = int(bat_spawning_cfg.get('spawn_fail_retry_timer'))
-            except Exception:
-                pass
-        if 'consecutive_spawn_limit' in bat_spawning_cfg:
-            try:
-                BAT_CONSECUTIVE_SPAWN_LIMIT = int(bat_spawning_cfg.get('consecutive_spawn_limit'))
-            except Exception:
-                pass
-        if 'consecutive_retry_timer' in bat_spawning_cfg:
-            try:
-                BAT_CONSECUTIVE_RETRY_TIMER = int(bat_spawning_cfg.get('consecutive_retry_timer'))
-            except Exception:
-                pass
-        if 'spawn_y_start' in bat_spawning_cfg:
-            try:
-                BAT_SPAWN_Y_START = int(bat_spawning_cfg.get('spawn_y_start'))
-            except Exception:
-                pass
-
-        # Bat tier weights and HP
-        bat_tiers_cfg = bats_cfg.get('tiers') if isinstance(bats_cfg.get('tiers'), dict) else bats_cfg
-        if 'weights_level_0_2' in bat_tiers_cfg and isinstance(bat_tiers_cfg.get('weights_level_0_2'), list):
-            try:
-                BAT_TIER_WEIGHTS_LEVEL_0_2 = list(bat_tiers_cfg.get('weights_level_0_2'))
-            except Exception:
-                pass
-        if 'weights_level_3_4' in bat_tiers_cfg and isinstance(bat_tiers_cfg.get('weights_level_3_4'), list):
-            try:
-                BAT_TIER_WEIGHTS_LEVEL_3_4 = list(bat_tiers_cfg.get('weights_level_3_4'))
-            except Exception:
-                pass
-        if 'weights_level_5_7' in bat_tiers_cfg and isinstance(bat_tiers_cfg.get('weights_level_5_7'), list):
-            try:
-                BAT_TIER_WEIGHTS_LEVEL_5_7 = list(bat_tiers_cfg.get('weights_level_5_7'))
-            except Exception:
-                pass
-        if 'weights_level_8_plus' in bat_tiers_cfg and isinstance(bat_tiers_cfg.get('weights_level_8_plus'), list):
-            try:
-                BAT_TIER_WEIGHTS_LEVEL_8_PLUS = list(bat_tiers_cfg.get('weights_level_8_plus'))
-            except Exception:
-                pass
-        if 'level_threshold_1' in bat_tiers_cfg:
-            try:
-                BAT_TIER_LEVEL_THRESHOLD_1 = int(bat_tiers_cfg.get('level_threshold_1'))
-            except Exception:
-                pass
-        if 'level_threshold_2' in bat_tiers_cfg:
-            try:
-                BAT_TIER_LEVEL_THRESHOLD_2 = int(bat_tiers_cfg.get('level_threshold_2'))
-            except Exception:
-                pass
-        if 'level_threshold_3' in bat_tiers_cfg:
-            try:
-                BAT_TIER_LEVEL_THRESHOLD_3 = int(bat_tiers_cfg.get('level_threshold_3'))
-            except Exception:
-                pass
-        if 'hp_tier_1' in bat_tiers_cfg:
-            try:
-                BAT_HP_TIER_1 = int(bat_tiers_cfg.get('hp_tier_1'))
-            except Exception:
-                pass
-        if 'hp_tier_2' in bat_tiers_cfg:
-            try:
-                BAT_HP_TIER_2 = int(bat_tiers_cfg.get('hp_tier_2'))
-            except Exception:
-                pass
-        if 'hp_tier_3' in bat_tiers_cfg:
-            try:
-                BAT_HP_TIER_3 = int(bat_tiers_cfg.get('hp_tier_3'))
-            except Exception:
-                pass
-        if 'hp_tier_4' in bat_tiers_cfg:
-            try:
-                BAT_HP_TIER_4 = int(bat_tiers_cfg.get('hp_tier_4'))
-            except Exception:
-                pass
-
-        # Obstacle spawning tunables
-        obstacle_spawning_cfg = obst_cfg.get('spawning') if isinstance(obst_cfg.get('spawning'), dict) else obst_cfg
-        if 'base_spawn_rate_base' in obstacle_spawning_cfg:
-            try:
-                OBSTACLE_BASE_SPAWN_RATE_BASE = int(obstacle_spawning_cfg.get('base_spawn_rate_base'))
-            except Exception:
-                pass
-        if 'base_spawn_rate_min' in obstacle_spawning_cfg:
-            try:
-                OBSTACLE_BASE_SPAWN_RATE_MIN = int(obstacle_spawning_cfg.get('base_spawn_rate_min'))
-            except Exception:
-                pass
-        if 'spawn_rate_level_multiplier' in obstacle_spawning_cfg:
-            try:
-                OBSTACLE_SPAWN_RATE_LEVEL_MULTIPLIER = int(obstacle_spawning_cfg.get('spawn_rate_level_multiplier'))
-            except Exception:
-                pass
-        if 'spawn_variance_base' in obstacle_spawning_cfg:
-            try:
-                OBSTACLE_SPAWN_VARIANCE_BASE = int(obstacle_spawning_cfg.get('spawn_variance_base'))
-            except Exception:
-                pass
-        if 'spawn_variance_min' in obstacle_spawning_cfg:
-            try:
-                OBSTACLE_SPAWN_VARIANCE_MIN = int(obstacle_spawning_cfg.get('spawn_variance_min'))
-            except Exception:
-                pass
-        if 'spawn_variance_level_multiplier' in obstacle_spawning_cfg:
-            try:
-                OBSTACLE_SPAWN_VARIANCE_LEVEL_MULTIPLIER = int(obstacle_spawning_cfg.get('spawn_variance_level_multiplier'))
-            except Exception:
-                pass
-        if 'retry_timer_divisor' in obstacle_spawning_cfg:
-            try:
-                OBSTACLE_RETRY_TIMER_DIVISOR = int(obstacle_spawning_cfg.get('retry_timer_divisor'))
-            except Exception:
-                pass
-        if 'retry_timer_min' in obstacle_spawning_cfg:
-            try:
-                OBSTACLE_RETRY_TIMER_MIN = int(obstacle_spawning_cfg.get('retry_timer_min'))
-            except Exception:
-                pass
-        if 'consecutive_spawn_limit' in obstacle_spawning_cfg:
-            try:
-                OBSTACLE_CONSECUTIVE_SPAWN_LIMIT = int(obstacle_spawning_cfg.get('consecutive_spawn_limit'))
-            except Exception:
-                pass
-
-        # Obstacle tier weights and HP
-        obstacle_tiers_cfg = obst_cfg.get('tiers') if isinstance(obst_cfg.get('tiers'), dict) else obst_cfg
-        if 'weights_level_0_2' in obstacle_tiers_cfg and isinstance(obstacle_tiers_cfg.get('weights_level_0_2'), list):
-            try:
-                OBSTACLE_TIER_WEIGHTS_LEVEL_0_2 = list(obstacle_tiers_cfg.get('weights_level_0_2'))
-            except Exception:
-                pass
-        if 'weights_level_3_4' in obstacle_tiers_cfg and isinstance(obstacle_tiers_cfg.get('weights_level_3_4'), list):
-            try:
-                OBSTACLE_TIER_WEIGHTS_LEVEL_3_4 = list(obstacle_tiers_cfg.get('weights_level_3_4'))
-            except Exception:
-                pass
-        if 'weights_level_5_7' in obstacle_tiers_cfg and isinstance(obstacle_tiers_cfg.get('weights_level_5_7'), list):
-            try:
-                OBSTACLE_TIER_WEIGHTS_LEVEL_5_7 = list(obstacle_tiers_cfg.get('weights_level_5_7'))
-            except Exception:
-                pass
-        if 'weights_level_8_plus' in obstacle_tiers_cfg and isinstance(obstacle_tiers_cfg.get('weights_level_8_plus'), list):
-            try:
-                OBSTACLE_TIER_WEIGHTS_LEVEL_8_PLUS = list(obstacle_tiers_cfg.get('weights_level_8_plus'))
-            except Exception:
-                pass
-        if 'level_threshold_1' in obstacle_tiers_cfg:
-            try:
-                OBSTACLE_TIER_LEVEL_THRESHOLD_1 = int(obstacle_tiers_cfg.get('level_threshold_1'))
-            except Exception:
-                pass
-        if 'level_threshold_2' in obstacle_tiers_cfg:
-            try:
-                OBSTACLE_TIER_LEVEL_THRESHOLD_2 = int(obstacle_tiers_cfg.get('level_threshold_2'))
-            except Exception:
-                pass
-        if 'level_threshold_3' in obstacle_tiers_cfg:
-            try:
-                OBSTACLE_TIER_LEVEL_THRESHOLD_3 = int(obstacle_tiers_cfg.get('level_threshold_3'))
-            except Exception:
-                pass
-        if 'hp_tier_1' in obstacle_tiers_cfg:
-            try:
-                OBSTACLE_HP_TIER_1 = int(obstacle_tiers_cfg.get('hp_tier_1'))
-            except Exception:
-                pass
-        if 'hp_tier_2' in obstacle_tiers_cfg:
-            try:
-                OBSTACLE_HP_TIER_2 = int(obstacle_tiers_cfg.get('hp_tier_2'))
-            except Exception:
-                pass
-        if 'hp_tier_3' in obstacle_tiers_cfg:
-            try:
-                OBSTACLE_HP_TIER_3 = int(obstacle_tiers_cfg.get('hp_tier_3'))
-            except Exception:
-                pass
-        if 'hp_tier_4' in obstacle_tiers_cfg:
-            try:
-                OBSTACLE_HP_TIER_4 = int(obstacle_tiers_cfg.get('hp_tier_4'))
-            except Exception:
-                pass
-
-        # Despawn timers
-        despawn_cfg = _config.get('despawn') if isinstance(_config.get('despawn'), dict) else timing_cfg
-        if 'bat_despawn_time' in despawn_cfg:
-            try:
-                BAT_DESPAWN_TIME = int(despawn_cfg.get('bat_despawn_time'))
-            except Exception:
-                pass
-        if 'loot_despawn_time' in despawn_cfg:
-            try:
-                LOOT_DESPAWN_TIME = int(despawn_cfg.get('loot_despawn_time'))
-            except Exception:
-                pass
-
-        # Game over screen formatting
-        game_over_cfg = _config.get('game_over') if isinstance(_config.get('game_over'), dict) else _config
-        if 'separator_width' in game_over_cfg:
-            try:
-                GAME_OVER_SEPARATOR_WIDTH = int(game_over_cfg.get('separator_width'))
-            except Exception:
-                pass
-        if 'time_divider' in game_over_cfg:
-            try:
-                GAME_OVER_TIME_DIVIDER = int(game_over_cfg.get('time_divider'))
-            except Exception:
-                pass
-        if 'time_remainder' in game_over_cfg:
-            try:
-                GAME_OVER_TIME_REMAINDER = int(game_over_cfg.get('time_remainder'))
-            except Exception:
-                pass
-        if 'minutes_divider' in game_over_cfg:
-            try:
-                GAME_OVER_MINUTES_DIVIDER = int(game_over_cfg.get('minutes_divider'))
-            except Exception:
-                pass
-        if 'leaderboard_name_max_length' in game_over_cfg:
-            try:
-                LEADERBOARD_NAME_MAX_LENGTH = int(game_over_cfg.get('leaderboard_name_max_length'))
-            except Exception:
-                pass
-
-        # Frame sleep state.level multiplier
-        if 'frame_sleep_level_multiplier' in timing_cfg:
-            try:
-                FRAME_SLEEP_LEVEL_MULTIPLIER = float(timing_cfg.get('frame_sleep_level_multiplier'))
-            except Exception:
-                pass
-
-        # Lane/cursor constraints
-        layout_constraints_cfg = layout_cfg.get('constraints') if isinstance(layout_cfg.get('constraints'), dict) else layout_cfg
-        if 'num_lanes' in layout_constraints_cfg:
-            try:
-                NUM_LANES = int(layout_constraints_cfg.get('num_lanes'))
-            except Exception:
-                pass
-        if 'min_lane_index' in layout_constraints_cfg:
-            try:
-                MIN_LANE_INDEX = int(layout_constraints_cfg.get('min_lane_index'))
-            except Exception:
-                pass
-        if 'max_lane_index' in layout_constraints_cfg:
-            try:
-                MAX_LANE_INDEX = int(layout_constraints_cfg.get('max_lane_index'))
-            except Exception:
-                pass
-
-        # Combat tunables
-        combat_cfg = _config.get('combat') if isinstance(_config.get('combat'), dict) else _config
-        if 'bat_center_offset' in combat_cfg:
-            try:
-                v.BAT_CENTER_OFFSET = int(combat_cfg.get('bat_center_offset'))
-            except Exception:
-                pass
-        if 'xp_bonus_per_tier' in combat_cfg:
-            try:
-                v.XP_BONUS_PER_TIER = int(combat_cfg.get('xp_bonus_per_tier'))
-            except Exception:
-                pass
-        if 'obstacle_score_multiplier' in combat_cfg:
-            try:
-                v.OBSTACLE_SCORE_MULTIPLIER = int(combat_cfg.get('obstacle_score_multiplier'))
-            except Exception:
-                pass
-
-        # Blue adjacent boost
-        if 'blue_adjacent_boost_seconds' in special_cfg:
-            try:
-                BLUE_ADJACENT_BOOST_SECONDS = float(special_cfg.get('blue_adjacent_boost_seconds'))
-            except Exception:
-                pass
-
-        # --- Keyboard controls ---
-        controls_cfg = _config.get('controls') if isinstance(_config.get('controls'), dict) else _config
-        if 'key_move_left' in controls_cfg:
-            try:
-                v.KEY_MOVE_LEFT = str(controls_cfg.get('key_move_left'))
-            except Exception:
-                pass
-        if 'key_move_right' in controls_cfg:
-            try:
-                v.KEY_MOVE_RIGHT = str(controls_cfg.get('key_move_right'))
-            except Exception:
-                pass
-        if 'key_move_up' in controls_cfg:
-            try:
-                v.KEY_MOVE_UP = str(controls_cfg.get('key_move_up'))
-            except Exception:
-                pass
-        if 'key_move_down' in controls_cfg:
-            try:
-                v.KEY_MOVE_DOWN = str(controls_cfg.get('key_move_down'))
-            except Exception:
-                pass
-        if 'key_action' in controls_cfg:
-            try:
-                v.KEY_ACTION = str(controls_cfg.get('key_action'))
-            except Exception:
-                pass
-        if 'key_pause' in controls_cfg:
-            try:
-                v.KEY_PAUSE = str(controls_cfg.get('key_pause'))
-            except Exception:
-                pass
-        if 'key_pause_alt' in controls_cfg:
-            try:
-                v.KEY_PAUSE_ALT = str(controls_cfg.get('key_pause_alt'))
-            except Exception:
-                pass
-        if 'key_toggle_xp' in controls_cfg:
-            try:
-                v.KEY_TOGGLE_XP = str(controls_cfg.get('key_toggle_xp'))
-            except Exception:
-                pass
-        if 'key_toggle_xp_alt' in controls_cfg:
-            try:
-                v.KEY_TOGGLE_XP_ALT = str(controls_cfg.get('key_toggle_xp_alt'))
-            except Exception:
-                pass
-        if 'key_quit' in controls_cfg:
-            try:
-                v.KEY_QUIT = str(controls_cfg.get('key_quit'))
-            except Exception:
-                pass
-
-except Exception:
-    pass
-
 # Assign speeds based on bird formation (higher = faster) - AFTER config is loaded
 # Use the bird names directly from DEFAULT_BIRD_FORMATION instead of comparing color objects
 state.ball_speeds = []
@@ -2278,7 +1347,7 @@ try:
                         if state.ball_colors[bird_in_lane] == ORANGE and state.ball_speeds[bird_in_lane] == 0:
                             # Use configurable recover chance for orange eggs
                             try:
-                                if random.random() >= float(ORANGE_RECOVER_CHANCE):
+                                if random.random() >= float(v.ORANGE_RECOVER_CHANCE):
                                     continue
                             except Exception:
                                 if random.random() >= 0.10:
@@ -2303,13 +1372,13 @@ try:
                                 state.dinosaur_up_presses[bird_in_lane] = cnt
                                 # Every DINOSAUR_PRESS_CHUNK UP presses reduce current fall speed by 1
                                 try:
-                                    chunk = int(DINOSAUR_PRESS_CHUNK)
+                                    chunk = int(v.DINOSAUR_PRESS_CHUNK)
                                 except Exception:
                                     chunk = 3
                                 if chunk > 0 and cnt % chunk == 0:
                                     # If this is the final (DINOSAUR_PRESSES_TO_BOUNCE) press, bounce up
                                     try:
-                                        target = int(DINOSAUR_PRESSES_TO_BOUNCE)
+                                        target = int(v.DINOSAUR_PRESSES_TO_BOUNCE)
                                     except Exception:
                                         target = 15
                                     if cnt >= target:
@@ -2333,7 +1402,7 @@ try:
                             try:
                                 if state.ball_colors[bird_in_lane] == GLITCH:
                                     try:
-                                        if random.random() < float(GLITCH_BOUNCE_IGNORE_CHANCE):
+                                        if random.random() < float(v.GLITCH_BOUNCE_IGNORE_CHANCE):
                                             # ignore bounce
                                             pass
                                         else:
@@ -2341,18 +1410,18 @@ try:
                                     except Exception:
                                         # fallback to configured chance if float conversion fails
                                         try:
-                                            if random.random() < float(GLITCH_BOUNCE_IGNORE_CHANCE):
+                                            if random.random() < float(v.GLITCH_BOUNCE_IGNORE_CHANCE):
                                                 pass
                                             else:
                                                 set_ball_vy(bird_in_lane, -1)
                                         except Exception:
                                             try:
-                                                if random.random() < float(GLITCH_BOUNCE_IGNORE_CHANCE):
+                                                if random.random() < float(v.GLITCH_BOUNCE_IGNORE_CHANCE):
                                                     pass
                                                 else:
                                                     set_ball_vy(bird_in_lane, -1)
                                             except Exception:
-                                                if random.random() < float(GLITCH_BOUNCE_IGNORE_CHANCE):
+                                                if random.random() < float(v.GLITCH_BOUNCE_IGNORE_CHANCE):
                                                     pass
                                                 else:
                                                     set_ball_vy(bird_in_lane, -1)
@@ -2368,8 +1437,8 @@ try:
                                     c = state.clockwork_charge.get(bird_in_lane, None)
                                     if c is None:
                                         # initialize if missing
-                                        state.clockwork_charge[bird_in_lane] = CLOCKWORK_INITIAL_CHARGE
-                                        c = CLOCKWORK_INITIAL_CHARGE
+                                        state.clockwork_charge[bird_in_lane] = v.CLOCKWORK_INITIAL_CHARGE
+                                        c = v.CLOCKWORK_INITIAL_CHARGE
                                     if c == 0:
                                         state.clockwork_charge[bird_in_lane] = 1
                                         # speed equals charge when >0
@@ -2378,7 +1447,7 @@ try:
                                 pass
                             # Apply bounce boost if active
                             if state.powerups['bounce_boost_active'] and bird_in_lane not in state.speed_boosts:
-                                boost_frames = int(state.powerups['bounce_boost_duration'] / base_sleep)
+                                boost_frames = int(state.powerups['bounce_boost_duration'] / v.base_sleep)
                                 state.speed_boosts[bird_in_lane] = boost_frames
                             # record bounce action for combo detection
                             try:
@@ -2428,7 +1497,7 @@ try:
                                         if 0 <= adj_lane < 9:
                                             # Find which bird is in the adjacent lane
                                             adj_bird = -1
-                                            for idx in range(NUM_BALLS):
+                                            for idx in range(v.NUM_BALLS):
                                                 if state.random_lanes[idx] == adj_lane:
                                                     adj_bird = idx
                                                     break
@@ -2441,7 +1510,7 @@ try:
                                                             # GLITCH has a 5% chance to ignore the bounce
                                                             try:
                                                                 try:
-                                                                    if state.ball_colors[adj_bird] == GLITCH and random.random() < float(GLITCH_BOUNCE_IGNORE_CHANCE):
+                                                                    if state.ball_colors[adj_bird] == GLITCH and random.random() < float(v.GLITCH_BOUNCE_IGNORE_CHANCE):
                                                                         # ignore bounce
                                                                         pass
                                                                     else:
@@ -2449,7 +1518,7 @@ try:
                                                                 except Exception:
                                                                     # fallback
                                                                     try:
-                                                                        if state.ball_colors[adj_bird] == GLITCH and random.random() < float(GLITCH_BOUNCE_IGNORE_CHANCE):
+                                                                        if state.ball_colors[adj_bird] == GLITCH and random.random() < float(v.GLITCH_BOUNCE_IGNORE_CHANCE):
                                                                             pass
                                                                         else:
                                                                             set_ball_vy(adj_bird, -1)
@@ -2471,7 +1540,7 @@ try:
                                                                 for cross_offset in [-1, 1]:
                                                                     cross_lane = adj_lane + cross_offset
                                                                     if 0 <= cross_lane < 9:
-                                                                        for bi in range(NUM_BALLS):
+                                                                        for bi in range(v.NUM_BALLS):
                                                                             try:
                                                                                 if state.random_lanes[bi] == cross_lane and not state.ball_lost[bi] and state.ball_colors[bi] == BLUE and bi in state.scared_birds and state.ball_vy[bi] == 1:
                                                                                     try:
@@ -2484,7 +1553,7 @@ try:
                                                                 pass
                                                         else:
                                                             # Non-yellow bird - apply slow effect
-                                                            state.speed_boosts[adj_bird] = -int(3.0 / base_sleep)  # 3 seconds of slow
+                                                            state.speed_boosts[adj_bird] = -int(3.0 / v.base_sleep)  # 3 seconds of slow
                                                             affected_count += 1
                                                 
 
@@ -2495,7 +1564,7 @@ try:
                                     for adj_offset in [-1, 1]:
                                         adj_lane = bird_lane + adj_offset
                                         if 0 <= adj_lane < 9:
-                                            for idx in range(NUM_BALLS):
+                                            for idx in range(v.NUM_BALLS):
                                                 if state.random_lanes[idx] == adj_lane and not state.ball_lost[idx]:
                                                     if (state.ball_colors[idx] == RED or state.ball_colors[idx] == PURPLE or state.ball_colors[idx] == PATCHWORK) and state.ball_vy[idx] == -1:
                                                         damage_bonus += 1
@@ -2565,7 +1634,7 @@ try:
 
                                 elif bird_color == BLUE:
                                     # Blue power: Speed boost + extra damage flag
-                                    boost_frames = int(3.0 / base_sleep)
+                                    boost_frames = int(3.0 / v.base_sleep)
                                     state.speed_boosts[bird_in_lane] = boost_frames
                                     # Mark this bird as having blue power active (for extra damage)
                                     if bird_in_lane not in state.speed_boosts:
@@ -2578,7 +1647,7 @@ try:
                                         if 0 <= adj_lane < 9:
                                             # Find which bird is in the adjacent lane
                                             adj_bird = -1
-                                            for idx in range(NUM_BALLS):
+                                            for idx in range(v.NUM_BALLS):
                                                 if state.random_lanes[idx] == adj_lane:
                                                     adj_bird = idx
                                                     break
@@ -2593,14 +1662,14 @@ try:
                                                     else:
                                                         # GLITCH has 5% chance to ignore the bounce
                                                         try:
-                                                            if state.ball_colors[adj_bird] == GLITCH and random.random() < float(GLITCH_BOUNCE_IGNORE_CHANCE):
+                                                            if state.ball_colors[adj_bird] == GLITCH and random.random() < float(v.GLITCH_BOUNCE_IGNORE_CHANCE):
                                                                 # ignore bounce
                                                                 pass
                                                             else:
                                                                 set_ball_vy(adj_bird, -1)
                                                         except Exception:
                                                             try:
-                                                                if state.ball_colors[adj_bird] == GLITCH and random.random() < float(GLITCH_BOUNCE_IGNORE_CHANCE):
+                                                                if state.ball_colors[adj_bird] == GLITCH and random.random() < float(v.GLITCH_BOUNCE_IGNORE_CHANCE):
                                                                     pass
                                                                 else:
                                                                     set_ball_vy(adj_bird, -1)
@@ -2647,7 +1716,7 @@ try:
                                                                 y_lane = adj_bird_lane + y_offset
                                                                 if 0 <= y_lane < 9:
                                                                     y_bird = -1
-                                                                    for idx2 in range(NUM_BALLS):
+                                                                    for idx2 in range(v.NUM_BALLS):
                                                                         if state.random_lanes[idx2] == y_lane:
                                                                             y_bird = idx2
                                                                             break
@@ -2663,7 +1732,7 @@ try:
                                                                                         reset_bird_power(y_bird)
                                                                             else:
                                                                                 # Slow non-yellow bird
-                                                                                state.speed_boosts[y_bird] = -int(3.0 / base_sleep)
+                                                                                state.speed_boosts[y_bird] = -int(3.0 / v.base_sleep)
 
                                                         elif adj_bird_color == RED:
                                                             # Red power on adjacent bird
@@ -2672,7 +1741,7 @@ try:
                                                             for adj_offset2 in [-1, 1]:
                                                                 adj_lane2 = adj_bird_lane + adj_offset2
                                                                 if 0 <= adj_lane2 < 9:
-                                                                    for idx2 in range(NUM_BALLS):
+                                                                    for idx2 in range(v.NUM_BALLS):
                                                                         if state.random_lanes[idx2] == adj_lane2 and not state.ball_lost[idx2]:
                                                                             if state.ball_colors[idx2] == RED and state.ball_vy[idx2] == -1:
                                                                                 damage_bonus += 1
@@ -2689,14 +1758,14 @@ try:
 
                                                         elif adj_bird_color == BLUE:
                                                             # Blue power on adjacent bird
-                                                            boost_frames = int(BLUE_ADJACENT_BOOST_SECONDS / base_sleep)
+                                                            boost_frames = int(v.BLUE_ADJACENT_BOOST_SECONDS / v.base_sleep)
                                                             state.speed_boosts[adj_bird] = boost_frames
                                 elif bird_color == CLOCKWORK:
                                     # CLOCKWORK power: increase charge up to max 3.
                                     try:
-                                        cur = state.clockwork_charge.get(bird_in_lane, CLOCKWORK_INITIAL_CHARGE)
+                                        cur = state.clockwork_charge.get(bird_in_lane, v.CLOCKWORK_INITIAL_CHARGE)
                                         if cur is None:
-                                            cur = CLOCKWORK_INITIAL_CHARGE
+                                            cur = v.CLOCKWORK_INITIAL_CHARGE
                                         newc = min(int(v.CLOCKWORK_MAX_CHARGE), cur + 1)
                                         state.clockwork_charge[bird_in_lane] = newc
                                         # When charge > 0, speed mirrors charge
@@ -2707,7 +1776,7 @@ try:
                                 elif bird_color == STEALTH:
                                     # Stealth power: become tangible for a short duration and deal heavy damage
                                     # state.bird_power_used[bird_in_lane] is already True
-                                    state.stealth_timers[bird_in_lane] = max(1, int(STEALTH_TANGIBLE_SECONDS / base_sleep))
+                                    state.stealth_timers[bird_in_lane] = max(1, int(v.STEALTH_TANGIBLE_SECONDS / v.base_sleep))
                                     # Save previous speed and apply temporary speed boost
                                     try:
                                         state.stealth_prev_speeds[bird_in_lane] = state.ball_speeds[bird_in_lane]
@@ -2739,7 +1808,7 @@ try:
                                 set_ball_vy(bird_in_lane, 1)
                                 # Apply suction boost if configured
                                 if state.powerups['suction_boost_duration'] > 0 and bird_in_lane not in state.speed_boosts:
-                                    boost_frames = int(state.powerups['suction_boost_duration'] / base_sleep)
+                                    boost_frames = int(state.powerups['suction_boost_duration'] / v.base_sleep)
                                     state.speed_boosts[bird_in_lane] = boost_frames
                                 # record suction action for combo detection
                                 try:
@@ -2941,9 +2010,9 @@ try:
                 if state.ball_vy[b] == -1:  # Moving up
                     if state.ball_colors[b] == CLOCKWORK:
                         try:
-                            c = state.clockwork_charge.get(b, CLOCKWORK_INITIAL_CHARGE)
+                            c = state.clockwork_charge.get(b, v.CLOCKWORK_INITIAL_CHARGE)
                         except Exception:
-                            c = CLOCKWORK_INITIAL_CHARGE
+                            c = v.CLOCKWORK_INITIAL_CHARGE
                         if c == 0:
                             sprite = BIRD_UP_2  # frozen
                         elif c == 1:
@@ -2966,9 +2035,9 @@ try:
                     else:
                         if state.ball_colors[b] == CLOCKWORK:
                             try:
-                                c = state.clockwork_charge.get(b, CLOCKWORK_INITIAL_CHARGE)
+                                c = state.clockwork_charge.get(b, v.CLOCKWORK_INITIAL_CHARGE)
                             except Exception:
-                                c = CLOCKWORK_INITIAL_CHARGE
+                                c = v.CLOCKWORK_INITIAL_CHARGE
                             if c == 0:
                                 sprite = BIRD_DOWN_2  # frozen
                             elif c == 1:
@@ -3018,7 +2087,7 @@ try:
                     # This makes the bird actually invisible on terminals that support SGR 8.
                     try:
                         # Use a faster visible pulse (~0.5s cycle) so the change is noticeable
-                        period = max(4, int(2 / base_sleep))
+                        period = max(4, int(2 / v.base_sleep))
                     except Exception:
                         period = 8
                     phase = (state.frame_count % period) / period
@@ -3046,11 +2115,11 @@ try:
                         # CLOCKWORK: special per-char coloring and blinking for '.' and '\''
                         if state.ball_colors[b] == CLOCKWORK:
                             try:
-                                c = state.clockwork_charge.get(b, CLOCKWORK_INITIAL_CHARGE)
+                                c = state.clockwork_charge.get(b, v.CLOCKWORK_INITIAL_CHARGE)
                             except Exception:
-                                c = CLOCKWORK_INITIAL_CHARGE
+                                c = v.CLOCKWORK_INITIAL_CHARGE
                             try:
-                                blink_period = max(1, int(0.6 / base_sleep))
+                                blink_period = max(1, int(0.6 / v.base_sleep))
                             except Exception:
                                 blink_period = 3
                             blink_on = ((state.frame_count // blink_period) % 2) == 0
@@ -3069,10 +2138,10 @@ try:
                             # Only render after charging actually started
                             if state.frame_count >= start_frame:
                                 try:
-                                    elapsed_seconds = int((state.frame_count - start_frame) * base_sleep)
+                                    elapsed_seconds = int((state.frame_count - start_frame) * v.base_sleep)
                                 except Exception:
                                     try:
-                                        elapsed_seconds = int(float(state.frame_count - start_frame) * float(base_sleep))
+                                        elapsed_seconds = int(float(state.frame_count - start_frame) * float(v.base_sleep))
                                     except Exception:
                                         elapsed_seconds = 0
                                 s = max(0, min(3, elapsed_seconds))
@@ -3206,12 +2275,12 @@ try:
         # Count active balls
         active_balls = sum(1 for lost in state.ball_lost if not lost)
         swap_hint = " | Press SPACE again to swap or cancel" if state.selected_lane is not None else ""
-        output += f"\033[{v.HEIGHT+4};1HUse ← → to move, ↑ to bounce, Ctrl+C to quit | Birds: {active_balls}/{NUM_BALLS}{swap_hint}"
+        output += f"\033[{v.HEIGHT+4};1HUse ← → to move, ↑ to bounce, Ctrl+C to quit | Birds: {active_balls}/{v.NUM_BALLS}{swap_hint}"
         # Optional debug overlay: show per-bird XP and grade summary near footer
         try:
             if state.show_xp_overlay:
                 parts = []
-                for i in range(NUM_BALLS):
+                for i in range(v.NUM_BALLS):
                     try:
                         label, _ = compute_grade_from_xp(state.per_bird_xp[i])
                     except Exception:
@@ -3254,15 +2323,15 @@ try:
         # CLOCKWORK decay: every 30s reduce charge by 1 (per bird)
         try:
             # Use configurable CLOCKWORK_DECAY_SECONDS (seconds) converted to frames
-            decay_frames = max(1, int(float(CLOCKWORK_DECAY_SECONDS) / base_sleep))
+            decay_frames = max(1, int(float(v.CLOCKWORK_DECAY_SECONDS) / v.base_sleep))
             if decay_frames > 0 and state.frame_count % decay_frames == 0:
-                for i in range(NUM_BALLS):
+                for i in range(v.NUM_BALLS):
                     try:
                         if state.ball_colors[i] == CLOCKWORK and not state.ball_lost[i]:
                             c = state.clockwork_charge.get(i, None)
                             if c is None:
-                                c = CLOCKWORK_INITIAL_CHARGE
-                                state.clockwork_charge[i] = CLOCKWORK_INITIAL_CHARGE
+                                c = v.CLOCKWORK_INITIAL_CHARGE
+                                state.clockwork_charge[i] = v.CLOCKWORK_INITIAL_CHARGE
                             if c > 0:
                                 state.clockwork_charge[i] = c - 1
                                 newc = state.clockwork_charge[i]
@@ -3281,7 +2350,7 @@ try:
         # Area hold: check if all active birds are in top X% areas
         # top50: y <= HEIGHT * 0.5, top30: y <= HEIGHT * 0.3
         try:
-            active_idxs = [i for i in range(NUM_BALLS) if not state.ball_lost[i]]
+            active_idxs = [i for i in range(v.NUM_BALLS) if not state.ball_lost[i]]
             if active_idxs:
                 top50_y = int(v.HEIGHT * 0.5)
                 top30_y = int(v.HEIGHT * 0.3)
@@ -3322,7 +2391,7 @@ try:
                 'GOLD': GOLD,
             }
             for cname, cval in color_map.items():
-                count = sum(1 for i in range(NUM_BALLS) if not state.ball_lost[i] and state.ball_colors[i] == cval)
+                count = sum(1 for i in range(v.NUM_BALLS) if not state.ball_lost[i] and state.ball_colors[i] == cval)
                 ach.check_achievements_event('color_count', color=cname, count=count, frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
         except Exception:
             # Non-fatal: achievements shouldn't crash the game
@@ -3333,7 +2402,7 @@ try:
         current_entities = len(state.obstacles) + len(state.bats) + active_birds
         
         # Try to spawn from queue if we're under the entity limit
-        if current_entities < MAX_ENTITIES and state.spawn_queue:
+        if current_entities < v.MAX_ENTITIES and state.spawn_queue:
             entity = state.spawn_queue.pop(0)
             if entity['type'] == 'bat':
                 # stamp a spawn timestamp for despawn logic
@@ -3358,27 +2427,27 @@ try:
             elif state.level <= 6:
                 target_y = random.randint(8, 10)
             else:
-                target_y = random.randint(BAT_TARGET_Y_MIN_LOW_LEVEL, BAT_TARGET_Y_MAX_LOW_LEVEL)  # Max at half screen
+                target_y = random.randint(v.BAT_TARGET_Y_MIN_LOW_LEVEL, v.BAT_TARGET_Y_MAX_LOW_LEVEL)  # Max at half screen
             
             # Tier selection increases with state.level (4 tiers now)
-            if state.level <= BAT_TIER_LEVEL_THRESHOLD_1:
-                tier = random.choices([1, 2, 3, 4], weights=BAT_TIER_WEIGHTS_LEVEL_0_2)[0]
-            elif state.level <= BAT_TIER_LEVEL_THRESHOLD_2:
-                tier = random.choices([1, 2, 3, 4], weights=BAT_TIER_WEIGHTS_LEVEL_3_4)[0]
-            elif state.level <= BAT_TIER_LEVEL_THRESHOLD_3:
-                tier = random.choices([1, 2, 3, 4], weights=BAT_TIER_WEIGHTS_LEVEL_5_7)[0]
+            if state.level <= v.BAT_TIER_LEVEL_THRESHOLD_1:
+                tier = random.choices([1, 2, 3, 4], weights=v.BAT_TIER_WEIGHTS_LEVEL_0_2)[0]
+            elif state.level <= v.BAT_TIER_LEVEL_THRESHOLD_2:
+                tier = random.choices([1, 2, 3, 4], weights=v.BAT_TIER_WEIGHTS_LEVEL_3_4)[0]
+            elif state.level <= v.BAT_TIER_LEVEL_THRESHOLD_3:
+                tier = random.choices([1, 2, 3, 4], weights=v.BAT_TIER_WEIGHTS_LEVEL_5_7)[0]
             else:
-                tier = random.choices([1, 2, 3, 4], weights=BAT_TIER_WEIGHTS_LEVEL_8_PLUS)[0]
+                tier = random.choices([1, 2, 3, 4], weights=v.BAT_TIER_WEIGHTS_LEVEL_8_PLUS)[0]
             
             # HP progression: 16, 32, 64, 128
             if tier == 1:
-                hp = BAT_HP_TIER_1
+                hp = v.BAT_HP_TIER_1
             elif tier == 2:
-                hp = BAT_HP_TIER_2
+                hp = v.BAT_HP_TIER_2
             elif tier == 3:
-                hp = BAT_HP_TIER_3
+                hp = v.BAT_HP_TIER_3
             else:  # tier 4
-                hp = BAT_HP_TIER_4
+                hp = v.BAT_HP_TIER_4
             
             # Try to find a spawn position that doesn't overlap with existing state.bats
             max_attempts = v.BAT_SPAWN_MAX_ATTEMPTS
@@ -3407,14 +2476,14 @@ try:
             
             # If we couldn't find a good position, DON'T SPAWN
             if spawn_x is None:
-                state.bat_spawn_timer = BAT_SPAWN_FAIL_RETRY_TIMER  # Wait a bit before trying again
+                state.bat_spawn_timer = v.BAT_SPAWN_FAIL_RETRY_TIMER  # Wait a bit before trying again
             else:
                 # Check if last 2 items in queue are state.bats - if so, skip this spawn
                 can_add = True
-                if len(state.spawn_queue) >= BAT_CONSECUTIVE_SPAWN_LIMIT:
+                if len(state.spawn_queue) >= v.BAT_CONSECUTIVE_SPAWN_LIMIT:
                     if state.spawn_queue[-1]['type'] == 'bat' and state.spawn_queue[-2]['type'] == 'bat':
                         can_add = False
-                        state.bat_spawn_timer = BAT_CONSECUTIVE_RETRY_TIMER  # Retry soon
+                        state.bat_spawn_timer = v.BAT_CONSECUTIVE_RETRY_TIMER  # Retry soon
                 
                 if can_add:
                     # Found a good position - queue the bat
@@ -3424,25 +2493,25 @@ try:
                         'type': 'bat',
                         'data': {
                             'x_pos': spawn_x,
-                            'y_pos': BAT_SPAWN_Y_START,  # Start from top like state.obstacles
+                            'y_pos': v.BAT_SPAWN_Y_START,  # Start from top like state.obstacles
                             'target_y': target_y,  # Stop at this Y position
                             'tier': tier,
                             'hp': hp,
                             'max_hp': hp,
                             'direction': direction,
-                            'wave_offset': random.randint(BAT_WAVE_OFFSET_MIN, BAT_WAVE_OFFSET_MAX)
+                            'wave_offset': random.randint(v.BAT_WAVE_OFFSET_MIN, v.BAT_WAVE_OFFSET_MAX)
                         }
                     })
         
         # Queue obstacle spawns - much more aggressive spawn rate
-        base_spawn_rate = max(OBSTACLE_BASE_SPAWN_RATE_MIN, OBSTACLE_BASE_SPAWN_RATE_BASE - (state.level * OBSTACLE_SPAWN_RATE_LEVEL_MULTIPLIER))  # Much faster spawning
-        spawn_variance = max(OBSTACLE_SPAWN_VARIANCE_MIN, OBSTACLE_SPAWN_VARIANCE_BASE - (state.level * OBSTACLE_SPAWN_VARIANCE_LEVEL_MULTIPLIER))
+        base_spawn_rate = max(v.OBSTACLE_BASE_SPAWN_RATE_MIN, v.OBSTACLE_BASE_SPAWN_RATE_BASE - (state.level * v.OBSTACLE_SPAWN_RATE_LEVEL_MULTIPLIER))  # Much faster spawning
+        spawn_variance = max(v.OBSTACLE_SPAWN_VARIANCE_MIN, v.OBSTACLE_SPAWN_VARIANCE_BASE - (state.level * v.OBSTACLE_SPAWN_VARIANCE_LEVEL_MULTIPLIER))
         
         if state.obstacle_spawn_timer > random.randint(base_spawn_rate - spawn_variance, base_spawn_rate + spawn_variance):
             state.obstacle_spawn_timer = 0
             
             # Get list of active lanes (where birds are still alive)
-            active_lanes = [state.random_lanes[i] for i in range(NUM_BALLS) if not state.ball_lost[i]]
+            active_lanes = [state.random_lanes[i] for i in range(v.NUM_BALLS) if not state.ball_lost[i]]
             
             # Only spawn obstacle if there are active lanes
             if active_lanes:
@@ -3450,14 +2519,14 @@ try:
                 available_lanes = []
                 for lane_idx in active_lanes:
                     lane_x = v.LANE_POSITIONS[lane_idx]
-                    lane_left = lane_x - LANE_COLLISION_HALF_WIDTH
-                    lane_right = lane_x + LANE_COLLISION_HALF_WIDTH
+                    lane_left = lane_x - v.LANE_COLLISION_HALF_WIDTH
+                    lane_right = lane_x + v.LANE_COLLISION_HALF_WIDTH
                     
                     # Check if any bat overlaps with this lane
                     bat_in_lane = False
                     for bat in state.bats:
                         bat_left = bat['x_pos']
-                        bat_right = bat['x_pos'] + BAT_SPRITE_WIDTH
+                        bat_right = bat['x_pos'] + v.BAT_SPRITE_WIDTH
                         if not (bat_right < lane_left or bat_left > lane_right):
                             bat_in_lane = True
                             break
@@ -3479,37 +2548,37 @@ try:
                     # Only spawn if there's at least one free lane
                     if not lanes_without_obstacles:
                         # All available lanes have state.obstacles - skip spawn
-                        state.obstacle_spawn_timer = max(OBSTACLE_RETRY_TIMER_MIN, base_spawn_rate // OBSTACLE_RETRY_TIMER_DIVISOR)
+                        state.obstacle_spawn_timer = max(v.OBSTACLE_RETRY_TIMER_MIN, base_spawn_rate // v.OBSTACLE_RETRY_TIMER_DIVISOR)
                     else:
                         # Choose a free lane
                         lane = random.choice(lanes_without_obstacles)
                     
                         # Tier distribution changes with state.level - higher tiers become MORE common (4 tiers)
-                        if state.level <= OBSTACLE_TIER_LEVEL_THRESHOLD_1:
-                            tier = random.choices([1, 2, 3, 4], weights=OBSTACLE_TIER_WEIGHTS_LEVEL_0_2)[0]
-                        elif state.level <= OBSTACLE_TIER_LEVEL_THRESHOLD_2:
-                            tier = random.choices([1, 2, 3, 4], weights=OBSTACLE_TIER_WEIGHTS_LEVEL_3_4)[0]
-                        elif state.level <= OBSTACLE_TIER_LEVEL_THRESHOLD_3:
-                            tier = random.choices([1, 2, 3, 4], weights=OBSTACLE_TIER_WEIGHTS_LEVEL_5_7)[0]
+                        if state.level <= v.OBSTACLE_TIER_LEVEL_THRESHOLD_1:
+                            tier = random.choices([1, 2, 3, 4], weights=v.OBSTACLE_TIER_WEIGHTS_LEVEL_0_2)[0]
+                        elif state.level <= v.OBSTACLE_TIER_LEVEL_THRESHOLD_2:
+                            tier = random.choices([1, 2, 3, 4], weights=v.OBSTACLE_TIER_WEIGHTS_LEVEL_3_4)[0]
+                        elif state.level <= v.OBSTACLE_TIER_LEVEL_THRESHOLD_3:
+                            tier = random.choices([1, 2, 3, 4], weights=v.OBSTACLE_TIER_WEIGHTS_LEVEL_5_7)[0]
                         else:
-                            tier = random.choices([1, 2, 3, 4], weights=OBSTACLE_TIER_WEIGHTS_LEVEL_8_PLUS)[0]
+                            tier = random.choices([1, 2, 3, 4], weights=v.OBSTACLE_TIER_WEIGHTS_LEVEL_8_PLUS)[0]
                         
                         # HP based on tier: 4, 6, 10, 16
                         if tier == 1:
-                            hp = OBSTACLE_HP_TIER_1
+                            hp = v.OBSTACLE_HP_TIER_1
                         elif tier == 2:
-                            hp = OBSTACLE_HP_TIER_2
+                            hp = v.OBSTACLE_HP_TIER_2
                         elif tier == 3:
-                            hp = OBSTACLE_HP_TIER_3
+                            hp = v.OBSTACLE_HP_TIER_3
                         else:  # tier 4
-                            hp = OBSTACLE_HP_TIER_4
+                            hp = v.OBSTACLE_HP_TIER_4
                         
                         # Check if last 2 items in queue are state.obstacles - if so, skip this spawn
                         can_add = True
-                        if len(state.spawn_queue) >= OBSTACLE_CONSECUTIVE_SPAWN_LIMIT:
+                        if len(state.spawn_queue) >= v.OBSTACLE_CONSECUTIVE_SPAWN_LIMIT:
                             if state.spawn_queue[-1]['type'] == 'obstacle' and state.spawn_queue[-2]['type'] == 'obstacle':
                                 can_add = False
-                                state.obstacle_spawn_timer = max(OBSTACLE_RETRY_TIMER_MIN, base_spawn_rate // OBSTACLE_RETRY_TIMER_DIVISOR)  # Retry sooner
+                                state.obstacle_spawn_timer = max(v.OBSTACLE_RETRY_TIMER_MIN, base_spawn_rate // v.OBSTACLE_RETRY_TIMER_DIVISOR)  # Retry sooner
                         
                         if can_add:
                             state.spawn_queue.append({
@@ -3554,7 +2623,7 @@ try:
                 
                 # Check collision with birds
                 if can_move:
-                    for i in range(NUM_BALLS):
+                    for i in range(v.NUM_BALLS):
                         if not state.ball_lost[i]:
                             # Get bird's LANE position - birds are in lanes!
                             bird_lane_x = v.LANE_POSITIONS[state.random_lanes[i]]
@@ -3638,7 +2707,7 @@ try:
             # Remove state.bats older than BAT_DESPAWN_TIME seconds
             for bat in state.bats[:]:
                 try:
-                    if now_ts - float(bat.get('spawn_ts', now_ts)) > BAT_DESPAWN_TIME:
+                    if now_ts - float(bat.get('spawn_ts', now_ts)) > v.BAT_DESPAWN_TIME:
                         state.bats.remove(bat)
                 except Exception:
                     # If malformed spawn_ts, skip removal for safety
@@ -3646,16 +2715,16 @@ try:
             # Remove loot items older than LOOT_DESPAWN_TIME seconds
             for loot in state.loot_items[:]:
                 try:
-                    if now_ts - float(loot.get('spawn_ts', now_ts)) > LOOT_DESPAWN_TIME:
+                    if now_ts - float(loot.get('spawn_ts', now_ts)) > v.LOOT_DESPAWN_TIME:
                         if loot.get('type') == 'orange_egg' and loot.get('y_pos') == v.STARTING_LINE:
                                 # find lane index from x_pos
                                 lane_x = loot.get('x_pos')
                                 lane = v.LANE_POSITIONS.index(lane_x)
                                 # find the bird that occupies that lane
-                                for bi in range(NUM_BALLS):
+                                for bi in range(v.NUM_BALLS):
                                     if state.random_lanes[bi] == lane:
                                             # check for egg-state markers
-                                            if (state.ball_colors[bi] == ORANGE and state.ball_y[bi] == ORANGE_OUT_OF_PLAY_Y and state.ball_speeds[bi] == 0 and not state.ball_lost[bi]):
+                                            if (state.ball_colors[bi] == v.ORANGE and state.ball_y[bi] == v.ORANGE_OUT_OF_PLAY_Y and state.ball_speeds[bi] == 0 and not state.ball_lost[bi]):
                                                 # mark bird as lost and decrement state.lives
                                                 state.ball_lost[bi] = True
                                                 state.ball_y[bi] = v.HEIGHT - 1
@@ -3726,7 +2795,7 @@ try:
         # Blue birds lose fear when crossing yellow birds
         # (blue going down, yellow going up, in adjacent lanes, blue passes yellow)
         birds_to_unfear = []
-        for i in range(NUM_BALLS):
+        for i in range(v.NUM_BALLS):
             if state.ball_colors[i] == BLUE and i in state.scared_birds and not state.ball_lost[i]:
                 if state.ball_vy[i] == 1:  # Blue bird moving down
                     blue_lane = state.random_lanes[i]
@@ -3737,7 +2806,7 @@ try:
                         adj_lane = blue_lane + adj_offset
                         if 0 <= adj_lane < 9:
                             # Find bird in adjacent lane
-                            for j in range(NUM_BALLS):
+                            for j in range(v.NUM_BALLS):
                                 if j != i and not state.ball_lost[j] and state.random_lanes[j] == adj_lane:
                                     if state.ball_colors[j] == YELLOW and state.ball_vy[j] == -1:  # Yellow moving up
                                         yellow_y = state.ball_y[j]
@@ -3838,10 +2907,10 @@ try:
                         start_frame = state.purple_charge_started_frame[b]
                         elapsed_seconds = 0
                         try:
-                            elapsed_seconds = int((state.frame_count - start_frame) * base_sleep)
+                            elapsed_seconds = int((state.frame_count - start_frame) * v.base_sleep)
                         except Exception:
                             try:
-                                elapsed_seconds = int(float(state.frame_count - start_frame) * float(base_sleep))
+                                elapsed_seconds = int(float(state.frame_count - start_frame) * float(v.base_sleep))
                             except Exception:
                                 elapsed_seconds = 0
                         s = max(0, min(3, elapsed_seconds))
@@ -3877,7 +2946,7 @@ try:
                                         # so the per-bird decrement at loop start doesn't
                                         # immediately clear the protection. Use a small
                                         # safety margin (at least 3 frames).
-                                        state.purple_just_fired_frames[b] = max(3, int(0.2 / base_sleep) + 2)
+                                        state.purple_just_fired_frames[b] = max(3, int(0.2 / v.base_sleep) + 2)
                                     except Exception:
                                         state.purple_just_fired_frames[b] = 3
                                 except Exception:
@@ -3968,7 +3037,7 @@ try:
 
                             # Find closest lane to bat center
                             bat_center_x = bat['x_pos'] + v.BAT_CENTER_OFFSET
-                            closest_lane = min(range(NUM_LANES), key=lambda lane_idx: abs(v.LANE_POSITIONS[lane_idx] - bat_center_x))
+                            closest_lane = min(range(v.NUM_LANES), key=lambda lane_idx: abs(v.LANE_POSITIONS[lane_idx] - bat_center_x))
 
                             # Loot drop logic (4 tiers with new percentages)
                             tier = bat['tier']
@@ -4005,7 +3074,7 @@ try:
 
                 # Check collision with state.obstacles
                 for obs in state.obstacles[:]:
-                    if obs['lane'] == proj['lane'] and abs(proj['y_pos'] - obs['y_pos']) <= NORMAL_BIRD_SPRITE_HEIGHT:
+                    if obs['lane'] == proj['lane'] and abs(proj['y_pos'] - obs['y_pos']) <= v.NORMAL_BIRD_SPRITE_HEIGHT:
                         # Hit obstacle - deal damage based on projectile power
                         dmg = int(proj.get('damage', 1))
                         obs['hp'] -= dmg
@@ -4036,7 +3105,7 @@ try:
         # Update power-ups (decrease frame counters)
         # Active STEALTH tangible damage: while a stealth bird is tangible, apply 24 damage
         # to any bat/obstacle/loot in proximity so the power reliably has an effect.
-        for i in range(NUM_BALLS):
+        for i in range(v.NUM_BALLS):
             if state.ball_colors[i] == STEALTH and i in state.stealth_timers and state.stealth_timers.get(i, 0) > 0 and not state.ball_lost[i]:
                 bird_lane = state.random_lanes[i]
                 bird_x = v.LANE_POSITIONS[bird_lane]
@@ -4061,7 +3130,7 @@ try:
                                 pass
                             add_score(bat.get('max_hp', 0))
                             bat_center_x = bat.get('x_pos', 0) + v.BAT_CENTER_OFFSET
-                            closest_lane = min(range(NUM_LANES), key=lambda lane_idx: abs(v.LANE_POSITIONS[lane_idx] - bat_center_x))
+                            closest_lane = min(range(v.NUM_LANES), key=lambda lane_idx: abs(v.LANE_POSITIONS[lane_idx] - bat_center_x))
                             tier = bat.get('tier', None)
                             prestige = compute_prestige()
                             # Use configurable base weights for bat loot by tier
@@ -4149,7 +3218,7 @@ try:
 
         # (slow-motion powerup removed; no expiry handling required)
         
-        for i in range(NUM_BALLS):
+        for i in range(v.NUM_BALLS):
             # Decrement any just-fired protection timers
             try:
                 if state.purple_just_fired_frames[i] > 0:
@@ -4192,7 +3261,7 @@ try:
             # GLITCH: 1% chance to flip direction spontaneously each step
             try:
                 if state.ball_colors[i] == GLITCH and not state.ball_lost[i]:
-                    if random.random() < float(GLITCH_FLIP_CHANCE):
+                    if random.random() < float(v.GLITCH_FLIP_CHANCE):
                         state.ball_vy[i] = -state.ball_vy[i]
             except Exception:
                 pass
@@ -4205,8 +3274,8 @@ try:
                 if state.ball_colors[i] == GLITCH and not state.ball_lost[i]:
                     # 1) swap lanes with another random active bird (1%)
                     try:
-                        if random.random() < float(GLITCH_SWAP_CHANCE):
-                            others = [j for j in range(NUM_BALLS) if j != i and not state.ball_lost[j]]
+                        if random.random() < float(v.GLITCH_SWAP_CHANCE):
+                            others = [j for j in range(v.NUM_BALLS) if j != i and not state.ball_lost[j]]
                             if others:
                                 j = random.choice(others)
                                 state.random_lanes[i], state.random_lanes[j] = state.random_lanes[j], state.random_lanes[i]
@@ -4224,18 +3293,18 @@ try:
 
                     # 2) nudge player cursor by -1 or +1 with 1% chance
                     try:
-                        if random.random() < float(GLITCH_NUDGE_CHANCE):
+                        if random.random() < float(v.GLITCH_NUDGE_CHANCE):
                             delta = random.choice([-1, 1])
                             # clamp between min and max lane index
-                            state.player_lane = max(int(MIN_LANE_INDEX), min(int(MAX_LANE_INDEX), state.player_lane + delta))
+                            state.player_lane = max(int(v.MIN_LANE_INDEX), min(int(v.MAX_LANE_INDEX), state.player_lane + delta))
                     except Exception:
                         pass
 
                     # 3) duplicate: 1% chance to spawn/replace a GLITCH in a random lane
                     try:
-                        if random.random() < float(GLITCH_DUPLICATE_CHANCE):
-                            target_lane = random.randint(int(MIN_LANE_INDEX), int(MAX_LANE_INDEX))
-                            target_idx = next((idx for idx in range(NUM_BALLS) if state.random_lanes[idx] == target_lane), None)
+                        if random.random() < float(v.GLITCH_DUPLICATE_CHANCE):
+                            target_lane = random.randint(int(v.MIN_LANE_INDEX), int(v.MAX_LANE_INDEX))
+                            target_idx = next((idx for idx in range(v.NUM_BALLS) if state.random_lanes[idx] == target_lane), None)
                             if target_idx is not None:
                                 # If the slot is empty (lost), resurrect it as GLITCH
                                 if state.ball_lost[target_idx]:
@@ -4312,7 +3381,7 @@ try:
                 position_multiplier = 0.5 + (v.HEIGHT - state.ball_y[i]) / v.HEIGHT
                 # Gold bird scores a fixed 100 points instead of its speed
                 try:
-                    score_value = GOLD_SCORE_VALUE if state.ball_colors[i] == GOLD else state.ball_speeds[i]
+                    score_value = v.GOLD_SCORE_VALUE if state.ball_colors[i] == v.GOLD else state.ball_speeds[i]
                 except Exception:
                     score_value = state.ball_speeds[i]
                 # Credit the bird that generated this state.score with XP as well
@@ -4327,19 +3396,19 @@ try:
                     broken_through = False
 
                     # Bird sprite height (default or DINOSAUR)
-                    bird_height = int(DINOSAUR_SPRITE_HEIGHT) if state.ball_colors[i] == DINOSAUR else int(NORMAL_BIRD_SPRITE_HEIGHT)
+                    bird_height = int(v.DINOSAUR_SPRITE_HEIGHT) if state.ball_colors[i] == v.DINOSAUR else int(v.NORMAL_BIRD_SPRITE_HEIGHT)
 
                     # Check collision with state.bats first - if bat enters bird's lane AT ALL, collision!
                     # Stealth birds (when not tangible) pass through state.bats
                     if not (state.ball_colors[i] == STEALTH and not (i in state.stealth_timers and state.stealth_timers.get(i, 0) > 0)):
                         for bat in state.bats[:]:
                             bat_left = bat['x_pos']
-                            bat_right = bat['x_pos'] + BAT_SPRITE_WIDTH
+                            bat_right = bat['x_pos'] + v.BAT_SPRITE_WIDTH
                             bat_top = bat['y_pos']
                             bat_bottom = bat['y_pos'] + 1
 
-                            lane_left = bird_lane_x - LANE_COLLISION_HALF_WIDTH
-                            lane_right = bird_lane_x + LANE_COLLISION_HALF_WIDTH
+                            lane_left = bird_lane_x - v.LANE_COLLISION_HALF_WIDTH
+                            lane_right = bird_lane_x + v.LANE_COLLISION_HALF_WIDTH
                             horizontal_overlap = not (bat_right < lane_left or bat_left > lane_right)
                             vertical_overlap = not (next_y + bird_height < bat_top or next_y > bat_bottom)
 
@@ -4350,19 +3419,19 @@ try:
                                 else:
                                     # DINOSAUR deals fixed damage
                                     if state.ball_colors[i] == DINOSAUR:
-                                        damage = DINOSAUR_DAMAGE
+                                        damage = v.DINOSAUR_DAMAGE
                                     # STEALTH tangible: fixed high damage
                                     elif state.ball_colors[i] == STEALTH and (i in state.stealth_timers and state.stealth_timers.get(i, 0) > 0):
-                                        damage = STEALTH_DAMAGE
+                                        damage = v.STEALTH_DAMAGE
                                     # GOLD bird deals fixed damage
                                     elif state.ball_colors[i] == GOLD:
-                                        damage = GOLD_DAMAGE
+                                        damage = v.GOLD_DAMAGE
                                     # GLITCH deals random damage in configured range
                                     elif state.ball_colors[i] == GLITCH:
                                         try:
-                                            damage = int(random.randint(int(GLITCH_DAMAGE_MIN), int(GLITCH_DAMAGE_MAX)))
+                                            damage = int(random.randint(int(v.GLITCH_DAMAGE_MIN), int(v.GLITCH_DAMAGE_MAX)))
                                         except Exception:
-                                            damage = int(GOLD_DAMAGE)
+                                            damage = int(v.GOLD_DAMAGE)
                                     else:
                                         damage = current_speed
                                         if state.ball_colors[i] == BLUE and state.bird_power_used[i]:
@@ -4378,15 +3447,15 @@ try:
                                 if not (state.ball_colors[i] == STEALTH and (i in state.stealth_timers and state.stealth_timers.get(i, 0) > 0)):
                                     bat_tier = bat['tier']
                                     if bat_tier == 1:
-                                        state.scared_birds[i] = get_scared_frames(i, SCARED_BASE_SECONDS)
+                                        state.scared_birds[i] = get_scared_frames(i, v.SCARED_BASE_SECONDS)
                                     elif bat_tier == 2:
-                                        state.scared_birds[i] = get_scared_frames(i, SCARED_BASE_SECONDS)
+                                        state.scared_birds[i] = get_scared_frames(i, v.SCARED_BASE_SECONDS)
                                     elif bat_tier == 3:
-                                        state.scared_birds[i] = get_scared_frames(i, SCARED_BASE_SECONDS)
-                                        state.speed_boosts[i] = int(SCARED_SPEED_BOOST_SECONDS / base_sleep)
+                                        state.scared_birds[i] = get_scared_frames(i, v.SCARED_BASE_SECONDS)
+                                        state.speed_boosts[i] = int(v.SCARED_SPEED_BOOST_SECONDS / v.base_sleep)
                                     else:
-                                        state.scared_birds[i] = get_scared_frames(i, SCARED_BASE_SECONDS)
-                                        state.speed_boosts[i] = int(SCARED_SPEED_BOOST_SECONDS / base_sleep)
+                                        state.scared_birds[i] = get_scared_frames(i, v.SCARED_BASE_SECONDS)
+                                        state.speed_boosts[i] = int(v.SCARED_SPEED_BOOST_SECONDS / v.base_sleep)
 
                                 if bat['hp'] <= 0:
                                     # Bonus XP for destroying the bat
@@ -4397,7 +3466,7 @@ try:
                                         pass
                                     add_score(bat['max_hp'])
                                     bat_center_x = bat['x_pos'] + v.BAT_CENTER_OFFSET
-                                    closest_lane = min(range(NUM_LANES), key=lambda lane_idx: abs(v.LANE_POSITIONS[lane_idx] - bat_center_x))
+                                    closest_lane = min(range(v.NUM_LANES), key=lambda lane_idx: abs(v.LANE_POSITIONS[lane_idx] - bat_center_x))
                                     tier = bat['tier']
                                     prestige = compute_prestige()
                                     # Use configured bat loot base weights when available
@@ -4441,16 +3510,16 @@ try:
                                         obs['hp'] = 0
                                     else:
                                         if state.ball_colors[i] == DINOSAUR:
-                                            damage = DINOSAUR_DAMAGE
+                                            damage = v.DINOSAUR_DAMAGE
                                         elif state.ball_colors[i] == STEALTH and (i in state.stealth_timers and state.stealth_timers.get(i, 0) > 0):
-                                            damage = STEALTH_DAMAGE
+                                            damage = v.STEALTH_DAMAGE
                                         elif state.ball_colors[i] == GOLD:
-                                            damage = GOLD_DAMAGE
+                                            damage = v.GOLD_DAMAGE
                                         elif state.ball_colors[i] == GLITCH:
                                             try:
-                                                damage = int(random.randint(int(GLITCH_DAMAGE_MIN), int(GLITCH_DAMAGE_MAX)))
+                                                damage = int(random.randint(int(v.GLITCH_DAMAGE_MIN), int(v.GLITCH_DAMAGE_MAX)))
                                             except Exception:
-                                                damage = int(GOLD_DAMAGE)
+                                                damage = int(v.GOLD_DAMAGE)
                                         else:
                                             damage = current_speed
                                             if state.ball_colors[i] == BLUE and state.bird_power_used[i]:
@@ -4524,10 +3593,10 @@ try:
                             if state.ball_colors[i] == GLITCH:
                                 r = random.random()
                                 try:
-                                    if r < float(GLITCH_LOOT_IGNORE_CHANCE):
+                                    if r < float(v.GLITCH_LOOT_IGNORE_CHANCE):
                                         # ignore the loot entirely
                                         continue
-                                    elif r < float(GLITCH_LOOT_IGNORE_CHANCE) + float(GLITCH_LOOT_PROMOTE_CHANCE):
+                                    elif r < float(v.GLITCH_LOOT_IGNORE_CHANCE) + float(v.GLITCH_LOOT_PROMOTE_CHANCE):
                                         # promote rarity one tier
                                         rar = loot.get('rarity', 'common')
                                         if rar == 'common':
@@ -4540,9 +3609,9 @@ try:
                                 except Exception:
                                     # fallback: try using configured glitch loot chances
                                     try:
-                                        if r < float(GLITCH_LOOT_IGNORE_CHANCE):
+                                        if r < float(v.GLITCH_LOOT_IGNORE_CHANCE):
                                             continue
-                                        elif r < float(GLITCH_LOOT_IGNORE_CHANCE) + float(GLITCH_LOOT_PROMOTE_CHANCE):
+                                        elif r < float(v.GLITCH_LOOT_IGNORE_CHANCE) + float(v.GLITCH_LOOT_PROMOTE_CHANCE):
                                             rar = loot.get('rarity', 'common')
                                             if rar == 'common':
                                                 loot['rarity'] = 'uncommon'
@@ -4553,9 +3622,9 @@ try:
                                     except Exception:
                                         # final fallback using configured constants where possible
                                         try:
-                                            if r < float(GLITCH_LOOT_IGNORE_CHANCE):
+                                            if r < float(v.GLITCH_LOOT_IGNORE_CHANCE):
                                                 continue
-                                            elif r < float(GLITCH_LOOT_IGNORE_CHANCE) + float(GLITCH_LOOT_PROMOTE_CHANCE):
+                                            elif r < float(v.GLITCH_LOOT_IGNORE_CHANCE) + float(v.GLITCH_LOOT_PROMOTE_CHANCE):
                                                 rar = loot.get('rarity', 'common')
                                                 if rar == 'common':
                                                     loot['rarity'] = 'uncommon'
@@ -4794,7 +3863,7 @@ try:
                                         pass
                                     break
                         elif loot_type == 'gold_egg':
-                            for idx in range(NUM_BALLS):
+                            for idx in range(v.NUM_BALLS):
                                 if state.ball_lost[idx]:
                                     state.ball_lost[idx] = False
                                     state.ball_colors[idx] = GOLD
@@ -4817,7 +3886,7 @@ try:
                                         pass
                                     break
                         elif loot_type == 'patchwork_egg':
-                            for idx in range(NUM_BALLS):
+                            for idx in range(v.NUM_BALLS):
                                 if state.ball_lost[idx]:
                                     state.ball_lost[idx] = False
                                     state.ball_colors[idx] = PATCHWORK
@@ -4840,7 +3909,7 @@ try:
                                         pass
                                     break
                         elif loot_type == 'stealth_egg':
-                            for idx in range(NUM_BALLS):
+                            for idx in range(v.NUM_BALLS):
                                 if state.ball_lost[idx]:
                                     state.ball_lost[idx] = False
                                     state.ball_colors[idx] = STEALTH
@@ -4859,7 +3928,7 @@ try:
                                         pass
                                     break
                         elif loot_type == 'orange_egg':
-                            for idx in range(NUM_BALLS):
+                            for idx in range(v.NUM_BALLS):
                                 if state.ball_lost[idx]:
                                     state.ball_lost[idx] = False
                                     state.ball_colors[idx] = ORANGE
@@ -4902,17 +3971,17 @@ try:
                             # determine which seconds to use based on suffix
                             if loot_type == 'wide_cursor':
                                 sec = cfg.get('base_seconds', v.WIDE_CURSOR_BASE_SECONDS)
-                                lanes = cfg.get('lanes_base', WIDE_CURSOR_LANES_BASE)
+                                lanes = cfg.get('lanes_base', v.WIDE_CURSOR_LANES_BASE)
                             elif loot_type == 'wide_cursor+':
                                 sec = cfg.get('plus_seconds', v.WIDE_CURSOR_PLUS_SECONDS)
-                                lanes = cfg.get('lanes_base', WIDE_CURSOR_LANES_BASE)
+                                lanes = cfg.get('lanes_base', v.WIDE_CURSOR_LANES_BASE)
                             elif loot_type == 'wide_cursor++':
                                 sec = cfg.get('plusplus_seconds', v.WIDE_CURSOR_PLUSPLUS_SECONDS)
-                                lanes = cfg.get('lanes_max', WIDE_CURSOR_LANES_MAX)
+                                lanes = cfg.get('lanes_max', v.WIDE_CURSOR_LANES_MAX)
                             else:
                                 sec = cfg.get('max_seconds', v.WIDE_CURSOR_MAX_SECONDS)
-                                lanes = cfg.get('lanes_max', WIDE_CURSOR_LANES_MAX)
-                            state.powerups['wide_cursor_frames'] = max(1, int(float(sec) / base_sleep))
+                                lanes = cfg.get('lanes_max', v.WIDE_CURSOR_LANES_MAX)
+                            state.powerups['wide_cursor_frames'] = max(1, int(float(sec) / v.base_sleep))
                             state.powerups['wide_cursor_lanes'] = int(lanes)
                             ach.check_achievements_event('power_used', power='wide_cursor', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type.startswith('bounce_boost'):
@@ -4930,7 +3999,7 @@ try:
                             else:
                                 sec = cfg.get('max_seconds', v.BOUNCE_BOOST_MAX_SECONDS)
                                 duration = cfg.get('duration_max', v.BOUNCE_BOOST_DURATION_MAX)
-                            state.powerups['bounce_boost_frames'] = max(1, int(float(sec) / base_sleep))
+                            state.powerups['bounce_boost_frames'] = max(1, int(float(sec) / v.base_sleep))
                             state.powerups['bounce_boost_duration'] = int(duration)
                             ach.check_achievements_event('power_used', power='bounce_boost', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type.startswith('suction'):
@@ -4948,7 +4017,7 @@ try:
                             else:
                                 sec = cfg.get('max_seconds', v.SUCTION_MAX_SECONDS)
                                 boost = cfg.get('boost_duration_max', v.SUCTION_BOOST_DURATION_MAX)
-                            state.powerups['suction_frames'] = max(1, int(float(sec) / base_sleep))
+                            state.powerups['suction_frames'] = max(1, int(float(sec) / v.base_sleep))
                             state.powerups['suction_boost_duration'] = int(boost)
                             ach.check_achievements_event('power_used', power='suction', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type.startswith('tailwind'):
@@ -4970,35 +4039,35 @@ try:
                                 sec = cfg.get('max_seconds', v.TAILWIND_MAX_SECONDS)
                                 up = cfg.get('up_bonus_plusplus', v.TAILWIND_UP_BONUS_PLUSPLUS)
                                 down = cfg.get('down_penalty_max', v.TAILWIND_DOWN_PENALTY_MAX)
-                            state.powerups['tailwind_frames'] = max(1, int(float(sec) / base_sleep))
+                            state.powerups['tailwind_frames'] = max(1, int(float(sec) / v.base_sleep))
                             state.powerups['tailwind_up_bonus'] = int(up)
                             state.powerups['tailwind_down_penalty'] = int(down)
                             ach.check_achievements_event('power_used', power='tailwind', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type == 'shuffle':
                             # Shuffle 2 birds (basic)
                             try:
-                                perform_shuffle(SHUFFLE_LEVEL_BASE)
+                                perform_shuffle(v.SHUFFLE_LEVEL_BASE)
                                 ach.check_achievements_event('power_used', power='shuffle', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                             except Exception:
                                 pass
                         elif loot_type == 'shuffle+':
                             # Shuffle 4 birds
                             try:
-                                perform_shuffle(SHUFFLE_LEVEL_PLUS)
+                                perform_shuffle(v.SHUFFLE_LEVEL_PLUS)
                                 ach.check_achievements_event('power_used', power='shuffle', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                             except Exception:
                                 pass
                         elif loot_type == 'shuffle++':
                             # Shuffle 6 birds
                             try:
-                                perform_shuffle(SHUFFLE_LEVEL_PLUSPLUS)
+                                perform_shuffle(v.SHUFFLE_LEVEL_PLUSPLUS)
                                 ach.check_achievements_event('power_used', power='shuffle', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                             except Exception:
                                 pass
                         elif loot_type == 'shuffle_max':
                             # Shuffle many (attempt to compact all outer birds)
                             try:
-                                perform_shuffle(SHUFFLE_LEVEL_MAX)
+                                perform_shuffle(v.SHUFFLE_LEVEL_MAX)
                                 ach.check_achievements_event('power_used', power='shuffle', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                             except Exception:
                                 pass
@@ -5008,7 +4077,7 @@ try:
                     if state.ball_colors[i] == ORANGE:
                         lane = state.random_lanes[i]
                         state.ball_lost[i] = False
-                        state.ball_y[i] = ORANGE_OUT_OF_PLAY_Y
+                        state.ball_y[i] = v.ORANGE_OUT_OF_PLAY_Y
                         set_ball_vy(i, 0)
                         reset_bird_power(i)
                         state.ball_speeds[i] = 0
@@ -5031,8 +4100,8 @@ try:
                         try:
                             c = state.clockwork_charge.get(i, None)
                             if c is None:
-                                c = CLOCKWORK_INITIAL_CHARGE
-                                state.clockwork_charge[i] = CLOCKWORK_INITIAL_CHARGE
+                                c = v.CLOCKWORK_INITIAL_CHARGE
+                                state.clockwork_charge[i] = v.CLOCKWORK_INITIAL_CHARGE
                             if c > 0:
                                 state.ball_y[i] = v.STARTING_LINE
                                 set_ball_vy(i, -1)
@@ -5061,7 +4130,7 @@ try:
                     elif not state.ball_lost[i]:  # Solo gli altri muoiono (incl. GLITCH special-case)
                         # GLITCH: 20% chance to survive and bounce instead of dying
                         try:
-                            if state.ball_colors[i] == GLITCH and random.random() < float(GLITCH_SURVIVE_ON_FLOOR_CHANCE):
+                            if state.ball_colors[i] == GLITCH and random.random() < float(v.GLITCH_SURVIVE_ON_FLOOR_CHANCE):
                                 # Bounce instead of dying
                                 state.ball_y[i] = v.STARTING_LINE
                                 set_ball_vy(i, -1)
@@ -5101,9 +4170,9 @@ try:
             print("\r")
             print("\r")
             print("\r")
-            print(f"{RED}{'=' * GAME_OVER_SEPARATOR_WIDTH}{RESET}\r")
+            print(f"{RED}{'=' * v.GAME_OVER_SEPARATOR_WIDTH}{RESET}\r")
             print(f"{RED}                   GAME OVER                     {RESET}\r")
-            print(f"{RED}{'=' * GAME_OVER_SEPARATOR_WIDTH}{RESET}\r")
+            print(f"{RED}{'=' * v.GAME_OVER_SEPARATOR_WIDTH}{RESET}\r")
             print("\r")
             print(f"  Final Score:      {int(state.score)}\r")
             print(f"  Level Reached:    {state.level}\r")
@@ -5117,20 +4186,20 @@ try:
             except Exception:
                 elapsed = 0
 
-            hours = elapsed // GAME_OVER_TIME_DIVIDER
-            minutes = (elapsed % GAME_OVER_TIME_REMAINDER) // GAME_OVER_MINUTES_DIVIDER
-            seconds = elapsed % GAME_OVER_MINUTES_DIVIDER
+            hours = elapsed // v.GAME_OVER_TIME_DIVIDER
+            minutes = (elapsed % v.GAME_OVER_TIME_REMAINDER) // v.GAME_OVER_MINUTES_DIVIDER
+            seconds = elapsed % v.GAME_OVER_MINUTES_DIVIDER
             if hours > 0:
                 elapsed_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
             else:
                 elapsed_str = f"{minutes:02d}:{seconds:02d}"
 
             print(f"  Time Played:      {elapsed_str} ({elapsed} s)\r")
-            print(f"{RED}{'=' * GAME_OVER_SEPARATOR_WIDTH}{RESET}\r")
+            print(f"{RED}{'=' * v.GAME_OVER_SEPARATOR_WIDTH}{RESET}\r")
             print("\r")
             # Prompt for optional leaderboard name and submit state.score
             try:
-                name = input("Enter name for leaderboard (leave blank to skip): ").strip()[:LEADERBOARD_NAME_MAX_LENGTH]
+                name = input("Enter name for leaderboard (leave blank to skip): ").strip()[:v.LEADERBOARD_NAME_MAX_LENGTH]
             except Exception:
                 name = ""
 
@@ -5143,7 +4212,7 @@ try:
                             try:
                                 # Compute average points per minute (avg_ppm).
                                 try:
-                                    minutes = float(elapsed) / float(GAME_OVER_MINUTES_DIVIDER) if elapsed > 0 else 0.0
+                                    minutes = float(elapsed) / float(v.GAME_OVER_MINUTES_DIVIDER) if elapsed > 0 else 0.0
                                     if minutes > 0:
                                         avg_ppm = float(state.score) / minutes
                                     else:
@@ -5162,7 +4231,7 @@ try:
                         try:
                             # Include version and avg_ppm in the state.game_over analytics event as well
                             try:
-                                minutes = float(elapsed) / float(GAME_OVER_MINUTES_DIVIDER) if elapsed > 0 else 0.0
+                                minutes = float(elapsed) / float(v.GAME_OVER_MINUTES_DIVIDER) if elapsed > 0 else 0.0
                                 if minutes > 0:
                                     avg_ppm = float(state.score) / minutes
                                 else:
