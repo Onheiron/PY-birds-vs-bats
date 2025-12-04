@@ -213,60 +213,8 @@ def _color_from_hp(base_rgb: tuple, hp: int, max_hp: int) -> str:
 # Note: Most constants are now imported from variables.py at the top of the file
 # Only special computed values and functions remain here
 
-
-
-# Ball positions and velocities
-# Initialize bird colors from DEFAULT_BIRD_FORMATION (using state module)
-state.ball_colors = []
-for bird_name in v.DEFAULT_BIRD_FORMATION[:v.NUM_BALLS]:
-    bird_name_upper = bird_name.upper()
-    if bird_name_upper == 'YELLOW':
-        state.ball_colors.append(YELLOW)
-    elif bird_name_upper == 'RED':
-        state.ball_colors.append(RED)
-    elif bird_name_upper == 'BLUE':
-        state.ball_colors.append(BLUE)
-    elif bird_name_upper == 'WHITE':
-        state.ball_colors.append(WHITE)
-    elif bird_name_upper == 'ORANGE':
-        state.ball_colors.append(ORANGE)
-    elif bird_name_upper == 'GOLD':
-        state.ball_colors.append(GOLD)
-    elif bird_name_upper == 'PATCHWORK':
-        state.ball_colors.append(PATCHWORK)
-    elif bird_name_upper == 'PURPLE':
-        state.ball_colors.append(PURPLE)
-    elif bird_name_upper == 'CLOCKWORK':
-        state.ball_colors.append(CLOCKWORK)
-    elif bird_name_upper == 'STEALTH':
-        state.ball_colors.append(STEALTH)
-    elif bird_name_upper == 'COOKIE':
-        state.ball_colors.append(COOKIE)
-    elif bird_name_upper == 'DINOSAUR':
-        state.ball_colors.append(DINOSAUR)
-    elif bird_name_upper == 'GLITCH':
-        state.ball_colors.append(GLITCH)
-    else:
-        state.ball_colors.append(YELLOW)  # Default fallback
-# Pad with YELLOW if formation is shorter than NUM_BALLS
-while len(state.ball_colors) < v.NUM_BALLS:
-    state.ball_colors.append(YELLOW)
-
-# Randomize which bird goes to which lane
-random.seed()
-state.random_lanes = list(range(v.NUM_LANES))  # [0, 1, 2, 3, 4, 5, 6, 7, 8]
-if v.RANDOMIZE_LANES:
-    random.shuffle(state.random_lanes)  # Shuffle to randomize
-
-state.ball_cols = [v.LANE_POSITIONS[state.random_lanes[i]] for i in range(v.NUM_BALLS)]
-# All birds start at the same height, near the bottom (4 lines from bottom)
-v.STARTING_LINE = v.HEIGHT - 4
-state.ball_y = [v.STARTING_LINE] * v.NUM_BALLS
-state.ball_vy = [-1] * v.NUM_BALLS
-state.ball_lost = [False] * v.NUM_BALLS
-state.bird_power_used = [False] * v.NUM_BALLS  # Track if bird used its special power while rising
-# Allow tracking how many times a bird used its power during the current ascent
-state.bird_power_uses = [0] * v.NUM_BALLS
+# Initialize all game state
+state.init()
 
 
 def set_ball_vy(idx, val):
@@ -455,84 +403,6 @@ def transform_bird_to_s(bi):
     except Exception:
         pass
 
-# Red bird projectiles - initialize from state
-state.red_projectiles = []
-
-# Per-bird experience points (persist per bird index)
-state.per_bird_xp = [0] * v.NUM_BALLS
-# Track whether a bird was transformed by reaching S grade (prevents egg loot)
-state.transformed_s = [False] * v.NUM_BALLS
-# Debug toggle: show per-bird XP/grade summary in the HUD when True
-state.show_xp_overlay = False
-
-# Background scroll offset
-state.bg_offset = 0
-
-# Obstacles - list of {lane, y_pos, tier, hp}
-state.obstacles = []
-state.obstacle_spawn_timer = 0
-
-# Bats - list of {x_pos, y_pos, tier, hp, max_hp, direction, target_y}
-state.bats = []
-state.bat_spawn_timer = 0
-
-# Loot items - list of {x_pos, y_pos, type}
-state.loot_items = []
-
-# Spawn queue - entities waiting to spawn when screen is not too crowded
-state.spawn_queue = []
-
-# Speed boosts - track which birds have temp speed boosts {bird_index: remaining_frames}
-state.speed_boosts = {}
-
-# DINOSAUR special counters: count UP presses while falling
-state.dinosaur_up_presses = {}
-
-# Scared birds - track which birds are scared {bird_index: remaining_frames}
-state.scared_birds = {}
-# Stealth timers
-state.stealth_timers = {}
-# Store previous speeds for stealth birds
-state.stealth_prev_speeds = {}
-# Clockwork bird charge state
-state.clockwork_charge = {}
-
-# Cookie bird crumb counter
-state.cookie_crumbs_made = {}
-
-# Purple bird charging state machine per bird
-state.purple_state = [0] * v.NUM_BALLS
-state.purple_primed_frame = [0] * v.NUM_BALLS
-state.purple_charge_started_frame = [0] * v.NUM_BALLS
-state.purple_saved_vy = [None] * v.NUM_BALLS
-state.purple_miss_count = [0] * v.NUM_BALLS
-state.purple_just_fired_frames = [0] * v.NUM_BALLS
-state.purple_hold_counter = [0] * v.NUM_BALLS
-
-# Global UP hold/miss counters for debounced release detection
-state.up_hold_counter = 0
-state.up_miss_counter = 0
-
-# Power-ups state (using dict to avoid scope issues)
-state.powerups = {
-    'wide_cursor_active': False,
-    'wide_cursor_frames': 0,
-    'wide_cursor_lanes': 1,
-    'bounce_boost_active': False,
-    'bounce_boost_frames': 0,
-    'bounce_boost_duration': 0,
-    'suction_active': False,
-    'suction_frames': 0,
-    'suction_boost_duration': 0
-}
-
-# Tailwind power-up state (tiered)
-state.powerups.setdefault('tailwind_active', False)
-state.powerups.setdefault('tailwind_frames', 0)
-state.powerups.setdefault('tailwind_up_bonus', 0)
-state.powerups.setdefault('tailwind_down_penalty', 0)
-
-
 def perform_shuffle(count: int):
     """Perform up to `count` smart swaps to compact birds toward the center.
     Algorithm (greedy):
@@ -641,14 +511,6 @@ def perform_shuffle(count: int):
         # Defensive: don't allow shuffle to crash the game
         pass
 
-# Score system (using state module)
-state.score = 0
-state.level = 1
-state.lives = 5
-state.game_over = False
-state.swaps_used = 0
-state.paused = False
-
 def calculate_level_threshold(level):
     """Calculate score threshold for given level"""
     try:
@@ -662,8 +524,6 @@ def calculate_level_threshold(level):
 
 # ---------------- Achievements (using module) ----------------
 # Keep state.notifications as local variable for display (using state module)
-state.notifications = []  # list of (text, expire_frame)
-
 
 
 # ---------------- Level-from-state.score helpers ----------------
@@ -929,15 +789,6 @@ def deduct_score(amount):
     # Re-evaluate state.score-based achievements when state.score changes
     ach.check_achievements_event('score', score=state.score, frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
 
-# Player (using state module)
-state.player_lane = 2
-state.selected_lane = None  # Lane selected when space is pressed
-state.last_space_state = False  # Track last frame's space state for edge detection
-state.last_up_state = False  # Track UP edge for charging detection
-
-# Frame counter (using state module)
-state.frame_count = 0
-
 def cleanup():
     try:
         print("\033[?25h", end="", flush=True)
@@ -1115,69 +966,6 @@ def handle_clockwork_auto_bounce():
         except Exception:
             # Defensive: in case of malformed data, skip
             pass
-
-def _load_config_file(path):
-    cfg = {}
-    if not path:
-        return cfg
-    if yaml is None:
-        try:
-            print(f"Warning: PyYAML not installed; cannot load config from {path}", file=sys.stderr)
-        except Exception:
-            pass
-        return cfg
-    try:
-        with open(path, 'r') as fh:
-            data = yaml.safe_load(fh)
-            if isinstance(data, dict):
-                cfg = data
-    except Exception as e:
-        try:
-            print(f"Failed to load config {path}: {e}", file=sys.stderr)
-        except Exception:
-            pass
-    
-    # Validate config against schema if jsonschema is available
-    if cfg and jsonschema is not None:
-        schema_path = os.path.join(os.path.dirname(__file__), 'config.schema.json')
-        if os.path.exists(schema_path):
-            try:
-                import json
-                with open(schema_path, 'r') as schema_file:
-                    schema = json.load(schema_file)
-                jsonschema.validate(instance=cfg, schema=schema)
-                try:
-                    print(f"Config validation: OK", file=sys.stderr)
-                except Exception:
-                    pass
-            except jsonschema.ValidationError as ve:
-                try:
-                    print(f"Config validation error: {ve.message}", file=sys.stderr)
-                    print(f"At path: {' -> '.join(str(p) for p in ve.path)}", file=sys.stderr)
-                    sys.exit(1)
-                except Exception:
-                    sys.exit(1)
-            except Exception as e:
-                try:
-                    print(f"Warning: Could not validate config schema: {e}", file=sys.stderr)
-                except Exception:
-                    pass
-    
-    return cfg
-
-# Assign speeds based on bird formation (higher = faster) - AFTER config is loaded
-# Use the bird names directly from DEFAULT_BIRD_FORMATION instead of comparing color objects
-state.ball_speeds = []
-for i in range(v.NUM_BALLS):
-    try:
-        # Get bird name from formation, defaulting to YELLOW if index out of range
-        bird_name = v.DEFAULT_BIRD_FORMATION[i].upper() if i < len(v.DEFAULT_BIRD_FORMATION) else 'YELLOW'
-        # Look up speed from configuration
-        spd = v.BALL_SPEEDS_DEFAULT.get(bird_name, 2)
-        state.ball_speeds.append(int(spd))
-    except Exception:
-        # Defensive fallback
-        state.ball_speeds.append(2)
 
 try:
     setup()
