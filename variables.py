@@ -428,4 +428,190 @@ if config:
     
     # Note: Bats, Obstacles, Powers, and Special configs are too complex
     # to apply here. They should be handled by the main game file that needs them.
+
+# ============================================================================
+# ADDITIONAL CONSTANTS (from modularization cleanup)
+# ============================================================================
+
+# Import color constants from sprites
+from sprites import (
+    YELLOW, RED, BLUE, PATCHWORK, PURPLE, CLOCKWORK, GOLD, STEALTH,
+    WHITE, ORANGE, COOKIE, DINOSAUR, GLITCH
+)
+
+# Version
+GAME_VERSION = "0.8.0"
+
+# Egg to color mapping
+EGG_TO_COLOR = {
+    'yellow_egg': YELLOW,
+    'red_egg': RED,
+    'blue_egg': BLUE,
+    'patchwork_egg': PATCHWORK,
+    'purple_egg': PURPLE,
+    'clockwork_egg': CLOCKWORK,
+    'gold_egg': GOLD,
+    'stealth_egg': STEALTH,
+    'white_egg': WHITE,
+    'orange_egg': ORANGE,
+    'cookie_egg': COOKIE,
+    'dinosaur_egg': DINOSAUR,
+    'glitch_egg': GLITCH,
+}
+
+# Color spawn limits (None = unlimited)
+COLOR_LIMITS = {
+    YELLOW: None,
+    RED: None,
+    BLUE: None,
+    PATCHWORK: 2,
+    PURPLE: 2,
+    CLOCKWORK: 2,
+    GOLD: 1,
+    STEALTH: 1,
+    WHITE: 1,
+    ORANGE: 1,
+    COOKIE: 1,
+    DINOSAUR: 1,
+    GLITCH: 1,
+}
+
+# Rarity eggs candidates (unified: candidates + weights from config)
+RARITY_EGGS_CANDIDATES = {
+    'common': {
+        'yellow_egg': 30,
+        'red_egg': 25,
+        'blue_egg': 20,
+        'patchwork_egg': 15,
+        'purple_egg': 10,
+    },
+    'uncommon': {
+        'blue_egg': 33,
+        'patchwork_egg': 25,
+        'purple_egg': 20,
+        'clockwork_egg': 12,
+        'stealth_egg': 7,
+        'cookie_egg': 3,
+    },
+    'rare': {
+        'white_egg': 34,
+        'orange_egg': 33,
+        'gold_egg': 33,
+    },
+    'epic': {
+        'dinosaur_egg': 50,
+        'glitch_egg': 50,
+    }
+}
+
+# Color name mapping for display
+COLOR_NAME_MAP = {
+    YELLOW: 'Yellow',
+    RED: 'Red',
+    BLUE: 'Blue',
+    ORANGE: 'Orange',
+    GOLD: 'Gold',
+    PATCHWORK: 'Patchwork',
+    CLOCKWORK: 'Clockwork',
+    COOKIE: 'Cookie',
+    STEALTH: 'Stealth',
+    DINOSAUR: 'Dinosaur',
+    WHITE: 'White',
+    PURPLE: 'Purple',
+    GLITCH: 'Glitch',
+}
+
+# Synergy transfer ratio
+SYNERGY_TRANSFER_RATIO = 0.10
+
+# Prestige modifiers per grade
+PRESTIGE_MODIFIERS = {
+    1: 1.1,
+    2: 1.2,
+    3: 1.35,
+    4: 1.5,
+    5: 1.75,
+}
+
+# Prestige rarity factor
+PRESTIGE_RARITY_FACTOR = 0.1
+
+# Transform limits for patchwork birds
+TRANSFORM_LIMITS = {
+    YELLOW: 5,
+    RED: 3,
+    BLUE: 2,
+}
+
+# Power-specific constants
+STEALTH_SPEED_BOOST = 2
+BOUNCE_BOOST_DURATION_BASE = 4
+BOUNCE_BOOST_DURATION_PLUS = 4
+BOUNCE_BOOST_DURATION_PLUSPLUS = 8
+BOUNCE_BOOST_DURATION_MAX = 12
+SUCTION_BOOST_DURATION_BASE = 0
+SUCTION_BOOST_DURATION_PLUS = 0
+SUCTION_BOOST_DURATION_PLUSPLUS = 4
+SUCTION_BOOST_DURATION_MAX = 8
+TAILWIND_UP_BONUS_BASE = 1
+TAILWIND_UP_BONUS_PLUS = 2
+TAILWIND_UP_BONUS_PLUSPLUS = 3
+TAILWIND_DOWN_PENALTY_BASE = 1
+TAILWIND_DOWN_PENALTY_PLUS = 1
+TAILWIND_DOWN_PENALTY_PLUSPLUS = 2
+TAILWIND_DOWN_PENALTY_MAX = 3
+
+# Special bird constants
+DINOSAUR_PRESSES_TO_BOUNCE = 15
+DINOSAUR_PRESS_CHUNK = 3
+DINOSAUR_RECOVERY_CHANCE_ON_EGG = 0.10
+DINOSAUR_DAMAGE = 16
+STEALTH_DAMAGE = 24
+STEALTH_TANGIBLE_SECONDS = 2.0
+GOLD_DAMAGE = 1
+GOLD_SCORE_VALUE = 100
+CLOCKWORK_LANES_BASE = 3
+CLOCKWORK_LANES_MAX = 5
+BLUE_ADJACENT_BOOST_SECONDS = 5.0
+
+# Bat constants
+BAT_SCARED_SECONDS = 2.0
+BAT_SCARED_SPEED_BOOST_SECONDS = 2.0
+
+# Shuffle constants
+SHUFFLE_LEVEL_BASE = 10
+SHUFFLE_LEVEL_PLUS = 15
+SHUFFLE_LEVEL_PLUSPLUS = 20
+SHUFFLE_LEVEL_MAX = 25
+
+# HP color scaling base RGB values
+_BATS_BASE_RGB = (255, 0, 255)   # magenta FF00FF
+_OBST_BASE_RGB = (0, 255, 0)     # green 00FF00
+_OBST_MAX_HP_BY_TIER = {1: 4, 2: 6, 3: 10, 4: 16}
+
+# Power defaults - Wide Cursor
+WIDE_CURSOR_BASE_SECONDS = 10.0
+WIDE_CURSOR_PLUS_SECONDS = 20.0
+WIDE_CURSOR_PLUSPLUS_SECONDS = 25.0
+WIDE_CURSOR_MAX_SECONDS = 50.0
+WIDE_CURSOR_LANES_BASE = 3
+WIDE_CURSOR_LANES_MAX = 5
+
+# Power defaults - Bounce Boost
+BOUNCE_BOOST_BASE_SECONDS = 10.0
+BOUNCE_BOOST_PLUS_SECONDS = 20.0
+BOUNCE_BOOST_PLUSPLUS_SECONDS = 25.0
+BOUNCE_BOOST_MAX_SECONDS = 50.0
+
+# Power defaults - Suction
+SUCTION_BASE_SECONDS = 10.0
+SUCTION_PLUS_SECONDS = 20.0
+SUCTION_PLUSPLUS_SECONDS = 25.0
+SUCTION_MAX_SECONDS = 50.0
+
+# Power defaults - Tailwind
+TAILWIND_BASE_SECONDS = 10.0
+TAILWIND_PLUS_SECONDS = 15.0
+TAILWIND_PLUSPLUS_SECONDS = 20.0
+TAILWIND_MAX_SECONDS = 30.0
     # This file only contains the most commonly used variables.

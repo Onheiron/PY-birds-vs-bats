@@ -95,46 +95,13 @@ def choose_loot_type(rarity):
     if random.random() < egg_prob:
         # Egg selection by rarity (rare tier may include gold_egg)
         # We must respect on-field limits per bird TYPE to avoid overspawning
-        # Map egg name -> bird color constant
-        egg_to_color = {
-            'yellow_egg': YELLOW,
-            'red_egg': RED,
-            'blue_egg': BLUE,
-            'white_egg': WHITE,
-            'clockwork_egg': CLOCKWORK,
-            'gold_egg': GOLD,
-            'stealth_egg': STEALTH,
-            'patchwork_egg': PATCHWORK,
-            'purple_egg': PURPLE,
-            'orange_egg': ORANGE,
-            'cookie_egg': COOKIE,
-            'dinosaur_egg': DINOSAUR,
-            'glitch_egg': GLITCH,
-        }
-
-        # Limits by category (None = unlimited)
-        color_limits = {
-            YELLOW: None,
-            RED: None,
-            BLUE: None,
-            PATCHWORK: 2,
-            PURPLE: 2,
-            CLOCKWORK: 2,
-            GOLD: 1,
-            STEALTH: 1,
-            WHITE: 1,
-            ORANGE: 1,
-            COOKIE: 1,
-            DINOSAUR: 1,
-            GLITCH: 1,
-        }
 
         def allowed(egg_name):
             try:
-                bcol = egg_to_color.get(egg_name)
+                bcol = v.EGG_TO_COLOR.get(egg_name)
                 if bcol is None:
                     return True
-                limit = color_limits.get(bcol)
+                limit = v.COLOR_LIMITS.get(bcol)
                 if limit is None:
                     return True
                 # Count active birds of that color
@@ -145,19 +112,21 @@ def choose_loot_type(rarity):
 
         # Candidate eggs and their base weights per rarity (weights are configurable)
         if rarity == 'common':
-            candidates = ['yellow_egg', 'red_egg', 'blue_egg', 'patchwork_egg', 'purple_egg']
-            raw_weights = v.RARITY_WEIGHTS.get('common', {})
+            rarity_data = v.RARITY_EGGS_CANDIDATES.get('common', {})
+            candidates = list(rarity_data.keys()) if isinstance(rarity_data, dict) else ['yellow_egg', 'red_egg', 'blue_egg']
+            raw_weights = rarity_data if isinstance(rarity_data, dict) else v.RARITY_WEIGHTS.get('common', {})
         elif rarity == 'uncommon':
-            candidates = ['blue_egg', 'patchwork_egg', 'purple_egg', 'clockwork_egg', 'stealth_egg', 'cookie_egg']
-            raw_weights = v.RARITY_WEIGHTS.get('uncommon', {})
+            rarity_data = v.RARITY_EGGS_CANDIDATES.get('uncommon', {})
+            candidates = list(rarity_data.keys()) if isinstance(rarity_data, dict) else ['blue_egg', 'patchwork_egg', 'purple_egg']
+            raw_weights = rarity_data if isinstance(rarity_data, dict) else v.RARITY_WEIGHTS.get('uncommon', {})
         elif rarity == 'rare':
-            # include COOKIE as a rare egg candidate
-            candidates = ['white_egg', 'orange_egg', 'gold_egg']
-            raw_weights = v.RARITY_WEIGHTS.get('rare', {})
+            rarity_data = v.RARITY_EGGS_CANDIDATES.get('rare', {})
+            candidates = list(rarity_data.keys()) if isinstance(rarity_data, dict) else ['white_egg', 'orange_egg', 'gold_egg']
+            raw_weights = rarity_data if isinstance(rarity_data, dict) else v.RARITY_WEIGHTS.get('rare', {})
         else:
-            # Epic tier: include special eggs (white/orange/gold + dinosaur/glitch)
-            candidates = ['dinosaur_egg', 'glitch_egg']
-            raw_weights = v.RARITY_WEIGHTS.get('epic', {})
+            rarity_data = v.RARITY_EGGS_CANDIDATES.get('epic', {})
+            candidates = list(rarity_data.keys()) if isinstance(rarity_data, dict) else ['dinosaur_egg', 'glitch_egg']
+            raw_weights = rarity_data if isinstance(rarity_data, dict) else v.RARITY_WEIGHTS.get('epic', {})
 
         # Normalize raw_weights: support either dict {item: weight} or legacy list/tuple
         if isinstance(raw_weights, dict):
@@ -202,35 +171,6 @@ else:
     import termios
     import fcntl
 
-# Populate COLOR_NAME_MAP so physics config keys (like 'YELLOW') can be resolved
-try:
-    COLOR_NAME_MAP.update({
-        YELLOW: 'YELLOW',
-        RED: 'RED',
-        BLUE: 'BLUE',
-        ORANGE: 'ORANGE',
-        GOLD: 'GOLD',
-        PATCHWORK: 'PATCHWORK',
-        CLOCKWORK: 'CLOCKWORK',
-        COOKIE: 'COOKIE',
-        STEALTH: 'STEALTH',
-        DINOSAUR: 'DINOSAUR',
-        PURPLE: 'PURPLE',
-        WHITE: 'WHITE',
-    })
-except Exception:
-    pass
-
-# Game version (update this when releasing a new build)
-GAME_VERSION = "0.8.0"
-
-# Base colors (full HP)
-_BATS_BASE_RGB = BATS_BASE_RGB  # from sprites
-_OBST_BASE_RGB = OBST_BASE_RGB  # from sprites
-
-# Obstacle max HP by tier (used for color scaling)
-_OBST_MAX_HP_BY_TIER = v.OBSTACLE_MAX_HP_BY_TIER
-
 # Color helpers: map HP ratio to RGB truecolor escape
 def _rgb_escape(r: int, g: int, b: int) -> str:
     # Decide if terminal likely supports truecolor (COLORTERM hint).
@@ -269,96 +209,10 @@ def _color_from_hp(base_rgb: tuple, hp: int, max_hp: int) -> str:
         r = g = b = 0
     return _rgb_escape(r, g, b)
 
-# Use rendering functions from sprites module
-_render_patchwork_line = render_patchwork_line
-_render_clockwork_line = render_clockwork_line
-
-# Map of color escape constants to their symbolic names (used to map config keys)
-COLOR_NAME_MAP = {}
-
-# Special / miscellaneous tunables
-SYNERGY_TRANSFER_RATIO = 0.10  # fraction of XP gap transferred on synergy
-
-# Prestige modifiers by grade label (can be overridden from config)
-PRESTIGE_MODIFIERS = {
-    'D': 0.0,
-    'C1': 0.03125,
-    'C2': 0.0625,
-    'B1': 0.125,
-    'B2': 0.25,
-    'A1': 0.5,
-    'A2': 1.0,
-    'S': 5.0,
-}
-# Multiplier factor used when adjusting rarity weights: factor = 1 + prestige * PRESTIGE_RARITY_FACTOR
-PRESTIGE_RARITY_FACTOR = 0.1
-
 # Note: Most constants are now imported from variables.py at the top of the file
 # Only special computed values and functions remain here
 
-# Additional constants not in variables.py
-STEALTH_SPEED_BOOST = 6
-DINOSAUR_SPRITE_HEIGHT = 3
-NORMAL_BIRD_SPRITE_HEIGHT = 2
-LANE_COLLISION_HALF_WIDTH = 2
-LOOT_COLLECTION_DISTANCE = 2
-BOUNCE_BOOST_DURATION_BASE = 4
-BOUNCE_BOOST_DURATION_PLUS = 4
-BOUNCE_BOOST_DURATION_PLUSPLUS = 8
-BOUNCE_BOOST_DURATION_MAX = 12
-SUCTION_BOOST_DURATION_BASE = 0
-SUCTION_BOOST_DURATION_PLUS = 0
-SUCTION_BOOST_DURATION_PLUSPLUS = 4
-SUCTION_BOOST_DURATION_MAX = 8
-TAILWIND_UP_BONUS_BASE = 1
-TAILWIND_UP_BONUS_PLUS = 2
-TAILWIND_UP_BONUS_PLUSPLUS = 3
-TAILWIND_DOWN_PENALTY_BASE = 1
-TAILWIND_DOWN_PENALTY_PLUS = 1
-TAILWIND_DOWN_PENALTY_PLUSPLUS = 2
-TAILWIND_DOWN_PENALTY_MAX = 3
 
-# Suction defaults
-SUCTION_BASE_SECONDS = 10.0
-SUCTION_PLUS_SECONDS = 20.0
-SUCTION_BOOST_DURATION_BASE = 0
-SUCTION_BOOST_DURATION_PLUS = 0
-SUCTION_BOOST_DURATION_PLUSPLUS = 4
-SUCTION_BOOST_DURATION_MAX = 8
-
-# Tailwind defaults
-TAILWIND_UP_BONUS_BASE = 1
-TAILWIND_UP_BONUS_PLUS = 2
-TAILWIND_UP_BONUS_PLUSPLUS = 3
-TAILWIND_DOWN_PENALTY_BASE = 1
-TAILWIND_DOWN_PENALTY_PLUS = 1
-TAILWIND_DOWN_PENALTY_PLUSPLUS = 2
-TAILWIND_DOWN_PENALTY_MAX = 3
-
-# Note: All constants now accessed via v.CONSTANT from variables module
-# Only local mutable copies and special hard-coded constants remain here
-
-# Special constants not in variables.py (hard-coded game logic)
-STEALTH_SPEED_BOOST = 6
-DINOSAUR_SPRITE_HEIGHT = 3
-NORMAL_BIRD_SPRITE_HEIGHT = 2
-LANE_COLLISION_HALF_WIDTH = 2
-LOOT_COLLECTION_DISTANCE = 2
-BOUNCE_BOOST_DURATION_BASE = 4
-BOUNCE_BOOST_DURATION_PLUS = 4
-BOUNCE_BOOST_DURATION_PLUSPLUS = 8
-BOUNCE_BOOST_DURATION_MAX = 12
-SUCTION_BOOST_DURATION_BASE = 0
-SUCTION_BOOST_DURATION_PLUS = 0
-SUCTION_BOOST_DURATION_PLUSPLUS = 4
-SUCTION_BOOST_DURATION_MAX = 8
-TAILWIND_UP_BONUS_BASE = 1
-TAILWIND_UP_BONUS_PLUS = 2
-TAILWIND_UP_BONUS_PLUSPLUS = 3
-TAILWIND_DOWN_PENALTY_BASE = 1
-TAILWIND_DOWN_PENALTY_PLUS = 1
-TAILWIND_DOWN_PENALTY_PLUSPLUS = 2
-TAILWIND_DOWN_PENALTY_MAX = 3
 
 # Ball positions and velocities
 # Initialize bird colors from DEFAULT_BIRD_FORMATION
@@ -551,7 +405,7 @@ def transform_bird_to_s(bi):
             # If we have a mapping, check limits before applying
             if target_color is not None:
                 try:
-                    limit = TRANSFORM_LIMITS.get(target_color, None)
+                    limit = v.TRANSFORM_LIMITS.get(target_color, None)
                 except Exception:
                     limit = None
 
@@ -600,45 +454,6 @@ def transform_bird_to_s(bi):
     except Exception:
         pass
 
-# Assign speeds based on color (higher = faster)
-# Blue: 4 (fastest), Red: 3, Yellow: 2, Obstacles: 1 (slowest)
-ball_speeds = []
-for color in ball_colors:
-    try:
-        # Resolve symbolic name for the color escape if available
-        cname = COLOR_NAME_MAP.get(color)
-        if not cname:
-            # Try to infer common names by identity comparisons
-            if color == YELLOW:
-                cname = 'YELLOW'
-            elif color == RED:
-                cname = 'RED'
-            elif color == BLUE:
-                cname = 'BLUE'
-            elif color == ORANGE:
-                cname = 'ORANGE'
-            elif color == GOLD:
-                cname = 'GOLD'
-            elif color == PATCHWORK:
-                cname = 'PATCHWORK'
-            elif color == CLOCKWORK:
-                cname = 'CLOCKWORK'
-            elif color == COOKIE:
-                cname = 'COOKIE'
-            elif color == STEALTH:
-                cname = 'STEALTH'
-            elif color == DINOSAUR:
-                cname = 'DINOSAUR'
-            elif color == PURPLE:
-                cname = 'PURPLE'
-            elif color == WHITE:
-                cname = 'WHITE'
-        spd = v.BALL_SPEEDS_DEFAULT.get(cname, 2)
-        ball_speeds.append(int(spd))
-    except Exception:
-        # Defensive fallback
-        ball_speeds.append(2)
-
 # Red bird projectiles - list of {x_pos, y_pos, lane}
 red_projectiles = []
 
@@ -648,20 +463,6 @@ per_bird_xp = [0] * v.NUM_BALLS
 transformed_s = [False] * v.NUM_BALLS
 # Debug toggle: show per-bird XP/grade summary in the HUD when True
 show_xp_overlay = False
-
-# Limits by category for transformations/spawns (None = unlimited)
-TRANSFORM_LIMITS = {
-    YELLOW: None,
-    RED: None,
-    BLUE: None,
-    PATCHWORK: 2,
-    PURPLE: 2,
-    CLOCKWORK: 2,
-    GOLD: 1,
-    STEALTH: 1,
-    WHITE: 1,
-    ORANGE: 1,
-}
 
 # Background scroll offset
 bg_offset = 0
@@ -682,9 +483,6 @@ loot_items = []
 
 # Spawn queue - entities waiting to spawn when screen is not too crowded
 spawn_queue = []
-
-# Entity limit to prevent buffer overflow
-MAX_ENTITIES = 50  # Max total entities on screen (excluding birds) - greatly increased due to compact sprites
 
 # Speed boosts - track which birds have temp speed boosts {bird_index: remaining_frames}
 speed_boosts = {}
@@ -1029,7 +827,7 @@ def compute_prestige():
         # mapping for exact grade labels
         # Allow overriding the prestige modifiers via PRESTIGE_MODIFIERS
         try:
-            mod_map = PRESTIGE_MODIFIERS if isinstance(PRESTIGE_MODIFIERS, dict) else {
+            mod_map = v.PRESTIGE_MODIFIERS if isinstance(v.PRESTIGE_MODIFIERS, dict) else {
                 'D': 0.0,
                 'C1': 0.03125,
                 'C2': 0.0625,
@@ -1097,7 +895,7 @@ def adjust_rarity_weights(base_weights, prestige):
     Returns a new list of floats that sum to 100.
     """
     try:
-        factor = 1.0 + float(prestige) * float(PRESTIGE_RARITY_FACTOR)
+        factor = 1.0 + float(prestige) * float(v.PRESTIGE_RARITY_FACTOR)
     except Exception:
         factor = 1.0
 
@@ -1146,10 +944,8 @@ selected_lane = None  # Lane selected when space is pressed
 last_space_state = False  # Track last frame's space state for edge detection
 last_up_state = False  # Track UP edge for charging detection
 
-# Frame counter and speed settings
+# Frame counter
 frame_count = 0
-base_sleep = 0.2  # Starting speed
-min_sleep = 0.02   # Maximum speed (lower = faster)
 
 def cleanup():
     try:
@@ -1307,12 +1103,6 @@ def get_key():
             return last
         except Exception:
             return None
-
-# --- Colore e sprite CLOCKWORK ---
-CLOCKWORK_BIRD_UP_1 = BIRD_UP_1
-CLOCKWORK_BIRD_UP_2 = BIRD_UP_2
-CLOCKWORK_BIRD_DOWN_1 = BIRD_DOWN_1
-CLOCKWORK_BIRD_DOWN_2 = BIRD_DOWN_2
 
 # --- Gestione auto-bounce CLOCKWORK ---
 def handle_clockwork_auto_bounce():
@@ -1609,12 +1399,12 @@ try:
                 # Optional movement and chaotic behavior overrides
                 if 'speed_min' in gcfg:
                     try:
-                        GLITCH_SPEED_MIN = int(gcfg.get('speed_min'))
+                        v.GLITCH_SPEED_MIN = int(gcfg.get('speed_min'))
                     except Exception:
                         pass
                 if 'speed_max' in gcfg:
                     try:
-                        GLITCH_SPEED_MAX = int(gcfg.get('speed_max'))
+                        v.GLITCH_SPEED_MAX = int(gcfg.get('speed_max'))
                     except Exception:
                         pass
                 if 'flip_chance' in gcfg:
@@ -1680,6 +1470,43 @@ try:
             # Cap NUM_BALLS to available lanes
             if v.NUM_BALLS > n_lanes:
                 v.NUM_BALLS = n_lanes
+            
+            # Reinitialize ball_colors from formation (may have changed in config)
+            ball_colors = []
+            for bird_name in v.DEFAULT_BIRD_FORMATION[:v.NUM_BALLS]:
+                bird_name_upper = bird_name.upper()
+                if bird_name_upper == 'YELLOW':
+                    ball_colors.append(YELLOW)
+                elif bird_name_upper == 'RED':
+                    ball_colors.append(RED)
+                elif bird_name_upper == 'BLUE':
+                    ball_colors.append(BLUE)
+                elif bird_name_upper == 'WHITE':
+                    ball_colors.append(WHITE)
+                elif bird_name_upper == 'ORANGE':
+                    ball_colors.append(ORANGE)
+                elif bird_name_upper == 'GOLD':
+                    ball_colors.append(GOLD)
+                elif bird_name_upper == 'PATCHWORK':
+                    ball_colors.append(PATCHWORK)
+                elif bird_name_upper == 'PURPLE':
+                    ball_colors.append(PURPLE)
+                elif bird_name_upper == 'CLOCKWORK':
+                    ball_colors.append(CLOCKWORK)
+                elif bird_name_upper == 'STEALTH':
+                    ball_colors.append(STEALTH)
+                elif bird_name_upper == 'COOKIE':
+                    ball_colors.append(COOKIE)
+                elif bird_name_upper == 'DINOSAUR':
+                    ball_colors.append(DINOSAUR)
+                elif bird_name_upper == 'GLITCH':
+                    ball_colors.append(GLITCH)
+                else:
+                    ball_colors.append(YELLOW)
+            # Pad with YELLOW if formation is shorter than NUM_BALLS
+            while len(ball_colors) < v.NUM_BALLS:
+                ball_colors.append(YELLOW)
+            
             # Recompute ball columns and starting positions/arrays
             ball_cols = [v.LANE_POSITIONS[random_lanes[i]] for i in range(v.NUM_BALLS)]
             v.STARTING_LINE = v.HEIGHT - 4
@@ -1709,12 +1536,12 @@ try:
         # Global speed clamps
         if 'speed_min' in physics_cfg:
             try:
-                SPEED_MIN = int(physics_cfg.get('speed_min'))
+                v.SPEED_MIN = int(physics_cfg.get('speed_min'))
             except Exception:
                 pass
         if 'speed_max' in physics_cfg:
             try:
-                SPEED_MAX = int(physics_cfg.get('speed_max'))
+                v.SPEED_MAX = int(physics_cfg.get('speed_max'))
             except Exception:
                 pass
         if 'combo_window_frames' in physics_cfg:
@@ -2276,6 +2103,20 @@ try:
 
 except Exception:
     pass
+
+# Assign speeds based on bird formation (higher = faster) - AFTER config is loaded
+# Use the bird names directly from DEFAULT_BIRD_FORMATION instead of comparing color objects
+ball_speeds = []
+for i in range(v.NUM_BALLS):
+    try:
+        # Get bird name from formation, defaulting to YELLOW if index out of range
+        bird_name = v.DEFAULT_BIRD_FORMATION[i].upper() if i < len(v.DEFAULT_BIRD_FORMATION) else 'YELLOW'
+        # Look up speed from configuration
+        spd = v.BALL_SPEEDS_DEFAULT.get(bird_name, 2)
+        ball_speeds.append(int(spd))
+    except Exception:
+        # Defensive fallback
+        ball_speeds.append(2)
 
 try:
     setup()
@@ -2878,7 +2719,7 @@ try:
                                     # Save previous speed and apply temporary speed boost
                                     try:
                                         stealth_prev_speeds[bird_in_lane] = ball_speeds[bird_in_lane]
-                                        ball_speeds[bird_in_lane] = int(STEALTH_SPEED_BOOST)
+                                        ball_speeds[bird_in_lane] = int(v.STEALTH_SPEED_BOOST)
                                     except Exception:
                                         pass
                                     try:
@@ -2993,10 +2834,10 @@ try:
         for obs in obstacles:
             # Color based on remaining HP (scale from base green to black)
             try:
-                max_hp = _OBST_MAX_HP_BY_TIER.get(obs.get('tier', 1), obs.get('hp', 1))
+                max_hp = v._OBST_MAX_HP_BY_TIER.get(obs.get('tier', 1), obs.get('hp', 1))
             except Exception:
                 max_hp = obs.get('hp', 1)
-            obs_color = _color_from_hp(_OBST_BASE_RGB, obs.get('hp', 0), max_hp)
+            obs_color = _color_from_hp(v._OBST_BASE_RGB, obs.get('hp', 0), max_hp)
 
             # Draw sprite - single line, no HP display
             for line_idx, line in enumerate(OBSTACLE_SPRITE):
@@ -3010,7 +2851,7 @@ try:
             # Color based on remaining HP (scale from magenta to black)
             bat_hp = bat.get('hp', 0)
             bat_max = bat.get('max_hp', bat_hp if bat_hp > 0 else 1)
-            bat_color = _color_from_hp(_BATS_BASE_RGB, bat_hp, bat_max)
+            bat_color = _color_from_hp(v._BATS_BASE_RGB, bat_hp, bat_max)
 
             # Choose sprite frame based on animation
             bat_sprite = BAT_FRAME_1 if (frame_count // 3) % 2 == 0 else BAT_FRAME_2
@@ -3221,11 +3062,11 @@ try:
                             except Exception:
                                 blink_period = 3
                             blink_on = ((frame_count // blink_period) % 2) == 0
-                            colored = _render_clockwork_line(line, c, blink_on)
+                            colored = render_clockwork_line(line, c, blink_on)
                             output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{colored}"
                         elif ball_colors[b] == PATCHWORK:
                             # Render each character with a different color pattern
-                            colored = _render_patchwork_line(line)
+                            colored = render_patchwork_line(line)
                             output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{colored}"
                         else:
                             output += f"\033[{y_pos};{ball_cols[b]-x_offset}H{color}{line}{RESET}"
@@ -3732,7 +3573,7 @@ try:
                             current_speed = ball_speeds[i]
                             if i in speed_boosts:
                                 current_speed += 1
-                            move_interval = max(1, int(SPEED_MAX - current_speed))
+                            move_interval = max(1, int(v.SPEED_MAX - current_speed))
                             
                             # Check if bird will move this frame
                             if frame_count % move_interval == 0:
@@ -4338,7 +4179,7 @@ try:
             try:
                 if ball_colors[i] == GLITCH and not ball_lost[i]:
                     # Random speed each step (configurable range)
-                    ball_speeds[i] = random.randint(int(GLITCH_SPEED_MIN), int(GLITCH_SPEED_MAX))
+                    ball_speeds[i] = random.randint(int(v.GLITCH_SPEED_MIN), int(v.GLITCH_SPEED_MAX))
             except Exception:
                 pass
             current_speed = ball_speeds[i]
@@ -4350,7 +4191,7 @@ try:
                     current_speed += 1
                 elif speed_boosts[i] < 0 and ball_vy[i] == 1:
                     # Negative = slow effect (yellow power)
-                    current_speed = max(int(SPEED_MIN), current_speed - 1)
+                    current_speed = max(int(v.SPEED_MIN), current_speed - 1)
             
             # Apply scared speed boost when going down
             if i in scared_birds and ball_vy[i] == 1:
@@ -4408,7 +4249,7 @@ try:
                                 if ball_lost[target_idx]:
                                     ball_lost[target_idx] = False
                                     ball_colors[target_idx] = GLITCH
-                                    ball_speeds[target_idx] = random.randint(int(GLITCH_SPEED_MIN), int(GLITCH_SPEED_MAX))
+                                    ball_speeds[target_idx] = random.randint(int(v.GLITCH_SPEED_MIN), int(v.GLITCH_SPEED_MAX))
                                     ball_y[target_idx] = v.STARTING_LINE
                                     ball_vy[target_idx] = -1
                                     try:
@@ -4426,7 +4267,7 @@ try:
                                 else:
                                     # Replace existing bird in that lane with GLITCH
                                     ball_colors[target_idx] = GLITCH
-                                    ball_speeds[target_idx] = random.randint(int(GLITCH_SPEED_MIN), int(GLITCH_SPEED_MAX))
+                                    ball_speeds[target_idx] = random.randint(int(v.GLITCH_SPEED_MIN), int(v.GLITCH_SPEED_MAX))
                                     try:
                                         per_bird_xp[target_idx] = 0
                                     except Exception:
@@ -4455,15 +4296,15 @@ try:
                     up_bonus = int(powerups.get('tailwind_up_bonus', 0))
                     down_pen = int(powerups.get('tailwind_down_penalty', 0))
                     if ball_vy[i] == -1 and up_bonus != 0:
-                        current_speed = min(int(SPEED_MAX), current_speed + up_bonus)
+                        current_speed = min(int(v.SPEED_MAX), current_speed + up_bonus)
                     elif ball_vy[i] == 1 and down_pen != 0:
-                        current_speed = max(int(SPEED_MIN), current_speed - down_pen)
+                        current_speed = max(int(v.SPEED_MIN), current_speed - down_pen)
                 except Exception:
                     # On any unexpected issue, don't alter speed
                     pass
             
             # Convert speed: higher number = faster, so invert for modulo
-            move_interval = max(1, int(SPEED_MAX - current_speed))
+            move_interval = max(1, int(v.SPEED_MAX - current_speed))
 
             # If this bird is actively charging (PURPLE state == 2) or was
             # just fired, keep it frozen: skip physics, collisions and loot
@@ -4764,7 +4605,7 @@ try:
                                     ball_lost[idx] = False
                                     # Ensure speed matches configured color speed
                                     try:
-                                        cname = COLOR_NAME_MAP.get(YELLOW, 'YELLOW')
+                                        cname = v.COLOR_NAME_MAP.get(YELLOW, 'YELLOW')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('YELLOW', 2)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('YELLOW', 2))
@@ -4786,7 +4627,7 @@ try:
                                     ball_colors[idx] = COOKIE
                                     ball_lost[idx] = False
                                     try:
-                                        cname = COLOR_NAME_MAP.get(COOKIE, 'COOKIE')
+                                        cname = v.COLOR_NAME_MAP.get(COOKIE, 'COOKIE')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('COOKIE', 3)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('COOKIE', 3))
@@ -4808,7 +4649,7 @@ try:
                                     ball_colors[idx] = RED
                                     ball_lost[idx] = False
                                     try:
-                                        cname = COLOR_NAME_MAP.get(RED, 'RED')
+                                        cname = v.COLOR_NAME_MAP.get(RED, 'RED')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('RED', 3)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('RED', 3))
@@ -4830,7 +4671,7 @@ try:
                                     ball_colors[idx] = BLUE
                                     ball_lost[idx] = False
                                     try:
-                                        cname = COLOR_NAME_MAP.get(BLUE, 'BLUE')
+                                        cname = v.COLOR_NAME_MAP.get(BLUE, 'BLUE')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('BLUE', 4)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('BLUE', 4))
@@ -4852,7 +4693,7 @@ try:
                                     ball_lost[idx] = False
                                     ball_colors[idx] = WHITE
                                     try:
-                                        cname = COLOR_NAME_MAP.get(WHITE, 'WHITE')
+                                        cname = v.COLOR_NAME_MAP.get(WHITE, 'WHITE')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('WHITE', 5)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('WHITE', 5))
@@ -4876,7 +4717,7 @@ try:
                                         # Initialize clockwork charge and speed
                                         try:
                                             clockwork_charge[idx] = v.CLOCKWORK_INITIAL_CHARGE
-                                            cname = COLOR_NAME_MAP.get(CLOCKWORK, 'CLOCKWORK')
+                                            cname = v.COLOR_NAME_MAP.get(CLOCKWORK, 'CLOCKWORK')
                                             ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('CLOCKWORK', 2)))
                                         except Exception:
                                             ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('CLOCKWORK', 2))
@@ -4898,7 +4739,7 @@ try:
                                     ball_lost[idx] = False
                                     ball_colors[idx] = PURPLE
                                     try:
-                                        cname = COLOR_NAME_MAP.get(PURPLE, 'PURPLE')
+                                        cname = v.COLOR_NAME_MAP.get(PURPLE, 'PURPLE')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('PURPLE', 3)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('PURPLE', 3))
@@ -4921,7 +4762,7 @@ try:
                                     ball_colors[idx] = DINOSAUR
                                     # DINOSAUR legendary: set a high base speed (4)
                                     try:
-                                        cname = COLOR_NAME_MAP.get(DINOSAUR, 'DINOSAUR')
+                                        cname = v.COLOR_NAME_MAP.get(DINOSAUR, 'DINOSAUR')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('DINOSAUR', 4)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('DINOSAUR', 4))
@@ -4944,7 +4785,7 @@ try:
                                     ball_colors[idx] = GLITCH
                                     # GLITCH bird: variable behavior; set medium speed
                                     try:
-                                        cname = COLOR_NAME_MAP.get(GLITCH, 'GLITCH')
+                                        cname = v.COLOR_NAME_MAP.get(GLITCH, 'GLITCH')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('GLITCH', 3)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('GLITCH', 3))
@@ -4967,7 +4808,7 @@ try:
                                     ball_colors[idx] = GOLD
                                     # Gold special bird = speed 6
                                     try:
-                                        cname = COLOR_NAME_MAP.get(GOLD, 'GOLD')
+                                        cname = v.COLOR_NAME_MAP.get(GOLD, 'GOLD')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('GOLD', 6)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('GOLD', 6))
@@ -4990,7 +4831,7 @@ try:
                                     ball_colors[idx] = PATCHWORK
                                     # Patchwork bird = speed 3 (per design)
                                     try:
-                                        cname = COLOR_NAME_MAP.get(PATCHWORK, 'PATCHWORK')
+                                        cname = v.COLOR_NAME_MAP.get(PATCHWORK, 'PATCHWORK')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('PATCHWORK', 3)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('PATCHWORK', 3))
@@ -5031,7 +4872,7 @@ try:
                                     ball_lost[idx] = False
                                     ball_colors[idx] = ORANGE
                                     try:
-                                        cname = COLOR_NAME_MAP.get(ORANGE, 'ORANGE')
+                                        cname = v.COLOR_NAME_MAP.get(ORANGE, 'ORANGE')
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get(cname, v.BALL_SPEEDS_DEFAULT.get('ORANGE', 5)))
                                     except Exception:
                                         ball_speeds[idx] = int(v.BALL_SPEEDS_DEFAULT.get('ORANGE', 5))  # Fastest bird (fallback)
@@ -5087,16 +4928,16 @@ try:
                             powerups['bounce_boost_active'] = True
                             if loot_type == 'bounce_boost':
                                 sec = cfg.get('base_seconds', v.BOUNCE_BOOST_BASE_SECONDS)
-                                duration = cfg.get('duration_base', BOUNCE_BOOST_DURATION_BASE)
+                                duration = cfg.get('duration_base', v.BOUNCE_BOOST_DURATION_BASE)
                             elif loot_type == 'bounce_boost+':
                                 sec = cfg.get('plus_seconds', v.BOUNCE_BOOST_PLUS_SECONDS)
-                                duration = cfg.get('duration_plus', BOUNCE_BOOST_DURATION_PLUS)
+                                duration = cfg.get('duration_plus', v.BOUNCE_BOOST_DURATION_PLUS)
                             elif loot_type == 'bounce_boost++':
                                 sec = cfg.get('plusplus_seconds', v.BOUNCE_BOOST_PLUSPLUS_SECONDS)
-                                duration = cfg.get('duration_plusplus', BOUNCE_BOOST_DURATION_PLUSPLUS)
+                                duration = cfg.get('duration_plusplus', v.BOUNCE_BOOST_DURATION_PLUSPLUS)
                             else:
                                 sec = cfg.get('max_seconds', v.BOUNCE_BOOST_MAX_SECONDS)
-                                duration = cfg.get('duration_max', BOUNCE_BOOST_DURATION_MAX)
+                                duration = cfg.get('duration_max', v.BOUNCE_BOOST_DURATION_MAX)
                             powerups['bounce_boost_frames'] = max(1, int(float(sec) / base_sleep))
                             powerups['bounce_boost_duration'] = int(duration)
                             ach.check_achievements_event('power_used', power='bounce_boost', frame_count=frame_count, notifications_list=notifications, firebase_client=firebase_client, background_call=background_call)
@@ -5104,17 +4945,17 @@ try:
                             cfg = v.POWERS_DEFAULT.get('suction', {})
                             powerups['suction_active'] = True
                             if loot_type == 'suction':
-                                sec = cfg.get('base_seconds', SUCTION_BASE_SECONDS)
-                                boost = cfg.get('boost_duration_base', SUCTION_BOOST_DURATION_BASE)
+                                sec = cfg.get('base_seconds', v.SUCTION_BASE_SECONDS)
+                                boost = cfg.get('boost_duration_base', v.SUCTION_BOOST_DURATION_BASE)
                             elif loot_type == 'suction+':
-                                sec = cfg.get('plus_seconds', SUCTION_PLUS_SECONDS)
-                                boost = cfg.get('boost_duration_plus', SUCTION_BOOST_DURATION_PLUS)
+                                sec = cfg.get('plus_seconds', v.SUCTION_PLUS_SECONDS)
+                                boost = cfg.get('boost_duration_plus', v.SUCTION_BOOST_DURATION_PLUS)
                             elif loot_type == 'suction++':
                                 sec = cfg.get('plusplus_seconds', v.SUCTION_PLUSPLUS_SECONDS)
-                                boost = cfg.get('boost_duration_plusplus', SUCTION_BOOST_DURATION_PLUSPLUS)
+                                boost = cfg.get('boost_duration_plusplus', v.SUCTION_BOOST_DURATION_PLUSPLUS)
                             else:
                                 sec = cfg.get('max_seconds', v.SUCTION_MAX_SECONDS)
-                                boost = cfg.get('boost_duration_max', SUCTION_BOOST_DURATION_MAX)
+                                boost = cfg.get('boost_duration_max', v.SUCTION_BOOST_DURATION_MAX)
                             powerups['suction_frames'] = max(1, int(float(sec) / base_sleep))
                             powerups['suction_boost_duration'] = int(boost)
                             ach.check_achievements_event('power_used', power='suction', frame_count=frame_count, notifications_list=notifications, firebase_client=firebase_client, background_call=background_call)
@@ -5123,20 +4964,20 @@ try:
                             powerups['tailwind_active'] = True
                             if loot_type == 'tailwind':
                                 sec = cfg.get('base_seconds', v.TAILWIND_BASE_SECONDS)
-                                up = cfg.get('up_bonus_base', TAILWIND_UP_BONUS_BASE)
-                                down = cfg.get('down_penalty_base', TAILWIND_DOWN_PENALTY_BASE)
+                                up = cfg.get('up_bonus_base', v.TAILWIND_UP_BONUS_BASE)
+                                down = cfg.get('down_penalty_base', v.TAILWIND_DOWN_PENALTY_BASE)
                             elif loot_type == 'tailwind+':
                                 sec = cfg.get('plus_seconds', v.TAILWIND_PLUS_SECONDS)
-                                up = cfg.get('up_bonus_plus', TAILWIND_UP_BONUS_PLUS)
-                                down = cfg.get('down_penalty_plus', TAILWIND_DOWN_PENALTY_PLUS)
+                                up = cfg.get('up_bonus_plus', v.TAILWIND_UP_BONUS_PLUS)
+                                down = cfg.get('down_penalty_plus', v.TAILWIND_DOWN_PENALTY_PLUS)
                             elif loot_type == 'tailwind++':
                                 sec = cfg.get('plusplus_seconds', v.TAILWIND_PLUSPLUS_SECONDS)
-                                up = cfg.get('up_bonus_plusplus', TAILWIND_UP_BONUS_PLUSPLUS)
-                                down = cfg.get('down_penalty_plusplus', TAILWIND_DOWN_PENALTY_PLUSPLUS)
+                                up = cfg.get('up_bonus_plusplus', v.TAILWIND_UP_BONUS_PLUSPLUS)
+                                down = cfg.get('down_penalty_plusplus', v.TAILWIND_DOWN_PENALTY_PLUSPLUS)
                             else:
                                 sec = cfg.get('max_seconds', v.TAILWIND_MAX_SECONDS)
-                                up = cfg.get('up_bonus_plusplus', TAILWIND_UP_BONUS_PLUSPLUS)
-                                down = cfg.get('down_penalty_max', TAILWIND_DOWN_PENALTY_MAX)
+                                up = cfg.get('up_bonus_plusplus', v.TAILWIND_UP_BONUS_PLUSPLUS)
+                                down = cfg.get('down_penalty_max', v.TAILWIND_DOWN_PENALTY_MAX)
                             powerups['tailwind_frames'] = max(1, int(float(sec) / base_sleep))
                             powerups['tailwind_up_bonus'] = int(up)
                             powerups['tailwind_down_penalty'] = int(down)
@@ -5318,7 +5159,7 @@ try:
                                 except Exception:
                                     avg_ppm = float(score)
 
-                                background_call(firebase_client.send_score, name, int(score), elapsed, elapsed_str, GAME_VERSION, avg_ppm)
+                                background_call(firebase_client.send_score, name, int(score), elapsed, elapsed_str, v.GAME_VERSION, avg_ppm)
                             except Exception:
                                 # Fallback to original call if something goes wrong
                                 try:
@@ -5337,10 +5178,10 @@ try:
                             except Exception:
                                 avg_ppm = float(score)
 
-                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level, 'time_played_seconds': elapsed, 'time_played': elapsed_str, 'version': GAME_VERSION, 'avg_ppm': avg_ppm})
+                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level, 'time_played_seconds': elapsed, 'time_played': elapsed_str, 'version': v.GAME_VERSION, 'avg_ppm': avg_ppm})
                         except Exception:
                             # Fallback: log without time info
-                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level, 'version': GAME_VERSION})
+                            background_call(firebase_client.log_event, 'game_over', {'score': int(score), 'level': level, 'version': v.GAME_VERSION})
                         background_call(firebase_client.sync_achievements, ach.achievements)
                     except Exception:
                         pass
