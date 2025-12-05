@@ -1853,45 +1853,19 @@ try:
                         # GLITCH interaction with loot: configurable ignore/promote chances
                         if state.ball_colors[i] == GLITCH:
                             r = random.random()
-                            try:
-                                if r < float(variables.GLITCH_LOOT_IGNORE_CHANCE):
-                                    # ignore the loot entirely
-                                    continue
-                                elif r < float(variables.GLITCH_LOOT_IGNORE_CHANCE) + float(variables.GLITCH_LOOT_PROMOTE_CHANCE):
-                                    # promote rarity one tier
-                                    rar = loot.get('rarity', 'common')
-                                    if rar == 'common':
-                                        loot['rarity'] = 'uncommon'
-                                    elif rar == 'uncommon':
-                                        loot['rarity'] = 'rare'
-                                    elif rar == 'rare':
-                                        loot['rarity'] = 'epic'
-                                    # otherwise epic stays epic
-                            except Exception:
-                                # fallback: try using configured glitch loot chances
-                                try:
-                                    if r < float(variables.GLITCH_LOOT_IGNORE_CHANCE):
-                                        continue
-                                    elif r < float(variables.GLITCH_LOOT_IGNORE_CHANCE) + float(variables.GLITCH_LOOT_PROMOTE_CHANCE):
-                                        rar = loot.get('rarity', 'common')
-                                        if rar == 'common':
-                                            loot['rarity'] = 'uncommon'
-                                        elif rar == 'uncommon':
-                                            loot['rarity'] = 'rare'
-                                        elif rar == 'rare':
-                                            loot['rarity'] = 'epic'
-                                except Exception:
-                                    # final fallback using configured constants where possible
-                                    if r < float(variables.GLITCH_LOOT_IGNORE_CHANCE):
-                                        continue
-                                    elif r < float(variables.GLITCH_LOOT_IGNORE_CHANCE) + float(variables.GLITCH_LOOT_PROMOTE_CHANCE):
-                                        rar = loot.get('rarity', 'common')
-                                        if rar == 'common':
-                                            loot['rarity'] = 'uncommon'
-                                        elif rar == 'uncommon':
-                                            loot['rarity'] = 'rare'
-                                        elif rar == 'rare':
-                                            loot['rarity'] = 'epic'
+                            if r < float(variables.GLITCH_LOOT_IGNORE_CHANCE):
+                                # ignore the loot entirely
+                                continue
+                            elif r < float(variables.GLITCH_LOOT_IGNORE_CHANCE) + float(variables.GLITCH_LOOT_PROMOTE_CHANCE):
+                                # promote rarity one tier
+                                rar = loot.get('rarity', 'common')
+                                if rar == 'common':
+                                    loot['rarity'] = 'uncommon'
+                                elif rar == 'uncommon':
+                                    loot['rarity'] = 'rare'
+                                elif rar == 'rare':
+                                    loot['rarity'] = 'epic'
+                                # otherwise epic stays epic
 
                         # Cookie crumbs should NOT be collected by COOKIE birds themselves;
                         # if the nearest collector is the COOKIE that dropped it, skip collection.
