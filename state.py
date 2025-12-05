@@ -129,6 +129,7 @@ def init():
     global up_hold_counter, up_miss_counter, powerups
     global score, level, lives, game_over, swaps_used, paused
     global player_lane, selected_lane, last_space_state, last_up_state, frame_count
+    global original_indices
     global notifications
     
     import random
@@ -276,6 +277,8 @@ def init():
     selected_lane = None
     last_space_state = False
     last_up_state = False
+
+    original_indices = list(range(v.NUM_BALLS))  # track which slots are the original birds
     
     # Frame counter
     frame_count = 0
