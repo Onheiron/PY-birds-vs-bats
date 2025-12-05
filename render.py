@@ -1,5 +1,8 @@
 import os
 import sys
+import random
+
+from sprites import *
 
 # Color helpers: map HP ratio to RGB truecolor escape
 def _rgb_escape(r: int, g: int, b: int) -> str:
@@ -106,3 +109,38 @@ def get_key():
             i += 1
 
         return last
+    
+def render_clockwork_line(line, charge, blink_on):
+    """Render a CLOCKWORK bird line with special coloring."""
+    colored = ""
+    for ch in line:
+        if ch == '.':
+            if charge == 0:
+                colored += f"{DARK_GRAY}{ch}{RESET}"
+            elif charge == 1:
+                colored += f"{ORANGE}{ch}{RESET}"
+            elif charge == 2:
+                colored += f"{YELLOW}{ch}{RESET}"
+            else:
+                colored += f"{GREEN}{ch}{RESET}"
+        elif ch == "'":
+            if blink_on:
+                colored += f"{YELLOW}{ch}{RESET}"
+            else:
+                colored += f"{DARK_GRAY}{ch}{RESET}"
+        else:
+            colored += f"{CLOCKWORK}{ch}{RESET}"
+    return colored
+
+
+def render_patchwork_line(line):
+    """Render a PATCHWORK bird line with random colors."""
+    colors = [RED, YELLOW, BLUE, GREEN, PURPLE, ORANGE, CYAN]
+    colored = ""
+    for ch in line:
+        if ch != ' ':
+            color = random.choice(colors)
+            colored += f"{color}{ch}{RESET}"
+        else:
+            colored += ch
+    return colored

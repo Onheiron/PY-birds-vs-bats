@@ -33,6 +33,10 @@ except Exception:
 
 import threading
 
+# Module-level variables for terminal settings (used by setup/cleanup)
+old_settings = None
+old_flags = None
+
 #!/usr/bin/env python3
 """
 Utility functions for BVB game.
@@ -640,6 +644,7 @@ def deduct_score(amount):
     achievements.check_achievements_event('score', score=state.score, frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=functions.background_call)
 
 def cleanup():
+    global old_settings, old_flags
     print("\033[?25h", end="", flush=True)
     # Music engine removed: nothing to stop here
     # Attempt to cleanly shutdown any network/client resources (best-effort).
@@ -664,16 +669,19 @@ def cleanup():
             if s is not None:
                 s.close()
 
-    if os.name != 'nt':
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-        fcntl.fcntl(sys.stdin, fcntl.F_SETFL, old_flags)
+    if os.name != 'nt' and old_settings is not None:
+        try:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+            fcntl.fcntl(sys.stdin, fcntl.F_SETFL, old_flags)
+        except Exception:
+            pass
     
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def setup():
+    global old_settings, old_flags
     print("\033[?25l", end="", flush=True)
     if os.name != 'nt':
-        global old_settings, old_flags
         old_settings = termios.tcgetattr(sys.stdin)
         old_flags = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
         tty.setraw(sys.stdin.fileno())
@@ -836,3 +844,38 @@ def find_adjacent_birds(bird_lane, offsets=[-1, 1]):
             if bird_idx >= 0:
                 adjacent.append((adj_lane, bird_idx))
     return adjacent
+
+def spawn_bird_from_egg(bird_color, loot_type):
+    """Spawn a new bird from an egg in the first available empty slot.
+    
+    Args:
+        bird_color: The color constant for the bird (e.g., YELLOW, RED, BLUE)
+        loot_type: The egg type string (e.g., 'yellow_egg', 'clockwork_egg')
+    
+    Returns:
+        True if bird was spawned, False if no empty slots available
+    """
+    for idx in range(variables.NUM_BALLS):
+        if state.ball_lost[idx]:
+            state.ball_lost[idx] = False
+            state.ball_colors[idx] = bird_color
+            
+            # Get color name for speed lookup
+            cname = variables.COLOR_NAME_MAP.get(bird_color, loot_type.replace('_egg', '').upper())
+            state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, 3))
+            
+            # Special initialization for CLOCKWORK birds
+            if bird_color == CLOCKWORK:
+                state.clockwork_charge[idx] = variables.CLOCKWORK_INITIAL_CHARGE
+            
+            # Position bird at starting line facing up
+            state.ball_y[idx] = variables.STARTING_LINE
+            set_ball_vy(idx, -1)
+            
+            # Restore life and handle S-grade transformation
+            state.lives += 1
+            state.transformed_s[idx] = False
+            transform_bird_to_s(idx)
+            
+            return True
+    return False

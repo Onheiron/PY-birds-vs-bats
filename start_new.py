@@ -1902,169 +1902,29 @@ try:
 
                         # Apply loot effects
                         if loot_type == 'yellow_egg':
-                            # Spawn yellow bird in first empty lane
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_colors[idx] = YELLOW
-                                    state.ball_lost[idx] = False
-                                    # Ensure speed matches configured color speed
-                                    cname = variables.COLOR_NAME_MAP.get(YELLOW, 'YELLOW')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('YELLOW', 2)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    state.ball_vy[idx] = -1
-                                    state.lives += 1  # Restore life
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(YELLOW, loot_type)
                         elif loot_type == 'cookie_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_colors[idx] = COOKIE
-                                    state.ball_lost[idx] = False
-                                    cname = variables.COLOR_NAME_MAP.get(COOKIE, 'COOKIE')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('COOKIE', 3)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    state.ball_vy[idx] = -1
-                                    state.lives += 1  # Restore life
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(COOKIE, loot_type)
                         elif loot_type == 'red_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_colors[idx] = RED
-                                    state.ball_lost[idx] = False
-                                    cname = variables.COLOR_NAME_MAP.get(RED, 'RED')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('RED', 3)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    state.ball_vy[idx] = -1
-                                    state.lives += 1  # Restore life
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(RED, loot_type)
                         elif loot_type == 'blue_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_colors[idx] = BLUE
-                                    state.ball_lost[idx] = False
-                                    cname = variables.COLOR_NAME_MAP.get(BLUE, 'BLUE')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('BLUE', 4)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    state.ball_vy[idx] = -1
-                                    state.lives += 1  # Restore life
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(BLUE, loot_type)
                         elif loot_type == 'white_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_lost[idx] = False
-                                    state.ball_colors[idx] = WHITE
-                                    cname = variables.COLOR_NAME_MAP.get(WHITE, 'WHITE')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('WHITE', 5)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    state.ball_vy[idx] = -1
-                                    state.lives += 1  # Restore life
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(WHITE, loot_type)
                         elif loot_type == 'clockwork_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                    if state.ball_lost[idx]:
-                                        state.ball_lost[idx] = False
-                                        state.ball_colors[idx] = CLOCKWORK
-                                        # Initialize clockwork charge and speed
-                                        state.clockwork_charge[idx] = variables.CLOCKWORK_INITIAL_CHARGE
-                                        cname = variables.COLOR_NAME_MAP.get(CLOCKWORK, 'CLOCKWORK')
-                                        state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('CLOCKWORK', 2)))
-                                        state.ball_y[idx] = variables.STARTING_LINE
-                                        state.ball_vy[idx] = -1
-                                        state.lives += 1  # Restore life
-                                        state.transformed_s[idx] = False
-                                        transform_bird_to_s(idx)
-                                        break
+                            spawn_bird_from_egg(CLOCKWORK, loot_type)
                         elif loot_type == 'purple_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_lost[idx] = False
-                                    state.ball_colors[idx] = PURPLE
-                                    cname = variables.COLOR_NAME_MAP.get(PURPLE, 'PURPLE')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('PURPLE', 3)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    state.ball_vy[idx] = -1
-                                    state.lives += 1
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(PURPLE, loot_type)
                         elif loot_type == 'dinosaur_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_lost[idx] = False
-                                    state.ball_colors[idx] = DINOSAUR
-                                    # DINOSAUR legendary: set a high base speed (4)
-                                    cname = variables.COLOR_NAME_MAP.get(DINOSAUR, 'DINOSAUR')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('DINOSAUR', 4)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    set_ball_vy(idx, -1)
-                                    state.lives += 1
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(DINOSAUR, loot_type)
                         elif loot_type == 'glitch_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_lost[idx] = False
-                                    state.ball_colors[idx] = GLITCH
-                                    # GLITCH bird: variable behavior; set medium speed
-                                    cname = variables.COLOR_NAME_MAP.get(GLITCH, 'GLITCH')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('GLITCH', 3)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    set_ball_vy(idx, -1)
-                                    state.lives += 1
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(GLITCH, loot_type)
                         elif loot_type == 'gold_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_lost[idx] = False
-                                    state.ball_colors[idx] = GOLD
-                                    # Gold special bird = speed 6
-                                    cname = variables.COLOR_NAME_MAP.get(GOLD, 'GOLD')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('GOLD', 6)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    state.ball_vy[idx] = -1
-                                    state.lives += 1  # Restore life
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(GOLD, loot_type)
                         elif loot_type == 'patchwork_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_lost[idx] = False
-                                    state.ball_colors[idx] = PATCHWORK
-                                    # Patchwork bird = speed 3 (per design)
-                                    cname = variables.COLOR_NAME_MAP.get(PATCHWORK, 'PATCHWORK')
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get(cname, variables.BALL_SPEEDS_DEFAULT.get('PATCHWORK', 3)))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    state.ball_vy[idx] = -1
-                                    state.lives += 1  # Restore life
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(PATCHWORK, loot_type)
                         elif loot_type == 'stealth_egg':
-                            for idx in range(variables.NUM_BALLS):
-                                if state.ball_lost[idx]:
-                                    state.ball_lost[idx] = False
-                                    state.ball_colors[idx] = STEALTH
-                                    # Stealth bird = speed 3 by default
-                                    state.ball_speeds[idx] = int(variables.BALL_SPEEDS_DEFAULT.get('STEALTH', 3))
-                                    state.ball_y[idx] = variables.STARTING_LINE
-                                    state.ball_vy[idx] = -1
-                                    state.lives += 1  # Restore life
-                                    state.transformed_s[idx] = False
-                                    transform_bird_to_s(idx)
-                                    break
+                            spawn_bird_from_egg(STEALTH, loot_type)
                         elif loot_type == 'orange_egg':
                             for idx in range(variables.NUM_BALLS):
                                 if state.ball_lost[idx]:
@@ -2245,10 +2105,8 @@ try:
         
         # Check if game over
         if state.game_over:
-            # Clean up terminal first
-            if os.name != 'nt':
-                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-                fcntl.fcntl(sys.stdin, fcntl.F_SETFL, old_flags)
+            # Clean up terminal using cleanup function
+            cleanup()
             
             # Clear screen and show cursor
             print("\033[2J\033[H\033[?25h")
