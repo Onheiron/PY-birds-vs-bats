@@ -118,7 +118,6 @@ OBST_BASE_RGB = (0, 255, 0)     # green 00FF00
 
 
 # Rendering helper functions
-
 def render_patchwork_line(line: str) -> str:
     """Return a string where each character in `line` is colored in a repeating patchwork pattern.
 
