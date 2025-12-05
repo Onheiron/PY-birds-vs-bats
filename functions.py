@@ -697,3 +697,142 @@ def handle_clockwork_auto_bounce():
                 reset_bird_power(i)
             # if charge == 0, let it fall through (no auto-bounce)
 
+
+def get_affected_lanes():
+    """Return list of lanes affected by current cursor (considers wide cursor powerup)."""
+    if state.powerups['wide_cursor_active']:
+        lanes = []
+        half_width = state.powerups['wide_cursor_lanes'] // 2
+        for offset in range(-half_width, half_width + 1):
+            lane = state.player_lane + offset
+            if 0 <= lane <= 8:
+                lanes.append(lane)
+        return lanes
+    else:
+        return [state.player_lane]
+
+
+def find_bird_in_lane(lane):
+    """Return bird index for given lane, or -1 if no bird found."""
+    return state.random_lanes.index(lane) if lane in state.random_lanes else -1
+
+
+def is_orange_egg_state(bird_idx):
+    """Check if bird is in orange egg dormant state."""
+    return (state.ball_colors[bird_idx] == ORANGE and 
+            state.ball_speeds[bird_idx] == 0 and 
+            state.ball_y[bird_idx] == 999)
+
+
+def try_glitch_bounce(bird_idx):
+    """Attempt to bounce GLITCH bird (has chance to ignore). Returns True if bounced."""
+    if state.ball_colors[bird_idx] == GLITCH:
+        if random.random() < float(variables.GLITCH_BOUNCE_IGNORE_CHANCE):
+            return False  # ignored bounce
+        else:
+            functions.set_ball_vy(bird_idx, -1)
+            return True
+    else:
+        functions.set_ball_vy(bird_idx, -1)
+        return True
+
+
+def get_color_name(bird_color):
+    """Map bird color escape code to simple name string."""
+    color_map = {
+        YELLOW: 'yellow',
+        RED: 'red',
+        BLUE: 'blue',
+        WHITE: 'white',
+        PURPLE: 'purple',
+        ORANGE: 'orange',
+        STEALTH: 'stealth',
+        CLOCKWORK: 'clockwork',
+        GOLD: 'gold',
+        PATCHWORK: 'patchwork',
+        COOKIE: 'cookie',
+        DINOSAUR: 'dinosaur',
+        GLITCH: 'glitch'
+    }
+    return color_map.get(bird_color, 'unknown')
+
+
+def reset_bird_to_start(bird_idx):
+    """Reset bird to starting line position facing up."""
+    state.ball_y[bird_idx] = variables.STARTING_LINE
+    functions.set_ball_vy(bird_idx, -1)
+    functions.reset_bird_power(bird_idx)
+
+
+def bounce_bird(bird_idx, apply_boost=False):
+    """Bounce a bird up and optionally apply bounce boost."""
+    functions.set_ball_vy(bird_idx, -1)
+    functions.reset_bird_power(bird_idx)
+    
+    # Handle CLOCKWORK charge restoration
+    if state.ball_colors[bird_idx] == CLOCKWORK:
+        c = state.clockwork_charge.get(bird_idx, None)
+        if c is None:
+            state.clockwork_charge[bird_idx] = variables.CLOCKWORK_INITIAL_CHARGE
+            c = variables.CLOCKWORK_INITIAL_CHARGE
+        if c == 0:
+            state.clockwork_charge[bird_idx] = 1
+            state.ball_speeds[bird_idx] = 1
+    
+    # Apply bounce boost if active
+    if apply_boost and state.powerups['bounce_boost_active'] and bird_idx not in state.speed_boosts:
+        boost_frames = int(state.powerups['bounce_boost_duration'] / variables.base_sleep)
+        state.speed_boosts[bird_idx] = boost_frames
+    
+    # Record bounce action for combos
+    achievements.append_recent_action('bounce', lane=state.random_lanes[bird_idx], 
+                                     color=state.ball_colors[bird_idx], frame_count=state.frame_count)
+
+def can_bird_bounce(bird_idx):
+    """Check if bird can be bounced (not scared, except PURPLE)."""
+    if bird_idx in state.scared_birds and state.ball_colors[bird_idx] != PURPLE:
+        return False
+    return True
+
+
+def update_orange_egg_lane(bird_idx, new_lane):
+    """Update orange egg loot position when bird lane changes."""
+    if is_orange_egg_state(bird_idx):
+        old_lane = state.random_lanes[bird_idx]
+        for loot in state.loot_items:
+            if (loot['type'] == 'orange_egg' and 
+                loot['x_pos'] == variables.LANE_POSITIONS[old_lane]):
+                loot['x_pos'] = variables.LANE_POSITIONS[new_lane]
+                break
+
+
+def swap_bird_lanes(bird_idx1, bird_idx2):
+    """Swap lane assignments for two birds and update positions."""
+    # Update orange egg positions before swap
+    update_orange_egg_lane(bird_idx1, state.random_lanes[bird_idx2])
+    update_orange_egg_lane(bird_idx2, state.random_lanes[bird_idx1])
+    
+    # Swap lanes
+    state.random_lanes[bird_idx1], state.random_lanes[bird_idx2] = \
+        state.random_lanes[bird_idx2], state.random_lanes[bird_idx1]
+    
+    # Update column positions
+    state.ball_cols[bird_idx1] = variables.LANE_POSITIONS[state.random_lanes[bird_idx1]]
+    state.ball_cols[bird_idx2] = variables.LANE_POSITIONS[state.random_lanes[bird_idx2]]
+    
+    # Reset birds to start if not lost and not in egg state
+    for bird_idx in [bird_idx1, bird_idx2]:
+        if not state.ball_lost[bird_idx] and not is_orange_egg_state(bird_idx):
+            reset_bird_to_start(bird_idx)
+
+
+def find_adjacent_birds(bird_lane, offsets=[-1, 1]):
+    """Find birds in adjacent lanes. Returns list of (lane, bird_idx) tuples."""
+    adjacent = []
+    for offset in offsets:
+        adj_lane = bird_lane + offset
+        if 0 <= adj_lane < 9:
+            bird_idx = find_bird_in_lane(adj_lane)
+            if bird_idx >= 0:
+                adjacent.append((adj_lane, bird_idx))
+    return adjacent
