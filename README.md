@@ -38,25 +38,29 @@ Standalone binary (if present):
 
 ## Configuration
 
-BVB supports extensive YAML-based configuration. All game constants can be customized via a config file.
+**Important**: BVB requires a configuration file to run. All game constants are loaded from `config.yml`.
 
 ### Quick Start
 
 ```bash
-# Copy the sample configuration
+# The game expects config.yml in the current directory
+# Copy the sample if you don't have one:
 cp config.sample.yml config.yml
 
 # Edit config.yml to customize game settings
-# Run with your custom config
-python3 start.py --config config.yml
+# Run the game (uses config.yml by default)
+python3 start.py
+
+# Or specify a different config file:
+python3 start.py --config myconfig.yml
 ```
 
 ### Configuration Structure
 
-The configuration file mirrors the namespace structure in `constants.py`. You can override any value:
+**All game constants are defined in config.yml** - there are no hardcoded defaults in the code. The configuration file uses a namespace structure:
 
 ```yaml
-# Example config.yml
+# Example config.yml structure
 layout:
   width: 50        # Game field width
   height: 35       # Game field height
@@ -69,20 +73,20 @@ physics:
   speed_max: 8     # Maximum bird speed
 ```
 
-All namespaces are configurable:
-- `layout` - Game dimensions and lane setup
-- `birds` - Bird formation and behavior
-- `timing` - Frame rates and durations
-- `physics` - Speed limits and movement
-- `eggs` - Drop rates and rarity weights
-- `bat_enemy` - Bat spawning and HP
-- `obstacle` - Obstacle spawning
+All namespaces must be present in config.yml:
+- `layout` - Game dimensions and lane setup (required)
+- `birds` - Bird formation and behavior (required)
+- `timing` - Frame rates and durations (required)
+- `physics` - Speed limits and movement (required)
+- `eggs` - Drop rates and rarity weights (required)
+- `bat_enemy` - Bat spawning and HP (required)
+- `obstacle` - Obstacle spawning (required)
 - `wide_cursor`, `bounce_boost`, `suction`, `tailwind` - Power-up settings
 - `dinosaur`, `stealth`, `gold`, `clockwork`, `glitch`, `orange` - Special bird behaviors
 - `progression`, `combo`, `combat` - Game mechanics
 - `controls` - Key bindings
 
-See `config.sample.yml` for the complete list of configurable values with their defaults.
+**See `config.sample.yml` for the complete reference configuration.** This file contains all required values and serves as documentation for available settings.
 
 ## Controls
 

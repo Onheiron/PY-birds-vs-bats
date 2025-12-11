@@ -74,25 +74,39 @@ def init_config():
     """
     Initialize game configuration from YAML file.
     Parses command-line arguments and loads configuration.
+    Default config file is 'config.yml' if --config is not specified.
     
     Returns:
         tuple: (config_dict, args_namespace) - The loaded config and parsed CLI args
     """
     # Parse CLI args (only config path here; allow other args to pass through)
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--config', help='Path to YAML config file to override defaults')
+    parser.add_argument('--config', default='config.yml', help='Path to YAML config file (default: config.yml)')
     args, _rest = parser.parse_known_args()
-    _config = load_config_file(args.config if args and args.config else None)
+    
+    config_path = args.config if args and args.config else 'config.yml'
+    _config = load_config_file(config_path)
+    
+    # Config is now required
+    if not _config:
+        try:
+            print(f"ERROR: Configuration file '{config_path}' not found or invalid.", file=sys.stderr)
+            print(f"Please ensure config.yml exists or specify a valid config with --config", file=sys.stderr)
+        except Exception:
+            pass
+        sys.exit(1)
     
     return _config, args
 
 
 def apply_config_to_namespace(namespace, config_dict, path=""):
     """
-    Recursively apply configuration values from a dict to a SimpleNamespace.
+    Recursively populate a SimpleNamespace from configuration dict.
+    Creates attributes if they don't exist.
+    Handles dicts with non-string keys by keeping them as dicts.
     
     Args:
-        namespace: SimpleNamespace object to update
+        namespace: SimpleNamespace object to populate
         config_dict: Dictionary with configuration values
         path: Current path for debugging (internal use)
     """
@@ -102,32 +116,38 @@ def apply_config_to_namespace(namespace, config_dict, path=""):
         return
     
     for key, value in config_dict.items():
-        if not hasattr(namespace, key):
-            # Skip keys that don't exist in the namespace
-            try:
-                print(f"Warning: Config key '{path}.{key}' not found in constants", file=sys.stderr)
-            except Exception:
-                pass
+        # Skip non-string keys (will be handled as regular dicts)
+        if not isinstance(key, str):
             continue
-        
-        current_value = getattr(namespace, key)
-        
-        # If the current value is a SimpleNamespace and the config value is a dict,
-        # recurse into it
-        if isinstance(current_value, SimpleNamespace) and isinstance(value, dict):
-            apply_config_to_namespace(current_value, value, f"{path}.{key}" if path else key)
+            
+        # If the value is a dict, check if all keys are strings
+        if isinstance(value, dict):
+            # If dict has non-string keys, keep it as a dict
+            if any(not isinstance(k, str) for k in value.keys()):
+                setattr(namespace, key, value)
+            else:
+                # Create nested SimpleNamespace for string-keyed dicts
+                if not hasattr(namespace, key):
+                    setattr(namespace, key, SimpleNamespace())
+                nested_ns = getattr(namespace, key)
+                apply_config_to_namespace(nested_ns, value, f"{path}.{key}" if path else key)
         else:
-            # Direct assignment - preserve the type if possible
-            try:
-                if isinstance(current_value, type(value)):
-                    setattr(namespace, key, value)
-                elif isinstance(current_value, (int, float)) and isinstance(value, (int, float)):
-                    # Allow int/float conversion
-                    setattr(namespace, key, type(current_value)(value))
-                else:
-                    setattr(namespace, key, value)
-            except Exception as e:
-                try:
-                    print(f"Warning: Failed to set '{path}.{key}': {e}", file=sys.stderr)
-                except Exception:
-                    pass
+            # Direct assignment
+            setattr(namespace, key, value)
+
+
+def dict_to_namespace(config_dict):
+    """
+    Convert a nested dict to nested SimpleNamespace objects.
+    
+    Args:
+        config_dict: Dictionary to convert
+        
+    Returns:
+        SimpleNamespace with nested structure
+    """
+    from types import SimpleNamespace
+    
+    ns = SimpleNamespace()
+    apply_config_to_namespace(ns, config_dict)
+    return ns
