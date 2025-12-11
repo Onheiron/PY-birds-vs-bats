@@ -158,9 +158,9 @@ def render_patchwork_line(line):
 def render_header(output, ceiling):
     """Rendering header con score, level, lives, prestige"""
     # Recompute level from current score
-    level = compute_level_from_score(state.score)
+    level = compute_level_from_score(state.game.score)
     next_level_score = calculate_level_threshold(level + 1)
-    lives_display = "●" * state.lives + "◌" * (5 - state.lives)
+    lives_display = "●" * state.game.lives + "◌" * (5 - state.game.lives)
     
     # Compute prestige for display
     prestige_val = compute_prestige()
@@ -168,19 +168,19 @@ def render_header(output, ceiling):
         prestige_val = 1.0
     prestige_display = f"{prestige_val:.2f}x"
     
-    base_score_line = f"SCORE: {int(state.score)}  |  LEVEL: {level}  |  NEXT: {next_level_score}  |  LIVES: {lives_display}  |  PRESTIGE: {prestige_display}"
+    base_score_line = f"SCORE: {int(state.game.score)}  |  LEVEL: {level}  |  NEXT: {next_level_score}  |  LIVES: {lives_display}  |  PRESTIGE: {prestige_display}"
     
     output += f"\033[1;1H{base_score_line}\n"
     output += f"\033[2;1H{ceiling}\n"
     
     # Render notifications
-    active_notifications = [n for n in state.notifications if n[1] > state.frame_count]
+    active_notifications = [n for n in state.ui.notifications if n[1] > state.game.frame_count]
     if active_notifications:
         text, exp = active_notifications[0]
         footer_y = constants.layout.height + 3
         display_text = text[:constants.layout.width]
         output += f"\033[{footer_y};1H{YELLOW}{display_text}{RESET}\n"
-    state.notifications[:] = active_notifications
+    state.ui.notifications[:] = active_notifications
     
     return output
 
@@ -202,19 +202,19 @@ def render_starting_line(output):
             lane_x = constants.layout.lane_positions[lane]
             bird_in_lane = find_bird_in_lane(lane)
             
-            if bird_in_lane >= 0 and not state.ball_lost[bird_in_lane]:
+            if bird_in_lane >= 0 and not state.birds.lost[bird_in_lane]:
                 # Bounce boost: blue ^
-                if state.powerups.bounce_boost_active and state.ball_vy[bird_in_lane] == 1:
+                if state.powerups.bounce_boost_active and state.birds.vy[bird_in_lane] == 1:
                     output += f"\033[{starting_line_y};{lane_x}H{BLUE}\033[1m^{RESET}"
                 # Suction: red v
-                elif state.powerups.suction_active and state.ball_vy[bird_in_lane] == -1:
+                elif state.powerups.suction_active and state.birds.vy[bird_in_lane] == -1:
                     output += f"\033[{starting_line_y};{lane_x}H{RED}\033[1mv{RESET}"
     
     return output
 
 def render_obstacles(output):
     """Rendering ostacoli"""
-    for obs in state.obstacles:
+    for obs in state.enemies.obstacles:
         max_hp = constants.obstacle.max_hp_by_tier.get(obs.get('tier', 1), obs.get('hp', 1))
         obs_color = render.color_from_hp(constants.colors.obstacles_base_rgb, obs.get('hp', 0), max_hp)
         
@@ -228,12 +228,12 @@ def render_obstacles(output):
 
 def render_bats(output):
     """Rendering pipistrelli"""
-    for bat in state.bats:
+    for bat in state.enemies.bats:
         bat_hp = bat.get('hp', 0)
         bat_max = bat.get('max_hp', bat_hp if bat_hp > 0 else 1)
         bat_color = render.color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max)
         
-        bat_sprite = BAT_FRAME_1 if (state.frame_count // 3) % 2 == 0 else BAT_FRAME_2
+        bat_sprite = BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else BAT_FRAME_2
         
         for line_idx, line in enumerate(bat_sprite):
             y_pos = bat['y_pos'] + line_idx + 2
@@ -244,7 +244,7 @@ def render_bats(output):
 
 def render_loot(output):
     """Rendering loot items (uova e power-up)"""
-    for loot in state.loot_items:
+    for loot in state.items.loot_items:
         y_pos = loot['y_pos'] + 2
         if 3 <= y_pos < constants.layout.height + 2:
             loot_type = loot['type']
@@ -303,7 +303,7 @@ def render_loot(output):
 
 def render_projectiles(output):
     """Rendering proiettili"""
-    for proj in state.red_projectiles:
+    for proj in state.special.red_projectiles:
         y_pos = proj['y_pos'] + 2
         if 3 <= y_pos < constants.layout.height + 2:
             symbol = "•" if proj.get('powered', False) else "⋅"
@@ -315,51 +315,51 @@ def render_projectiles(output):
 def render_birds(output):
     """Rendering uccelli attivi"""
     for b in range(constants.layout.num_balls):
-        if not state.ball_lost[b]:
+        if not state.birds.lost[b]:
             # Check if slowed
-            is_slowed = b in state.speed_boosts and state.speed_boosts[b] < 0 and state.ball_vy[b] == 1
+            is_slowed = b in state.special.speed_boosts and state.special.speed_boosts[b] < 0 and state.birds.vy[b] == 1
             
             # Choose sprite based on direction and animation
-            if state.ball_vy[b] == -1:  # Moving up
-                if state.ball_colors[b] == CLOCKWORK:
+            if state.birds.vy[b] == -1:  # Moving up
+                if state.birds.colors[b] == CLOCKWORK:
                     try:
-                        c = state.clockwork_charge.get(b, constants.clockwork.initial_charge)
+                        c = state.special.clockwork_charge.get(b, constants.clockwork.initial_charge)
                     except Exception:
                         c = constants.clockwork.initial_charge
                     if c == 0:
                         sprite = BIRD_UP_2
                     elif c == 1:
-                        sprite = BIRD_UP_1 if (state.frame_count // 6) % 2 == 0 else BIRD_UP_2
+                        sprite = BIRD_UP_1 if (state.game.frame_count // 6) % 2 == 0 else BIRD_UP_2
                     else:
-                        sprite = BIRD_UP_1 if (state.frame_count // 3) % 2 == 0 else BIRD_UP_2
+                        sprite = BIRD_UP_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_UP_2
                 else:
-                    if state.ball_colors[b] == DINOSAUR:
-                        sprite = DINOSAUR_UP_1 if (state.frame_count // 3) % 2 == 0 else DINOSAUR_UP_2
-                    elif state.ball_colors[b] == BLUE and state.bird_power_used[b]:
+                    if state.birds.colors[b] == DINOSAUR:
+                        sprite = DINOSAUR_UP_1 if (state.game.frame_count // 3) % 2 == 0 else DINOSAUR_UP_2
+                    elif state.birds.colors[b] == BLUE and state.birds.power_used[b]:
                         sprite = BIRD_UP_1
                     else:
-                        sprite = BIRD_UP_1 if (state.frame_count // 3) % 2 == 0 else BIRD_UP_2
+                        sprite = BIRD_UP_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_UP_2
             else:  # Moving down
                 if is_slowed:
                     sprite = BIRD_DOWN_2
                 else:
-                    if state.ball_colors[b] == CLOCKWORK:
-                        c = state.clockwork_charge.get(b, constants.clockwork.initial_charge)
+                    if state.birds.colors[b] == CLOCKWORK:
+                        c = state.special.clockwork_charge.get(b, constants.clockwork.initial_charge)
                         if c == 0:
                             sprite = BIRD_DOWN_2
                         elif c == 1:
-                            sprite = BIRD_DOWN_1 if (state.frame_count // 6) % 2 == 0 else BIRD_DOWN_2
+                            sprite = BIRD_DOWN_1 if (state.game.frame_count // 6) % 2 == 0 else BIRD_DOWN_2
                         else:
-                            sprite = BIRD_DOWN_1 if (state.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
+                            sprite = BIRD_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
                     else:
-                        if state.ball_colors[b] == DINOSAUR:
-                            sprite = DINOSAUR_DOWN_1 if (state.frame_count // 3) % 2 == 0 else DINOSAUR_DOWN_2
+                        if state.birds.colors[b] == DINOSAUR:
+                            sprite = DINOSAUR_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else DINOSAUR_DOWN_2
                         else:
-                            sprite = BIRD_DOWN_1 if (state.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
+                            sprite = BIRD_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
                     
                         # GLITCH: mix sprite pieces
-                        if state.ball_colors[b] == GLITCH:
-                            if state.ball_vy[b] == -1:
+                        if state.birds.colors[b] == GLITCH:
+                            if state.birds.vy[b] == -1:
                                 f1, f2 = BIRD_UP_1, BIRD_UP_2
                             else:
                                 f1, f2 = BIRD_DOWN_1, BIRD_DOWN_2
@@ -374,46 +374,46 @@ def render_birds(output):
                             sprite = mixed
             
             # Choose color
-            if state.ball_colors[b] == STEALTH:
-                tangible = b in state.stealth_timers and state.stealth_timers.get(b, 0) > 0
+            if state.birds.colors[b] == STEALTH:
+                tangible = b in state.special.stealth_timers and state.special.stealth_timers.get(b, 0) > 0
                 period = max(4, int(2 / constants.timing.base_sleep))
-                phase = (state.frame_count % period) / period
+                phase = (state.game.frame_count % period) / period
                 color = DARK_GRAY if phase < 0.5 else "\033[8m"
                 if tangible:
                     color = WHITE
-            elif state.ball_colors[b] == BLUE and state.bird_power_used[b]:
+            elif state.birds.colors[b] == BLUE and state.birds.power_used[b]:
                 color = CYAN
             else:
-                color = state.ball_colors[b]
+                color = state.birds.colors[b]
             
             # Draw bird sprite
             for line_idx, line in enumerate(sprite):
-                y_pos = state.ball_y[b] + line_idx + 2
+                y_pos = state.birds.y[b] + line_idx + 2
                 if 3 <= y_pos < constants.layout.height + 2:
                     x_offset = len(line) // 2
                     
-                    if state.ball_colors[b] == CLOCKWORK:
-                        c = state.clockwork_charge.get(b, constants.clockwork.initial_charge)
+                    if state.birds.colors[b] == CLOCKWORK:
+                        c = state.special.clockwork_charge.get(b, constants.clockwork.initial_charge)
                         blink_period = max(1, int(0.6 / constants.timing.base_sleep))
-                        blink_on = ((state.frame_count // blink_period) % 2) == 0
+                        blink_on = ((state.game.frame_count // blink_period) % 2) == 0
                         colored = render_clockwork_line(line, c, blink_on)
-                        output += f"\033[{y_pos};{state.ball_cols[b]-x_offset}H{colored}"
-                    elif state.ball_colors[b] == PATCHWORK:
+                        output += f"\033[{y_pos};{state.birds.cols[b]-x_offset}H{colored}"
+                    elif state.birds.colors[b] == PATCHWORK:
                         colored = render_patchwork_line(line)
-                        output += f"\033[{y_pos};{state.ball_cols[b]-x_offset}H{colored}"
+                        output += f"\033[{y_pos};{state.birds.cols[b]-x_offset}H{colored}"
                     else:
-                        output += f"\033[{y_pos};{state.ball_cols[b]-x_offset}H{color}{line}{RESET}"
+                        output += f"\033[{y_pos};{state.birds.cols[b]-x_offset}H{color}{line}{RESET}"
                 
                 # PURPLE charging orb
-                if state.ball_colors[b] == PURPLE and state.purple_state[b] == 2:
-                    start_frame = state.purple_charge_started_frame[b]
-                    if state.frame_count >= start_frame:
-                        elapsed_seconds = int((state.frame_count - start_frame) * constants.timing.base_sleep)
+                if state.birds.colors[b] == PURPLE and state.special.purple_state[b] == 2:
+                    start_frame = state.special.purple_charge_started_frame[b]
+                    if state.game.frame_count >= start_frame:
+                        elapsed_seconds = int((state.game.frame_count - start_frame) * constants.timing.base_sleep)
                         s = max(0, min(3, elapsed_seconds))
                         sym = '⋅' if s <= 0 else ('•' if s == 1 else '●')
-                        orb_y = state.ball_y[b] + 1 + 2 - 1
+                        orb_y = state.birds.y[b] + 1 + 2 - 1
                         if 3 <= orb_y < constants.layout.height + 2:
-                            output += f"\033[{orb_y};{state.ball_cols[b]}H{PURPLE}{sym}{RESET}"
+                            output += f"\033[{orb_y};{state.birds.cols[b]}H{PURPLE}{sym}{RESET}"
     
     return output
 
@@ -424,12 +424,12 @@ def render_floor_and_cursor(output, floor):
     
     # Lost birds on floor
     for b in range(constants.layout.num_balls):
-        if state.ball_lost[b]:
-            output += f"\033[{constants.layout.height+2};{state.ball_cols[b]}H\033[90mX{RESET}"
+        if state.birds.lost[b]:
+            output += f"\033[{constants.layout.height+2};{state.birds.cols[b]}H\033[90mX{RESET}"
     
     # Player cursor
-    cursor_x = constants.layout.lane_positions[state.player_lane] - 1
-    fallback_cursor_color = YELLOW if state.selected_lane is not None else GREEN
+    cursor_x = constants.layout.lane_positions[state.player.lane] - 1
+    fallback_cursor_color = YELLOW if state.player.selected_lane is not None else GREEN
     
     def _grade_letter_color(letter):
         if letter and isinstance(letter, str) and len(letter) > 0:
@@ -453,13 +453,13 @@ def render_floor_and_cursor(output, floor):
         half_width = state.powerups.wide_cursor_lanes // 2
         cursor_str = ""
         for offset in range(-half_width, half_width + 1):
-            lane = state.player_lane + offset
+            lane = state.player.lane + offset
             if 0 <= lane < 9:
                 lane_x = constants.layout.lane_positions[lane] - 1
-                bird_idx = state.random_lanes.index(lane) if lane in state.random_lanes else -1
+                bird_idx = state.birds.random_lanes.index(lane) if lane in state.birds.random_lanes else -1
                 
-                if bird_idx >= 0 and not state.ball_lost[bird_idx]:
-                    letter, _ = compute_grade_from_xp(state.per_bird_xp[bird_idx])
+                if bird_idx >= 0 and not state.birds.lost[bird_idx]:
+                    letter, _ = compute_grade_from_xp(state.birds.per_bird_xp[bird_idx])
                     color = _grade_letter_color(letter)
                 else:
                     color = fallback_cursor_color
@@ -468,9 +468,9 @@ def render_floor_and_cursor(output, floor):
                 cursor_str += f"\033[{constants.layout.height+3};{lane_x}H{color}\033[1m[{glyph}]{RESET}"
         output += cursor_str + "\n"
     else:
-        bird_idx = state.random_lanes.index(state.player_lane) if state.player_lane in state.random_lanes else -1
-        if bird_idx >= 0 and not state.ball_lost[bird_idx]:
-            letter, _ = compute_grade_from_xp(state.per_bird_xp[bird_idx])
+        bird_idx = state.birds.random_lanes.index(state.player.lane) if state.player.lane in state.birds.random_lanes else -1
+        if bird_idx >= 0 and not state.birds.lost[bird_idx]:
+            letter, _ = compute_grade_from_xp(state.birds.per_bird_xp[bird_idx])
             color = _grade_letter_color(letter)
         else:
             color = fallback_cursor_color
@@ -479,23 +479,23 @@ def render_floor_and_cursor(output, floor):
         output += f"\033[{constants.layout.height+3};{cursor_x}H{color}\033[1m[{glyph}]{RESET}\n"
     
     # Highlight selected lane in swap mode
-    if state.selected_lane is not None:
-        selected_x = constants.layout.lane_positions[state.selected_lane] - 1
+    if state.player.selected_lane is not None:
+        selected_x = constants.layout.lane_positions[state.player.selected_lane] - 1
         output += f"\033[{constants.layout.height+3};{selected_x}H{YELLOW}\033[1m[*]{RESET}"
     
     return output
 
 def render_footer(output):
     """Rendering footer con comandi e XP overlay opzionale"""
-    active_balls = sum(1 for lost in state.ball_lost if not lost)
-    swap_hint = " | Press SPACE again to swap or cancel" if state.selected_lane is not None else ""
+    active_balls = sum(1 for lost in state.birds.lost if not lost)
+    swap_hint = " | Press SPACE again to swap or cancel" if state.player.selected_lane is not None else ""
     output += f"\033[{constants.layout.height+4};1HUse ← → to move, ↑ to bounce, Ctrl+C to quit | Birds: {active_balls}/{constants.layout.num_balls}{swap_hint}"
     
-    if state.show_xp_overlay:
+    if state.ui.show_xp_overlay:
         parts = []
         for i in range(constants.layout.num_balls):
-            label, _ = compute_grade_from_xp(state.per_bird_xp[i])
-            parts.append(f"{label}({int(state.per_bird_xp[i])})")
+            label, _ = compute_grade_from_xp(state.birds.per_bird_xp[i])
+            parts.append(f"{label}({int(state.birds.per_bird_xp[i])})")
         xp_summary = ' '.join(parts)
         output += f"\033[{constants.layout.height+5};1HXP: {xp_summary[:constants.layout.width]}{RESET}"
     
@@ -503,7 +503,7 @@ def render_footer(output):
 
 def render_pause_overlay(output):
     """Rendering overlay PAUSED"""
-    if state.paused:
+    if state.game.paused:
         pause_y = 2 + (constants.layout.height // 2)
         pause_x = max(1, (constants.layout.width // 2) - 3)
         output += f"\033[{pause_y};{pause_x}H{YELLOW}\033[1mPAUSED{RESET}"
@@ -518,7 +518,7 @@ def render_game():
     output = "\033[2J\033[H"
     
     # Recompute level for rendering
-    state.level = compute_level_from_score(state.score)
+    state.game.level = compute_level_from_score(state.game.score)
     
     # Render all components using dedicated functions
     output = render_header(output, ceiling)
