@@ -4,6 +4,15 @@ Sprite definitions and rendering functions for BVB.
 Contains all ASCII art sprites for birds, bats, obstacles, and related rendering helpers.
 """
 
+# ============================================================================
+# ANSI COLOR CODES (LEGACY)
+# ============================================================================
+# NOTE: These are legacy color constants. New code should use:
+#   from bird_types import BirdType, BIRD_TYPES
+#   color = BIRD_TYPES[BirdType.YELLOW]['color']
+#
+# These remain here for backward compatibility during migration.
+
 # ANSI colors
 RED = "\033[31m"
 GREEN = "\033[32m"

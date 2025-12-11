@@ -215,8 +215,8 @@ def render_starting_line(output):
 def render_obstacles(output):
     """Rendering ostacoli"""
     for obs in state.obstacles:
-        max_hp = constants._OBST_MAX_HP_BY_TIER.get(obs.get('tier', 1), obs.get('hp', 1))
-        obs_color = render.color_from_hp(constants._OBST_BASE_RGB, obs.get('hp', 0), max_hp)
+        max_hp = constants.OBSTACLE_MAX_HP_BY_TIER.get(obs.get('tier', 1), obs.get('hp', 1))
+        obs_color = render.color_from_hp(constants.OBSTACLES_BASE_COLOR_RGB, obs.get('hp', 0), max_hp)
         
         for line_idx, line in enumerate(OBSTACLE_SPRITE):
             y_pos = obs['y_pos'] + line_idx + 2
@@ -231,7 +231,7 @@ def render_bats(output):
     for bat in state.bats:
         bat_hp = bat.get('hp', 0)
         bat_max = bat.get('max_hp', bat_hp if bat_hp > 0 else 1)
-        bat_color = render.color_from_hp(constants._BATS_BASE_RGB, bat_hp, bat_max)
+        bat_color = render.color_from_hp(constants.BATS_BASE_COLOR_RGB, bat_hp, bat_max)
         
         bat_sprite = BAT_FRAME_1 if (state.frame_count // 3) % 2 == 0 else BAT_FRAME_2
         

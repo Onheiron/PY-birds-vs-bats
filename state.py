@@ -7,6 +7,7 @@ Access as: state.score, state.ball_y, etc.
 """
 
 import constants as v
+from bird_types import BirdType, DEFAULT_FORMATION, get_default_speed, get_color_for_bird_type
 
 # Ball/bird state arrays
 ball_colors = []
@@ -133,40 +134,12 @@ def init():
     global notifications
     
     import random
-    from sprites import YELLOW, RED, BLUE, WHITE, ORANGE, GOLD, PATCHWORK, PURPLE, CLOCKWORK, STEALTH, COOKIE, DINOSAUR, GLITCH
     
     # Initialize bird colors from DEFAULT_BIRD_FORMATION
     ball_colors = []
-    for bird_name in v.DEFAULT_BIRD_FORMATION[:v.NUM_BALLS]:
-        bird_name_upper = bird_name.upper()
-        if bird_name_upper == 'YELLOW':
-            ball_colors.append(YELLOW)
-        elif bird_name_upper == 'RED':
-            ball_colors.append(RED)
-        elif bird_name_upper == 'BLUE':
-            ball_colors.append(BLUE)
-        elif bird_name_upper == 'WHITE':
-            ball_colors.append(WHITE)
-        elif bird_name_upper == 'ORANGE':
-            ball_colors.append(ORANGE)
-        elif bird_name_upper == 'GOLD':
-            ball_colors.append(GOLD)
-        elif bird_name_upper == 'PATCHWORK':
-            ball_colors.append(PATCHWORK)
-        elif bird_name_upper == 'PURPLE':
-            ball_colors.append(PURPLE)
-        elif bird_name_upper == 'CLOCKWORK':
-            ball_colors.append(CLOCKWORK)
-        elif bird_name_upper == 'STEALTH':
-            ball_colors.append(STEALTH)
-        elif bird_name_upper == 'COOKIE':
-            ball_colors.append(COOKIE)
-        elif bird_name_upper == 'DINOSAUR':
-            ball_colors.append(DINOSAUR)
-        elif bird_name_upper == 'GLITCH':
-            ball_colors.append(GLITCH)
-        else:
-            ball_colors.append(YELLOW)  # Default fallback
+    for bird_type in DEFAULT_FORMATION[:v.NUM_BALLS]:
+        color = get_color_for_bird_type(bird_type)
+        ball_colors.append(color)
     
     # Pad with YELLOW if formation is shorter than NUM_BALLS
     while len(ball_colors) < v.NUM_BALLS:
@@ -287,8 +260,8 @@ def init():
     ball_speeds = []
     for i in range(v.NUM_BALLS):
         try:
-            bird_name = v.DEFAULT_BIRD_FORMATION[i].upper() if i < len(v.DEFAULT_BIRD_FORMATION) else 'YELLOW'
-            spd = v.BALL_SPEEDS_DEFAULT.get(bird_name, 2)
+            bird_type = DEFAULT_FORMATION[i] if i < len(DEFAULT_FORMATION) else BirdType.YELLOW
+            spd = get_default_speed(bird_type)
             ball_speeds.append(int(spd))
         except Exception:
             ball_speeds.append(2)

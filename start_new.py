@@ -14,6 +14,7 @@ else:
 from sprites import *
 
 import constants
+from bird_types import BirdType, get_default_speed
 from functions import *
 from render import *
 import achievements
@@ -111,7 +112,7 @@ try:
                                     target = int(constants.DINOSAUR_PRESSES_TO_BOUNCE)
                                     if cnt >= target:
                                         set_ball_vy(bird_in_lane, -1)
-                                        state.ball_speeds[bird_in_lane] = int(constants.BALL_SPEEDS_DEFAULT.get('DINOSAUR', 4))
+                                        state.ball_speeds[bird_in_lane] = int(get_default_speed(BirdType.DINOSAUR))
                                         state.dinosaur_up_presses[bird_in_lane] = 0
                                         reset_bird_power(bird_in_lane)
                                     else:

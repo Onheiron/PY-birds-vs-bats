@@ -2,6 +2,27 @@
 
 ## File Organization
 
+### bird_types.py ⭐ NEW
+Contiene il **sistema centralizzato di bird types**:
+- `BirdType` enum-like class (YELLOW, RED, BLUE, etc.)
+- `BIRD_TYPES` dictionary con tutti i dati:
+  - name, display_name
+  - color (ANSI code)
+  - speed, damage
+  - ability, description
+  - rarity, spawn_limit
+  - egg_type
+- Helper functions:
+  - `get_bird_type_by_color(ansi_color)` 
+  - `get_color_for_bird_type(bird_type)`
+  - `get_display_name(bird_type)`
+  - `get_egg_type(bird_type)`
+  - `get_bird_type_from_egg(egg_type)`
+  - `get_spawn_limit(bird_type)`
+  - `get_default_speed(bird_type)`
+
+**Migration in corso**: Vedi `MIGRATION.md` per dettagli
+
 ### constants.py
 Contiene tutte le **costanti di configurazione** che vengono lette all'avvio e non vengono mai modificate durante il gioco:
 - Layout (WIDTH, HEIGHT, NUM_BALLS, LANE_POSITIONS, etc.)

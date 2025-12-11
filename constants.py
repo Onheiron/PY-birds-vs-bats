@@ -25,8 +25,10 @@ MAX_LANE_INDEX = 8
 LANE_POSITIONS = [5, 9, 13, 17, 21, 25, 29, 33, 37]
 STARTING_LINE = HEIGHT - 4
 
-# Bird formation
-DEFAULT_BIRD_FORMATION = ['YELLOW', 'YELLOW', 'YELLOW', 'YELLOW', 'RED', 'RED', 'RED', 'BLUE', 'BLUE']
+# Bird configuration
+from bird_types import DEFAULT_FORMATION
+
+DEFAULT_BIRD_FORMATION = DEFAULT_FORMATION  # Use BirdType enums from bird_types
 RANDOMIZE_LANES = True
 
 # Timing
@@ -41,21 +43,7 @@ MAX_ENTITIES = 50
 # Physics
 SPEED_MIN = 1
 SPEED_MAX = 6
-BALL_SPEEDS_DEFAULT = {
-    'YELLOW': 2,
-    'RED': 3,
-    'BLUE': 4,
-    'ORANGE': 5,
-    'GOLD': 6,
-    'PATCHWORK': 3,
-    'CLOCKWORK': 2,
-    'COOKIE': 3,
-    'STEALTH': 3,
-    'DINOSAUR': 4,
-    'WHITE': 4,
-    'PURPLE': 3,
-    'GLITCH': 3,
-}
+# Note: Ball speeds are now in BIRD_TYPES[bird_type]['speed']
 
 # Eggs
 EGG_PROBS = {0: 0.0, 1: 0.25, 2: 0.35, 3: 0.45, 4: 0.55}
@@ -352,8 +340,7 @@ if config:
         physics_cfg = config['physics']
         SPEED_MIN = physics_cfg.get('speed_min', SPEED_MIN)
         SPEED_MAX = physics_cfg.get('speed_max', SPEED_MAX)
-        if 'ball_speeds' in physics_cfg and isinstance(physics_cfg['ball_speeds'], dict):
-            BALL_SPEEDS_DEFAULT.update({str(k): int(v) for k, v in physics_cfg['ball_speeds'].items()})
+        # Note: Bird-specific speeds are now managed in bird_types.BIRD_TYPES
     
     # Progression
     if 'progression' in config and isinstance(config['progression'], dict):
@@ -442,39 +429,8 @@ from sprites import (
 # Version
 GAME_VERSION = "0.8.0"
 
-# Egg to color mapping
-EGG_TO_COLOR = {
-    'yellow_egg': YELLOW,
-    'red_egg': RED,
-    'blue_egg': BLUE,
-    'patchwork_egg': PATCHWORK,
-    'purple_egg': PURPLE,
-    'clockwork_egg': CLOCKWORK,
-    'gold_egg': GOLD,
-    'stealth_egg': STEALTH,
-    'white_egg': WHITE,
-    'orange_egg': ORANGE,
-    'cookie_egg': COOKIE,
-    'dinosaur_egg': DINOSAUR,
-    'glitch_egg': GLITCH,
-}
-
-# Color spawn limits (None = unlimited)
-COLOR_LIMITS = {
-    YELLOW: None,
-    RED: None,
-    BLUE: None,
-    PATCHWORK: 2,
-    PURPLE: 2,
-    CLOCKWORK: 2,
-    GOLD: 1,
-    STEALTH: 1,
-    WHITE: 1,
-    ORANGE: 1,
-    COOKIE: 1,
-    DINOSAUR: 1,
-    GLITCH: 1,
-}
+# Note: Egg mappings, color limits, and display names are now in bird_types.py
+# Use: get_bird_type_from_egg(), get_spawn_limit(), get_display_name()
 
 # Rarity eggs candidates (unified: candidates + weights from config)
 RARITY_EGGS_CANDIDATES = {
@@ -504,22 +460,7 @@ RARITY_EGGS_CANDIDATES = {
     }
 }
 
-# Color name mapping for display
-COLOR_NAME_MAP = {
-    YELLOW: 'Yellow',
-    RED: 'Red',
-    BLUE: 'Blue',
-    ORANGE: 'Orange',
-    GOLD: 'Gold',
-    PATCHWORK: 'Patchwork',
-    CLOCKWORK: 'Clockwork',
-    COOKIE: 'Cookie',
-    STEALTH: 'Stealth',
-    DINOSAUR: 'Dinosaur',
-    WHITE: 'White',
-    PURPLE: 'Purple',
-    GLITCH: 'Glitch',
-}
+# Note: Display names now in bird_types.get_display_name()
 
 # Synergy transfer ratio
 SYNERGY_TRANSFER_RATIO = 0.10
@@ -588,9 +529,8 @@ SHUFFLE_LEVEL_PLUSPLUS = 20
 SHUFFLE_LEVEL_MAX = 25
 
 # HP color scaling base RGB values
-_BATS_BASE_RGB = (255, 0, 255)   # magenta FF00FF
-_OBST_BASE_RGB = (0, 255, 0)     # green 00FF00
-_OBST_MAX_HP_BY_TIER = {1: 4, 2: 6, 3: 10, 4: 16}
+BATS_BASE_COLOR_RGB = (255, 0, 255)   # magenta FF00FF
+OBSTACLES_BASE_COLOR_RGB = (0, 255, 0)     # green 00FF00
 
 # Power defaults - Wide Cursor
 WIDE_CURSOR_BASE_SECONDS = 10.0
