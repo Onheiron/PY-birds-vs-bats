@@ -137,47 +137,47 @@ def init():
     
     # Initialize bird colors from DEFAULT_BIRD_FORMATION
     ball_colors = []
-    for bird_type in DEFAULT_FORMATION[:v.NUM_BALLS]:
+    for bird_type in DEFAULT_FORMATION[:v.layout.num_balls]:
         color = get_color_for_bird_type(bird_type)
         ball_colors.append(color)
     
     # Pad with YELLOW if formation is shorter than NUM_BALLS
-    while len(ball_colors) < v.NUM_BALLS:
+    while len(ball_colors) < v.layout.num_balls:
         ball_colors.append(YELLOW)
     
     # Randomize which bird goes to which lane
     random.seed()
-    random_lanes = list(range(v.NUM_LANES))
-    if v.RANDOMIZE_LANES:
+    random_lanes = list(range(v.layout.num_lanes))
+    if v.birds.randomize_lanes:
         random.shuffle(random_lanes)
     
     # Initialize position and velocity arrays
-    ball_cols = [v.LANE_POSITIONS[random_lanes[i]] for i in range(v.NUM_BALLS)]
-    v.STARTING_LINE = v.HEIGHT - 4
-    ball_y = [v.STARTING_LINE] * v.NUM_BALLS
-    ball_vy = [-1] * v.NUM_BALLS
+    ball_cols = [v.layout.lane_positions[random_lanes[i]] for i in range(v.layout.num_balls)]
+    v.layout.starting_line = v.layout.height - 4
+    ball_y = [v.layout.starting_line] * v.layout.num_balls
+    ball_vy = [-1] * v.layout.num_balls
     ball_speeds = []
-    ball_lost = [False] * v.NUM_BALLS
-    bird_power_used = [False] * v.NUM_BALLS
-    bird_power_uses = [0] * v.NUM_BALLS
+    ball_lost = [False] * v.layout.num_balls
+    bird_power_used = [False] * v.layout.num_balls
+    bird_power_uses = [0] * v.layout.num_balls
     
-    per_bird_xp = [0] * v.NUM_BALLS
-    transformed_s = [False] * v.NUM_BALLS
+    per_bird_xp = [0] * v.layout.num_balls
+    transformed_s = [False] * v.layout.num_balls
     
-    purple_state = [0] * v.NUM_BALLS
-    purple_primed_frame = [0] * v.NUM_BALLS
-    purple_charge_started_frame = [0] * v.NUM_BALLS
-    purple_saved_vy = [None] * v.NUM_BALLS
-    purple_miss_count = [0] * v.NUM_BALLS
-    purple_just_fired_frames = [0] * v.NUM_BALLS
-    purple_hold_counter = [0] * v.NUM_BALLS
+    purple_state = [0] * v.layout.num_balls
+    purple_primed_frame = [0] * v.layout.num_balls
+    purple_charge_started_frame = [0] * v.layout.num_balls
+    purple_saved_vy = [None] * v.layout.num_balls
+    purple_miss_count = [0] * v.layout.num_balls
+    purple_just_fired_frames = [0] * v.layout.num_balls
+    purple_hold_counter = [0] * v.layout.num_balls
     
     # Projectiles
     red_projectiles = []
     
     # XP and transformation tracking
-    per_bird_xp = [0] * v.NUM_BALLS
-    transformed_s = [False] * v.NUM_BALLS
+    per_bird_xp = [0] * v.layout.num_balls
+    transformed_s = [False] * v.layout.num_balls
     show_xp_overlay = False
     
     # Background scroll
@@ -251,14 +251,14 @@ def init():
     last_space_state = False
     last_up_state = False
 
-    original_indices = list(range(v.NUM_BALLS))  # track which slots are the original birds
+    original_indices = list(range(v.layout.num_balls))  # track which slots are the original birds
     
     # Frame counter
     frame_count = 0
     
     # Assign speeds based on bird formation
     ball_speeds = []
-    for i in range(v.NUM_BALLS):
+    for i in range(v.layout.num_balls):
         try:
             bird_type = DEFAULT_FORMATION[i] if i < len(DEFAULT_FORMATION) else BirdType.YELLOW
             spd = get_default_speed(bird_type)

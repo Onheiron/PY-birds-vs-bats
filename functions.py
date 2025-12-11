@@ -176,19 +176,19 @@ def get_scared_frames(bird_idx, base_seconds, ctx):
 # Loot selection logic with dynamic egg probability and new eggs
 def choose_loot_type(rarity):
     # Count empty lanes (no bird)
-    empty_lanes = [lane for lane in range(constants.NUM_LANES) if lane not in state.random_lanes or all(state.ball_lost[idx] or state.random_lanes[idx] != lane for idx in range(constants.NUM_BALLS))]
+    empty_lanes = [lane for lane in range(constants.layout.num_lanes) if lane not in state.random_lanes or all(state.ball_lost[idx] or state.random_lanes[idx] != lane for idx in range(constants.layout.num_balls))]
     num_empty = len(empty_lanes)
     # Egg probability by empty lanes (configurable EGG_PROBS)
     # Support either dict {empty_count: prob} or legacy list/tuple.
     egg_prob = 0.0
     if num_empty == 0:
         egg_prob = 0.0
-    elif num_empty in constants.EGG_PROBS:
-        egg_prob = float(constants.EGG_PROBS[num_empty])
+    elif num_empty in constants.eggs.drop_probs:
+        egg_prob = float(constants.eggs.drop_probs[num_empty])
     else:
         # Fallback: choose the highest defined key
-        int_keys = sorted([k for k in constants.EGG_PROBS.keys() if isinstance(k, int)])
-        egg_prob = float(constants.EGG_PROBS[int_keys[-1]])
+        int_keys = sorted([k for k in constants.eggs.drop_probs.keys() if isinstance(k, int)])
+        egg_prob = float(constants.eggs.drop_probs[int_keys[-1]])
         
     # Loot pool by rarity 
     if rarity == 'common':
@@ -205,33 +205,33 @@ def choose_loot_type(rarity):
         # We must respect on-field limits per bird TYPE to avoid overspawning
 
         def allowed(egg_name):
-            bcol = constants.EGG_TO_COLOR.get(egg_name)
+            bcol = bird_types.EGG_TO_COLOR.get(egg_name)
             if bcol is None:
                 return True
-            limit = constants.COLOR_LIMITS.get(bcol)
+            limit = bird_types.COLOR_LIMITS.get(bcol)
             if limit is None:
                 return True
             # Count active birds of that color
-            cnt = sum(1 for i in range(constants.NUM_BALLS) if not state.ball_lost[i] and state.ball_colors[i] == bcol)
+            cnt = sum(1 for i in range(constants.layout.num_balls) if not state.ball_lost[i] and state.ball_colors[i] == bcol)
             return cnt < limit
 
         # Candidate eggs and their base weights per rarity (weights are configurable)
         if rarity == 'common':
-            rarity_data = constants.RARITY_EGGS_CANDIDATES.get('common', {})
+            rarity_data = constants.eggs.rarity_candidates.get('common', {})
             candidates = list(rarity_data.keys()) if isinstance(rarity_data, dict) else ['yellow_egg', 'red_egg', 'blue_egg']
-            raw_weights = rarity_data if isinstance(rarity_data, dict) else constants.RARITY_WEIGHTS.get('common', {})
+            raw_weights = rarity_data if isinstance(rarity_data, dict) else constants.eggs.rarity_weights.get('common', {})
         elif rarity == 'uncommon':
-            rarity_data = constants.RARITY_EGGS_CANDIDATES.get('uncommon', {})
+            rarity_data = constants.eggs.rarity_candidates.get('uncommon', {})
             candidates = list(rarity_data.keys()) if isinstance(rarity_data, dict) else ['blue_egg', 'patchwork_egg', 'purple_egg']
-            raw_weights = rarity_data if isinstance(rarity_data, dict) else constants.RARITY_WEIGHTS.get('uncommon', {})
+            raw_weights = rarity_data if isinstance(rarity_data, dict) else constants.eggs.rarity_weights.get('uncommon', {})
         elif rarity == 'rare':
-            rarity_data = constants.RARITY_EGGS_CANDIDATES.get('rare', {})
+            rarity_data = constants.eggs.rarity_candidates.get('rare', {})
             candidates = list(rarity_data.keys()) if isinstance(rarity_data, dict) else ['white_egg', 'orange_egg', 'gold_egg']
-            raw_weights = rarity_data if isinstance(rarity_data, dict) else constants.RARITY_WEIGHTS.get('rare', {})
+            raw_weights = rarity_data if isinstance(rarity_data, dict) else constants.eggs.rarity_weights.get('rare', {})
         else:
-            rarity_data = constants.RARITY_EGGS_CANDIDATES.get('epic', {})
+            rarity_data = constants.eggs.rarity_candidates.get('epic', {})
             candidates = list(rarity_data.keys()) if isinstance(rarity_data, dict) else ['dinosaur_egg', 'glitch_egg']
-            raw_weights = rarity_data if isinstance(rarity_data, dict) else constants.RARITY_WEIGHTS.get('epic', {})
+            raw_weights = rarity_data if isinstance(rarity_data, dict) else constants.eggs.rarity_weights.get('epic', {})
 
         # Normalize raw_weights: support either dict {item: weight} or legacy list/tuple
         weights = [float(raw_weights.get(e, 1.0)) for e in candidates]
@@ -278,7 +278,7 @@ def set_ball_vy(idx, val):
     unintended motion. This helper centralizes that guard.
     """
     try:
-        if 0 <= int(idx) < constants.NUM_BALLS:
+        if 0 <= int(idx) < constants.layout.num_balls:
             if state.purple_state[idx] == 2 or (state.purple_just_fired_frames and state.purple_just_fired_frames[idx] > 0):
                 return
             state.ball_vy[idx] = val
@@ -316,7 +316,7 @@ def get_scared_frames(bird_idx, base_seconds=2.0):
     if not label.startswith('D') and not label.startswith('C'):
         base_seconds = max(1, base_seconds - 1.0)
 
-    return max(1, int(float(base_seconds) / constants.BASE_SLEEP))
+    return max(1, int(float(base_seconds) / constants.timing.base_sleep))
 
 
 def transform_bird_to_s(bi):
@@ -330,7 +330,7 @@ def transform_bird_to_s(bi):
     This function is idempotent and safe to call repeatedly.
     """
     bi = int(bi)
-    if bi < 0 or bi >= constants.NUM_BALLS:
+    if bi < 0 or bi >= constants.layout.num_balls:
         return
 
     if state.transformed_s[bi]:
@@ -345,19 +345,19 @@ def transform_bird_to_s(bi):
         target_speed = None
         if old == BLUE:
             target_color = WHITE
-            target_speed = int(constants.BALL_SPEEDS_DEFAULT.get('WHITE', 4))
+            target_speed = int(bird_types.BALL_SPEEDS_DEFAULT.get('WHITE', 4))
         elif old == RED:
             target_color = ORANGE
-            target_speed = int(constants.BALL_SPEEDS_DEFAULT.get('ORANGE', 5))
+            target_speed = int(bird_types.BALL_SPEEDS_DEFAULT.get('ORANGE', 5))
         elif old == YELLOW:
             target_color = GOLD
-            target_speed = int(constants.BALL_SPEEDS_DEFAULT.get('GOLD', 6))
+            target_speed = int(bird_types.BALL_SPEEDS_DEFAULT.get('GOLD', 6))
         # If we have a mapping, check limits before applying
         if target_color is not None:
-            limit = constants.TRANSFORM_LIMITS.get(target_color, None)
+            limit = constants.transform.limits.get(target_color, None)
             # Count active birds of target color (exclude this bird if it is not yet that color)
             cnt = 0
-            for j in range(constants.NUM_BALLS):
+            for j in range(constants.layout.num_balls):
                 try:
                     if not state.ball_lost[j] and state.ball_colors[j] == target_color:
                         cnt += 1
@@ -389,7 +389,7 @@ def perform_shuffle(count: int):
     used_lost_slots = set()
     for _ in range(max(0, int(count))):
         # Living bird indices not yet moved in this shuffle
-        living = [i for i in range(constants.NUM_BALLS) if not state.ball_lost[i]]
+        living = [i for i in range(constants.layout.num_balls) if not state.ball_lost[i]]
         living_available = [i for i in living if i not in moved_indices]
         if len(living_available) <= 1:
             break
@@ -400,7 +400,7 @@ def perform_shuffle(count: int):
         src_lane = state.random_lanes[src_idx]
 
         # Find lost slots (empty lanes) and prefer the empty lane closest to center
-        lost_slots = [i for i in range(constants.NUM_BALLS) if state.ball_lost[i] and i not in used_lost_slots]
+        lost_slots = [i for i in range(constants.layout.num_balls) if state.ball_lost[i] and i not in used_lost_slots]
         if lost_slots:
             empty_lanes = sorted([state.random_lanes[i] for i in lost_slots], key=lambda l: abs(l - center))
             target_lane = empty_lanes[0]
@@ -410,11 +410,11 @@ def perform_shuffle(count: int):
                 # Swap lanes between the source bird and the lost slot
                 state.random_lanes[src_idx], state.random_lanes[target_lost_idx] = state.random_lanes[target_lost_idx], state.random_lanes[src_idx]
                 # Update rendering columns and reset moved bird to starting line facing up
-                state.ball_cols[src_idx] = constants.LANE_POSITIONS[state.random_lanes[src_idx]]
-                state.ball_y[src_idx] = constants.STARTING_LINE
+                state.ball_cols[src_idx] = constants.layout.lane_positions[state.random_lanes[src_idx]]
+                state.ball_y[src_idx] = constants.layout.starting_line
                 set_ball_vy(src_idx, -1)
                 reset_bird_power(src_idx)
-                state.ball_cols[target_lost_idx] = constants.LANE_POSITIONS[state.random_lanes[target_lost_idx]]
+                state.ball_cols[target_lost_idx] = constants.layout.lane_positions[state.random_lanes[target_lost_idx]]
                 # Mark both slot and source as used so we don't move them twice
                 moved_indices.add(src_idx)
                 used_lost_slots.add(target_lost_idx)
@@ -428,12 +428,12 @@ def perform_shuffle(count: int):
             tgt_idx = sorted(inner_candidates, key=lambda i: abs(state.random_lanes[i] - center))[0]
             state.random_lanes[src_idx], state.random_lanes[tgt_idx] = state.random_lanes[tgt_idx], state.random_lanes[src_idx]
             # Update both moved birds' rendering cols and reset positions to starting line
-            state.ball_cols[src_idx] = constants.LANE_POSITIONS[state.random_lanes[src_idx]]
-            state.ball_y[src_idx] = constants.STARTING_LINE
+            state.ball_cols[src_idx] = constants.layout.lane_positions[state.random_lanes[src_idx]]
+            state.ball_y[src_idx] = constants.layout.starting_line
             set_ball_vy(src_idx, -1)
             reset_bird_power(src_idx)
-            state.ball_cols[tgt_idx] = constants.LANE_POSITIONS[state.random_lanes[tgt_idx]]
-            state.ball_y[tgt_idx] = constants.STARTING_LINE
+            state.ball_cols[tgt_idx] = constants.layout.lane_positions[state.random_lanes[tgt_idx]]
+            state.ball_y[tgt_idx] = constants.layout.starting_line
             set_ball_vy(tgt_idx, -1)
             reset_bird_power(tgt_idx)
             # Mark moved indices so we don't select them again
@@ -448,12 +448,12 @@ def perform_shuffle(count: int):
             break
         other = random.choice(other_candidates)
         state.random_lanes[src_idx], state.random_lanes[other] = state.random_lanes[other], state.random_lanes[src_idx]
-        state.ball_cols[src_idx] = constants.LANE_POSITIONS[state.random_lanes[src_idx]]
-        state.ball_y[src_idx] = constants.STARTING_LINE
+        state.ball_cols[src_idx] = constants.layout.lane_positions[state.random_lanes[src_idx]]
+        state.ball_y[src_idx] = constants.layout.starting_line
         set_ball_vy(src_idx, -1)
         reset_bird_power(src_idx)
-        state.ball_cols[other] = constants.LANE_POSITIONS[state.random_lanes[other]]
-        state.ball_y[other] = constants.STARTING_LINE
+        state.ball_cols[other] = constants.layout.lane_positions[state.random_lanes[other]]
+        state.ball_y[other] = constants.layout.starting_line
         set_ball_vy(other, -1)
         reset_bird_power(other)
         moved_indices.add(src_idx)
@@ -462,8 +462,8 @@ def perform_shuffle(count: int):
 def calculate_level_threshold(level):
     """Calculate score threshold for given level"""
     # Use configurable game level progression constants
-    base = float(constants.LEVEL_SCORE_BASE)
-    factor = float(constants.LEVEL_SCORE_FACTOR)
+    base = float(constants.progression.level_score_base)
+    factor = float(constants.progression.level_score_factor)
     return int(base ** (factor ** (level + 1)))
 
 # ---------------- Level-from-state.score helpers ----------------
@@ -486,8 +486,8 @@ def compute_grade_from_xp(xp):
     xp = int(float(xp))
 
     # Use configurable progression constants
-    base = float(constants.XP_BASE)
-    factor = float(constants.GRADE_EXP_FACTOR)
+    base = float(constants.progression.xp_base)
+    factor = float(constants.progression.grade_exp_factor)
 
     # If below base, D
     if xp < int(base):
@@ -583,10 +583,10 @@ def compute_prestige():
 
         # If compute_grade returned multi-char like 'C1' handle it, otherwise
         # accept single-letter 'D'/'S'
-        add = constants.PRESTIGE_MODIFIERS.get(label, 0.0)
+        add = constants.prestige.modifiers.get(label, 0.0)
         # If label is like 'C' fallback to C1 modifier (defensive)
         if add == 0.0 and isinstance(label, str) and len(label) == 1:
-            add = constants.PRESTIGE_MODIFIERS.get(label, 0.0)
+            add = constants.prestige.modifiers.get(label, 0.0)
         total += add
 
     return float(total)
@@ -602,7 +602,7 @@ def adjust_rarity_weights(base_weights, prestige):
     - If the total is below 100, add the missing amount to the common bucket.
     Returns a new list of floats that sum to 100.
     """
-    factor = 1.0 + float(prestige) * float(constants.PRESTIGE_RARITY_FACTOR)
+    factor = 1.0 + float(prestige) * float(constants.prestige.rarity_factor)
 
     new = [float(w) * factor for w in base_weights]
     total = sum(new)
@@ -690,17 +690,17 @@ def setup():
 
 # --- Gestione auto-bounce CLOCKWORK ---
 def handle_clockwork_auto_bounce():
-    # Bounce esattamente dove spawnano gli uccelli (constants.STARTING_LINE)
+    # Bounce esattamente dove spawnano gli uccelli (constants.layout.starting_line)
     for i, c in enumerate(state.ball_colors):
         # Treat CLOCKWORK birds as special: only auto-bounce if they still have charge > 0
-        if c == CLOCKWORK and not state.ball_lost[i] and state.ball_vy[i] == 1 and state.ball_y[i] >= constants.STARTING_LINE:
+        if c == CLOCKWORK and not state.ball_lost[i] and state.ball_vy[i] == 1 and state.ball_y[i] >= constants.layout.starting_line:
             charge = state.clockwork_charge.get(i, None)
             # If charge is None, initialize to configured initial charge (safe fallback)
             if charge is None:
                 charge = constants.clockwork.initial_charge
                 state.clockwork_charge[i] = constants.clockwork.initial_charge
             if charge > 0:
-                state.ball_y[i] = constants.STARTING_LINE
+                state.ball_y[i] = constants.layout.starting_line
                 set_ball_vy(i, -1)
                 reset_bird_power(i)
             # if charge == 0, let it fall through (no auto-bounce)
@@ -767,7 +767,7 @@ def get_color_name(bird_color):
 
 def reset_bird_to_start(bird_idx):
     """Reset bird to starting line position facing up."""
-    state.ball_y[bird_idx] = constants.STARTING_LINE
+    state.ball_y[bird_idx] = constants.layout.starting_line
     functions.set_ball_vy(bird_idx, -1)
     functions.reset_bird_power(bird_idx)
 
@@ -789,7 +789,7 @@ def bounce_bird(bird_idx, apply_boost=False):
     
     # Apply bounce boost if active
     if apply_boost and state.powerups['bounce_boost_active'] and bird_idx not in state.speed_boosts:
-        boost_frames = int(state.powerups['bounce_boost_duration'] / constants.BASE_SLEEP)
+        boost_frames = int(state.powerups['bounce_boost_duration'] / constants.timing.base_sleep)
         state.speed_boosts[bird_idx] = boost_frames
     
     # Record bounce action for combos
@@ -809,8 +809,8 @@ def update_orange_egg_lane(bird_idx, new_lane):
         old_lane = state.random_lanes[bird_idx]
         for loot in state.loot_items:
             if (loot['type'] == 'orange_egg' and 
-                loot['x_pos'] == constants.LANE_POSITIONS[old_lane]):
-                loot['x_pos'] = constants.LANE_POSITIONS[new_lane]
+                loot['x_pos'] == constants.layout.lane_positions[old_lane]):
+                loot['x_pos'] = constants.layout.lane_positions[new_lane]
                 break
 
 
@@ -825,8 +825,8 @@ def swap_bird_lanes(bird_idx1, bird_idx2):
         state.random_lanes[bird_idx2], state.random_lanes[bird_idx1]
     
     # Update column positions
-    state.ball_cols[bird_idx1] = constants.LANE_POSITIONS[state.random_lanes[bird_idx1]]
-    state.ball_cols[bird_idx2] = constants.LANE_POSITIONS[state.random_lanes[bird_idx2]]
+    state.ball_cols[bird_idx1] = constants.layout.lane_positions[state.random_lanes[bird_idx1]]
+    state.ball_cols[bird_idx2] = constants.layout.lane_positions[state.random_lanes[bird_idx2]]
     
     # Reset birds to start if not lost and not in egg state
     for bird_idx in [bird_idx1, bird_idx2]:
@@ -855,21 +855,21 @@ def spawn_bird_from_egg(bird_color, loot_type):
     Returns:
         True if bird was spawned, False if no empty slots available
     """
-    for idx in range(constants.NUM_BALLS):
+    for idx in range(constants.layout.num_balls):
         if state.ball_lost[idx]:
             state.ball_lost[idx] = False
             state.ball_colors[idx] = bird_color
             
             # Get color name for speed lookup
-            cname = constants.COLOR_NAME_MAP.get(bird_color, loot_type.replace('_egg', '').upper())
-            state.ball_speeds[idx] = int(constants.BALL_SPEEDS_DEFAULT.get(cname, 3))
+            cname = bird_types.COLOR_NAME_MAP.get(bird_color, loot_type.replace('_egg', '').upper())
+            state.ball_speeds[idx] = int(bird_types.BALL_SPEEDS_DEFAULT.get(cname, 3))
             
             # Special initialization for CLOCKWORK birds
             if bird_color == CLOCKWORK:
                 state.clockwork_charge[idx] = constants.clockwork.initial_charge
             
             # Position bird at starting line facing up
-            state.ball_y[idx] = constants.STARTING_LINE
+            state.ball_y[idx] = constants.layout.starting_line
             set_ball_vy(idx, -1)
             
             # Restore life and handle S-grade transformation

@@ -352,7 +352,7 @@ def append_recent_action(action, frame_count, lane=None, color=None):
     """Append an atomic action for combo detection and prune old actions."""
     global recent_actions
     recent_actions.append({'action': action, 'frame': frame_count, 'lane': lane, 'color': color})
-    recent_actions[:] = [a for a in recent_actions if frame_count - a['frame'] <= v.COMBO_WINDOW_FRAMES]
+    recent_actions[:] = [a for a in recent_actions if frame_count - a['frame'] <= v.combo.window_frames]
 
 
 def detect_combos(frame_count, notifications_list, firebase_client=None, background_call=None):
@@ -388,7 +388,7 @@ def detect_combos(frame_count, notifications_list, firebase_client=None, backgro
         if combo_id not in combo_cooldowns:
             for yb in yellow_bounces:
                 for bb in blue_speed_boosts:
-                    if abs(yb['frame'] - bb['frame']) <= v.YELLOW_BLUE_CHAIN_WINDOW:
+                    if abs(yb['frame'] - bb['frame']) <= v.combo.yellow_blue_chain_window:
                         for aid, a in achievements.items():
                             if a.get('type') == 'special' and a.get('event') == combo_id and not a.get('unlocked'):
                                 unlock_achievement(aid, frame_count, notifications_list, firebase_client, background_call)

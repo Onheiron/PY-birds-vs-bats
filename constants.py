@@ -31,16 +31,6 @@ layout = SimpleNamespace(
     starting_line=26  # height - 4
 )
 
-# Backward compatibility
-WIDTH = layout.width
-HEIGHT = layout.height
-NUM_BALLS = layout.num_balls
-NUM_LANES = layout.num_lanes
-MIN_LANE_INDEX = layout.min_lane_index
-MAX_LANE_INDEX = layout.max_lane_index
-LANE_POSITIONS = layout.lane_positions
-STARTING_LINE = layout.starting_line
-
 # Bird configuration
 from bird_types import DEFAULT_FORMATION
 
@@ -48,10 +38,6 @@ birds = SimpleNamespace(
     default_formation=DEFAULT_FORMATION,
     randomize_lanes=True
 )
-
-# Backward compatibility
-DEFAULT_BIRD_FORMATION = birds.default_formation
-RANDOMIZE_LANES = birds.randomize_lanes
 
 # Timing
 timing = SimpleNamespace(
@@ -61,19 +47,10 @@ timing = SimpleNamespace(
     frame_sleep_level_multiplier=0.88
 )
 
-# Backward compatibility
-BASE_SLEEP = timing.base_sleep
-MIN_SLEEP = timing.min_sleep
-NOTIFICATION_DURATION_SECONDS = timing.notification_duration_seconds
-FRAME_SLEEP_LEVEL_MULTIPLIER = timing.frame_sleep_level_multiplier
-
 # Limits
 limits = SimpleNamespace(
     max_entities=50
 )
-
-# Backward compatibility
-MAX_ENTITIES = limits.max_entities
 
 # Physics
 physics = SimpleNamespace(
@@ -81,10 +58,6 @@ physics = SimpleNamespace(
     speed_max=6
 )
 # Note: Ball speeds are now in BIRD_TYPES[bird_type]['speed']
-
-# Backward compatibility
-SPEED_MIN = physics.speed_min
-SPEED_MAX = physics.speed_max
 
 # Eggs
 eggs = SimpleNamespace(
@@ -143,11 +116,6 @@ eggs = SimpleNamespace(
     }
 )
 
-# Backward compatibility
-EGG_PROBS = eggs.drop_probs
-RARITY_WEIGHTS = eggs.rarity_weights
-RARITY_EGGS_CANDIDATES = eggs.rarity_candidates
-
 # ============================================================================
 # ENEMIES (organized as namespaces)
 # ============================================================================
@@ -196,40 +164,6 @@ bat_enemy = SimpleNamespace(
     )
 )
 
-# Backward compatibility
-BAT_SPAWN_INTERVAL_RANGE = bat_enemy.spawn_interval_range
-BAT_MAX_ON_SCREEN = bat_enemy.max_on_screen
-BAT_HP_BY_TIER = bat_enemy.hp_by_tier
-SCARED_BASE_SECONDS = bat_enemy.scared.base_seconds
-SCARED_SPEED_BOOST_SECONDS = bat_enemy.scared.speed_boost_seconds
-BAT_LOOT_BASE_WEIGHTS = bat_enemy.loot_base_weights
-BAT_WAVE_OFFSET_MIN = bat_enemy.spawning.wave_offset.min
-BAT_WAVE_OFFSET_MAX = bat_enemy.spawning.wave_offset.max
-BAT_TARGET_Y_MIN_LOW_LEVEL = bat_enemy.spawning.target_y_low_level.min
-BAT_TARGET_Y_MAX_LOW_LEVEL = bat_enemy.spawning.target_y_low_level.max
-BAT_TARGET_Y_MIN_HIGH_LEVEL = bat_enemy.spawning.target_y_high_level.min
-BAT_TARGET_Y_MAX_HIGH_LEVEL = bat_enemy.spawning.target_y_high_level.max
-BAT_TARGET_Y_LEVEL_THRESHOLD = bat_enemy.spawning.level_threshold
-BAT_SPAWN_MAX_ATTEMPTS = bat_enemy.spawning.max_attempts
-BAT_SPAWN_X_MIN = bat_enemy.spawning.x_min
-BAT_SPAWN_X_MARGIN = bat_enemy.spawning.x_margin
-BAT_MIN_SEPARATION = bat_enemy.spawning.min_separation
-BAT_SPAWN_FAIL_RETRY_TIMER = bat_enemy.spawning.fail_retry_timer
-BAT_CONSECUTIVE_SPAWN_LIMIT = bat_enemy.spawning.consecutive_spawn_limit
-BAT_CONSECUTIVE_RETRY_TIMER = bat_enemy.spawning.consecutive_retry_timer
-BAT_SPAWN_Y_START = bat_enemy.spawning.y_start
-BAT_TIER_WEIGHTS_LEVEL_0_2 = bat_enemy.tiers.weights_level_0_2
-BAT_TIER_WEIGHTS_LEVEL_3_4 = bat_enemy.tiers.weights_level_3_4
-BAT_TIER_WEIGHTS_LEVEL_5_7 = bat_enemy.tiers.weights_level_5_7
-BAT_TIER_WEIGHTS_LEVEL_8_PLUS = bat_enemy.tiers.weights_level_8_plus
-BAT_TIER_LEVEL_THRESHOLD_1 = bat_enemy.tiers.level_threshold_1
-BAT_TIER_LEVEL_THRESHOLD_2 = bat_enemy.tiers.level_threshold_2
-BAT_TIER_LEVEL_THRESHOLD_3 = bat_enemy.tiers.level_threshold_3
-BAT_HP_TIER_1 = bat_enemy.tiers.hp_tier_1
-BAT_HP_TIER_2 = bat_enemy.tiers.hp_tier_2
-BAT_HP_TIER_3 = bat_enemy.tiers.hp_tier_3
-BAT_HP_TIER_4 = bat_enemy.tiers.hp_tier_4
-
 # Obstacle enemies
 obstacle = SimpleNamespace(
     max_hp_by_tier={1: 4, 2: 6, 3: 10, 4: 16},
@@ -257,29 +191,6 @@ obstacle = SimpleNamespace(
     )
 )
 
-# Backward compatibility
-OBSTACLE_MAX_HP_BY_TIER = obstacle.max_hp_by_tier
-OBSTACLE_BASE_SPAWN_RATE_BASE = obstacle.spawning.base_spawn_rate.base
-OBSTACLE_BASE_SPAWN_RATE_MIN = obstacle.spawning.base_spawn_rate.min
-OBSTACLE_SPAWN_RATE_LEVEL_MULTIPLIER = obstacle.spawning.spawn_rate_level_multiplier
-OBSTACLE_SPAWN_VARIANCE_BASE = obstacle.spawning.spawn_variance.base
-OBSTACLE_SPAWN_VARIANCE_MIN = obstacle.spawning.spawn_variance.min
-OBSTACLE_SPAWN_VARIANCE_LEVEL_MULTIPLIER = obstacle.spawning.spawn_variance_level_multiplier
-OBSTACLE_RETRY_TIMER_DIVISOR = obstacle.spawning.retry_timer_divisor
-OBSTACLE_RETRY_TIMER_MIN = obstacle.spawning.retry_timer_min
-OBSTACLE_CONSECUTIVE_SPAWN_LIMIT = obstacle.spawning.consecutive_spawn_limit
-OBSTACLE_TIER_WEIGHTS_LEVEL_0_2 = obstacle.tiers.weights_level_0_2
-OBSTACLE_TIER_WEIGHTS_LEVEL_3_4 = obstacle.tiers.weights_level_3_4
-OBSTACLE_TIER_WEIGHTS_LEVEL_5_7 = obstacle.tiers.weights_level_5_7
-OBSTACLE_TIER_WEIGHTS_LEVEL_8_PLUS = obstacle.tiers.weights_level_8_plus
-OBSTACLE_TIER_LEVEL_THRESHOLD_1 = obstacle.tiers.level_threshold_1
-OBSTACLE_TIER_LEVEL_THRESHOLD_2 = obstacle.tiers.level_threshold_2
-OBSTACLE_TIER_LEVEL_THRESHOLD_3 = obstacle.tiers.level_threshold_3
-OBSTACLE_HP_TIER_1 = obstacle.tiers.hp_tier_1
-OBSTACLE_HP_TIER_2 = obstacle.tiers.hp_tier_2
-OBSTACLE_HP_TIER_3 = obstacle.tiers.hp_tier_3
-OBSTACLE_HP_TIER_4 = obstacle.tiers.hp_tier_4
-
 # ============================================================================
 # POWER-UPS (organized as namespaces)
 # ============================================================================
@@ -289,10 +200,6 @@ powers = SimpleNamespace(
     default={},
     blue_adjacent_boost_seconds=5.0
 )
-
-# Backward compatibility
-POWERS_DEFAULT = powers.default
-BLUE_ADJACENT_BOOST_SECONDS = powers.blue_adjacent_boost_seconds
 
 # Wide Cursor power-up
 wide_cursor = SimpleNamespace(
@@ -501,185 +408,14 @@ controls = SimpleNamespace(
     quit='QUIT'
 )
 
-# Backward compatibility
-XP_BASE = progression.xp_base
-GRADE_EXP_FACTOR = progression.grade_exp_factor
-LEVEL_SCORE_BASE = progression.level_score_base
-LEVEL_SCORE_FACTOR = progression.level_score_factor
 
-COMBO_WINDOW_FRAMES = combo.window_frames
-YELLOW_BLUE_CHAIN_WINDOW = combo.yellow_blue_chain_window
-
-BAT_CENTER_OFFSET = combat.bat_center_offset
-XP_BONUS_PER_TIER = combat.xp_bonus_per_tier
-OBSTACLE_SCORE_MULTIPLIER = combat.obstacle_score_multiplier
-
-LANE_COLLISION_HALF_WIDTH = collision.lane_half_width
-LOOT_COLLECTION_DISTANCE = collision.loot_collection_distance
-BAT_SPRITE_WIDTH = collision.bat_sprite_width
-
-DINOSAUR_SPRITE_HEIGHT = rendering.dinosaur_sprite_height
-NORMAL_BIRD_SPRITE_HEIGHT = rendering.normal_bird_sprite_height
-
-BAT_DESPAWN_TIME = despawn.bat_time
-LOOT_DESPAWN_TIME = despawn.loot_time
-
-GAME_OVER_SEPARATOR_WIDTH = game_over.separator_width
-GAME_OVER_TIME_DIVIDER = game_over.time_divider
-GAME_OVER_TIME_REMAINDER = game_over.time_remainder
-GAME_OVER_MINUTES_DIVIDER = game_over.minutes_divider
-LEADERBOARD_NAME_MAX_LENGTH = game_over.leaderboard_name_max_length
-
-KEY_MOVE_LEFT = controls.move_left
-KEY_MOVE_RIGHT = controls.move_right
-KEY_MOVE_UP = controls.move_up
-KEY_MOVE_DOWN = controls.move_down
-KEY_ACTION = controls.action
-KEY_PAUSE = controls.pause
-KEY_PAUSE_ALT = controls.pause_alt
-KEY_TOGGLE_XP = controls.toggle_xp
-KEY_TOGGLE_XP_ALT = controls.toggle_xp_alt
-KEY_QUIT = controls.quit
-
-SHUFFLE_LEVEL_BASE = shuffle.level.base
-SHUFFLE_LEVEL_PLUS = shuffle.level.plus
-SHUFFLE_LEVEL_PLUSPLUS = shuffle.level.plusplus
-SHUFFLE_LEVEL_MAX = shuffle.level.max
-
-
-# Apply configuration overrides
+# Apply configuration overrides (directly to namespaces)
 if config:
-    # Layout
-    if 'layout' in config and isinstance(config['layout'], dict):
-        layout_cfg = config['layout']
-        WIDTH = layout_cfg.get('width', layout.width)
-        HEIGHT = layout_cfg.get('height', layout.height)
-        NUM_BALLS = layout_cfg.get('num_balls', layout.num_balls)
-        if 'lane_positions' in layout_cfg:
-            LANE_POSITIONS = layout_cfg['lane_positions']
-        
-        if 'constraints' in layout_cfg and isinstance(layout_cfg['constraints'], dict):
-            const = layout_cfg['constraints']
-            NUM_LANES = const.get('num_lanes', layout.num_lanes)
-            MIN_LANE_INDEX = const.get('min_lane_index', layout.min_lane_index)
-            MAX_LANE_INDEX = const.get('max_lane_index', layout.max_lane_index)
-    
-    # Recalculate derived values
-    STARTING_LINE = HEIGHT - 4
-    
-    # Birds
-    if 'birds' in config and isinstance(config['birds'], dict):
-        birds_cfg = config['birds']
-        if 'formation' in birds_cfg:
-            DEFAULT_BIRD_FORMATION = [str(b).upper() for b in birds_cfg['formation']]
-        RANDOMIZE_LANES = birds_cfg.get('randomize_lanes', birds.randomize_lanes)
-    
-    # Timing
-    if 'timing' in config and isinstance(config['timing'], dict):
-        timing_cfg = config['timing']
-        NOTIFICATION_DURATION_SECONDS = timing_cfg.get('notification_duration_seconds', timing.notification_duration_seconds)
-        BASE_SLEEP = timing_cfg.get('base_sleep', timing.base_sleep)
-        MIN_SLEEP = timing_cfg.get('min_sleep', timing.min_sleep)
-        FRAME_SLEEP_LEVEL_MULTIPLIER = timing_cfg.get('frame_sleep_level_multiplier', timing.frame_sleep_level_multiplier)
-    
-    # Limits
-    if 'limits' in config and isinstance(config['limits'], dict):
-        MAX_ENTITIES = config['limits'].get('max_entities', limits.max_entities)
-    
-    # Eggs
-    if 'egg_probs' in config:
-        ev = config['egg_probs']
-        if isinstance(ev, dict):
-            EGG_PROBS = {int(k): float(v) for k, v in ev.items()}
-        elif isinstance(ev, (list, tuple)):
-            EGG_PROBS = {i: float(ev[i]) for i in range(len(ev))}
-    
-    if 'rarity_weights' in config and isinstance(config['rarity_weights'], dict):
-        for rarity, weights in config['rarity_weights'].items():
-            if rarity in eggs.rarity_weights and isinstance(weights, dict):
-                eggs.rarity_weights[rarity].update(weights)
-                RARITY_WEIGHTS[rarity].update(weights)
-    
-    # Physics
-    if 'physics' in config and isinstance(config['physics'], dict):
-        physics_cfg = config['physics']
-        SPEED_MIN = physics_cfg.get('speed_min', physics.speed_min)
-        SPEED_MAX = physics_cfg.get('speed_max', physics.speed_max)
-        # Note: Bird-specific speeds are now managed in bird_types.BIRD_TYPES
-    
-    # Progression
-    if 'progression' in config and isinstance(config['progression'], dict):
-        prog = config['progression']
-        XP_BASE = float(prog.get('xp_base', XP_BASE))
-        GRADE_EXP_FACTOR = float(prog.get('grade_exp_factor', GRADE_EXP_FACTOR))
-        LEVEL_SCORE_BASE = float(prog.get('level_score_base', LEVEL_SCORE_BASE))
-        LEVEL_SCORE_FACTOR = float(prog.get('level_score_factor', LEVEL_SCORE_FACTOR))
-    
-    # Combo
-    if 'combo' in config and isinstance(config['combo'], dict):
-        combo = config['combo']
-        COMBO_WINDOW_FRAMES = combo.get('combo_window_frames', COMBO_WINDOW_FRAMES)
-        YELLOW_BLUE_CHAIN_WINDOW = combo.get('yellow_blue_chain_window', YELLOW_BLUE_CHAIN_WINDOW)
-    
-    # Combat
-    if 'combat' in config and isinstance(config['combat'], dict):
-        combat = config['combat']
-        BAT_CENTER_OFFSET = combat.get('bat_center_offset', BAT_CENTER_OFFSET)
-        XP_BONUS_PER_TIER = combat.get('xp_bonus_per_tier', XP_BONUS_PER_TIER)
-        OBSTACLE_SCORE_MULTIPLIER = combat.get('obstacle_score_multiplier', OBSTACLE_SCORE_MULTIPLIER)
-    
-    # Collision
-    if 'collision' in config and isinstance(config['collision'], dict):
-        coll = config['collision']
-        LANE_COLLISION_HALF_WIDTH = coll.get('lane_collision_half_width', LANE_COLLISION_HALF_WIDTH)
-        LOOT_COLLECTION_DISTANCE = coll.get('loot_collection_distance', LOOT_COLLECTION_DISTANCE)
-        BAT_SPRITE_WIDTH = coll.get('bat_sprite_width', BAT_SPRITE_WIDTH)
-    
-    # Rendering
-    if 'rendering' in config and isinstance(config['rendering'], dict):
-        rend = config['rendering']
-        DINOSAUR_SPRITE_HEIGHT = rend.get('dinosaur_sprite_height', DINOSAUR_SPRITE_HEIGHT)
-        NORMAL_BIRD_SPRITE_HEIGHT = rend.get('normal_bird_sprite_height', NORMAL_BIRD_SPRITE_HEIGHT)
-    
-    # Shuffle
-    if 'shuffle' in config and isinstance(config['shuffle'], dict):
-        shuf = config['shuffle']
-        SHUFFLE_LEVEL_BASE = shuf.get('level_base', SHUFFLE_LEVEL_BASE)
-        SHUFFLE_LEVEL_PLUS = shuf.get('level_plus', SHUFFLE_LEVEL_PLUS)
-        SHUFFLE_LEVEL_PLUSPLUS = shuf.get('level_plusplus', SHUFFLE_LEVEL_PLUSPLUS)
-        SHUFFLE_LEVEL_MAX = shuf.get('level_max', SHUFFLE_LEVEL_MAX)
-    
-    # Despawn
-    if 'despawn' in config and isinstance(config['despawn'], dict):
-        desp = config['despawn']
-        BAT_DESPAWN_TIME = desp.get('bat_despawn_time', BAT_DESPAWN_TIME)
-        LOOT_DESPAWN_TIME = desp.get('loot_despawn_time', LOOT_DESPAWN_TIME)
-    
-    # Game over
-    if 'game_over' in config and isinstance(config['game_over'], dict):
-        go = config['game_over']
-        GAME_OVER_SEPARATOR_WIDTH = go.get('separator_width', GAME_OVER_SEPARATOR_WIDTH)
-        GAME_OVER_TIME_DIVIDER = go.get('time_divider', GAME_OVER_TIME_DIVIDER)
-        GAME_OVER_TIME_REMAINDER = go.get('time_remainder', GAME_OVER_TIME_REMAINDER)
-        GAME_OVER_MINUTES_DIVIDER = go.get('minutes_divider', GAME_OVER_MINUTES_DIVIDER)
-        LEADERBOARD_NAME_MAX_LENGTH = go.get('leaderboard_name_max_length', LEADERBOARD_NAME_MAX_LENGTH)
-    
-    # Controls
-    if 'controls' in config and isinstance(config['controls'], dict):
-        ctrl = config['controls']
-        KEY_MOVE_LEFT = str(ctrl.get('key_move_left', KEY_MOVE_LEFT))
-        KEY_MOVE_RIGHT = str(ctrl.get('key_move_right', KEY_MOVE_RIGHT))
-        KEY_MOVE_UP = str(ctrl.get('key_move_up', KEY_MOVE_UP))
-        KEY_MOVE_DOWN = str(ctrl.get('key_move_down', KEY_MOVE_DOWN))
-        KEY_ACTION = str(ctrl.get('key_action', KEY_ACTION))
-        KEY_PAUSE = str(ctrl.get('key_pause', KEY_PAUSE))
-        KEY_PAUSE_ALT = str(ctrl.get('key_pause_alt', KEY_PAUSE_ALT))
-        KEY_TOGGLE_XP = str(ctrl.get('key_toggle_xp', KEY_TOGGLE_XP))
-        KEY_TOGGLE_XP_ALT = str(ctrl.get('key_toggle_xp_alt', KEY_TOGGLE_XP_ALT))
-        KEY_QUIT = str(ctrl.get('key_quit', KEY_QUIT))
-    
-    # Note: Bats, Obstacles, Powers, and Special configs are too complex
-    # to apply here. They should be handled by the main game file that needs them.
+    # Note: Configuration override support is minimal now.
+    # Game files should access constants.namespace.property directly.
+    # If config customization is needed, it can be added here by updating
+    # the SimpleNamespace objects directly (e.g., layout.width = config_value)
+    pass
 
 # ============================================================================
 # ADDITIONAL CONSTANTS (from modularization cleanup)
@@ -695,9 +431,6 @@ from sprites import (
 game = SimpleNamespace(
     version="0.8.0"
 )
-
-# Backward compatibility
-GAME_VERSION = game.version
 
 # Note: Egg mappings, color limits, and display names are now in bird_types.py
 # Use: get_bird_type_from_egg(), get_spawn_limit(), get_display_name()
@@ -747,11 +480,3 @@ colors = SimpleNamespace(
     bats_base_rgb=(255, 0, 255),   # magenta FF00FF
     obstacles_base_rgb=(0, 255, 0)  # green 00FF00
 )
-
-# Backward compatibility
-SYNERGY_TRANSFER_RATIO = synergy.transfer_ratio
-PRESTIGE_MODIFIERS = prestige.modifiers
-PRESTIGE_RARITY_FACTOR = prestige.rarity_factor
-TRANSFORM_LIMITS = transform.limits
-BATS_BASE_COLOR_RGB = colors.bats_base_rgb
-OBSTACLES_BASE_COLOR_RGB = colors.obstacles_base_rgb
