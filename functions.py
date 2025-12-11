@@ -697,8 +697,8 @@ def handle_clockwork_auto_bounce():
             charge = state.clockwork_charge.get(i, None)
             # If charge is None, initialize to configured initial charge (safe fallback)
             if charge is None:
-                charge = constants.CLOCKWORK_INITIAL_CHARGE
-                state.clockwork_charge[i] = constants.CLOCKWORK_INITIAL_CHARGE
+                charge = constants.clockwork.initial_charge
+                state.clockwork_charge[i] = constants.clockwork.initial_charge
             if charge > 0:
                 state.ball_y[i] = constants.STARTING_LINE
                 set_ball_vy(i, -1)
@@ -735,7 +735,7 @@ def is_orange_egg_state(bird_idx):
 def try_glitch_bounce(bird_idx):
     """Attempt to bounce GLITCH bird (has chance to ignore). Returns True if bounced."""
     if state.ball_colors[bird_idx] == GLITCH:
-        if random.random() < float(constants.GLITCH_BOUNCE_IGNORE_CHANCE):
+        if random.random() < float(constants.glitch.bounce_ignore_chance):
             return False  # ignored bounce
         else:
             functions.set_ball_vy(bird_idx, -1)
@@ -781,8 +781,8 @@ def bounce_bird(bird_idx, apply_boost=False):
     if state.ball_colors[bird_idx] == CLOCKWORK:
         c = state.clockwork_charge.get(bird_idx, None)
         if c is None:
-            state.clockwork_charge[bird_idx] = constants.CLOCKWORK_INITIAL_CHARGE
-            c = constants.CLOCKWORK_INITIAL_CHARGE
+            state.clockwork_charge[bird_idx] = constants.clockwork.initial_charge
+            c = constants.clockwork.initial_charge
         if c == 0:
             state.clockwork_charge[bird_idx] = 1
             state.ball_speeds[bird_idx] = 1
@@ -866,7 +866,7 @@ def spawn_bird_from_egg(bird_color, loot_type):
             
             # Special initialization for CLOCKWORK birds
             if bird_color == CLOCKWORK:
-                state.clockwork_charge[idx] = constants.CLOCKWORK_INITIAL_CHARGE
+                state.clockwork_charge[idx] = constants.clockwork.initial_charge
             
             # Position bird at starting line facing up
             state.ball_y[idx] = constants.STARTING_LINE

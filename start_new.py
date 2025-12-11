@@ -89,7 +89,7 @@ try:
                     bird_in_lane = find_bird_in_lane(lane)
                     if bird_in_lane >= 0 and not state.ball_lost[bird_in_lane]:
                         if state.ball_colors[bird_in_lane] == ORANGE and state.ball_speeds[bird_in_lane] == 0:
-                            if random.random() >= float(constants.ORANGE_RECOVER_CHANCE):
+                            if random.random() >= float(constants.orange.recover_chance):
                                 continue
                             lane = state.random_lanes[bird_in_lane]
                             state.ball_y[bird_in_lane] = constants.STARTING_LINE
@@ -107,9 +107,9 @@ try:
                             if state.ball_colors[bird_in_lane] == DINOSAUR:
                                 cnt = state.dinosaur_up_presses.get(bird_in_lane, 0) + 1
                                 state.dinosaur_up_presses[bird_in_lane] = cnt
-                                chunk = int(constants.DINOSAUR_PRESS_CHUNK)
+                                chunk = int(constants.dinosaur.press_chunk)
                                 if chunk > 0 and cnt % chunk == 0:
-                                    target = int(constants.DINOSAUR_PRESSES_TO_BOUNCE)
+                                    target = int(constants.dinosaur.presses_to_bounce)
                                     if cnt >= target:
                                         set_ball_vy(bird_in_lane, -1)
                                         state.ball_speeds[bird_in_lane] = int(get_default_speed(BirdType.DINOSAUR))
@@ -249,17 +249,17 @@ try:
                                                             boost_frames = int(constants.BLUE_ADJACENT_BOOST_SECONDS / constants.BASE_SLEEP)
                                                             state.speed_boosts[adj_bird] = boost_frames
                                 elif bird_color == CLOCKWORK:
-                                    cur = state.clockwork_charge.get(bird_in_lane, constants.CLOCKWORK_INITIAL_CHARGE)
+                                    cur = state.clockwork_charge.get(bird_in_lane, constants.clockwork.initial_charge)
                                     if cur is None:
-                                        cur = constants.CLOCKWORK_INITIAL_CHARGE
-                                    newc = min(int(constants.CLOCKWORK_MAX_CHARGE), cur + 1)
+                                        cur = constants.clockwork.initial_charge
+                                    newc = min(int(constants.clockwork.max_charge), cur + 1)
                                     state.clockwork_charge[bird_in_lane] = newc
                                     if newc > 0:
                                         state.ball_speeds[bird_in_lane] = newc
                                 elif bird_color == STEALTH:
-                                    state.stealth_timers[bird_in_lane] = max(1, int(constants.STEALTH_TANGIBLE_SECONDS / constants.BASE_SLEEP))
+                                    state.stealth_timers[bird_in_lane] = max(1, int(constants.stealth.tangible_seconds / constants.BASE_SLEEP))
                                     state.stealth_prev_speeds[bird_in_lane] = state.ball_speeds[bird_in_lane]
-                                    state.ball_speeds[bird_in_lane] = int(constants.STEALTH_SPEED_BOOST)
+                                    state.ball_speeds[bird_in_lane] = int(constants.stealth.speed_boost)
                                     achievements.append_recent_action('stealth', lane=bird_lane, color=STEALTH, frame_count=state.frame_count)
             elif key == constants.KEY_MOVE_DOWN:
                 if state.powerups['suction_active']:
@@ -286,14 +286,14 @@ try:
         state.frame_count += 1
         state.obstacle_spawn_timer += 1
         state.bat_spawn_timer += 1
-        decay_frames = max(1, int(float(constants.CLOCKWORK_DECAY_SECONDS) / constants.BASE_SLEEP))
+        decay_frames = max(1, int(float(constants.clockwork.decay_seconds) / constants.BASE_SLEEP))
         if decay_frames > 0 and state.frame_count % decay_frames == 0:
             for i in range(constants.NUM_BALLS):
                 if state.ball_colors[i] == CLOCKWORK and not state.ball_lost[i]:
                     c = state.clockwork_charge.get(i, None)
                     if c is None:
-                        c = constants.CLOCKWORK_INITIAL_CHARGE
-                        state.clockwork_charge[i] = constants.CLOCKWORK_INITIAL_CHARGE
+                        c = constants.clockwork.initial_charge
+                        state.clockwork_charge[i] = constants.clockwork.initial_charge
                     if c > 0:
                         state.clockwork_charge[i] = c - 1
                         newc = state.clockwork_charge[i]
@@ -564,7 +564,7 @@ try:
                         lane = constants.LANE_POSITIONS.index(lane_x)
                         for bi in range(constants.NUM_BALLS):
                             if state.random_lanes[bi] == lane:
-                                    if (state.ball_colors[bi] == constants.ORANGE and state.ball_y[bi] == constants.ORANGE_OUT_OF_PLAY_Y and state.ball_speeds[bi] == 0 and not state.ball_lost[bi]):
+                                    if (state.ball_colors[bi] == constants.ORANGE and state.ball_y[bi] == constants.orange.out_of_play_y and state.ball_speeds[bi] == 0 and not state.ball_lost[bi]):
                                         state.ball_lost[bi] = True
                                         state.ball_y[bi] = constants.HEIGHT - 1
                                         state.lives -= 1
@@ -834,7 +834,7 @@ try:
             if state.purple_state[i] == 2 or (state.purple_just_fired_frames[i] > 0):
                 continue
             if state.ball_colors[i] == GLITCH and not state.ball_lost[i]:
-                state.ball_speeds[i] = random.randint(int(constants.GLITCH_SPEED_MIN), int(constants.GLITCH_SPEED_MAX))
+                state.ball_speeds[i] = random.randint(int(constants.glitch.speed.min), int(constants.glitch.speed.max))
             current_speed = state.ball_speeds[i]
             if i in state.speed_boosts:
                 if state.speed_boosts[i] > 0 and state.ball_vy[i] == -1:
@@ -844,27 +844,27 @@ try:
             if i in state.scared_birds and state.ball_vy[i] == 1:
                 current_speed += 1
             if state.ball_colors[i] == GLITCH and not state.ball_lost[i]:
-                if random.random() < float(constants.GLITCH_FLIP_CHANCE):
+                if random.random() < float(constants.glitch.flip_chance):
                     state.ball_vy[i] = -state.ball_vy[i]
             if state.ball_colors[i] == GLITCH and not state.ball_lost[i]:
-                if random.random() < float(constants.GLITCH_SWAP_CHANCE):
+                if random.random() < float(constants.glitch.swap_chance):
                     others = [j for j in range(constants.NUM_BALLS) if j != i and not state.ball_lost[j]]
                     if others:
                         j = random.choice(others)
                         state.random_lanes[i], state.random_lanes[j] = state.random_lanes[j], state.random_lanes[i]
                         state.ball_cols[i] = constants.LANE_POSITIONS[state.random_lanes[i]]
                         state.ball_cols[j] = constants.LANE_POSITIONS[state.random_lanes[j]]
-                if random.random() < float(constants.GLITCH_NUDGE_CHANCE):
+                if random.random() < float(constants.glitch.nudge_chance):
                     delta = random.choice([-1, 1])
                     state.player_lane = max(int(constants.MIN_LANE_INDEX), min(int(constants.MAX_LANE_INDEX), state.player_lane + delta))
-                if random.random() < float(constants.GLITCH_DUPLICATE_CHANCE):
+                if random.random() < float(constants.glitch.duplicate_chance):
                     target_lane = random.randint(int(constants.MIN_LANE_INDEX), int(constants.MAX_LANE_INDEX))
                     target_idx = next((idx for idx in range(constants.NUM_BALLS) if state.random_lanes[idx] == target_lane), None)
                     if target_idx is not None:
                         if state.ball_lost[target_idx]:
                             state.ball_lost[target_idx] = False
                             state.ball_colors[target_idx] = GLITCH
-                            state.ball_speeds[target_idx] = random.randint(int(constants.GLITCH_SPEED_MIN), int(constants.GLITCH_SPEED_MAX))
+                            state.ball_speeds[target_idx] = random.randint(int(constants.glitch.speed.min), int(constants.glitch.speed.max))
                             state.ball_y[target_idx] = constants.STARTING_LINE
                             state.ball_vy[target_idx] = -1
                             state.per_bird_xp[target_idx] = 0
@@ -872,7 +872,7 @@ try:
                             state.ball_cols[target_idx] = constants.LANE_POSITIONS[target_lane]
                         else:
                             state.ball_colors[target_idx] = GLITCH
-                            state.ball_speeds[target_idx] = random.randint(int(constants.GLITCH_SPEED_MIN), int(constants.GLITCH_SPEED_MAX))
+                            state.ball_speeds[target_idx] = random.randint(int(constants.glitch.speed.min), int(constants.glitch.speed.max))
                             state.per_bird_xp[target_idx] = 0
                             state.ball_y[target_idx] = constants.STARTING_LINE
                             state.ball_vy[target_idx] = -1
@@ -892,7 +892,7 @@ try:
             if not state.ball_lost[i] and state.frame_count % move_interval == 0:
                 position_multiplier = 0.5 + (constants.HEIGHT - state.ball_y[i]) / constants.HEIGHT
                 try:
-                    score_value = constants.GOLD_SCORE_VALUE if state.ball_colors[i] == constants.GOLD else state.ball_speeds[i]
+                    score_value = constants.gold.score_value if state.ball_colors[i] == constants.GOLD else state.ball_speeds[i]
                 except Exception:
                     score_value = state.ball_speeds[i]
                 add_score(score_value * position_multiplier, by_bird=i)
@@ -920,13 +920,13 @@ try:
                                     bat['hp'] = 0
                                 else:
                                     if state.ball_colors[i] == DINOSAUR:
-                                        damage = constants.DINOSAUR_DAMAGE
+                                        damage = constants.dinosaur.damage
                                     elif state.ball_colors[i] == STEALTH and (i in state.stealth_timers and state.stealth_timers.get(i, 0) > 0):
-                                        damage = constants.STEALTH_DAMAGE
+                                        damage = constants.stealth.damage
                                     elif state.ball_colors[i] == GOLD:
-                                        damage = constants.GOLD_DAMAGE
+                                        damage = constants.gold.damage
                                     elif state.ball_colors[i] == GLITCH:
-                                        damage = int(random.randint(int(constants.GLITCH_DAMAGE_MIN), int(constants.GLITCH_DAMAGE_MAX)))
+                                        damage = int(random.randint(int(constants.glitch.damage.min), int(constants.glitch.damage.max)))
                                     else:
                                         damage = current_speed
                                         if state.ball_colors[i] == BLUE and state.bird_power_used[i]:
@@ -986,13 +986,13 @@ try:
                                         obs['hp'] = 0
                                     else:
                                         if state.ball_colors[i] == DINOSAUR:
-                                            damage = constants.DINOSAUR_DAMAGE
+                                            damage = constants.dinosaur.damage
                                         elif state.ball_colors[i] == STEALTH and (i in state.stealth_timers and state.stealth_timers.get(i, 0) > 0):
-                                            damage = constants.STEALTH_DAMAGE
+                                            damage = constants.stealth.damage
                                         elif state.ball_colors[i] == GOLD:
-                                            damage = constants.GOLD_DAMAGE
+                                            damage = constants.gold.damage
                                         elif state.ball_colors[i] == GLITCH:
-                                            damage = int(random.randint(int(constants.GLITCH_DAMAGE_MIN), int(constants.GLITCH_DAMAGE_MAX)))
+                                            damage = int(random.randint(int(constants.glitch.damage.min), int(constants.glitch.damage.max)))
                                         else:
                                             damage = current_speed
                                             if state.ball_colors[i] == BLUE and state.bird_power_used[i]:
@@ -1018,8 +1018,8 @@ try:
                     if state.ball_colors[i] == CLOCKWORK and state.ball_vy[i] == 1 and state.ball_y[i] + state.ball_vy[i] >= constants.STARTING_LINE:
                         c = state.clockwork_charge.get(i, None)
                         if c is None:
-                            c = constants.CLOCKWORK_INITIAL_CHARGE
-                            state.clockwork_charge[i] = constants.CLOCKWORK_INITIAL_CHARGE
+                            c = constants.clockwork.initial_charge
+                            state.clockwork_charge[i] = constants.clockwork.initial_charge
                         if c > 0:
                             state.ball_y[i] = constants.STARTING_LINE
                             state.ball_vy[i] = -1
@@ -1038,9 +1038,9 @@ try:
                         achievements.check_achievements_event('collect', loot=loot_type, frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         if state.ball_colors[i] == GLITCH:
                             r = random.random()
-                            if r < float(constants.GLITCH_LOOT_IGNORE_CHANCE):
+                            if r < float(constants.glitch.loot_ignore_chance):
                                 continue
-                            elif r < float(constants.GLITCH_LOOT_IGNORE_CHANCE) + float(constants.GLITCH_LOOT_PROMOTE_CHANCE):
+                            elif r < float(constants.glitch.loot_ignore_chance) + float(constants.glitch.loot_promote_chance):
                                 rar = loot.get('rarity', 'common')
                                 if rar == 'common':
                                     loot['rarity'] = 'uncommon'
@@ -1100,17 +1100,17 @@ try:
                             cfg = constants.POWERS_DEFAULT.get('wide_cursor', {})
                             state.powerups['wide_cursor_active'] = True
                             if loot_type == 'wide_cursor':
-                                sec = cfg.get('base_seconds', constants.WIDE_CURSOR_BASE_SECONDS)
-                                lanes = cfg.get('lanes_base', constants.WIDE_CURSOR_LANES_BASE)
+                                sec = cfg.get('base_seconds', constants.wide_cursor.seconds.base)
+                                lanes = cfg.get('lanes_base', constants.wide_cursor.lanes.base)
                             elif loot_type == 'wide_cursor+':
-                                sec = cfg.get('plus_seconds', constants.WIDE_CURSOR_PLUS_SECONDS)
-                                lanes = cfg.get('lanes_base', constants.WIDE_CURSOR_LANES_BASE)
+                                sec = cfg.get('plus_seconds', constants.wide_cursor.seconds.plus)
+                                lanes = cfg.get('lanes_base', constants.wide_cursor.lanes.base)
                             elif loot_type == 'wide_cursor++':
-                                sec = cfg.get('plusplus_seconds', constants.WIDE_CURSOR_PLUSPLUS_SECONDS)
-                                lanes = cfg.get('lanes_max', constants.WIDE_CURSOR_LANES_MAX)
+                                sec = cfg.get('plusplus_seconds', constants.wide_cursor.seconds.plusplus)
+                                lanes = cfg.get('lanes_max', constants.wide_cursor.lanes.max)
                             else:
-                                sec = cfg.get('max_seconds', constants.WIDE_CURSOR_MAX_SECONDS)
-                                lanes = cfg.get('lanes_max', constants.WIDE_CURSOR_LANES_MAX)
+                                sec = cfg.get('max_seconds', constants.wide_cursor.seconds.max)
+                                lanes = cfg.get('lanes_max', constants.wide_cursor.lanes.max)
                             state.powerups['wide_cursor_frames'] = max(1, int(float(sec) / constants.BASE_SLEEP))
                             state.powerups['wide_cursor_lanes'] = int(lanes)
                             achievements.check_achievements_event('power_used', power='wide_cursor', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
@@ -1118,17 +1118,17 @@ try:
                             cfg = constants.POWERS_DEFAULT.get('bounce_boost', {})
                             state.powerups['bounce_boost_active'] = True
                             if loot_type == 'bounce_boost':
-                                sec = cfg.get('base_seconds', constants.BOUNCE_BOOST_BASE_SECONDS)
-                                duration = cfg.get('duration_base', constants.BOUNCE_BOOST_DURATION_BASE)
+                                sec = cfg.get('base_seconds', constants.bounce_boost.seconds.base)
+                                duration = cfg.get('duration_base', constants.bounce_boost.duration.base)
                             elif loot_type == 'bounce_boost+':
-                                sec = cfg.get('plus_seconds', constants.BOUNCE_BOOST_PLUS_SECONDS)
-                                duration = cfg.get('duration_plus', constants.BOUNCE_BOOST_DURATION_PLUS)
+                                sec = cfg.get('plus_seconds', constants.bounce_boost.seconds.plus)
+                                duration = cfg.get('duration_plus', constants.bounce_boost.duration.plus)
                             elif loot_type == 'bounce_boost++':
-                                sec = cfg.get('plusplus_seconds', constants.BOUNCE_BOOST_PLUSPLUS_SECONDS)
-                                duration = cfg.get('duration_plusplus', constants.BOUNCE_BOOST_DURATION_PLUSPLUS)
+                                sec = cfg.get('plusplus_seconds', constants.bounce_boost.seconds.plusplus)
+                                duration = cfg.get('duration_plusplus', constants.bounce_boost.duration.plusPLUS)
                             else:
-                                sec = cfg.get('max_seconds', constants.BOUNCE_BOOST_MAX_SECONDS)
-                                duration = cfg.get('duration_max', constants.BOUNCE_BOOST_DURATION_MAX)
+                                sec = cfg.get('max_seconds', constants.bounce_boost.seconds.max)
+                                duration = cfg.get('duration_max', constants.bounce_boost.duration.max)
                             state.powerups['bounce_boost_frames'] = max(1, int(float(sec) / constants.BASE_SLEEP))
                             state.powerups['bounce_boost_duration'] = int(duration)
                             achievements.check_achievements_event('power_used', power='bounce_boost', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
@@ -1136,17 +1136,17 @@ try:
                             cfg = constants.POWERS_DEFAULT.get('suction', {})
                             state.powerups['suction_active'] = True
                             if loot_type == 'suction':
-                                sec = cfg.get('base_seconds', constants.SUCTION_BASE_SECONDS)
-                                boost = cfg.get('boost_duration_base', constants.SUCTION_BOOST_DURATION_BASE)
+                                sec = cfg.get('base_seconds', constants.suction.seconds.base)
+                                boost = cfg.get('boost_duration_base', constants.suction.boost_duration.base)
                             elif loot_type == 'suction+':
-                                sec = cfg.get('plus_seconds', constants.SUCTION_PLUS_SECONDS)
-                                boost = cfg.get('boost_duration_plus', constants.SUCTION_BOOST_DURATION_PLUS)
+                                sec = cfg.get('plus_seconds', constants.suction.seconds.plus)
+                                boost = cfg.get('boost_duration_plus', constants.suction.boost_duration.plus)
                             elif loot_type == 'suction++':
-                                sec = cfg.get('plusplus_seconds', constants.SUCTION_PLUSPLUS_SECONDS)
-                                boost = cfg.get('boost_duration_plusplus', constants.SUCTION_BOOST_DURATION_PLUSPLUS)
+                                sec = cfg.get('plusplus_seconds', constants.suction.seconds.plusplus)
+                                boost = cfg.get('boost_duration_plusplus', constants.suction.boost_duration.plusPLUS)
                             else:
-                                sec = cfg.get('max_seconds', constants.SUCTION_MAX_SECONDS)
-                                boost = cfg.get('boost_duration_max', constants.SUCTION_BOOST_DURATION_MAX)
+                                sec = cfg.get('max_seconds', constants.suction.seconds.max)
+                                boost = cfg.get('boost_duration_max', constants.suction.boost_duration.max)
                             state.powerups['suction_frames'] = max(1, int(float(sec) / constants.BASE_SLEEP))
                             state.powerups['suction_boost_duration'] = int(boost)
                             achievements.check_achievements_event('power_used', power='suction', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
@@ -1154,42 +1154,42 @@ try:
                             cfg = constants.POWERS_DEFAULT.get('tailwind', {})
                             state.powerups['tailwind_active'] = True
                             if loot_type == 'tailwind':
-                                sec = cfg.get('base_seconds', constants.TAILWIND_BASE_SECONDS)
-                                up = cfg.get('up_bonus_base', constants.TAILWIND_UP_BONUS_BASE)
-                                down = cfg.get('down_penalty_base', constants.TAILWIND_DOWN_PENALTY_BASE)
+                                sec = cfg.get('base_seconds', constants.tailwind.seconds.base)
+                                up = cfg.get('up_bonus_base', constants.tailwind.up_bonus.base)
+                                down = cfg.get('down_penalty_base', constants.tailwind.down_penalty.base)
                             elif loot_type == 'tailwind+':
-                                sec = cfg.get('plus_seconds', constants.TAILWIND_PLUS_SECONDS)
-                                up = cfg.get('up_bonus_plus', constants.TAILWIND_UP_BONUS_PLUS)
-                                down = cfg.get('down_penalty_plus', constants.TAILWIND_DOWN_PENALTY_PLUS)
+                                sec = cfg.get('plus_seconds', constants.tailwind.seconds.plus)
+                                up = cfg.get('up_bonus_plus', constants.tailwind.up_bonus.plus)
+                                down = cfg.get('down_penalty_plus', constants.tailwind.down_penalty.plus)
                             elif loot_type == 'tailwind++':
-                                sec = cfg.get('plusplus_seconds', constants.TAILWIND_PLUSPLUS_SECONDS)
-                                up = cfg.get('up_bonus_plusplus', constants.TAILWIND_UP_BONUS_PLUSPLUS)
-                                down = cfg.get('down_penalty_plusplus', constants.TAILWIND_DOWN_PENALTY_PLUSPLUS)
+                                sec = cfg.get('plusplus_seconds', constants.tailwind.seconds.plusplus)
+                                up = cfg.get('up_bonus_plusplus', constants.tailwind.up_bonus.plusPLUS)
+                                down = cfg.get('down_penalty_plusplus', constants.tailwind.down_penalty.plusPLUS)
                             else:
-                                sec = cfg.get('max_seconds', constants.TAILWIND_MAX_SECONDS)
-                                up = cfg.get('up_bonus_plusplus', constants.TAILWIND_UP_BONUS_PLUSPLUS)
-                                down = cfg.get('down_penalty_max', constants.TAILWIND_DOWN_PENALTY_MAX)
+                                sec = cfg.get('max_seconds', constants.tailwind.seconds.max)
+                                up = cfg.get('up_bonus_plusplus', constants.tailwind.up_bonus.plusPLUS)
+                                down = cfg.get('down_penalty_max', constants.tailwind.down_penalty.max)
                             state.powerups['tailwind_frames'] = max(1, int(float(sec) / constants.BASE_SLEEP))
                             state.powerups['tailwind_up_bonus'] = int(up)
                             state.powerups['tailwind_down_penalty'] = int(down)
                             achievements.check_achievements_event('power_used', power='tailwind', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type == 'shuffle':
-                            perform_shuffle(constants.SHUFFLE_LEVEL_BASE)
+                            perform_shuffle(constants.shuffle.level.base)
                             achievements.check_achievements_event('power_used', power='shuffle', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type == 'shuffle+':
-                            perform_shuffle(constants.SHUFFLE_LEVEL_PLUS)
+                            perform_shuffle(constants.shuffle.level.plus)
                             achievements.check_achievements_event('power_used', power='shuffle', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type == 'shuffle++':
-                            perform_shuffle(constants.SHUFFLE_LEVEL_PLUSPLUS)
+                            perform_shuffle(constants.shuffle.level.plusPLUS)
                             achievements.check_achievements_event('power_used', power='shuffle', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type == 'shuffle_max':
-                            perform_shuffle(constants.SHUFFLE_LEVEL_MAX)
+                            perform_shuffle(constants.shuffle.level.max)
                             achievements.check_achievements_event('power_used', power='shuffle', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                 if state.ball_y[i] <= 1:
                     if state.ball_colors[i] == ORANGE:
                         lane = state.random_lanes[i]
                         state.ball_lost[i] = False
-                        state.ball_y[i] = constants.ORANGE_OUT_OF_PLAY_Y
+                        state.ball_y[i] = constants.orange.out_of_play_y
                         set_ball_vy(i, 0)
                         reset_bird_power(i)
                         state.ball_speeds[i] = 0
@@ -1203,8 +1203,8 @@ try:
                     if state.ball_colors[i] == CLOCKWORK:
                         c = state.clockwork_charge.get(i, None)
                         if c is None:
-                            c = constants.CLOCKWORK_INITIAL_CHARGE
-                            state.clockwork_charge[i] = constants.CLOCKWORK_INITIAL_CHARGE
+                            c = constants.clockwork.initial_charge
+                            state.clockwork_charge[i] = constants.clockwork.initial_charge
                         if c > 0:
                             state.ball_y[i] = constants.STARTING_LINE
                             set_ball_vy(i, -1)
@@ -1220,7 +1220,7 @@ try:
                     elif state.ball_colors[i] == ORANGE:
                         continue
                     elif not state.ball_lost[i]:  # Solo gli altri muoiono (incl. GLITCH special-case)
-                        if state.ball_colors[i] == GLITCH and random.random() < float(constants.GLITCH_SURVIVE_ON_FLOOR_CHANCE):
+                        if state.ball_colors[i] == GLITCH and random.random() < float(constants.glitch.survive_on_floor_chance):
                             state.ball_y[i] = constants.STARTING_LINE
                             set_ball_vy(i, -1)
                             reset_bird_power(i)

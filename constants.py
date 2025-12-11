@@ -16,141 +16,283 @@ args = _args
 # Game state globals (will be set by configuration)
 # These can be imported by other modules with: from variables import WIDTH, HEIGHT, etc.
 
-# Layout
-WIDTH = 45
-HEIGHT = 30
-NUM_BALLS = 9
-NUM_LANES = 9
-MIN_LANE_INDEX = 0
-MAX_LANE_INDEX = 8
-LANE_POSITIONS = [5, 9, 13, 17, 21, 25, 29, 33, 37]
-STARTING_LINE = HEIGHT - 4
+# ============================================================================
+# LAYOUT (organized as namespace)
+# ============================================================================
+
+layout = SimpleNamespace(
+    width=45,
+    height=30,
+    num_balls=9,
+    num_lanes=9,
+    min_lane_index=0,
+    max_lane_index=8,
+    lane_positions=[5, 9, 13, 17, 21, 25, 29, 33, 37],
+    starting_line=26  # height - 4
+)
+
+# Backward compatibility
+WIDTH = layout.width
+HEIGHT = layout.height
+NUM_BALLS = layout.num_balls
+NUM_LANES = layout.num_lanes
+MIN_LANE_INDEX = layout.min_lane_index
+MAX_LANE_INDEX = layout.max_lane_index
+LANE_POSITIONS = layout.lane_positions
+STARTING_LINE = layout.starting_line
 
 # Bird configuration
 from bird_types import DEFAULT_FORMATION
 
-DEFAULT_BIRD_FORMATION = DEFAULT_FORMATION  # Use BirdType enums from bird_types
-RANDOMIZE_LANES = True
+birds = SimpleNamespace(
+    default_formation=DEFAULT_FORMATION,
+    randomize_lanes=True
+)
+
+# Backward compatibility
+DEFAULT_BIRD_FORMATION = birds.default_formation
+RANDOMIZE_LANES = birds.randomize_lanes
 
 # Timing
-BASE_SLEEP = 0.2
-MIN_SLEEP = 0.02
-NOTIFICATION_DURATION_SECONDS = 3.0
-FRAME_SLEEP_LEVEL_MULTIPLIER = 0.88
+timing = SimpleNamespace(
+    base_sleep=0.2,
+    min_sleep=0.02,
+    notification_duration_seconds=3.0,
+    frame_sleep_level_multiplier=0.88
+)
+
+# Backward compatibility
+BASE_SLEEP = timing.base_sleep
+MIN_SLEEP = timing.min_sleep
+NOTIFICATION_DURATION_SECONDS = timing.notification_duration_seconds
+FRAME_SLEEP_LEVEL_MULTIPLIER = timing.frame_sleep_level_multiplier
 
 # Limits
-MAX_ENTITIES = 50
+limits = SimpleNamespace(
+    max_entities=50
+)
+
+# Backward compatibility
+MAX_ENTITIES = limits.max_entities
 
 # Physics
-SPEED_MIN = 1
-SPEED_MAX = 6
+physics = SimpleNamespace(
+    speed_min=1,
+    speed_max=6
+)
 # Note: Ball speeds are now in BIRD_TYPES[bird_type]['speed']
 
+# Backward compatibility
+SPEED_MIN = physics.speed_min
+SPEED_MAX = physics.speed_max
+
 # Eggs
-EGG_PROBS = {0: 0.0, 1: 0.25, 2: 0.35, 3: 0.45, 4: 0.55}
-RARITY_WEIGHTS = {
-    'common': {
-        'yellow_egg': 30,
-        'red_egg': 25,
-        'blue_egg': 20,
-        'patchwork_egg': 15,
-        'purple_egg': 10,
+eggs = SimpleNamespace(
+    drop_probs={0: 0.0, 1: 0.25, 2: 0.35, 3: 0.45, 4: 0.55},
+    rarity_weights={
+        'common': {
+            'yellow_egg': 30,
+            'red_egg': 25,
+            'blue_egg': 20,
+            'patchwork_egg': 15,
+            'purple_egg': 10,
+        },
+        'uncommon': {
+            'blue_egg': 33,
+            'patchwork_egg': 25,
+            'purple_egg': 20,
+            'clockwork_egg': 12,
+            'stealth_egg': 7,
+            'cookie_egg': 3,
+        },
+        'rare': {
+            'white_egg': 34,
+            'orange_egg': 33,
+            'gold_egg': 33,
+        },
+        'epic': {
+            'dinosaur_egg': 50,
+            'glitch_egg': 50,
+        }
     },
-    'uncommon': {
-        'blue_egg': 33,
-        'patchwork_egg': 25,
-        'purple_egg': 20,
-        'clockwork_egg': 12,
-        'stealth_egg': 7,
-        'cookie_egg': 3,
-    },
-    'rare': {
-        'white_egg': 34,
-        'orange_egg': 33,
-        'gold_egg': 33,
-    },
-    'epic': {
-        'dinosaur_egg': 50,
-        'glitch_egg': 50,
+    rarity_candidates={
+        'common': {
+            'yellow_egg': 30,
+            'red_egg': 25,
+            'blue_egg': 20,
+            'patchwork_egg': 15,
+            'purple_egg': 10,
+        },
+        'uncommon': {
+            'blue_egg': 33,
+            'patchwork_egg': 25,
+            'purple_egg': 20,
+            'clockwork_egg': 12,
+            'stealth_egg': 7,
+            'cookie_egg': 3,
+        },
+        'rare': {
+            'white_egg': 34,
+            'orange_egg': 33,
+            'gold_egg': 33,
+        },
+        'epic': {
+            'dinosaur_egg': 50,
+            'glitch_egg': 50,
+        }
     }
-}
+)
 
-# Bats
-BAT_SPAWN_INTERVAL_RANGE = [120, 220]
-BAT_MAX_ON_SCREEN = 3
-BAT_HP_BY_TIER = {1: 16, 2: 32, 3: 64, 4: 128}
-SCARED_BASE_SECONDS = 2.0
-SCARED_SPEED_BOOST_SECONDS = 2.0
-BAT_LOOT_BASE_WEIGHTS = {
-    1: [60, 25, 10, 5],
-    2: [50, 30, 15, 5],
-    3: [40, 33, 17, 10],
-    4: [35, 25, 20, 15],
-}
+# Backward compatibility
+EGG_PROBS = eggs.drop_probs
+RARITY_WEIGHTS = eggs.rarity_weights
+RARITY_EGGS_CANDIDATES = eggs.rarity_candidates
 
-# Bat spawning
-BAT_WAVE_OFFSET_MIN = 0
-BAT_WAVE_OFFSET_MAX = 10
-BAT_TARGET_Y_MIN_LOW_LEVEL = 10
-BAT_TARGET_Y_MAX_LOW_LEVEL = 12
-BAT_TARGET_Y_MIN_HIGH_LEVEL = 18
-BAT_TARGET_Y_MAX_HIGH_LEVEL = 22
-BAT_TARGET_Y_LEVEL_THRESHOLD = 5
-BAT_SPAWN_MAX_ATTEMPTS = 20
-BAT_SPAWN_X_MIN = 1
-BAT_SPAWN_X_MARGIN = 9
-BAT_MIN_SEPARATION = 15
-BAT_SPAWN_FAIL_RETRY_TIMER = 50
-BAT_CONSECUTIVE_SPAWN_LIMIT = 2
-BAT_CONSECUTIVE_RETRY_TIMER = 20
-BAT_SPAWN_Y_START = 1
+# ============================================================================
+# ENEMIES (organized as namespaces)
+# ============================================================================
 
-# Bat tiers
-BAT_TIER_WEIGHTS_LEVEL_0_2 = [70, 20, 8, 2]
-BAT_TIER_WEIGHTS_LEVEL_3_4 = [50, 30, 15, 5]
-BAT_TIER_WEIGHTS_LEVEL_5_7 = [30, 35, 25, 10]
-BAT_TIER_WEIGHTS_LEVEL_8_PLUS = [15, 30, 35, 20]
-BAT_TIER_LEVEL_THRESHOLD_1 = 2
-BAT_TIER_LEVEL_THRESHOLD_2 = 4
-BAT_TIER_LEVEL_THRESHOLD_3 = 7
-BAT_HP_TIER_1 = 16
-BAT_HP_TIER_2 = 32
-BAT_HP_TIER_3 = 64
-BAT_HP_TIER_4 = 128
+# Bat enemies
+bat_enemy = SimpleNamespace(
+    spawn_interval_range=[120, 220],
+    max_on_screen=3,
+    hp_by_tier={1: 16, 2: 32, 3: 64, 4: 128},
+    scared=SimpleNamespace(
+        base_seconds=2.0,
+        speed_boost_seconds=2.0
+    ),
+    loot_base_weights={
+        1: [60, 25, 10, 5],
+        2: [50, 30, 15, 5],
+        3: [40, 33, 17, 10],
+        4: [35, 25, 20, 15],
+    },
+    spawning=SimpleNamespace(
+        wave_offset=SimpleNamespace(min=0, max=10),
+        target_y_low_level=SimpleNamespace(min=10, max=12),
+        target_y_high_level=SimpleNamespace(min=18, max=22),
+        level_threshold=5,
+        max_attempts=20,
+        x_min=1,
+        x_margin=9,
+        min_separation=15,
+        fail_retry_timer=50,
+        consecutive_spawn_limit=2,
+        consecutive_retry_timer=20,
+        y_start=1
+    ),
+    tiers=SimpleNamespace(
+        weights_level_0_2=[70, 20, 8, 2],
+        weights_level_3_4=[50, 30, 15, 5],
+        weights_level_5_7=[30, 35, 25, 10],
+        weights_level_8_plus=[15, 30, 35, 20],
+        level_threshold_1=2,
+        level_threshold_2=4,
+        level_threshold_3=7,
+        hp_tier_1=16,
+        hp_tier_2=32,
+        hp_tier_3=64,
+        hp_tier_4=128
+    )
+)
 
-# Obstacles
-OBSTACLE_MAX_HP_BY_TIER = {1: 4, 2: 6, 3: 10, 4: 16}
+# Backward compatibility
+BAT_SPAWN_INTERVAL_RANGE = bat_enemy.spawn_interval_range
+BAT_MAX_ON_SCREEN = bat_enemy.max_on_screen
+BAT_HP_BY_TIER = bat_enemy.hp_by_tier
+SCARED_BASE_SECONDS = bat_enemy.scared.base_seconds
+SCARED_SPEED_BOOST_SECONDS = bat_enemy.scared.speed_boost_seconds
+BAT_LOOT_BASE_WEIGHTS = bat_enemy.loot_base_weights
+BAT_WAVE_OFFSET_MIN = bat_enemy.spawning.wave_offset.min
+BAT_WAVE_OFFSET_MAX = bat_enemy.spawning.wave_offset.max
+BAT_TARGET_Y_MIN_LOW_LEVEL = bat_enemy.spawning.target_y_low_level.min
+BAT_TARGET_Y_MAX_LOW_LEVEL = bat_enemy.spawning.target_y_low_level.max
+BAT_TARGET_Y_MIN_HIGH_LEVEL = bat_enemy.spawning.target_y_high_level.min
+BAT_TARGET_Y_MAX_HIGH_LEVEL = bat_enemy.spawning.target_y_high_level.max
+BAT_TARGET_Y_LEVEL_THRESHOLD = bat_enemy.spawning.level_threshold
+BAT_SPAWN_MAX_ATTEMPTS = bat_enemy.spawning.max_attempts
+BAT_SPAWN_X_MIN = bat_enemy.spawning.x_min
+BAT_SPAWN_X_MARGIN = bat_enemy.spawning.x_margin
+BAT_MIN_SEPARATION = bat_enemy.spawning.min_separation
+BAT_SPAWN_FAIL_RETRY_TIMER = bat_enemy.spawning.fail_retry_timer
+BAT_CONSECUTIVE_SPAWN_LIMIT = bat_enemy.spawning.consecutive_spawn_limit
+BAT_CONSECUTIVE_RETRY_TIMER = bat_enemy.spawning.consecutive_retry_timer
+BAT_SPAWN_Y_START = bat_enemy.spawning.y_start
+BAT_TIER_WEIGHTS_LEVEL_0_2 = bat_enemy.tiers.weights_level_0_2
+BAT_TIER_WEIGHTS_LEVEL_3_4 = bat_enemy.tiers.weights_level_3_4
+BAT_TIER_WEIGHTS_LEVEL_5_7 = bat_enemy.tiers.weights_level_5_7
+BAT_TIER_WEIGHTS_LEVEL_8_PLUS = bat_enemy.tiers.weights_level_8_plus
+BAT_TIER_LEVEL_THRESHOLD_1 = bat_enemy.tiers.level_threshold_1
+BAT_TIER_LEVEL_THRESHOLD_2 = bat_enemy.tiers.level_threshold_2
+BAT_TIER_LEVEL_THRESHOLD_3 = bat_enemy.tiers.level_threshold_3
+BAT_HP_TIER_1 = bat_enemy.tiers.hp_tier_1
+BAT_HP_TIER_2 = bat_enemy.tiers.hp_tier_2
+BAT_HP_TIER_3 = bat_enemy.tiers.hp_tier_3
+BAT_HP_TIER_4 = bat_enemy.tiers.hp_tier_4
 
-# Obstacle spawning
-OBSTACLE_BASE_SPAWN_RATE_BASE = 60
-OBSTACLE_BASE_SPAWN_RATE_MIN = 15
-OBSTACLE_SPAWN_RATE_LEVEL_MULTIPLIER = 4
-OBSTACLE_SPAWN_VARIANCE_BASE = 30
-OBSTACLE_SPAWN_VARIANCE_MIN = 10
-OBSTACLE_SPAWN_VARIANCE_LEVEL_MULTIPLIER = 2
-OBSTACLE_RETRY_TIMER_DIVISOR = 2
-OBSTACLE_RETRY_TIMER_MIN = 5
-OBSTACLE_CONSECUTIVE_SPAWN_LIMIT = 2
+# Obstacle enemies
+obstacle = SimpleNamespace(
+    max_hp_by_tier={1: 4, 2: 6, 3: 10, 4: 16},
+    spawning=SimpleNamespace(
+        base_spawn_rate=SimpleNamespace(base=60, min=15),
+        spawn_rate_level_multiplier=4,
+        spawn_variance=SimpleNamespace(base=30, min=10),
+        spawn_variance_level_multiplier=2,
+        retry_timer_divisor=2,
+        retry_timer_min=5,
+        consecutive_spawn_limit=2
+    ),
+    tiers=SimpleNamespace(
+        weights_level_0_2=[70, 20, 8, 2],
+        weights_level_3_4=[55, 28, 13, 4],
+        weights_level_5_7=[35, 35, 20, 10],
+        weights_level_8_plus=[20, 30, 30, 20],
+        level_threshold_1=2,
+        level_threshold_2=4,
+        level_threshold_3=7,
+        hp_tier_1=4,
+        hp_tier_2=6,
+        hp_tier_3=10,
+        hp_tier_4=16
+    )
+)
 
-# Obstacle tiers
-OBSTACLE_TIER_WEIGHTS_LEVEL_0_2 = [70, 20, 8, 2]
-OBSTACLE_TIER_WEIGHTS_LEVEL_3_4 = [55, 28, 13, 4]
-OBSTACLE_TIER_WEIGHTS_LEVEL_5_7 = [35, 35, 20, 10]
-OBSTACLE_TIER_WEIGHTS_LEVEL_8_PLUS = [20, 30, 30, 20]
-OBSTACLE_TIER_LEVEL_THRESHOLD_1 = 2
-OBSTACLE_TIER_LEVEL_THRESHOLD_2 = 4
-OBSTACLE_TIER_LEVEL_THRESHOLD_3 = 7
-OBSTACLE_HP_TIER_1 = 4
-OBSTACLE_HP_TIER_2 = 6
-OBSTACLE_HP_TIER_3 = 10
-OBSTACLE_HP_TIER_4 = 16
-
-# Powers
-POWERS_DEFAULT = {}
+# Backward compatibility
+OBSTACLE_MAX_HP_BY_TIER = obstacle.max_hp_by_tier
+OBSTACLE_BASE_SPAWN_RATE_BASE = obstacle.spawning.base_spawn_rate.base
+OBSTACLE_BASE_SPAWN_RATE_MIN = obstacle.spawning.base_spawn_rate.min
+OBSTACLE_SPAWN_RATE_LEVEL_MULTIPLIER = obstacle.spawning.spawn_rate_level_multiplier
+OBSTACLE_SPAWN_VARIANCE_BASE = obstacle.spawning.spawn_variance.base
+OBSTACLE_SPAWN_VARIANCE_MIN = obstacle.spawning.spawn_variance.min
+OBSTACLE_SPAWN_VARIANCE_LEVEL_MULTIPLIER = obstacle.spawning.spawn_variance_level_multiplier
+OBSTACLE_RETRY_TIMER_DIVISOR = obstacle.spawning.retry_timer_divisor
+OBSTACLE_RETRY_TIMER_MIN = obstacle.spawning.retry_timer_min
+OBSTACLE_CONSECUTIVE_SPAWN_LIMIT = obstacle.spawning.consecutive_spawn_limit
+OBSTACLE_TIER_WEIGHTS_LEVEL_0_2 = obstacle.tiers.weights_level_0_2
+OBSTACLE_TIER_WEIGHTS_LEVEL_3_4 = obstacle.tiers.weights_level_3_4
+OBSTACLE_TIER_WEIGHTS_LEVEL_5_7 = obstacle.tiers.weights_level_5_7
+OBSTACLE_TIER_WEIGHTS_LEVEL_8_PLUS = obstacle.tiers.weights_level_8_plus
+OBSTACLE_TIER_LEVEL_THRESHOLD_1 = obstacle.tiers.level_threshold_1
+OBSTACLE_TIER_LEVEL_THRESHOLD_2 = obstacle.tiers.level_threshold_2
+OBSTACLE_TIER_LEVEL_THRESHOLD_3 = obstacle.tiers.level_threshold_3
+OBSTACLE_HP_TIER_1 = obstacle.tiers.hp_tier_1
+OBSTACLE_HP_TIER_2 = obstacle.tiers.hp_tier_2
+OBSTACLE_HP_TIER_3 = obstacle.tiers.hp_tier_3
+OBSTACLE_HP_TIER_4 = obstacle.tiers.hp_tier_4
 
 # ============================================================================
 # POWER-UPS (organized as namespaces)
 # ============================================================================
+
+# Powers state
+powers = SimpleNamespace(
+    default={},
+    blue_adjacent_boost_seconds=5.0
+)
+
+# Backward compatibility
+POWERS_DEFAULT = powers.default
+BLUE_ADJACENT_BOOST_SECONDS = powers.blue_adjacent_boost_seconds
 
 # Wide Cursor power-up
 wide_cursor = SimpleNamespace(
@@ -219,47 +361,6 @@ tailwind = SimpleNamespace(
     )
 )
 
-# Backward compatibility - keep old constants for now
-WIDE_CURSOR_BASE_SECONDS = wide_cursor.seconds.base
-WIDE_CURSOR_PLUS_SECONDS = wide_cursor.seconds.plus
-WIDE_CURSOR_PLUSPLUS_SECONDS = wide_cursor.seconds.plusplus
-WIDE_CURSOR_MAX_SECONDS = wide_cursor.seconds.max
-WIDE_CURSOR_LANES_BASE = wide_cursor.lanes.base
-WIDE_CURSOR_LANES_MAX = wide_cursor.lanes.max
-
-BOUNCE_BOOST_BASE_SECONDS = bounce_boost.seconds.base
-BOUNCE_BOOST_PLUS_SECONDS = bounce_boost.seconds.plus
-BOUNCE_BOOST_PLUSPLUS_SECONDS = bounce_boost.seconds.plusplus
-BOUNCE_BOOST_MAX_SECONDS = bounce_boost.seconds.max
-BOUNCE_BOOST_DURATION_BASE = bounce_boost.duration.base
-BOUNCE_BOOST_DURATION_PLUS = bounce_boost.duration.plus
-BOUNCE_BOOST_DURATION_PLUSPLUS = bounce_boost.duration.plusplus
-BOUNCE_BOOST_DURATION_MAX = bounce_boost.duration.max
-
-SUCTION_BASE_SECONDS = suction.seconds.base
-SUCTION_PLUS_SECONDS = suction.seconds.plus
-SUCTION_PLUSPLUS_SECONDS = suction.seconds.plusplus
-SUCTION_MAX_SECONDS = suction.seconds.max
-SUCTION_BOOST_DURATION_BASE = suction.boost_duration.base
-SUCTION_BOOST_DURATION_PLUS = suction.boost_duration.plus
-SUCTION_BOOST_DURATION_PLUSPLUS = suction.boost_duration.plusplus
-SUCTION_BOOST_DURATION_MAX = suction.boost_duration.max
-
-TAILWIND_BASE_SECONDS = tailwind.seconds.base
-TAILWIND_PLUS_SECONDS = tailwind.seconds.plus
-TAILWIND_PLUSPLUS_SECONDS = tailwind.seconds.plusplus
-TAILWIND_MAX_SECONDS = tailwind.seconds.max
-TAILWIND_UP_BONUS_BASE = tailwind.up_bonus.base
-TAILWIND_UP_BONUS_PLUS = tailwind.up_bonus.plus
-TAILWIND_UP_BONUS_PLUSPLUS = tailwind.up_bonus.plusplus
-TAILWIND_DOWN_PENALTY_BASE = tailwind.down_penalty.base
-TAILWIND_DOWN_PENALTY_PLUS = tailwind.down_penalty.plus
-TAILWIND_DOWN_PENALTY_PLUSPLUS = tailwind.down_penalty.plusplus
-TAILWIND_DOWN_PENALTY_MAX = tailwind.down_penalty.max
-
-# Special
-BLUE_ADJACENT_BOOST_SECONDS = 5.0
-
 # ============================================================================
 # SPECIAL BIRDS (organized as namespaces)
 # ============================================================================
@@ -323,94 +424,127 @@ orange = SimpleNamespace(
     out_of_play_y=999
 )
 
-# Backward compatibility
-DINOSAUR_PRESSES_TO_BOUNCE = dinosaur.presses_to_bounce
-DINOSAUR_PRESS_CHUNK = dinosaur.press_chunk
-DINOSAUR_RECOVERY_ON_EGG = dinosaur.recovery_on_egg
-DINOSAUR_DAMAGE = dinosaur.damage
+# Shuffle system
+shuffle = SimpleNamespace(
+    level=SimpleNamespace(
+        base=10,
+        plus=15,
+        plusplus=20,
+        max=25
+    )
+)
 
-STEALTH_DAMAGE = stealth.damage
-STEALTH_TANGIBLE_SECONDS = stealth.tangible_seconds
-STEALTH_SPEED_BOOST = stealth.speed_boost
+# ============================================================================
+# GAME SYSTEMS (organized as namespaces)
+# ============================================================================
 
-GOLD_DAMAGE = gold.damage
-GOLD_SCORE_VALUE = gold.score_value
+# Progression system
+progression = SimpleNamespace(
+    xp_base=500.0,
+    grade_exp_factor=1.07,
+    level_score_base=500.0,
+    level_score_factor=1.07
+)
 
-CLOCKWORK_DECAY_SECONDS = clockwork.decay_seconds
-CLOCKWORK_INITIAL_CHARGE = clockwork.initial_charge
-CLOCKWORK_MIN_CHARGE = clockwork.min_charge
-CLOCKWORK_MAX_CHARGE = clockwork.max_charge
-CLOCKWORK_LANES_BASE = clockwork.lanes.base
-CLOCKWORK_LANES_MAX = clockwork.lanes.max
+# Combo system
+combo = SimpleNamespace(
+    window_frames=200,
+    yellow_blue_chain_window=60
+)
 
-GLITCH_BOUNCE_IGNORE_CHANCE = glitch.bounce_ignore_chance
-GLITCH_LOOT_IGNORE_CHANCE = glitch.loot_ignore_chance
-GLITCH_LOOT_PROMOTE_CHANCE = glitch.loot_promote_chance
-GLITCH_DAMAGE_MIN = glitch.damage.min
-GLITCH_DAMAGE_MAX = glitch.damage.max
-GLITCH_SURVIVE_ON_FLOOR_CHANCE = glitch.survive_on_floor_chance
-GLITCH_SPEED_MIN = glitch.speed.min
-GLITCH_SPEED_MAX = glitch.speed.max
-GLITCH_FLIP_CHANCE = glitch.flip_chance
-GLITCH_SWAP_CHANCE = glitch.swap_chance
-GLITCH_NUDGE_CHANCE = glitch.nudge_chance
-GLITCH_DUPLICATE_CHANCE = glitch.duplicate_chance
+# Combat system
+combat = SimpleNamespace(
+    bat_center_offset=4,
+    xp_bonus_per_tier=10,
+    obstacle_score_multiplier=2
+)
 
-ORANGE_RECOVER_CHANCE = orange.recover_chance
-ORANGE_OUT_OF_PLAY_Y = orange.out_of_play_y
-
-# Progression
-XP_BASE = 500.0
-GRADE_EXP_FACTOR = 1.07
-LEVEL_SCORE_BASE = 500.0
-LEVEL_SCORE_FACTOR = 1.07
-
-# Combo
-COMBO_WINDOW_FRAMES = 200
-YELLOW_BLUE_CHAIN_WINDOW = 60
-
-# Combat
-BAT_CENTER_OFFSET = 4
-XP_BONUS_PER_TIER = 10
-OBSTACLE_SCORE_MULTIPLIER = 2
-
-# Collision
-LANE_COLLISION_HALF_WIDTH = 2
-LOOT_COLLECTION_DISTANCE = 2
-BAT_SPRITE_WIDTH = 8
+# Collision detection
+collision = SimpleNamespace(
+    lane_half_width=2,
+    loot_collection_distance=2,
+    bat_sprite_width=8
+)
 
 # Rendering
-DINOSAUR_SPRITE_HEIGHT = 3
-NORMAL_BIRD_SPRITE_HEIGHT = 2
+rendering = SimpleNamespace(
+    dinosaur_sprite_height=3,
+    normal_bird_sprite_height=2
+)
 
-# Shuffle
-SHUFFLE_LEVEL_BASE = 1
-SHUFFLE_LEVEL_PLUS = 2
-SHUFFLE_LEVEL_PLUSPLUS = 3
-SHUFFLE_LEVEL_MAX = 4
+# Despawn timers
+despawn = SimpleNamespace(
+    bat_time=60,
+    loot_time=60
+)
 
-# Despawn
-BAT_DESPAWN_TIME = 60
-LOOT_DESPAWN_TIME = 60
-
-# Game over
-GAME_OVER_SEPARATOR_WIDTH = 50
-GAME_OVER_TIME_DIVIDER = 3600
-GAME_OVER_TIME_REMAINDER = 3600
-GAME_OVER_MINUTES_DIVIDER = 60
-LEADERBOARD_NAME_MAX_LENGTH = 20
+# Game over screen
+game_over = SimpleNamespace(
+    separator_width=50,
+    time_divider=3600,
+    time_remainder=3600,
+    minutes_divider=60,
+    leaderboard_name_max_length=20
+)
 
 # Keyboard controls
-KEY_MOVE_LEFT = 'LEFT'
-KEY_MOVE_RIGHT = 'RIGHT'
-KEY_MOVE_UP = 'UP'
-KEY_MOVE_DOWN = 'DOWN'
-KEY_ACTION = 'SPACE'
-KEY_PAUSE = 'p'
-KEY_PAUSE_ALT = 'P'
-KEY_TOGGLE_XP = 'x'
-KEY_TOGGLE_XP_ALT = 'X'
-KEY_QUIT = 'QUIT'
+controls = SimpleNamespace(
+    move_left='LEFT',
+    move_right='RIGHT',
+    move_up='UP',
+    move_down='DOWN',
+    action='SPACE',
+    pause='p',
+    pause_alt='P',
+    toggle_xp='x',
+    toggle_xp_alt='X',
+    quit='QUIT'
+)
+
+# Backward compatibility
+XP_BASE = progression.xp_base
+GRADE_EXP_FACTOR = progression.grade_exp_factor
+LEVEL_SCORE_BASE = progression.level_score_base
+LEVEL_SCORE_FACTOR = progression.level_score_factor
+
+COMBO_WINDOW_FRAMES = combo.window_frames
+YELLOW_BLUE_CHAIN_WINDOW = combo.yellow_blue_chain_window
+
+BAT_CENTER_OFFSET = combat.bat_center_offset
+XP_BONUS_PER_TIER = combat.xp_bonus_per_tier
+OBSTACLE_SCORE_MULTIPLIER = combat.obstacle_score_multiplier
+
+LANE_COLLISION_HALF_WIDTH = collision.lane_half_width
+LOOT_COLLECTION_DISTANCE = collision.loot_collection_distance
+BAT_SPRITE_WIDTH = collision.bat_sprite_width
+
+DINOSAUR_SPRITE_HEIGHT = rendering.dinosaur_sprite_height
+NORMAL_BIRD_SPRITE_HEIGHT = rendering.normal_bird_sprite_height
+
+BAT_DESPAWN_TIME = despawn.bat_time
+LOOT_DESPAWN_TIME = despawn.loot_time
+
+GAME_OVER_SEPARATOR_WIDTH = game_over.separator_width
+GAME_OVER_TIME_DIVIDER = game_over.time_divider
+GAME_OVER_TIME_REMAINDER = game_over.time_remainder
+GAME_OVER_MINUTES_DIVIDER = game_over.minutes_divider
+LEADERBOARD_NAME_MAX_LENGTH = game_over.leaderboard_name_max_length
+
+KEY_MOVE_LEFT = controls.move_left
+KEY_MOVE_RIGHT = controls.move_right
+KEY_MOVE_UP = controls.move_up
+KEY_MOVE_DOWN = controls.move_down
+KEY_ACTION = controls.action
+KEY_PAUSE = controls.pause
+KEY_PAUSE_ALT = controls.pause_alt
+KEY_TOGGLE_XP = controls.toggle_xp
+KEY_TOGGLE_XP_ALT = controls.toggle_xp_alt
+KEY_QUIT = controls.quit
+
+SHUFFLE_LEVEL_BASE = shuffle.level.base
+SHUFFLE_LEVEL_PLUS = shuffle.level.plus
+SHUFFLE_LEVEL_PLUSPLUS = shuffle.level.plusplus
+SHUFFLE_LEVEL_MAX = shuffle.level.max
 
 
 # Apply configuration overrides
@@ -418,17 +552,17 @@ if config:
     # Layout
     if 'layout' in config and isinstance(config['layout'], dict):
         layout_cfg = config['layout']
-        WIDTH = layout_cfg.get('width', WIDTH)
-        HEIGHT = layout_cfg.get('height', HEIGHT)
-        NUM_BALLS = layout_cfg.get('num_balls', NUM_BALLS)
+        WIDTH = layout_cfg.get('width', layout.width)
+        HEIGHT = layout_cfg.get('height', layout.height)
+        NUM_BALLS = layout_cfg.get('num_balls', layout.num_balls)
         if 'lane_positions' in layout_cfg:
             LANE_POSITIONS = layout_cfg['lane_positions']
         
         if 'constraints' in layout_cfg and isinstance(layout_cfg['constraints'], dict):
             const = layout_cfg['constraints']
-            NUM_LANES = const.get('num_lanes', NUM_LANES)
-            MIN_LANE_INDEX = const.get('min_lane_index', MIN_LANE_INDEX)
-            MAX_LANE_INDEX = const.get('max_lane_index', MAX_LANE_INDEX)
+            NUM_LANES = const.get('num_lanes', layout.num_lanes)
+            MIN_LANE_INDEX = const.get('min_lane_index', layout.min_lane_index)
+            MAX_LANE_INDEX = const.get('max_lane_index', layout.max_lane_index)
     
     # Recalculate derived values
     STARTING_LINE = HEIGHT - 4
@@ -438,19 +572,19 @@ if config:
         birds_cfg = config['birds']
         if 'formation' in birds_cfg:
             DEFAULT_BIRD_FORMATION = [str(b).upper() for b in birds_cfg['formation']]
-        RANDOMIZE_LANES = birds_cfg.get('randomize_lanes', RANDOMIZE_LANES)
+        RANDOMIZE_LANES = birds_cfg.get('randomize_lanes', birds.randomize_lanes)
     
     # Timing
     if 'timing' in config and isinstance(config['timing'], dict):
         timing_cfg = config['timing']
-        NOTIFICATION_DURATION_SECONDS = timing_cfg.get('notification_duration_seconds', NOTIFICATION_DURATION_SECONDS)
-        BASE_SLEEP = timing_cfg.get('base_sleep', BASE_SLEEP)
-        MIN_SLEEP = timing_cfg.get('min_sleep', MIN_SLEEP)
-        FRAME_SLEEP_LEVEL_MULTIPLIER = timing_cfg.get('frame_sleep_level_multiplier', FRAME_SLEEP_LEVEL_MULTIPLIER)
+        NOTIFICATION_DURATION_SECONDS = timing_cfg.get('notification_duration_seconds', timing.notification_duration_seconds)
+        BASE_SLEEP = timing_cfg.get('base_sleep', timing.base_sleep)
+        MIN_SLEEP = timing_cfg.get('min_sleep', timing.min_sleep)
+        FRAME_SLEEP_LEVEL_MULTIPLIER = timing_cfg.get('frame_sleep_level_multiplier', timing.frame_sleep_level_multiplier)
     
     # Limits
     if 'limits' in config and isinstance(config['limits'], dict):
-        MAX_ENTITIES = config['limits'].get('max_entities', MAX_ENTITIES)
+        MAX_ENTITIES = config['limits'].get('max_entities', limits.max_entities)
     
     # Eggs
     if 'egg_probs' in config:
@@ -462,14 +596,15 @@ if config:
     
     if 'rarity_weights' in config and isinstance(config['rarity_weights'], dict):
         for rarity, weights in config['rarity_weights'].items():
-            if rarity in RARITY_WEIGHTS and isinstance(weights, dict):
+            if rarity in eggs.rarity_weights and isinstance(weights, dict):
+                eggs.rarity_weights[rarity].update(weights)
                 RARITY_WEIGHTS[rarity].update(weights)
     
     # Physics
     if 'physics' in config and isinstance(config['physics'], dict):
         physics_cfg = config['physics']
-        SPEED_MIN = physics_cfg.get('speed_min', SPEED_MIN)
-        SPEED_MAX = physics_cfg.get('speed_max', SPEED_MAX)
+        SPEED_MIN = physics_cfg.get('speed_min', physics.speed_min)
+        SPEED_MAX = physics_cfg.get('speed_max', physics.speed_max)
         # Note: Bird-specific speeds are now managed in bird_types.BIRD_TYPES
     
     # Progression
@@ -556,89 +691,67 @@ from sprites import (
     WHITE, ORANGE, COOKIE, DINOSAUR, GLITCH
 )
 
-# Version
-GAME_VERSION = "0.8.0"
+# Game metadata
+game = SimpleNamespace(
+    version="0.8.0"
+)
+
+# Backward compatibility
+GAME_VERSION = game.version
 
 # Note: Egg mappings, color limits, and display names are now in bird_types.py
 # Use: get_bird_type_from_egg(), get_spawn_limit(), get_display_name()
-
-# Rarity eggs candidates (unified: candidates + weights from config)
-RARITY_EGGS_CANDIDATES = {
-    'common': {
-        'yellow_egg': 30,
-        'red_egg': 25,
-        'blue_egg': 20,
-        'patchwork_egg': 15,
-        'purple_egg': 10,
-    },
-    'uncommon': {
-        'blue_egg': 33,
-        'patchwork_egg': 25,
-        'purple_egg': 20,
-        'clockwork_egg': 12,
-        'stealth_egg': 7,
-        'cookie_egg': 3,
-    },
-    'rare': {
-        'white_egg': 34,
-        'orange_egg': 33,
-        'gold_egg': 33,
-    },
-    'epic': {
-        'dinosaur_egg': 50,
-        'glitch_egg': 50,
-    }
-}
-
 # Note: Display names now in bird_types.get_display_name()
 
-# Synergy transfer ratio
-SYNERGY_TRANSFER_RATIO = 0.10
+# ============================================================================
+# GAME MECHANICS (organized as namespaces)
+# ============================================================================
 
-# Prestige modifiers per grade
-PRESTIGE_MODIFIERS = {
-    'D': 0.0,
-    'C1': 0.03125,
-    'C2': 0.0625,
-    'B1': 0.125,
-    'B2': 0.25,
-    'A1': 0.5,
-    'A2': 1.0,
-    'S': 5.0,
-}
+# Synergy system
+synergy = SimpleNamespace(
+    transfer_ratio=0.10
+)
 
-# Prestige rarity factor
-PRESTIGE_RARITY_FACTOR = 0.1
+# Prestige system
+prestige = SimpleNamespace(
+    modifiers={
+        'D': 0.0,
+        'C1': 0.03125,
+        'C2': 0.0625,
+        'B1': 0.125,
+        'B2': 0.25,
+        'A1': 0.5,
+        'A2': 1.0,
+        'S': 5.0,
+    },
+    rarity_factor=0.1
+)
 
-# Transform limits for patchwork birds
-TRANSFORM_LIMITS = {
-    YELLOW: 5,
-    RED: 3,
-    BLUE: 2,
-}
+# Transform limits (patchwork birds)
+transform = SimpleNamespace(
+    limits={
+        YELLOW: 5,
+        RED: 3,
+        BLUE: 2,
+    }
+)
 
-# Bat constants
+# Bat special behavior
 bat = SimpleNamespace(
     scared_seconds=2.0,
     scared_speed_boost_seconds=2.0
 )
-BAT_SCARED_SECONDS = bat.scared_seconds
-BAT_SCARED_SPEED_BOOST_SECONDS = bat.scared_speed_boost_seconds
 
-# Shuffle constants
-shuffle = SimpleNamespace(
-    level=SimpleNamespace(
-        base=10,
-        plus=15,
-        plusplus=20,
-        max=25
-    )
+# HP color scaling
+colors = SimpleNamespace(
+    bats_base_rgb=(255, 0, 255),   # magenta FF00FF
+    obstacles_base_rgb=(0, 255, 0)  # green 00FF00
 )
-SHUFFLE_LEVEL_BASE = shuffle.level.base
-SHUFFLE_LEVEL_PLUS = shuffle.level.plus
-SHUFFLE_LEVEL_PLUSPLUS = shuffle.level.plusplus
-SHUFFLE_LEVEL_MAX = shuffle.level.max
 
-# HP color scaling base RGB values
-BATS_BASE_COLOR_RGB = (255, 0, 255)   # magenta FF00FF
-OBSTACLES_BASE_COLOR_RGB = (0, 255, 0)     # green 00FF00
+# Backward compatibility
+SYNERGY_TRANSFER_RATIO = synergy.transfer_ratio
+PRESTIGE_MODIFIERS = prestige.modifiers
+PRESTIGE_RARITY_FACTOR = prestige.rarity_factor
+TRANSFORM_LIMITS = transform.limits
+BATS_BASE_COLOR_RGB = colors.bats_base_rgb
+OBSTACLES_BASE_COLOR_RGB = colors.obstacles_base_rgb

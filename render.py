@@ -323,9 +323,9 @@ def render_birds(output):
             if state.ball_vy[b] == -1:  # Moving up
                 if state.ball_colors[b] == CLOCKWORK:
                     try:
-                        c = state.clockwork_charge.get(b, constants.CLOCKWORK_INITIAL_CHARGE)
+                        c = state.clockwork_charge.get(b, constants.clockwork.initial_charge)
                     except Exception:
-                        c = constants.CLOCKWORK_INITIAL_CHARGE
+                        c = constants.clockwork.initial_charge
                     if c == 0:
                         sprite = BIRD_UP_2
                     elif c == 1:
@@ -344,7 +344,7 @@ def render_birds(output):
                     sprite = BIRD_DOWN_2
                 else:
                     if state.ball_colors[b] == CLOCKWORK:
-                        c = state.clockwork_charge.get(b, constants.CLOCKWORK_INITIAL_CHARGE)
+                        c = state.clockwork_charge.get(b, constants.clockwork.initial_charge)
                         if c == 0:
                             sprite = BIRD_DOWN_2
                         elif c == 1:
@@ -393,7 +393,7 @@ def render_birds(output):
                     x_offset = len(line) // 2
                     
                     if state.ball_colors[b] == CLOCKWORK:
-                        c = state.clockwork_charge.get(b, constants.CLOCKWORK_INITIAL_CHARGE)
+                        c = state.clockwork_charge.get(b, constants.clockwork.initial_charge)
                         blink_period = max(1, int(0.6 / constants.BASE_SLEEP))
                         blink_on = ((state.frame_count // blink_period) % 2) == 0
                         colored = render_clockwork_line(line, c, blink_on)
