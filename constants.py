@@ -4,6 +4,7 @@ Global game variables and configuration state.
 Initialized from config file via init.py.
 """
 import init
+from types import SimpleNamespace
 
 # Load configuration
 _config, _args = init.init_config()
@@ -147,87 +148,216 @@ OBSTACLE_HP_TIER_4 = 16
 # Powers
 POWERS_DEFAULT = {}
 
-# Wide cursor
-WIDE_CURSOR_BASE_SECONDS = 10.0
-WIDE_CURSOR_PLUS_SECONDS = 20.0
-WIDE_CURSOR_PLUSPLUS_SECONDS = 25.0
-WIDE_CURSOR_MAX_SECONDS = 50.0
-WIDE_CURSOR_LANES_BASE = 3
-WIDE_CURSOR_LANES_MAX = 5
+# ============================================================================
+# POWER-UPS (organized as namespaces)
+# ============================================================================
 
-# Bounce boost
-BOUNCE_BOOST_BASE_SECONDS = 10.0
-BOUNCE_BOOST_PLUS_SECONDS = 20.0
-BOUNCE_BOOST_PLUSPLUS_SECONDS = 25.0
-BOUNCE_BOOST_MAX_SECONDS = 50.0
-BOUNCE_BOOST_DURATION_BASE = 4
-BOUNCE_BOOST_DURATION_PLUS = 4
-BOUNCE_BOOST_DURATION_PLUSPLUS = 8
-BOUNCE_BOOST_DURATION_MAX = 12
+# Wide Cursor power-up
+wide_cursor = SimpleNamespace(
+    seconds=SimpleNamespace(
+        base=10.0,
+        plus=20.0,
+        plusplus=25.0,
+        max=50.0
+    ),
+    lanes=SimpleNamespace(
+        base=3,
+        max=5
+    )
+)
 
-# Suction
-SUCTION_BASE_SECONDS = 10.0
-SUCTION_PLUS_SECONDS = 20.0
-SUCTION_PLUSPLUS_SECONDS = 25.0
-SUCTION_MAX_SECONDS = 50.0
-SUCTION_BOOST_DURATION_BASE = 0
-SUCTION_BOOST_DURATION_PLUS = 0
-SUCTION_BOOST_DURATION_PLUSPLUS = 4
-SUCTION_BOOST_DURATION_MAX = 8
+# Bounce Boost power-up
+bounce_boost = SimpleNamespace(
+    seconds=SimpleNamespace(
+        base=10.0,
+        plus=20.0,
+        plusplus=25.0,
+        max=50.0
+    ),
+    duration=SimpleNamespace(
+        base=4,
+        plus=4,
+        plusplus=8,
+        max=12
+    )
+)
 
-# Tailwind
-TAILWIND_BASE_SECONDS = 10.0
-TAILWIND_PLUS_SECONDS = 15.0
-TAILWIND_PLUSPLUS_SECONDS = 20.0
-TAILWIND_MAX_SECONDS = 30.0
-TAILWIND_UP_BONUS_BASE = 1
-TAILWIND_UP_BONUS_PLUS = 2
-TAILWIND_UP_BONUS_PLUSPLUS = 3
-TAILWIND_DOWN_PENALTY_BASE = 1
-TAILWIND_DOWN_PENALTY_PLUS = 1
-TAILWIND_DOWN_PENALTY_PLUSPLUS = 2
-TAILWIND_DOWN_PENALTY_MAX = 3
+# Suction power-up
+suction = SimpleNamespace(
+    seconds=SimpleNamespace(
+        base=10.0,
+        plus=20.0,
+        plusplus=25.0,
+        max=50.0
+    ),
+    boost_duration=SimpleNamespace(
+        base=0,
+        plus=0,
+        plusplus=4,
+        max=8
+    )
+)
+
+# Tailwind power-up
+tailwind = SimpleNamespace(
+    seconds=SimpleNamespace(
+        base=10.0,
+        plus=15.0,
+        plusplus=20.0,
+        max=30.0
+    ),
+    up_bonus=SimpleNamespace(
+        base=1,
+        plus=2,
+        plusplus=3
+    ),
+    down_penalty=SimpleNamespace(
+        base=1,
+        plus=1,
+        plusplus=2,
+        max=3
+    )
+)
+
+# Backward compatibility - keep old constants for now
+WIDE_CURSOR_BASE_SECONDS = wide_cursor.seconds.base
+WIDE_CURSOR_PLUS_SECONDS = wide_cursor.seconds.plus
+WIDE_CURSOR_PLUSPLUS_SECONDS = wide_cursor.seconds.plusplus
+WIDE_CURSOR_MAX_SECONDS = wide_cursor.seconds.max
+WIDE_CURSOR_LANES_BASE = wide_cursor.lanes.base
+WIDE_CURSOR_LANES_MAX = wide_cursor.lanes.max
+
+BOUNCE_BOOST_BASE_SECONDS = bounce_boost.seconds.base
+BOUNCE_BOOST_PLUS_SECONDS = bounce_boost.seconds.plus
+BOUNCE_BOOST_PLUSPLUS_SECONDS = bounce_boost.seconds.plusplus
+BOUNCE_BOOST_MAX_SECONDS = bounce_boost.seconds.max
+BOUNCE_BOOST_DURATION_BASE = bounce_boost.duration.base
+BOUNCE_BOOST_DURATION_PLUS = bounce_boost.duration.plus
+BOUNCE_BOOST_DURATION_PLUSPLUS = bounce_boost.duration.plusplus
+BOUNCE_BOOST_DURATION_MAX = bounce_boost.duration.max
+
+SUCTION_BASE_SECONDS = suction.seconds.base
+SUCTION_PLUS_SECONDS = suction.seconds.plus
+SUCTION_PLUSPLUS_SECONDS = suction.seconds.plusplus
+SUCTION_MAX_SECONDS = suction.seconds.max
+SUCTION_BOOST_DURATION_BASE = suction.boost_duration.base
+SUCTION_BOOST_DURATION_PLUS = suction.boost_duration.plus
+SUCTION_BOOST_DURATION_PLUSPLUS = suction.boost_duration.plusplus
+SUCTION_BOOST_DURATION_MAX = suction.boost_duration.max
+
+TAILWIND_BASE_SECONDS = tailwind.seconds.base
+TAILWIND_PLUS_SECONDS = tailwind.seconds.plus
+TAILWIND_PLUSPLUS_SECONDS = tailwind.seconds.plusplus
+TAILWIND_MAX_SECONDS = tailwind.seconds.max
+TAILWIND_UP_BONUS_BASE = tailwind.up_bonus.base
+TAILWIND_UP_BONUS_PLUS = tailwind.up_bonus.plus
+TAILWIND_UP_BONUS_PLUSPLUS = tailwind.up_bonus.plusplus
+TAILWIND_DOWN_PENALTY_BASE = tailwind.down_penalty.base
+TAILWIND_DOWN_PENALTY_PLUS = tailwind.down_penalty.plus
+TAILWIND_DOWN_PENALTY_PLUSPLUS = tailwind.down_penalty.plusplus
+TAILWIND_DOWN_PENALTY_MAX = tailwind.down_penalty.max
 
 # Special
 BLUE_ADJACENT_BOOST_SECONDS = 5.0
 
-# Dinosaur
-DINOSAUR_PRESSES_TO_BOUNCE = 15
-DINOSAUR_PRESS_CHUNK = 3
-DINOSAUR_RECOVERY_ON_EGG = 0.10
-DINOSAUR_DAMAGE = 16
+# ============================================================================
+# SPECIAL BIRDS (organized as namespaces)
+# ============================================================================
 
-# Stealth
-STEALTH_DAMAGE = 24
-STEALTH_TANGIBLE_SECONDS = 2.0
+# Dinosaur bird
+dinosaur = SimpleNamespace(
+    presses_to_bounce=15,
+    press_chunk=3,
+    recovery_on_egg=0.10,
+    damage=16
+)
 
-# Gold
-GOLD_DAMAGE = 1
-GOLD_SCORE_VALUE = 100
+# Stealth bird
+stealth = SimpleNamespace(
+    damage=24,
+    tangible_seconds=2.0,
+    speed_boost=2
+)
 
-# Clockwork
-CLOCKWORK_DECAY_SECONDS = 30.0
-CLOCKWORK_INITIAL_CHARGE = 2
-CLOCKWORK_MIN_CHARGE = 0
-CLOCKWORK_MAX_CHARGE = 3
+# Gold bird
+gold = SimpleNamespace(
+    damage=1,
+    score_value=100
+)
 
-# Glitch
-GLITCH_BOUNCE_IGNORE_CHANCE = 0.05
-GLITCH_LOOT_IGNORE_CHANCE = 0.05
-GLITCH_LOOT_PROMOTE_CHANCE = 0.05
-GLITCH_DAMAGE_MIN = 1
-GLITCH_DAMAGE_MAX = 32
-GLITCH_SURVIVE_ON_FLOOR_CHANCE = 0.20
-GLITCH_SPEED_MIN = 1
-GLITCH_SPEED_MAX = 6
-GLITCH_FLIP_CHANCE = 0.01
-GLITCH_SWAP_CHANCE = 0.01
-GLITCH_NUDGE_CHANCE = 0.01
-GLITCH_DUPLICATE_CHANCE = 0.01
+# Clockwork bird
+clockwork = SimpleNamespace(
+    decay_seconds=30.0,
+    initial_charge=2,
+    min_charge=0,
+    max_charge=3,
+    lanes=SimpleNamespace(
+        base=3,
+        max=5
+    )
+)
 
-# Orange
-ORANGE_RECOVER_CHANCE = 0.10
-ORANGE_OUT_OF_PLAY_Y = 999
+# Glitch bird
+glitch = SimpleNamespace(
+    bounce_ignore_chance=0.05,
+    loot_ignore_chance=0.05,
+    loot_promote_chance=0.05,
+    damage=SimpleNamespace(
+        min=1,
+        max=32
+    ),
+    survive_on_floor_chance=0.20,
+    speed=SimpleNamespace(
+        min=1,
+        max=6
+    ),
+    flip_chance=0.01,
+    swap_chance=0.01,
+    nudge_chance=0.01,
+    duplicate_chance=0.01
+)
+
+# Orange bird
+orange = SimpleNamespace(
+    recover_chance=0.10,
+    out_of_play_y=999
+)
+
+# Backward compatibility
+DINOSAUR_PRESSES_TO_BOUNCE = dinosaur.presses_to_bounce
+DINOSAUR_PRESS_CHUNK = dinosaur.press_chunk
+DINOSAUR_RECOVERY_ON_EGG = dinosaur.recovery_on_egg
+DINOSAUR_DAMAGE = dinosaur.damage
+
+STEALTH_DAMAGE = stealth.damage
+STEALTH_TANGIBLE_SECONDS = stealth.tangible_seconds
+STEALTH_SPEED_BOOST = stealth.speed_boost
+
+GOLD_DAMAGE = gold.damage
+GOLD_SCORE_VALUE = gold.score_value
+
+CLOCKWORK_DECAY_SECONDS = clockwork.decay_seconds
+CLOCKWORK_INITIAL_CHARGE = clockwork.initial_charge
+CLOCKWORK_MIN_CHARGE = clockwork.min_charge
+CLOCKWORK_MAX_CHARGE = clockwork.max_charge
+CLOCKWORK_LANES_BASE = clockwork.lanes.base
+CLOCKWORK_LANES_MAX = clockwork.lanes.max
+
+GLITCH_BOUNCE_IGNORE_CHANCE = glitch.bounce_ignore_chance
+GLITCH_LOOT_IGNORE_CHANCE = glitch.loot_ignore_chance
+GLITCH_LOOT_PROMOTE_CHANCE = glitch.loot_promote_chance
+GLITCH_DAMAGE_MIN = glitch.damage.min
+GLITCH_DAMAGE_MAX = glitch.damage.max
+GLITCH_SURVIVE_ON_FLOOR_CHANCE = glitch.survive_on_floor_chance
+GLITCH_SPEED_MIN = glitch.speed.min
+GLITCH_SPEED_MAX = glitch.speed.max
+GLITCH_FLIP_CHANCE = glitch.flip_chance
+GLITCH_SWAP_CHANCE = glitch.swap_chance
+GLITCH_NUDGE_CHANCE = glitch.nudge_chance
+GLITCH_DUPLICATE_CHANCE = glitch.duplicate_chance
+
+ORANGE_RECOVER_CHANCE = orange.recover_chance
+ORANGE_OUT_OF_PLAY_Y = orange.out_of_play_y
 
 # Progression
 XP_BASE = 500.0
@@ -487,74 +617,28 @@ TRANSFORM_LIMITS = {
     BLUE: 2,
 }
 
-# Power-specific constants
-STEALTH_SPEED_BOOST = 2
-BOUNCE_BOOST_DURATION_BASE = 4
-BOUNCE_BOOST_DURATION_PLUS = 4
-BOUNCE_BOOST_DURATION_PLUSPLUS = 8
-BOUNCE_BOOST_DURATION_MAX = 12
-SUCTION_BOOST_DURATION_BASE = 0
-SUCTION_BOOST_DURATION_PLUS = 0
-SUCTION_BOOST_DURATION_PLUSPLUS = 4
-SUCTION_BOOST_DURATION_MAX = 8
-TAILWIND_UP_BONUS_BASE = 1
-TAILWIND_UP_BONUS_PLUS = 2
-TAILWIND_UP_BONUS_PLUSPLUS = 3
-TAILWIND_DOWN_PENALTY_BASE = 1
-TAILWIND_DOWN_PENALTY_PLUS = 1
-TAILWIND_DOWN_PENALTY_PLUSPLUS = 2
-TAILWIND_DOWN_PENALTY_MAX = 3
-
-# Special bird constants
-DINOSAUR_PRESSES_TO_BOUNCE = 15
-DINOSAUR_PRESS_CHUNK = 3
-DINOSAUR_RECOVERY_CHANCE_ON_EGG = 0.10
-DINOSAUR_DAMAGE = 16
-STEALTH_DAMAGE = 24
-STEALTH_TANGIBLE_SECONDS = 2.0
-GOLD_DAMAGE = 1
-GOLD_SCORE_VALUE = 100
-CLOCKWORK_LANES_BASE = 3
-CLOCKWORK_LANES_MAX = 5
-BLUE_ADJACENT_BOOST_SECONDS = 5.0
-
 # Bat constants
-BAT_SCARED_SECONDS = 2.0
-BAT_SCARED_SPEED_BOOST_SECONDS = 2.0
+bat = SimpleNamespace(
+    scared_seconds=2.0,
+    scared_speed_boost_seconds=2.0
+)
+BAT_SCARED_SECONDS = bat.scared_seconds
+BAT_SCARED_SPEED_BOOST_SECONDS = bat.scared_speed_boost_seconds
 
 # Shuffle constants
-SHUFFLE_LEVEL_BASE = 10
-SHUFFLE_LEVEL_PLUS = 15
-SHUFFLE_LEVEL_PLUSPLUS = 20
-SHUFFLE_LEVEL_MAX = 25
+shuffle = SimpleNamespace(
+    level=SimpleNamespace(
+        base=10,
+        plus=15,
+        plusplus=20,
+        max=25
+    )
+)
+SHUFFLE_LEVEL_BASE = shuffle.level.base
+SHUFFLE_LEVEL_PLUS = shuffle.level.plus
+SHUFFLE_LEVEL_PLUSPLUS = shuffle.level.plusplus
+SHUFFLE_LEVEL_MAX = shuffle.level.max
 
 # HP color scaling base RGB values
 BATS_BASE_COLOR_RGB = (255, 0, 255)   # magenta FF00FF
 OBSTACLES_BASE_COLOR_RGB = (0, 255, 0)     # green 00FF00
-
-# Power defaults - Wide Cursor
-WIDE_CURSOR_BASE_SECONDS = 10.0
-WIDE_CURSOR_PLUS_SECONDS = 20.0
-WIDE_CURSOR_PLUSPLUS_SECONDS = 25.0
-WIDE_CURSOR_MAX_SECONDS = 50.0
-WIDE_CURSOR_LANES_BASE = 3
-WIDE_CURSOR_LANES_MAX = 5
-
-# Power defaults - Bounce Boost
-BOUNCE_BOOST_BASE_SECONDS = 10.0
-BOUNCE_BOOST_PLUS_SECONDS = 20.0
-BOUNCE_BOOST_PLUSPLUS_SECONDS = 25.0
-BOUNCE_BOOST_MAX_SECONDS = 50.0
-
-# Power defaults - Suction
-SUCTION_BASE_SECONDS = 10.0
-SUCTION_PLUS_SECONDS = 20.0
-SUCTION_PLUSPLUS_SECONDS = 25.0
-SUCTION_MAX_SECONDS = 50.0
-
-# Power defaults - Tailwind
-TAILWIND_BASE_SECONDS = 10.0
-TAILWIND_PLUS_SECONDS = 15.0
-TAILWIND_PLUSPLUS_SECONDS = 20.0
-TAILWIND_MAX_SECONDS = 30.0
-    # This file only contains the most commonly used constants.
