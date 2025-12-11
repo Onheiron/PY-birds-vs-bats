@@ -564,7 +564,7 @@ try:
                         lane = constants.layout.lane_positions.index(lane_x)
                         for bi in range(constants.layout.num_balls):
                             if state.birds.random_lanes[bi] == lane:
-                                    if (state.birds.colors[bi] == constants.ORANGE and state.birds.y[bi] == constants.orange.out_of_play_y and state.birds.speeds[bi] == 0 and not state.birds.lost[bi]):
+                                    if (state.birds.colors[bi] == ORANGE and state.birds.y[bi] == constants.orange.out_of_play_y and state.birds.speeds[bi] == 0 and not state.birds.lost[bi]):
                                         state.birds.lost[bi] = True
                                         state.birds.y[bi] = constants.layout.height - 1
                                         state.game.lives -= 1
@@ -902,7 +902,7 @@ try:
                     next_y = state.birds.y[i] + state.birds.vy[i]  # Calculate next position
                     collided = False
                     broken_through = False
-                    bird_height = int(constants.rendering.dinosaur_sprite_height) if state.birds.colors[i] == constants.DINOSAUR else int(constants.rendering.normal_bird_sprite_height)
+                    bird_height = int(constants.rendering.dinosaur_sprite_height) if state.birds.colors[i] == DINOSAUR else int(constants.rendering.normal_bird_sprite_height)
                     if not (state.birds.colors[i] == STEALTH and not (i in state.special.stealth_timers and state.special.stealth_timers.get(i, 0) > 0)):
                         for bat in state.enemies.bats[:]:
                             bat_left = bat['x_pos']

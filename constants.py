@@ -7,11 +7,7 @@ import init
 from types import SimpleNamespace
 
 # Load configuration
-_config, _args = init.init_config()
-
-# Export config for other modules
-config = _config
-args = _args
+config, args = init.init_config()
 
 # Game state globals (will be set by configuration)
 # These can be imported by other modules with: from variables import WIDTH, HEIGHT, etc.
@@ -32,7 +28,7 @@ layout = SimpleNamespace(
 )
 
 # Bird configuration
-from bird_types import DEFAULT_FORMATION
+from bird_types import DEFAULT_FORMATION, BirdType, get_color_for_bird_type
 
 birds = SimpleNamespace(
     default_formation=DEFAULT_FORMATION,
@@ -421,12 +417,6 @@ if config:
 # ADDITIONAL CONSTANTS (from modularization cleanup)
 # ============================================================================
 
-# Import color constants from sprites
-from sprites import (
-    YELLOW, RED, BLUE, PATCHWORK, PURPLE, CLOCKWORK, GOLD, STEALTH,
-    WHITE, ORANGE, COOKIE, DINOSAUR, GLITCH
-)
-
 # Game metadata
 game = SimpleNamespace(
     version="0.8.0"
@@ -463,9 +453,9 @@ prestige = SimpleNamespace(
 # Transform limits (patchwork birds)
 transform = SimpleNamespace(
     limits={
-        YELLOW: 5,
-        RED: 3,
-        BLUE: 2,
+        get_color_for_bird_type(BirdType.YELLOW): 5,
+        get_color_for_bird_type(BirdType.RED): 3,
+        get_color_for_bird_type(BirdType.BLUE): 2,
     }
 )
 

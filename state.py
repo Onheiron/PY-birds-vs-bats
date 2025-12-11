@@ -6,7 +6,7 @@ Import as: import state
 Access as: state.birds.colors, state.game.score, etc.
 """
 
-import constants as v
+import constants
 from bird_types import BirdType, DEFAULT_FORMATION, get_default_speed, get_color_for_bird_type
 from sprites import YELLOW
 from types import SimpleNamespace
@@ -145,40 +145,40 @@ def init():
     
     # Initialize bird colors from DEFAULT_BIRD_FORMATION
     birds.colors = []
-    for bird_type in DEFAULT_FORMATION[:v.layout.num_balls]:
+    for bird_type in DEFAULT_FORMATION[:constants.layout.num_balls]:
         color = get_color_for_bird_type(bird_type)
         birds.colors.append(color)
     
     # Pad with YELLOW if formation is shorter than NUM_BALLS
-    while len(birds.colors) < v.layout.num_balls:
+    while len(birds.colors) < constants.layout.num_balls:
         birds.colors.append(YELLOW)
     
     # Randomize which bird goes to which lane
     random.seed()
-    birds.random_lanes = list(range(v.layout.num_lanes))
-    if v.birds.randomize_lanes:
+    birds.random_lanes = list(range(constants.layout.num_lanes))
+    if constants.birds.randomize_lanes:
         random.shuffle(birds.random_lanes)
     
     # Initialize position and velocity arrays
-    birds.cols = [v.layout.lane_positions[birds.random_lanes[i]] for i in range(v.layout.num_balls)]
-    v.layout.starting_line = v.layout.height - 4
-    birds.y = [v.layout.starting_line] * v.layout.num_balls
-    birds.vy = [-1] * v.layout.num_balls
-    birds.lost = [False] * v.layout.num_balls
-    birds.power_used = [False] * v.layout.num_balls
-    birds.power_uses = [0] * v.layout.num_balls
+    birds.cols = [constants.layout.lane_positions[birds.random_lanes[i]] for i in range(constants.layout.num_balls)]
+    constants.layout.starting_line = constants.layout.height - 4
+    birds.y = [constants.layout.starting_line] * constants.layout.num_balls
+    birds.vy = [-1] * constants.layout.num_balls
+    birds.lost = [False] * constants.layout.num_balls
+    birds.power_used = [False] * constants.layout.num_balls
+    birds.power_uses = [0] * constants.layout.num_balls
     
-    birds.per_bird_xp = [0] * v.layout.num_balls
-    birds.transformed = [False] * v.layout.num_balls
+    birds.per_bird_xp = [0] * constants.layout.num_balls
+    birds.transformed = [False] * constants.layout.num_balls
     
     # Purple bird state
-    special.purple_state = [0] * v.layout.num_balls
-    special.purple_primed_frame = [0] * v.layout.num_balls
-    special.purple_charge_started_frame = [0] * v.layout.num_balls
-    special.purple_saved_vy = [None] * v.layout.num_balls
-    special.purple_miss_count = [0] * v.layout.num_balls
-    special.purple_just_fired_frames = [0] * v.layout.num_balls
-    special.purple_hold_counter = [0] * v.layout.num_balls
+    special.purple_state = [0] * constants.layout.num_balls
+    special.purple_primed_frame = [0] * constants.layout.num_balls
+    special.purple_charge_started_frame = [0] * constants.layout.num_balls
+    special.purple_saved_vy = [None] * constants.layout.num_balls
+    special.purple_miss_count = [0] * constants.layout.num_balls
+    special.purple_just_fired_frames = [0] * constants.layout.num_balls
+    special.purple_hold_counter = [0] * constants.layout.num_balls
     
     # Red bird projectiles
     special.red_projectiles = []
@@ -240,11 +240,11 @@ def init():
     player.last_up_state = False
 
     # Track original bird indices
-    birds.original_indices = list(range(v.layout.num_balls))
+    birds.original_indices = list(range(constants.layout.num_balls))
     
     # Assign speeds based on bird formation
     birds.speeds = []
-    for i in range(v.layout.num_balls):
+    for i in range(constants.layout.num_balls):
         try:
             bird_type = DEFAULT_FORMATION[i] if i < len(DEFAULT_FORMATION) else BirdType.YELLOW
             spd = get_default_speed(bird_type)
