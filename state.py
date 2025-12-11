@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Game state module - contains all mutable game state variables.
+Game state module - contains all mutable game state constants.
 This module centralizes all variables that change during gameplay.
 Import as: import state
 Access as: state.score, state.ball_y, etc.
 """
 
-import variables as v
+import constants as v
 
 # Ball/bird state arrays
 ball_colors = []
@@ -117,7 +117,7 @@ frame_count = 0
 
 
 def init():
-    """Initialize all game state variables."""
+    """Initialize all game state constants."""
     global ball_colors, ball_cols, ball_y, ball_vy, ball_speeds, ball_lost
     global bird_power_used, bird_power_uses, per_bird_xp, transformed_s
     global purple_state, purple_primed_frame, purple_charge_started_frame

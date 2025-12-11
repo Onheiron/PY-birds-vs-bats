@@ -30,9 +30,9 @@ DEFAULT_BIRD_FORMATION = ['YELLOW', 'YELLOW', 'YELLOW', 'YELLOW', 'RED', 'RED', 
 RANDOMIZE_LANES = True
 
 # Timing
-base_sleep = 0.2
-min_sleep = 0.02
-notification_duration_seconds = 3.0
+BASE_SLEEP = 0.2
+MIN_SLEEP = 0.02
+NOTIFICATION_DURATION_SECONDS = 3.0
 FRAME_SLEEP_LEVEL_MULTIPLIER = 0.88
 
 # Limits
@@ -325,9 +325,9 @@ if config:
     # Timing
     if 'timing' in config and isinstance(config['timing'], dict):
         timing_cfg = config['timing']
-        notification_duration_seconds = timing_cfg.get('notification_duration_seconds', notification_duration_seconds)
-        base_sleep = timing_cfg.get('base_sleep', base_sleep)
-        min_sleep = timing_cfg.get('min_sleep', min_sleep)
+        NOTIFICATION_DURATION_SECONDS = timing_cfg.get('notification_duration_seconds', NOTIFICATION_DURATION_SECONDS)
+        BASE_SLEEP = timing_cfg.get('base_sleep', BASE_SLEEP)
+        MIN_SLEEP = timing_cfg.get('min_sleep', MIN_SLEEP)
         FRAME_SLEEP_LEVEL_MULTIPLIER = timing_cfg.get('frame_sleep_level_multiplier', FRAME_SLEEP_LEVEL_MULTIPLIER)
     
     # Limits
@@ -617,4 +617,4 @@ TAILWIND_BASE_SECONDS = 10.0
 TAILWIND_PLUS_SECONDS = 15.0
 TAILWIND_PLUSPLUS_SECONDS = 20.0
 TAILWIND_MAX_SECONDS = 30.0
-    # This file only contains the most commonly used variables.
+    # This file only contains the most commonly used constants.
