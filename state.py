@@ -7,7 +7,7 @@ Access as: state.birds.colors, state.game.score, etc.
 """
 
 import constants
-from bird_types import BirdType, DEFAULT_FORMATION, get_default_speed, get_color_for_bird_type
+from bird_types import BirdType, get_default_speed, get_color_for_bird_type
 from sprites import YELLOW
 from types import SimpleNamespace
 
@@ -143,9 +143,9 @@ def init():
     """Initialize all game state using namespaces."""
     import random
     
-    # Initialize bird colors from DEFAULT_BIRD_FORMATION
+    # Initialize bird colors from default formation (configurable via constants.birds.default_formation)
     birds.colors = []
-    for bird_type in DEFAULT_FORMATION[:constants.layout.num_balls]:
+    for bird_type in constants.birds.default_formation[:constants.layout.num_balls]:
         color = get_color_for_bird_type(bird_type)
         birds.colors.append(color)
     
@@ -246,7 +246,7 @@ def init():
     birds.speeds = []
     for i in range(constants.layout.num_balls):
         try:
-            bird_type = DEFAULT_FORMATION[i] if i < len(DEFAULT_FORMATION) else BirdType.YELLOW
+            bird_type = constants.birds.default_formation[i] if i < len(constants.birds.default_formation) else BirdType.YELLOW
             spd = get_default_speed(bird_type)
             birds.speeds.append(int(spd))
         except Exception:

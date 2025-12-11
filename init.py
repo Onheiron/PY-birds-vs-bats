@@ -85,3 +85,49 @@ def init_config():
     _config = load_config_file(args.config if args and args.config else None)
     
     return _config, args
+
+
+def apply_config_to_namespace(namespace, config_dict, path=""):
+    """
+    Recursively apply configuration values from a dict to a SimpleNamespace.
+    
+    Args:
+        namespace: SimpleNamespace object to update
+        config_dict: Dictionary with configuration values
+        path: Current path for debugging (internal use)
+    """
+    from types import SimpleNamespace
+    
+    if not isinstance(config_dict, dict):
+        return
+    
+    for key, value in config_dict.items():
+        if not hasattr(namespace, key):
+            # Skip keys that don't exist in the namespace
+            try:
+                print(f"Warning: Config key '{path}.{key}' not found in constants", file=sys.stderr)
+            except Exception:
+                pass
+            continue
+        
+        current_value = getattr(namespace, key)
+        
+        # If the current value is a SimpleNamespace and the config value is a dict,
+        # recurse into it
+        if isinstance(current_value, SimpleNamespace) and isinstance(value, dict):
+            apply_config_to_namespace(current_value, value, f"{path}.{key}" if path else key)
+        else:
+            # Direct assignment - preserve the type if possible
+            try:
+                if isinstance(current_value, type(value)):
+                    setattr(namespace, key, value)
+                elif isinstance(current_value, (int, float)) and isinstance(value, (int, float)):
+                    # Allow int/float conversion
+                    setattr(namespace, key, type(current_value)(value))
+                else:
+                    setattr(namespace, key, value)
+            except Exception as e:
+                try:
+                    print(f"Warning: Failed to set '{path}.{key}': {e}", file=sys.stderr)
+                except Exception:
+                    pass

@@ -405,14 +405,6 @@ controls = SimpleNamespace(
 )
 
 
-# Apply configuration overrides (directly to namespaces)
-if config:
-    # Note: Configuration override support is minimal now.
-    # Game files should access constants.namespace.property directly.
-    # If config customization is needed, it can be added here by updating
-    # the SimpleNamespace objects directly (e.g., layout.width = config_value)
-    pass
-
 # ============================================================================
 # ADDITIONAL CONSTANTS (from modularization cleanup)
 # ============================================================================
@@ -470,3 +462,52 @@ colors = SimpleNamespace(
     bats_base_rgb=(255, 0, 255),   # magenta FF00FF
     obstacles_base_rgb=(0, 255, 0)  # green 00FF00
 )
+
+# ============================================================================
+# APPLY CONFIGURATION OVERRIDES
+# ============================================================================
+# Apply configuration from YAML file to all namespaces
+if config:
+    from init import apply_config_to_namespace
+    
+    # Apply config to all namespace objects
+    namespace_map = {
+        'layout': layout,
+        'birds': birds,
+        'timing': timing,
+        'limits': limits,
+        'physics': physics,
+        'eggs': eggs,
+        'bat_enemy': bat_enemy,
+        'obstacle': obstacle,
+        'powers': powers,
+        'wide_cursor': wide_cursor,
+        'bounce_boost': bounce_boost,
+        'suction': suction,
+        'tailwind': tailwind,
+        'dinosaur': dinosaur,
+        'stealth': stealth,
+        'gold': gold,
+        'clockwork': clockwork,
+        'glitch': glitch,
+        'orange': orange,
+        'shuffle': shuffle,
+        'progression': progression,
+        'combo': combo,
+        'combat': combat,
+        'collision': collision,
+        'rendering': rendering,
+        'despawn': despawn,
+        'game_over': game_over,
+        'controls': controls,
+        'game': game,
+        'synergy': synergy,
+        'prestige': prestige,
+        'transform': transform,
+        'bat': bat,
+        'colors': colors,
+    }
+    
+    for key, namespace_obj in namespace_map.items():
+        if key in config:
+            apply_config_to_namespace(namespace_obj, config[key], key)

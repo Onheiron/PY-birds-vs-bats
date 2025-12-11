@@ -36,6 +36,54 @@ Standalone binary (if present):
 - macOS: `dist/BVB` (run `./dist/BVB`)
 - Windows: `dist/BVB.exe`
 
+## Configuration
+
+BVB supports extensive YAML-based configuration. All game constants can be customized via a config file.
+
+### Quick Start
+
+```bash
+# Copy the sample configuration
+cp config.sample.yml config.yml
+
+# Edit config.yml to customize game settings
+# Run with your custom config
+python3 start.py --config config.yml
+```
+
+### Configuration Structure
+
+The configuration file mirrors the namespace structure in `constants.py`. You can override any value:
+
+```yaml
+# Example config.yml
+layout:
+  width: 50        # Game field width
+  height: 35       # Game field height
+  num_balls: 12    # Number of birds
+
+timing:
+  base_sleep: 0.15 # Frame delay (lower = faster)
+
+physics:
+  speed_max: 8     # Maximum bird speed
+```
+
+All namespaces are configurable:
+- `layout` - Game dimensions and lane setup
+- `birds` - Bird formation and behavior
+- `timing` - Frame rates and durations
+- `physics` - Speed limits and movement
+- `eggs` - Drop rates and rarity weights
+- `bat_enemy` - Bat spawning and HP
+- `obstacle` - Obstacle spawning
+- `wide_cursor`, `bounce_boost`, `suction`, `tailwind` - Power-up settings
+- `dinosaur`, `stealth`, `gold`, `clockwork`, `glitch`, `orange` - Special bird behaviors
+- `progression`, `combo`, `combat` - Game mechanics
+- `controls` - Key bindings
+
+See `config.sample.yml` for the complete list of configurable values with their defaults.
+
 ## Controls
 
 - ← / → : Move cursor between lanes
@@ -140,19 +188,6 @@ Run locally:
 ```bash
 pip install pyyaml jsonschema
 python3 start.py
-```
-
-Configuration:
-
-The game supports extensive YAML-based configuration. Copy `config.sample.yml` to `config.yml` or use `--config`:
-
-```bash
-cp config.sample.yml config.yml
-# Edit config.yml with your settings
-python3 start.py
-
-# Or use a different file
-python3 start.py --config myconfig.yml
 ```
 
 **Configuration validation:**
