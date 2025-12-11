@@ -708,9 +708,9 @@ def handle_clockwork_auto_bounce():
 
 def get_affected_lanes():
     """Return list of lanes affected by current cursor (considers wide cursor powerup)."""
-    if state.powerups['wide_cursor_active']:
+    if state.powerups.wide_cursor_active:
         lanes = []
-        half_width = state.powerups['wide_cursor_lanes'] // 2
+        half_width = state.powerups.wide_cursor_lanes // 2
         for offset in range(-half_width, half_width + 1):
             lane = state.player_lane + offset
             if 0 <= lane <= 8:
@@ -788,8 +788,8 @@ def bounce_bird(bird_idx, apply_boost=False):
             state.ball_speeds[bird_idx] = 1
     
     # Apply bounce boost if active
-    if apply_boost and state.powerups['bounce_boost_active'] and bird_idx not in state.speed_boosts:
-        boost_frames = int(state.powerups['bounce_boost_duration'] / constants.timing.base_sleep)
+    if apply_boost and state.powerups.bounce_boost_active and bird_idx not in state.speed_boosts:
+        boost_frames = int(state.powerups.bounce_boost_duration / constants.timing.base_sleep)
         state.speed_boosts[bird_idx] = boost_frames
     
     # Record bounce action for combos

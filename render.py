@@ -189,7 +189,7 @@ def render_starting_line(output):
     starting_line_y = constants.layout.starting_line + 2
     if 3 <= starting_line_y < constants.layout.height + 2:
         # Tailwind: blue carets, normale: dashed line
-        if state.powerups.get('tailwind_active'):
+        if state.powerups.tailwind_active:
             dashed_line = "^ " * (constants.layout.width // 2)
             output += f"\033[{starting_line_y};1H{BLUE}{dashed_line[:constants.layout.width]}{RESET}"
         else:
@@ -204,10 +204,10 @@ def render_starting_line(output):
             
             if bird_in_lane >= 0 and not state.ball_lost[bird_in_lane]:
                 # Bounce boost: blue ^
-                if state.powerups['bounce_boost_active'] and state.ball_vy[bird_in_lane] == 1:
+                if state.powerups.bounce_boost_active and state.ball_vy[bird_in_lane] == 1:
                     output += f"\033[{starting_line_y};{lane_x}H{BLUE}\033[1m^{RESET}"
                 # Suction: red v
-                elif state.powerups['suction_active'] and state.ball_vy[bird_in_lane] == -1:
+                elif state.powerups.suction_active and state.ball_vy[bird_in_lane] == -1:
                     output += f"\033[{starting_line_y};{lane_x}H{RED}\033[1mv{RESET}"
     
     return output
@@ -449,8 +449,8 @@ def render_floor_and_cursor(output, floor):
         return fallback_cursor_color
     
     # Wide cursor or normal
-    if state.powerups['wide_cursor_active']:
-        half_width = state.powerups['wide_cursor_lanes'] // 2
+    if state.powerups.wide_cursor_active:
+        half_width = state.powerups.wide_cursor_lanes // 2
         cursor_str = ""
         for offset in range(-half_width, half_width + 1):
             lane = state.player_lane + offset

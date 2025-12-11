@@ -262,7 +262,7 @@ try:
                                     state.ball_speeds[bird_in_lane] = int(constants.stealth.speed_boost)
                                     achievements.append_recent_action('stealth', lane=bird_lane, color=STEALTH, frame_count=state.frame_count)
             elif key == constants.controls.move_down:
-                if state.powerups['suction_active']:
+                if state.powerups.suction_active:
                     lanes_to_affect = get_affected_lanes()
 
                     for lane in lanes_to_affect:
@@ -270,8 +270,8 @@ try:
                         if bird_in_lane >= 0 and not state.ball_lost[bird_in_lane]:
                             if state.ball_vy[bird_in_lane] == -1:  # Moving up - pull it down
                                 set_ball_vy(bird_in_lane, 1)
-                                if state.powerups['suction_boost_duration'] > 0 and bird_in_lane not in state.speed_boosts:
-                                    boost_frames = int(state.powerups['suction_boost_duration'] / constants.timing.base_sleep)
+                                if state.powerups.suction_boost_duration > 0 and bird_in_lane not in state.speed_boosts:
+                                    boost_frames = int(state.powerups.suction_boost_duration / constants.timing.base_sleep)
                                     state.speed_boosts[bird_in_lane] = boost_frames
                                 achievements.append_recent_action('suction', lane=state.random_lanes[bird_in_lane], color=state.ball_colors[bird_in_lane], frame_count=state.frame_count)
             elif key == constants.controls.quit:
@@ -804,29 +804,29 @@ try:
                     if abs(bird_x - loot.get('x_pos', 0)) <= 2 and abs(bird_y - loot.get('y_pos', 0)) <= 2:
                         state.loot_items.remove(loot)
                         
-        if state.powerups['wide_cursor_active']:
-            state.powerups['wide_cursor_frames'] -= 1
-            if state.powerups['wide_cursor_frames'] <= 0:
-                state.powerups['wide_cursor_active'] = False
-                state.powerups['wide_cursor_lanes'] = 1
+        if state.powerups.wide_cursor_active:
+            state.powerups.wide_cursor_frames -= 1
+            if state.powerups.wide_cursor_frames <= 0:
+                state.powerups.wide_cursor_active = False
+                state.powerups.wide_cursor_lanes = 1
         
-        if state.powerups['bounce_boost_active']:
-            state.powerups['bounce_boost_frames'] -= 1
-            if state.powerups['bounce_boost_frames'] <= 0:
-                state.powerups['bounce_boost_active'] = False
-                state.powerups['bounce_boost_duration'] = 0
+        if state.powerups.bounce_boost_active:
+            state.powerups.bounce_boost_frames -= 1
+            if state.powerups.bounce_boost_frames <= 0:
+                state.powerups.bounce_boost_active = False
+                state.powerups.bounce_boost_duration = 0
         
-        if state.powerups['suction_active']:
-            state.powerups['suction_frames'] -= 1
-            if state.powerups['suction_frames'] <= 0:
-                state.powerups['suction_active'] = False
-                state.powerups['suction_boost_duration'] = 0
-        if state.powerups.get('tailwind_active'):
-            state.powerups['tailwind_frames'] -= 1
-            if state.powerups['tailwind_frames'] <= 0:
-                state.powerups['tailwind_active'] = False
-                state.powerups['tailwind_up_bonus'] = 0
-                state.powerups['tailwind_down_penalty'] = 0
+        if state.powerups.suction_active:
+            state.powerups.suction_frames -= 1
+            if state.powerups.suction_frames <= 0:
+                state.powerups.suction_active = False
+                state.powerups.suction_boost_duration = 0
+        if state.powerups.tailwind_active:
+            state.powerups.tailwind_frames -= 1
+            if state.powerups.tailwind_frames <= 0:
+                state.powerups.tailwind_active = False
+                state.powerups.tailwind_up_bonus = 0
+                state.powerups.tailwind_down_penalty = 0
 
         for i in range(constants.layout.num_balls):
             if state.purple_just_fired_frames[i] > 0:
@@ -878,9 +878,9 @@ try:
                             state.ball_vy[target_idx] = -1
                             state.transformed_s[target_idx] = False
                             state.ball_cols[target_idx] = constants.layout.lane_positions[target_lane]
-            if state.powerups.get('tailwind_active'):
-                up_bonus = int(state.powerups.get('tailwind_up_bonus', 0))
-                down_pen = int(state.powerups.get('tailwind_down_penalty', 0))
+            if state.powerups.tailwind_active:
+                up_bonus = int(getattr(state.powerups, 'tailwind_up_bonus', 0))
+                down_pen = int(getattr(state.powerups, 'tailwind_down_penalty', 0))
                 if state.ball_vy[i] == -1 and up_bonus != 0:
                     current_speed = min(int(constants.physics.speed_max), current_speed + up_bonus)
                 elif state.ball_vy[i] == 1 and down_pen != 0:
@@ -1098,7 +1098,7 @@ try:
                                     award_xp(i, xp_val)
                         elif loot_type.startswith('wide_cursor'):
                             cfg = constants.powers.default.get('wide_cursor', {})
-                            state.powerups['wide_cursor_active'] = True
+                            state.powerups.wide_cursor_active = True
                             if loot_type == 'wide_cursor':
                                 sec = cfg.get('base_seconds', constants.wide_cursor.seconds.base)
                                 lanes = cfg.get('lanes_base', constants.wide_cursor.lanes.base)
@@ -1111,12 +1111,12 @@ try:
                             else:
                                 sec = cfg.get('max_seconds', constants.wide_cursor.seconds.max)
                                 lanes = cfg.get('lanes_max', constants.wide_cursor.lanes.max)
-                            state.powerups['wide_cursor_frames'] = max(1, int(float(sec) / constants.timing.base_sleep))
-                            state.powerups['wide_cursor_lanes'] = int(lanes)
+                            state.powerups.wide_cursor_frames = max(1, int(float(sec) / constants.timing.base_sleep))
+                            state.powerups.wide_cursor_lanes = int(lanes)
                             achievements.check_achievements_event('power_used', power='wide_cursor', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type.startswith('bounce_boost'):
                             cfg = constants.powers.default.get('bounce_boost', {})
-                            state.powerups['bounce_boost_active'] = True
+                            state.powerups.bounce_boost_active = True
                             if loot_type == 'bounce_boost':
                                 sec = cfg.get('base_seconds', constants.bounce_boost.seconds.base)
                                 duration = cfg.get('duration_base', constants.bounce_boost.duration.base)
@@ -1129,12 +1129,12 @@ try:
                             else:
                                 sec = cfg.get('max_seconds', constants.bounce_boost.seconds.max)
                                 duration = cfg.get('duration_max', constants.bounce_boost.duration.max)
-                            state.powerups['bounce_boost_frames'] = max(1, int(float(sec) / constants.timing.base_sleep))
-                            state.powerups['bounce_boost_duration'] = int(duration)
+                            state.powerups.bounce_boost_frames = max(1, int(float(sec) / constants.timing.base_sleep))
+                            state.powerups.bounce_boost_duration = int(duration)
                             achievements.check_achievements_event('power_used', power='bounce_boost', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type.startswith('suction'):
                             cfg = constants.powers.default.get('suction', {})
-                            state.powerups['suction_active'] = True
+                            state.powerups.suction_active = True
                             if loot_type == 'suction':
                                 sec = cfg.get('base_seconds', constants.suction.seconds.base)
                                 boost = cfg.get('boost_duration_base', constants.suction.boost_duration.base)
@@ -1147,12 +1147,12 @@ try:
                             else:
                                 sec = cfg.get('max_seconds', constants.suction.seconds.max)
                                 boost = cfg.get('boost_duration_max', constants.suction.boost_duration.max)
-                            state.powerups['suction_frames'] = max(1, int(float(sec) / constants.timing.base_sleep))
-                            state.powerups['suction_boost_duration'] = int(boost)
+                            state.powerups.suction_frames = max(1, int(float(sec) / constants.timing.base_sleep))
+                            state.powerups.suction_boost_duration = int(boost)
                             achievements.check_achievements_event('power_used', power='suction', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type.startswith('tailwind'):
                             cfg = constants.powers.default.get('tailwind', {})
-                            state.powerups['tailwind_active'] = True
+                            state.powerups.tailwind_active = True
                             if loot_type == 'tailwind':
                                 sec = cfg.get('base_seconds', constants.tailwind.seconds.base)
                                 up = cfg.get('up_bonus_base', constants.tailwind.up_bonus.base)
@@ -1169,9 +1169,9 @@ try:
                                 sec = cfg.get('max_seconds', constants.tailwind.seconds.max)
                                 up = cfg.get('up_bonus_plusplus', constants.tailwind.up_bonus.plusPLUS)
                                 down = cfg.get('down_penalty_max', constants.tailwind.down_penalty.max)
-                            state.powerups['tailwind_frames'] = max(1, int(float(sec) / constants.timing.base_sleep))
-                            state.powerups['tailwind_up_bonus'] = int(up)
-                            state.powerups['tailwind_down_penalty'] = int(down)
+                            state.powerups.tailwind_frames = max(1, int(float(sec) / constants.timing.base_sleep))
+                            state.powerups.tailwind_up_bonus = int(up)
+                            state.powerups.tailwind_down_penalty = int(down)
                             achievements.check_achievements_event('power_used', power='tailwind', frame_count=state.frame_count, notifications_list=state.notifications, firebase_client=firebase_client, background_call=background_call)
                         elif loot_type == 'shuffle':
                             perform_shuffle(constants.shuffle.level.base)

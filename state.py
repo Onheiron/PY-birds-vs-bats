@@ -1,270 +1,385 @@
 #!/usr/bin/env python3
 """
-Game state module - contains all mutable game state constants.
+Game state module - contains all mutable game state organized in namespaces.
 This module centralizes all variables that change during gameplay.
 Import as: import state
-Access as: state.score, state.ball_y, etc.
+Access as: state.birds.colors, state.game.score, etc.
 """
 
 import constants as v
 from bird_types import BirdType, DEFAULT_FORMATION, get_default_speed, get_color_for_bird_type
+from sprites import YELLOW
+from types import SimpleNamespace
 
-# Ball/bird state arrays
-ball_colors = []
-ball_cols = []
-ball_y = []
-ball_vy = []
-ball_speeds = []
-ball_lost = []
-bird_power_used = []
-bird_power_uses = []
+# ============================================================================
+# BIRDS STATE (organized as namespace)
+# ============================================================================
+birds = SimpleNamespace(
+    colors=[],
+    cols=[],
+    y=[],
+    vy=[],
+    speeds=[],
+    lost=[],
+    power_used=[],
+    power_uses=[],
+    random_lanes=[],
+    per_bird_xp=[],
+    transformed=[],
+    original_indices=[]
+)
 
-# Lane randomization
-random_lanes = []
+# ============================================================================
+# SPECIAL BIRDS STATE (organized as namespace)
+# ============================================================================
+special = SimpleNamespace(
+    # Red bird projectiles
+    red_projectiles=[],
+    
+    # Speed boosts
+    speed_boosts={},
+    
+    # Dinosaur
+    dinosaur_up_presses={},
+    
+    # Scared birds
+    scared_birds={},
+    
+    # Stealth
+    stealth_timers={},
+    stealth_prev_speeds={},
+    
+    # Clockwork
+    clockwork_charge={},
+    
+    # Cookie
+    cookie_crumbs_made={},
+    
+    # Purple bird charging state
+    purple_state=[],
+    purple_primed_frame=[],
+    purple_charge_started_frame=[],
+    purple_saved_vy=[],
+    purple_miss_count=[],
+    purple_just_fired_frames=[],
+    purple_hold_counter=[],
+    
+    # Global UP counters
+    up_hold_counter=0,
+    up_miss_counter=0
+)
 
-# Projectiles (red bird)
-red_projectiles = []
+# ============================================================================
+# ENEMIES STATE (organized as namespace)
+# ============================================================================
+enemies = SimpleNamespace(
+    obstacles=[],
+    obstacle_spawn_timer=0,
+    bats=[],
+    bat_spawn_timer=0,
+    spawn_queue=[]
+)
 
-# Bird experience and progression
-per_bird_xp = []
-transformed_s = []
-show_xp_overlay = False
+# ============================================================================
+# ITEMS STATE (organized as namespace)
+# ============================================================================
+items = SimpleNamespace(
+    loot_items=[]
+)
 
-# Background
-bg_offset = 0
+# ============================================================================
+# POWER-UPS STATE (organized as namespace)
+# ============================================================================
+powerups = SimpleNamespace(
+    wide_cursor_active=False,
+    wide_cursor_frames=0,
+    wide_cursor_lanes=1,
+    bounce_boost_active=False,
+    bounce_boost_frames=0,
+    bounce_boost_duration=0,
+    suction_active=False,
+    suction_frames=0,
+    suction_boost_duration=0,
+    tailwind_active=False,
+    tailwind_frames=0,
+    tailwind_up_bonus=0,
+    tailwind_down_penalty=0
+)
 
-# Obstacles
-obstacles = []
-obstacle_spawn_timer = 0
+# ============================================================================
+# GAME STATE (organized as namespace)
+# ============================================================================
+game = SimpleNamespace(
+    score=0,
+    level=1,
+    lives=5,
+    game_over=False,
+    swaps_used=0,
+    paused=False,
+    frame_count=0
+)
 
-# Bats
-bats = []
-bat_spawn_timer = 0
+# ============================================================================
+# PLAYER STATE (organized as namespace)
+# ============================================================================
+player = SimpleNamespace(
+    lane=2,
+    selected_lane=None,
+    last_space_state=False,
+    last_up_state=False
+)
 
-# Loot
-loot_items = []
+# ============================================================================
+# UI STATE (organized as namespace)
+# ============================================================================
+ui = SimpleNamespace(
+    show_xp_overlay=False,
+    bg_offset=0,
+    notifications=[]
+)
 
-# Spawn queue
-spawn_queue = []
+# Backward compatibility (to be removed after full migration)
+ball_colors = birds.colors
+ball_cols = birds.cols
+ball_y = birds.y
+ball_vy = birds.vy
+ball_speeds = birds.speeds
+ball_lost = birds.lost
+bird_power_used = birds.power_used
+bird_power_uses = birds.power_uses
+random_lanes = birds.random_lanes
+per_bird_xp = birds.per_bird_xp
+transformed_s = birds.transformed
+original_indices = birds.original_indices
 
-# Speed boosts
-speed_boosts = {}
+red_projectiles = special.red_projectiles
+speed_boosts = special.speed_boosts
+dinosaur_up_presses = special.dinosaur_up_presses
+scared_birds = special.scared_birds
+stealth_timers = special.stealth_timers
+stealth_prev_speeds = special.stealth_prev_speeds
+clockwork_charge = special.clockwork_charge
+cookie_crumbs_made = special.cookie_crumbs_made
+purple_state = special.purple_state
+purple_primed_frame = special.purple_primed_frame
+purple_charge_started_frame = special.purple_charge_started_frame
+purple_saved_vy = special.purple_saved_vy
+purple_miss_count = special.purple_miss_count
+purple_just_fired_frames = special.purple_just_fired_frames
+purple_hold_counter = special.purple_hold_counter
+up_hold_counter = special.up_hold_counter
+up_miss_counter = special.up_miss_counter
 
-# Dinosaur special counters
-dinosaur_up_presses = {}
+obstacles = enemies.obstacles
+obstacle_spawn_timer = enemies.obstacle_spawn_timer
+bats = enemies.bats
+bat_spawn_timer = enemies.bat_spawn_timer
+spawn_queue = enemies.spawn_queue
 
-# Scared birds
-scared_birds = {}
+loot_items = items.loot_items
 
-# Stealth timers
-stealth_timers = {}
-stealth_prev_speeds = {}
+score = game.score
+level = game.level
+lives = game.lives
+game_over = game.game_over
+swaps_used = game.swaps_used
+paused = game.paused
+frame_count = game.frame_count
 
-# Clockwork bird charge
-clockwork_charge = {}
+player_lane = player.lane
+selected_lane = player.selected_lane
+last_space_state = player.last_space_state
+last_up_state = player.last_up_state
 
-# Cookie bird crumbs
-cookie_crumbs_made = {}
+show_xp_overlay = ui.show_xp_overlay
+bg_offset = ui.bg_offset
+notifications = ui.notifications
 
-# Purple bird charging state machine
-purple_state = []
-purple_primed_frame = []
-purple_charge_started_frame = []
-purple_saved_vy = []
-purple_miss_count = []
-purple_just_fired_frames = []
-purple_hold_counter = []
 
-# Global UP hold/miss counters
-up_hold_counter = 0
-up_miss_counter = 0
-
-# Power-ups state
-powerups = {
-    'wide_cursor_active': False,
-    'wide_cursor_frames': 0,
-    'wide_cursor_lanes': 1,
-    'bounce_boost_active': False,
-    'bounce_boost_frames': 0,
-    'bounce_boost_duration': 0,
-    'suction_active': False,
-    'suction_frames': 0,
-    'suction_boost_duration': 0,
-    'tailwind_active': False,
-    'tailwind_frames': 0,
-    'tailwind_up_bonus': 0,
-    'tailwind_down_penalty': 0
-}
-
-# Score system
-score = 0
-level = 1
-lives = 5
-game_over = False
-swaps_used = 0
-paused = False
-
-# Notifications
-notifications = []
-
-# Player cursor
-player_lane = 2
-selected_lane = None
-last_space_state = False
-last_up_state = False
-
-# Frame counter
-frame_count = 0
+def _update_aliases():
+    """Update backward compatibility aliases to point to namespace values."""
+    global ball_colors, ball_cols, ball_y, ball_vy, ball_speeds, ball_lost
+    global bird_power_used, bird_power_uses, random_lanes, per_bird_xp, transformed_s, original_indices
+    global red_projectiles, speed_boosts, dinosaur_up_presses, scared_birds
+    global stealth_timers, stealth_prev_speeds, clockwork_charge, cookie_crumbs_made
+    global purple_state, purple_primed_frame, purple_charge_started_frame, purple_saved_vy
+    global purple_miss_count, purple_just_fired_frames, purple_hold_counter
+    global up_hold_counter, up_miss_counter
+    global obstacles, obstacle_spawn_timer, bats, bat_spawn_timer, spawn_queue
+    global loot_items
+    global score, level, lives, game_over, swaps_used, paused, frame_count
+    global player_lane, selected_lane, last_space_state, last_up_state
+    global show_xp_overlay, bg_offset, notifications
+    
+    ball_colors = birds.colors
+    ball_cols = birds.cols
+    ball_y = birds.y
+    ball_vy = birds.vy
+    ball_speeds = birds.speeds
+    ball_lost = birds.lost
+    bird_power_used = birds.power_used
+    bird_power_uses = birds.power_uses
+    random_lanes = birds.random_lanes
+    per_bird_xp = birds.per_bird_xp
+    transformed_s = birds.transformed
+    original_indices = birds.original_indices
+    
+    red_projectiles = special.red_projectiles
+    speed_boosts = special.speed_boosts
+    dinosaur_up_presses = special.dinosaur_up_presses
+    scared_birds = special.scared_birds
+    stealth_timers = special.stealth_timers
+    stealth_prev_speeds = special.stealth_prev_speeds
+    clockwork_charge = special.clockwork_charge
+    cookie_crumbs_made = special.cookie_crumbs_made
+    purple_state = special.purple_state
+    purple_primed_frame = special.purple_primed_frame
+    purple_charge_started_frame = special.purple_charge_started_frame
+    purple_saved_vy = special.purple_saved_vy
+    purple_miss_count = special.purple_miss_count
+    purple_just_fired_frames = special.purple_just_fired_frames
+    purple_hold_counter = special.purple_hold_counter
+    up_hold_counter = special.up_hold_counter
+    up_miss_counter = special.up_miss_counter
+    
+    obstacles = enemies.obstacles
+    obstacle_spawn_timer = enemies.obstacle_spawn_timer
+    bats = enemies.bats
+    bat_spawn_timer = enemies.bat_spawn_timer
+    spawn_queue = enemies.spawn_queue
+    
+    loot_items = items.loot_items
+    
+    score = game.score
+    level = game.level
+    lives = game.lives
+    game_over = game.game_over
+    swaps_used = game.swaps_used
+    paused = game.paused
+    frame_count = game.frame_count
+    
+    player_lane = player.lane
+    selected_lane = player.selected_lane
+    last_space_state = player.last_space_state
+    last_up_state = player.last_up_state
+    
+    show_xp_overlay = ui.show_xp_overlay
+    bg_offset = ui.bg_offset
+    notifications = ui.notifications
 
 
 def init():
-    """Initialize all game state constants."""
-    global ball_colors, ball_cols, ball_y, ball_vy, ball_speeds, ball_lost
-    global bird_power_used, bird_power_uses, per_bird_xp, transformed_s
-    global purple_state, purple_primed_frame, purple_charge_started_frame
-    global purple_saved_vy, purple_miss_count, purple_just_fired_frames, purple_hold_counter
-    global random_lanes, red_projectiles, show_xp_overlay, bg_offset
-    global obstacles, obstacle_spawn_timer, bats, bat_spawn_timer, loot_items, spawn_queue
-    global speed_boosts, dinosaur_up_presses, scared_birds, stealth_timers
-    global stealth_prev_speeds, clockwork_charge, cookie_crumbs_made
-    global up_hold_counter, up_miss_counter, powerups
-    global score, level, lives, game_over, swaps_used, paused
-    global player_lane, selected_lane, last_space_state, last_up_state, frame_count
-    global original_indices
-    global notifications
-    
+    """Initialize all game state using namespaces."""
     import random
     
     # Initialize bird colors from DEFAULT_BIRD_FORMATION
-    ball_colors = []
+    birds.colors = []
     for bird_type in DEFAULT_FORMATION[:v.layout.num_balls]:
         color = get_color_for_bird_type(bird_type)
-        ball_colors.append(color)
+        birds.colors.append(color)
     
     # Pad with YELLOW if formation is shorter than NUM_BALLS
-    while len(ball_colors) < v.layout.num_balls:
-        ball_colors.append(YELLOW)
+    while len(birds.colors) < v.layout.num_balls:
+        birds.colors.append(YELLOW)
     
     # Randomize which bird goes to which lane
     random.seed()
-    random_lanes = list(range(v.layout.num_lanes))
+    birds.random_lanes = list(range(v.layout.num_lanes))
     if v.birds.randomize_lanes:
-        random.shuffle(random_lanes)
+        random.shuffle(birds.random_lanes)
     
     # Initialize position and velocity arrays
-    ball_cols = [v.layout.lane_positions[random_lanes[i]] for i in range(v.layout.num_balls)]
+    birds.cols = [v.layout.lane_positions[birds.random_lanes[i]] for i in range(v.layout.num_balls)]
     v.layout.starting_line = v.layout.height - 4
-    ball_y = [v.layout.starting_line] * v.layout.num_balls
-    ball_vy = [-1] * v.layout.num_balls
-    ball_speeds = []
-    ball_lost = [False] * v.layout.num_balls
-    bird_power_used = [False] * v.layout.num_balls
-    bird_power_uses = [0] * v.layout.num_balls
+    birds.y = [v.layout.starting_line] * v.layout.num_balls
+    birds.vy = [-1] * v.layout.num_balls
+    birds.lost = [False] * v.layout.num_balls
+    birds.power_used = [False] * v.layout.num_balls
+    birds.power_uses = [0] * v.layout.num_balls
     
-    per_bird_xp = [0] * v.layout.num_balls
-    transformed_s = [False] * v.layout.num_balls
+    birds.per_bird_xp = [0] * v.layout.num_balls
+    birds.transformed = [False] * v.layout.num_balls
     
-    purple_state = [0] * v.layout.num_balls
-    purple_primed_frame = [0] * v.layout.num_balls
-    purple_charge_started_frame = [0] * v.layout.num_balls
-    purple_saved_vy = [None] * v.layout.num_balls
-    purple_miss_count = [0] * v.layout.num_balls
-    purple_just_fired_frames = [0] * v.layout.num_balls
-    purple_hold_counter = [0] * v.layout.num_balls
+    # Purple bird state
+    special.purple_state = [0] * v.layout.num_balls
+    special.purple_primed_frame = [0] * v.layout.num_balls
+    special.purple_charge_started_frame = [0] * v.layout.num_balls
+    special.purple_saved_vy = [None] * v.layout.num_balls
+    special.purple_miss_count = [0] * v.layout.num_balls
+    special.purple_just_fired_frames = [0] * v.layout.num_balls
+    special.purple_hold_counter = [0] * v.layout.num_balls
     
-    # Projectiles
-    red_projectiles = []
+    # Red bird projectiles
+    special.red_projectiles = []
     
-    # XP and transformation tracking
-    per_bird_xp = [0] * v.layout.num_balls
-    transformed_s = [False] * v.layout.num_balls
-    show_xp_overlay = False
+    # Special bird state
+    special.speed_boosts = {}
+    special.dinosaur_up_presses = {}
+    special.scared_birds = {}
+    special.stealth_timers = {}
+    special.stealth_prev_speeds = {}
+    special.clockwork_charge = {}
+    special.cookie_crumbs_made = {}
+    special.up_hold_counter = 0
+    special.up_miss_counter = 0
     
-    # Background scroll
-    bg_offset = 0
+    # UI state
+    ui.show_xp_overlay = False
+    ui.bg_offset = 0
+    ui.notifications = []
     
-    # Obstacles
-    obstacles = []
-    obstacle_spawn_timer = 0
+    # Enemies
+    enemies.obstacles = []
+    enemies.obstacle_spawn_timer = 0
+    enemies.bats = []
+    enemies.bat_spawn_timer = 0
+    enemies.spawn_queue = []
     
-    # Bats
-    bats = []
-    bat_spawn_timer = 0
+    # Items
+    items.loot_items = []
     
-    # Loot items
-    loot_items = []
+    # Power-ups (reset to default values)
+    powerups.wide_cursor_active = False
+    powerups.wide_cursor_frames = 0
+    powerups.wide_cursor_lanes = 1
+    powerups.bounce_boost_active = False
+    powerups.bounce_boost_frames = 0
+    powerups.bounce_boost_duration = 0
+    powerups.suction_active = False
+    powerups.suction_frames = 0
+    powerups.suction_boost_duration = 0
+    powerups.tailwind_active = False
+    powerups.tailwind_frames = 0
+    powerups.tailwind_up_bonus = 0
+    powerups.tailwind_down_penalty = 0
     
-    # Spawn queue
-    spawn_queue = []
+    # Game state
+    game.score = 0
+    game.level = 1
+    game.lives = 5
+    game.game_over = False
+    game.swaps_used = 0
+    game.paused = False
+    game.frame_count = 0
     
-    # Speed boosts
-    speed_boosts = {}
-    
-    # Dinosaur counters
-    dinosaur_up_presses = {}
-    
-    # Scared birds
-    scared_birds = {}
-    
-    # Stealth timers
-    stealth_timers = {}
-    stealth_prev_speeds = {}
-    
-    # Clockwork charge
-    clockwork_charge = {}
-    
-    # Cookie crumbs
-    cookie_crumbs_made = {}
-    
-    # Global UP counters
-    up_hold_counter = 0
-    up_miss_counter = 0
-    
-    # Power-ups
-    powerups = {
-        'wide_cursor_active': False,
-        'wide_cursor_frames': 0,
-        'wide_cursor_lanes': 1,
-        'bounce_boost_active': False,
-        'bounce_boost_frames': 0,
-        'bounce_boost_duration': 0,
-        'suction_active': False,
-        'suction_frames': 0,
-        'suction_boost_duration': 0,
-        'tailwind_active': False,
-        'tailwind_frames': 0,
-        'tailwind_up_bonus': 0,
-        'tailwind_down_penalty': 0
-    }
-    
-    # Score system
-    score = 0
-    level = 1
-    lives = 5
-    game_over = False
-    swaps_used = 0
-    paused = False
-    
-    # Player
-    player_lane = 2
-    selected_lane = None
-    last_space_state = False
-    last_up_state = False
+    # Player state
+    player.lane = 2
+    player.selected_lane = None
+    player.last_space_state = False
+    player.last_up_state = False
 
-    original_indices = list(range(v.layout.num_balls))  # track which slots are the original birds
-    
-    # Frame counter
-    frame_count = 0
+    # Track original bird indices
+    birds.original_indices = list(range(v.layout.num_balls))
     
     # Assign speeds based on bird formation
-    ball_speeds = []
+    birds.speeds = []
     for i in range(v.layout.num_balls):
         try:
             bird_type = DEFAULT_FORMATION[i] if i < len(DEFAULT_FORMATION) else BirdType.YELLOW
             spd = get_default_speed(bird_type)
-            ball_speeds.append(int(spd))
+            birds.speeds.append(int(spd))
         except Exception:
-            ball_speeds.append(2)
+            birds.speeds.append(2)
     
-    # Notifications
-    notifications = []
+    # Update backward compatibility references
+    _update_aliases()
