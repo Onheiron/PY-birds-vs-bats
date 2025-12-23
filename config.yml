@@ -17,7 +17,7 @@ layout:
   starting_line: 26
   width: 45
 birds:
-  default_formation: [YELLOW, YELLOW, YELLOW, DINOSAUR, RED, RED, RED, BLUE, BLUE]
+  default_formation: [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]
   randomize_lanes: true
 timing:
   base_sleep: 0.2
