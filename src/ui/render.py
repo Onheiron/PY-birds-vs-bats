@@ -1,6 +1,7 @@
 import os
 import sys
 import random
+import re
 
 if os.name == 'nt':
     import msvcrt
@@ -13,6 +14,144 @@ from src.core import state
 # Pre-build static parts
 ceiling = "=" * constants.layout.width
 floor = ceiling
+
+# =============================================================================
+# FRAMEBUFFER - Double buffering per rendering differenziale
+# =============================================================================
+
+class FrameBuffer:
+    """
+    Virtual framebuffer for differential rendering.
+    Stores character and color for each cell, outputs only changed cells.
+    """
+
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        # Each cell: (char, color_code)
+        # Current frame being built
+        self.current = [[(' ', '') for _ in range(width)] for _ in range(height)]
+        # Previous frame (already displayed)
+        self.previous = [[(' ', '') for _ in range(width)] for _ in range(height)]
+        self.first_frame = True
+
+    def clear(self):
+        """Clear current buffer to spaces."""
+        for y in range(self.height):
+            for x in range(self.width):
+                self.current[y][x] = (' ', '')
+
+    def put(self, x, y, char, color=''):
+        """Put a character at position with optional color."""
+        if 0 <= x < self.width and 0 <= y < self.height:
+            self.current[y][x] = (char, color)
+
+    def put_string(self, x, y, text, color=''):
+        """Put a string starting at position."""
+        # Strip ANSI codes from text to get actual characters
+        clean_text = re.sub(r'\033\[[0-9;]*m', '', text)
+        for i, char in enumerate(clean_text):
+            if x + i < self.width:
+                self.put(x + i, y, char, color)
+
+    def put_colored_string(self, x, y, text):
+        """Put string that may contain ANSI color codes."""
+        # Parse text extracting color codes and characters
+        current_color = ''
+        pos = 0
+        i = 0
+        while i < len(text):
+            if text[i] == '\033':
+                # Find end of ANSI sequence
+                end = text.find('m', i)
+                if end != -1:
+                    code = text[i:end+1]
+                    if code == RESET:
+                        current_color = ''
+                    else:
+                        current_color = code
+                    i = end + 1
+                    continue
+            # Regular character
+            if x + pos < self.width and 0 <= y < self.height:
+                self.current[y][x + pos] = (text[i], current_color)
+            pos += 1
+            i += 1
+
+    def render(self):
+        """Generate output string with only changed cells."""
+        output = []
+        last_color = ''
+
+        if self.first_frame:
+            # First frame: clear screen and render everything
+            output.append("\033[2J\033[H")
+            self.first_frame = False
+
+            for y in range(self.height):
+                output.append(f"\033[{y+1};1H")  # Move to line start
+                line_chars = []
+                for x in range(self.width):
+                    char, color = self.current[y][x]
+                    if color != last_color:
+                        if color:
+                            line_chars.append(color)
+                        else:
+                            line_chars.append(RESET)
+                        last_color = color
+                    line_chars.append(char)
+                output.append(''.join(line_chars))
+        else:
+            # Differential rendering: only output changed cells
+            for y in range(self.height):
+                x = 0
+                while x < self.width:
+                    if self.current[y][x] != self.previous[y][x]:
+                        # Find run of changed cells
+                        run_start = x
+                        while x < self.width and self.current[y][x] != self.previous[y][x]:
+                            x += 1
+
+                        # Output this run
+                        output.append(f"\033[{y+1};{run_start+1}H")
+                        for rx in range(run_start, x):
+                            char, color = self.current[y][rx]
+                            if color != last_color:
+                                if color:
+                                    output.append(color)
+                                else:
+                                    output.append(RESET)
+                                last_color = color
+                            output.append(char)
+                    else:
+                        x += 1
+
+        # Reset color at end
+        if last_color:
+            output.append(RESET)
+
+        # Swap buffers
+        self.previous, self.current = self.current, self.previous
+        # Clear new current buffer
+        for y in range(self.height):
+            for x in range(self.width):
+                self.current[y][x] = (' ', '')
+
+        return ''.join(output)
+
+
+# Global framebuffer instance
+_framebuffer = None
+
+def get_framebuffer():
+    """Get or create the global framebuffer."""
+    global _framebuffer
+    if _framebuffer is None:
+        # Height: header(2) + game area + floor(1) + cursor(1) + notification(1) + footer(2) + extra
+        total_height = constants.layout.height + 8
+        # Width: molto più largo per header con prestige
+        _framebuffer = FrameBuffer(constants.layout.width + 60, total_height)
+    return _framebuffer
 
 # Color helpers: map HP ratio to RGB truecolor escape
 def _rgb_escape(r: int, g: int, b: int) -> str:
@@ -511,33 +650,305 @@ def render_pause_overlay(output):
     return output
 
 def render_game():
-    ###########################################################################
-    ### -------- RENDERING SCHERMO --------
-    ###########################################################################
+    """Main render function using differential framebuffer."""
+    fb = get_framebuffer()
 
-    # Build output buffer
-    output = "\033[2J\033[H"
-    
     # Recompute level for rendering
     state.game.level = compute_level_from_score(state.game.score)
-    
-    # Render all components using dedicated functions
-    output = render_header(output, ceiling)
-    output = render_starting_line(output)
-    output = render_obstacles(output)
-    output = render_bats(output)
-    output = render_loot(output)
-    output = render_projectiles(output)
-    output = render_birds(output)
-    output = render_floor_and_cursor(output, floor)
-    output = render_footer(output)
-    output = render_pause_overlay(output)
 
-    # === Output su schermo ===
-    # Write all at once - handle blocking errors gracefully
+    # Render all components to framebuffer
+    _fb_render_header(fb)
+    _fb_render_starting_line(fb)
+    _fb_render_obstacles(fb)
+    _fb_render_bats(fb)
+    _fb_render_loot(fb)
+    _fb_render_projectiles(fb)
+    _fb_render_birds(fb)
+    _fb_render_notifications(fb)  # PRIMA del cursore, così il cursore sovrascrive
+    _fb_render_floor_and_cursor(fb)  # DOPO le notifiche
+    _fb_render_footer(fb)
+    _fb_render_pause_overlay(fb)
+
+    # Generate differential output and write to screen
+    output = fb.render()
     try:
         sys.stdout.write(output)
         sys.stdout.flush()
     except BlockingIOError:
-        # Buffer full, skip this frame
         pass
+
+
+# =============================================================================
+# FRAMEBUFFER RENDER FUNCTIONS
+# =============================================================================
+
+def _fb_render_header(fb):
+    """Render header to framebuffer."""
+    level = state.game.level
+    next_level_score = calculate_level_threshold(level + 1)
+    lives_display = "●" * state.game.lives + "◌" * (5 - state.game.lives)
+
+    prestige_val = compute_prestige()
+    if prestige_val is None:
+        prestige_val = 1.0
+
+    score_line = f"Score: {int(state.game.score):,} | Level: {level} | Next: {int(next_level_score):,} | Lives: {lives_display} | Prestige: x{prestige_val:.2f}"
+    fb.put_string(0, 0, score_line[:fb.width])
+    fb.put_string(0, 1, ceiling[:fb.width])
+
+
+def _fb_render_starting_line(fb):
+    """Render starting line to framebuffer."""
+    starting_line_y = constants.layout.starting_line
+    if starting_line_y < 0 or starting_line_y >= constants.layout.height:
+        return
+
+    if state.powerups.tailwind_active:
+        line = "^ " * (constants.layout.width // 2)
+        color = BLUE
+    else:
+        line = "- " * (constants.layout.width // 2)
+        color = ''
+
+    for i, char in enumerate(line[:constants.layout.width]):
+        fb.put(i, starting_line_y + 2, char, color)
+
+
+def _fb_render_obstacles(fb):
+    """Render obstacles to framebuffer."""
+    for obs in state.enemies.obstacles:
+        max_hp = constants.obstacle.max_hp_by_tier.get(obs.get('tier', 1), obs.get('hp', 1))
+        obs_color = color_from_hp(constants.colors.obstacles_base_rgb, obs.get('hp', 0), max_hp)
+
+        for line_idx, line in enumerate(OBSTACLE_SPRITE):
+            y_pos = obs['y_pos'] + line_idx
+            if 0 <= y_pos < constants.layout.height:
+                x_pos = constants.layout.lane_positions[obs['lane']] - 1
+                for i, char in enumerate(line):
+                    if char != ' ':  # Solo caratteri non-spazio
+                        fb.put(x_pos + i, y_pos + 2, char, obs_color)
+
+
+def _fb_render_bats(fb):
+    """Render bats to framebuffer."""
+    for bat in state.enemies.bats:
+        bat_hp = bat.get('hp', 0)
+        bat_max = bat.get('max_hp', bat_hp if bat_hp > 0 else 1)
+        bat_color = color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max)
+
+        bat_sprite = BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else BAT_FRAME_2
+
+        for line_idx, line in enumerate(bat_sprite):
+            y_pos = bat['y_pos'] + line_idx
+            if 0 <= y_pos < constants.layout.height:
+                for i, char in enumerate(line):
+                    if char != ' ':  # Solo caratteri non-spazio
+                        fb.put(bat['x_pos'] + i, y_pos + 2, char, bat_color)
+
+
+def _fb_render_loot(fb):
+    """Render loot items to framebuffer."""
+    loot_symbols = {
+        'yellow_egg': ('⬯', YELLOW), 'red_egg': ('⬯', RED), 'blue_egg': ('⬯', BLUE),
+        'white_egg': ('⬯', WHITE), 'clockwork_egg': ('⬯', CLOCKWORK), 'gold_egg': ('⬯', GOLD),
+        'stealth_egg': ('⬯', DARK_GRAY), 'patchwork_egg': ('⬯', PATCHWORK),
+        'orange_egg': ('⬯', ORANGE), 'cookie_egg': ('⬯', COOKIE), 'cookie_crumb': ('•', COOKIE),
+        'dinosaur_egg': ('⬯', DINOSAUR), 'glitch_egg': ('⬯', GLITCH), 'purple_egg': ('⬯', PURPLE),
+    }
+
+    for loot in state.items.loot_items:
+        y_pos = loot['y_pos']
+        if 0 <= y_pos < constants.layout.height:
+            loot_type = loot['type']
+            rarity = loot.get('rarity', 'common')
+
+            # Colore basato su rarity
+            if rarity == 'common':
+                power_color = YELLOW
+            elif rarity == 'uncommon':
+                power_color = RED
+            elif rarity == 'rare':
+                power_color = BLUE
+            else:
+                power_color = WHITE
+
+            if loot_type in loot_symbols:
+                char, color = loot_symbols[loot_type]
+            elif 'wide_cursor' in loot_type:
+                char = '↔'
+                color = power_color
+            elif 'bounce_boost' in loot_type:
+                char = '↺'  # Originale
+                color = power_color
+            elif 'suction' in loot_type:
+                char = '⥥'  # Originale
+                color = power_color
+            elif 'tailwind' in loot_type:
+                char = '༄'  # Originale
+                color = power_color
+            elif 'shuffle' in loot_type:
+                char = '𖦹'  # Originale
+                color = power_color
+            else:
+                char = '?'
+                color = WHITE
+
+            fb.put(loot['x_pos'], y_pos + 2, char, color)
+
+
+def _fb_render_projectiles(fb):
+    """Render projectiles to framebuffer."""
+    for proj in state.special.red_projectiles:
+        y_pos = proj['y_pos']
+        if 0 <= y_pos < constants.layout.height:
+            symbol = '•' if proj.get('powered', False) else '⋅'  # • piccolo, non ● grande
+            proj_color = proj.get('color', RED)
+            fb.put(proj['x_pos'], y_pos + 2, symbol, proj_color)
+
+
+def _fb_render_birds(fb):
+    """Render birds to framebuffer."""
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i]:
+            # Draw X on floor for lost bird
+            x_pos = constants.layout.lane_positions[state.birds.random_lanes[i]]
+            fb.put(x_pos, constants.layout.height + 2, 'X', DARK_GRAY)
+            continue
+
+        y_pos = state.birds.y[i]
+        if y_pos < 0 or y_pos >= constants.layout.height:
+            continue
+
+        bird_color = state.birds.colors[i]
+        x_pos = state.birds.cols[i]
+
+        # Choose sprite based on direction and animation frame
+        if state.birds.vy[i] == -1:  # Moving up
+            sprite = BIRD_UP_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_UP_2
+        else:  # Moving down or stationary
+            sprite = BIRD_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
+
+        # Special handling for different bird types
+        if bird_color == STEALTH:
+            tangible = i in state.special.stealth_timers and state.special.stealth_timers.get(i, 0) > 0
+            bird_color = WHITE if tangible else DARK_GRAY
+        elif bird_color == BLUE and state.birds.power_used[i]:
+            bird_color = CYAN
+
+        # Render bird sprite
+        for line_idx, line in enumerate(sprite):
+            by = y_pos + line_idx
+            if 0 <= by < constants.layout.height:
+                x_offset = len(line) // 2
+                for ci, char in enumerate(line):
+                    if char != ' ':
+                        fb.put(x_pos - x_offset + ci, by + 2, char, bird_color)
+
+        # Purple bird charging orb
+        if state.birds.colors[i] == PURPLE and state.special.purple_state[i] == 2:
+            start_frame = state.special.purple_charge_started_frame[i]
+            if state.game.frame_count >= start_frame:
+                elapsed_seconds = int((state.game.frame_count - start_frame) * constants.timing.base_sleep)
+                s = max(0, min(3, elapsed_seconds))
+                sym = '⋅' if s <= 0 else ('•' if s == 1 else '●')
+                orb_y = y_pos + 1
+                if 0 <= orb_y < constants.layout.height:
+                    fb.put(x_pos, orb_y + 2, sym, PURPLE)
+
+
+def _fb_render_floor_and_cursor(fb):
+    """Render floor and cursor to framebuffer."""
+    floor_y = constants.layout.height + 2
+
+    # Floor
+    fb.put_string(0, floor_y, floor[:fb.width])
+
+    # Cursor - render [^] per ogni lane affetta
+    affected_lanes = get_affected_lanes()
+    fallback_cursor_color = YELLOW if state.player.selected_lane is not None else GREEN
+
+    for lane in affected_lanes:
+        if 0 <= lane < len(constants.layout.lane_positions):
+            x_pos = constants.layout.lane_positions[lane] - 1  # -1 per centrare [^]
+
+            # Determina colore in base al bird nella lane
+            bird_idx = -1
+            for bi, bl in enumerate(state.birds.random_lanes):
+                if bl == lane:
+                    bird_idx = bi
+                    break
+
+            if bird_idx >= 0 and not state.birds.lost[bird_idx]:
+                letter, _ = compute_grade_from_xp(state.birds.per_bird_xp[bird_idx])
+                color = _grade_letter_color(letter, fallback_cursor_color)
+            else:
+                color = fallback_cursor_color
+
+            # Render [^]
+            fb.put(x_pos, floor_y + 1, '[', color)
+            fb.put(x_pos + 1, floor_y + 1, '^', color)
+            fb.put(x_pos + 2, floor_y + 1, ']', color)
+
+    # Selected lane indicator for swap - mostra [*]
+    if state.player.selected_lane is not None:
+        sel_x = constants.layout.lane_positions[state.player.selected_lane] - 1
+        fb.put(sel_x, floor_y + 1, '[', YELLOW)
+        fb.put(sel_x + 1, floor_y + 1, '*', YELLOW)
+        fb.put(sel_x + 2, floor_y + 1, ']', YELLOW)
+
+
+def _grade_letter_color(letter, fallback):
+    """Helper per colore cursore basato su grade."""
+    if letter and isinstance(letter, str) and len(letter) > 0:
+        prefix = letter[0]
+    else:
+        return fallback
+    if prefix == 'D':
+        return GREEN
+    if prefix == 'C':
+        return ORANGE
+    if prefix == 'B':
+        return CLOCKWORK
+    if prefix == 'A':
+        return GOLD
+    if prefix == 'S':
+        return RED
+    return fallback
+
+
+def _fb_render_footer(fb):
+    """Render footer to framebuffer."""
+    # height+2=floor, +3=cursore/notifica, +4=footer
+    footer_y = constants.layout.height + 4
+    active_balls = sum(1 for lost in state.birds.lost if not lost)
+    swap_hint = " | SPACE to swap" if state.player.selected_lane is not None else ""
+    footer_text = f"← → move | ↑ bounce | Ctrl+C quit | Birds: {active_balls}/{constants.layout.num_balls}{swap_hint}"
+    fb.put_string(0, footer_y, footer_text[:fb.width])
+
+    if state.ui.show_xp_overlay:
+        parts = []
+        for i in range(constants.layout.num_balls):
+            label, _ = compute_grade_from_xp(state.birds.per_bird_xp[i])
+            parts.append(f"{label}({int(state.birds.per_bird_xp[i])})")
+        xp_summary = ' '.join(parts)
+        fb.put_string(0, footer_y + 1, f"XP: {xp_summary[:fb.width-4]}")
+
+
+def _fb_render_notifications(fb):
+    """Render notifications to framebuffer."""
+    active_notifications = [n for n in state.ui.notifications if n[1] > state.game.frame_count]
+    if active_notifications:
+        text, _ = active_notifications[0]
+        # Stessa riga del cursore (height+3), ma renderizzata PRIMA
+        # così il cursore la sovrascrive dove serve
+        notif_y = constants.layout.height + 3
+        fb.put_string(0, notif_y, text[:fb.width], YELLOW)
+    state.ui.notifications[:] = active_notifications
+
+
+def _fb_render_pause_overlay(fb):
+    """Render pause overlay to framebuffer."""
+    if state.game.paused:
+        pause_y = constants.layout.height // 2 + 2
+        pause_x = max(0, (constants.layout.width // 2) - 3)
+        fb.put_string(pause_x, pause_y, "PAUSED", YELLOW)
