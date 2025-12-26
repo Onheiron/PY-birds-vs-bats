@@ -3,7 +3,7 @@ Achievements system for Birds vs Bats game.
 Handles achievement definitions, tracking, unlocking, and combo detection.
 """
 
-import constants as v
+from src.core import constants as v
 
 # Global state
 achievements = {}

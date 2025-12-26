@@ -7,9 +7,9 @@ Handles movement of all game entities: birds, projectiles, enemies, loot.
 import random
 import math
 
-import state
-import constants
-from sprites import CLOCKWORK, GLITCH, PURPLE, ORANGE
+from src.core import state
+from src.core import constants
+from src.entities.sprites import CLOCKWORK, GLITCH, PURPLE, ORANGE
 
 
 def _set_ball_vy(idx, val):
@@ -234,7 +234,7 @@ def _glitch_duplicate(source_idx):
     if target_idx is None:
         return
 
-    from sprites import GLITCH as GLITCH_COLOR
+    from src.entities.sprites import GLITCH as GLITCH_COLOR
 
     if state.birds.lost[target_idx]:
         # Resurrect as GLITCH

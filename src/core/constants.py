@@ -3,14 +3,14 @@
 Global game constants loaded from configuration.
 All values are loaded from config.yml (or specified --config file).
 """
-import init
+from . import init
 from types import SimpleNamespace
 
 # Load configuration (required - will exit if not found)
 config, args = init.init_config()
 
 # Import necessary functions for transform limits
-from bird_types import BirdType, get_color_for_bird_type
+from src.entities.bird_types import BirdType, get_color_for_bird_type
 
 # Create all namespace objects from config
 layout = init.dict_to_namespace(config.get('layout', {}))

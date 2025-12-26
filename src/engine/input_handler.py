@@ -7,11 +7,11 @@ Processes keyboard input and modifies game state accordingly.
 import random
 import time
 
-import state
-import constants
-import achievements
-from sprites import *
-import bird_types
+from src.core import state
+from src.core import constants
+from src.services import achievements
+from src.entities.sprites import *
+from src.entities import bird_types
 
 
 def _find_bird_in_lane(lane):
@@ -62,7 +62,7 @@ def _allow_consume_power(idx, allowed_uses=1):
 
 def _get_scared_frames(bird_idx, base_seconds=2.0):
     """Return number of frames for scared state."""
-    from functions import compute_grade_from_xp
+    from src.functions import compute_grade_from_xp
     label, _ = compute_grade_from_xp(state.birds.per_bird_xp[bird_idx])
     if not label.startswith('D') and not label.startswith('C'):
         base_seconds = max(1, base_seconds - 1.0)
@@ -107,7 +107,7 @@ def handle_swap():
 
 def _execute_swap():
     """Execute a bird swap between selected lane and current lane."""
-    from functions import compute_level_from_score, deduct_score
+    from src.functions import compute_level_from_score, deduct_score
 
     level = compute_level_from_score(state.game.score)
     swap_cost = 200 * level
@@ -265,7 +265,7 @@ def _handle_dinosaur_bounce(bird_idx):
 
 def _activate_bird_power(bird_idx):
     """Activate a bird's special power."""
-    from functions import compute_grade_from_xp
+    from src.functions import compute_grade_from_xp
 
     # Check allowed uses
     label, _ = compute_grade_from_xp(state.birds.per_bird_xp[bird_idx])
@@ -424,7 +424,7 @@ def _power_blue(bird_idx):
 
 def _power_white(bird_idx, bird_lane):
     """White power: affect 4 adjacent lanes."""
-    from functions import compute_grade_from_xp
+    from src.functions import compute_grade_from_xp
 
     for adj_offset in [-2, -1, 1, 2]:
         adj_lane = bird_lane + adj_offset

@@ -2,13 +2,13 @@
 """
 Game state module - contains all mutable game state organized in namespaces.
 This module centralizes all variables that change during gameplay.
-Import as: import state
+Import as: from src.core import state
 Access as: state.birds.colors, state.game.score, etc.
 """
 
-import constants
-from bird_types import BirdType, get_default_speed, get_color_for_bird_type
-from sprites import YELLOW
+from src.core import constants
+from src.entities.bird_types import BirdType, get_default_speed, get_color_for_bird_type
+from src.entities.sprites import YELLOW
 from types import SimpleNamespace
 
 # ============================================================================

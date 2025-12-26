@@ -7,11 +7,11 @@ Handles collisions, spawning, scoring, powerups, and game state transitions.
 import random
 import time
 
-import state
-import constants
-import achievements
-from sprites import *
-from functions import (
+from src.core import state
+from src.core import constants
+from src.services import achievements
+from src.entities.sprites import *
+from src.functions import (
     compute_level_from_score,
     compute_grade_from_xp,
     compute_prestige,

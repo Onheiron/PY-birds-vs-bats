@@ -2,12 +2,13 @@ import os
 import sys
 import random
 
-from sprites import *
+if os.name == 'nt':
+    import msvcrt
 
-import constants
-from functions import *
-import render
-import state
+from src.entities.sprites import *
+from src.core import constants
+from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane
+from src.core import state
 
 # Pre-build static parts
 ceiling = "=" * constants.layout.width
@@ -216,7 +217,7 @@ def render_obstacles(output):
     """Rendering ostacoli"""
     for obs in state.enemies.obstacles:
         max_hp = constants.obstacle.max_hp_by_tier.get(obs.get('tier', 1), obs.get('hp', 1))
-        obs_color = render.color_from_hp(constants.colors.obstacles_base_rgb, obs.get('hp', 0), max_hp)
+        obs_color = color_from_hp(constants.colors.obstacles_base_rgb, obs.get('hp', 0), max_hp)
         
         for line_idx, line in enumerate(OBSTACLE_SPRITE):
             y_pos = obs['y_pos'] + line_idx + 2
@@ -231,7 +232,7 @@ def render_bats(output):
     for bat in state.enemies.bats:
         bat_hp = bat.get('hp', 0)
         bat_max = bat.get('max_hp', bat_hp if bat_hp > 0 else 1)
-        bat_color = render.color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max)
+        bat_color = color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max)
         
         bat_sprite = BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else BAT_FRAME_2
         

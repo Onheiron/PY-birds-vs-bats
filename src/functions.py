@@ -16,18 +16,18 @@ else:
     import termios
     import fcntl
 
-from sprites import *
-import constants
-import state
-import achievements
+from src.entities.sprites import *
+from src.core import constants
+from src.core import state
+from src.services import achievements
 
 try:
-    import bird_types
+    from src.entities import bird_types
 except ImportError:
     bird_types = None
 
 try:
-    import firebase_client
+    from src.services import firebase_client
 except ImportError:
     firebase_client = None
 

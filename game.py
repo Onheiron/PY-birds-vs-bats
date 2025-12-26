@@ -6,18 +6,18 @@ Main entry point with clean game loop.
 
 import time
 
-import functions
-import state
-import render
-import constants
-import input_handler
-import physics
-import game_logic
-import achievements
-from sprites import RED, RESET
+from src import functions
+from src.core import state
+from src.core import constants
+from src.ui import render
+from src.engine import input_handler
+from src.engine import physics
+from src.engine import game_logic
+from src.services import achievements
+from src.entities.sprites import RED, RESET
 
 try:
-    import firebase_client
+    from src.services import firebase_client
 except ImportError:
     firebase_client = None
 
