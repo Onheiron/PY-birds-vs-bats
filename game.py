@@ -144,14 +144,13 @@ def main():
             time.sleep(game_logic.calculate_frame_sleep())
 
     except KeyboardInterrupt:
-        pass
+        # CTRL+C è un'uscita volontaria
+        state.game.quit_requested = True
     finally:
-        # Show game over screen if game ended normally
-        if state.game.game_over:
-            functions.cleanup()
+        functions.cleanup()
+        # Mostra game over screen SOLO se è un game over reale (non quit volontario)
+        if state.game.game_over and not state.game.quit_requested:
             show_game_over_screen()
-        else:
-            functions.cleanup()
 
 
 if __name__ == '__main__':

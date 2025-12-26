@@ -530,6 +530,7 @@ def process_input(key):
         if key in ('P', 'p'):
             handle_pause()
         elif key == 'QUIT':
+            state.game.quit_requested = True
             state.game.game_over = True
         return
 
@@ -549,4 +550,5 @@ def process_input(key):
     elif key == 'DOWN':
         handle_suction()
     elif key == 'QUIT':
+        state.game.quit_requested = True
         state.game.game_over = True

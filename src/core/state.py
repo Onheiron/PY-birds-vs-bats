@@ -114,6 +114,7 @@ game = SimpleNamespace(
     level=1,
     lives=5,
     game_over=False,
+    quit_requested=False,  # True quando l'utente esce con Q/CTRL+C
     swaps_used=0,
     paused=False,
     frame_count=0,
@@ -230,6 +231,7 @@ def init():
     game.level = 1
     game.lives = 5
     game.game_over = False
+    game.quit_requested = False
     game.swaps_used = 0
     game.paused = False
     game.frame_count = 0
