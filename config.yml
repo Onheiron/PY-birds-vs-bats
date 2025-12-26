@@ -80,20 +80,20 @@ eggs:
       glitch_egg: 50
 bat_enemy:
   hp_by_tier:
-    1: 16
-    2: 32
-    3: 64
-    4: 128
+    1: 24      # era 16 (+50%)
+    2: 48      # era 32 (+50%)
+    3: 96      # era 64 (+50%)
+    4: 192     # era 128 (+50%)
   loot_base_weights:
     1: [60, 25, 10, 5]
     2: [50, 30, 15, 5]
     3: [40, 33, 17, 10]
     4: [35, 25, 20, 15]
-  max_on_screen: 3
+  max_on_screen: 5    # era 3 - più pipistrelli contemporaneamente
   scared:
     base_seconds: 2.0
     speed_boost_seconds: 2.0
-  spawn_interval_range: [120, 220]
+  spawn_interval_range: [80, 160]  # era [120, 220] - spawn più frequente
   spawning:
     consecutive_retry_timer: 20
     consecutive_spawn_limit: 2
@@ -114,47 +114,47 @@ bat_enemy:
     x_min: 1
     y_start: 1
   tiers:
-    hp_tier_1: 16
-    hp_tier_2: 32
-    hp_tier_3: 64
-    hp_tier_4: 128
+    hp_tier_1: 24      # era 16
+    hp_tier_2: 48      # era 32
+    hp_tier_3: 96      # era 64
+    hp_tier_4: 192     # era 128
     level_threshold_1: 2
     level_threshold_2: 4
     level_threshold_3: 7
-    weights_level_0_2: [70, 20, 8, 2]
-    weights_level_3_4: [50, 30, 15, 5]
-    weights_level_5_7: [30, 35, 25, 10]
-    weights_level_8_plus: [15, 30, 35, 20]
+    weights_level_0_2: [60, 25, 10, 5]   # più tier alti prima
+    weights_level_3_4: [40, 35, 18, 7]
+    weights_level_5_7: [25, 35, 28, 12]
+    weights_level_8_plus: [10, 25, 40, 25]  # tier 3 e 4 molto più comuni
 obstacle:
   max_hp_by_tier:
-    1: 4
-    2: 6
-    3: 10
-    4: 16
+    1: 6       # era 4 (+50%)
+    2: 10      # era 6 (+67%)
+    3: 16      # era 10 (+60%)
+    4: 24      # era 16 (+50%)
   spawning:
     base_spawn_rate:
-      base: 60
-      min: 15
-    consecutive_spawn_limit: 2
+      base: 40       # era 60 - spawn più frequente
+      min: 10        # era 15 - minimo più basso
+    consecutive_spawn_limit: 3    # era 2 - più ostacoli consecutivi
     retry_timer_divisor: 2
-    retry_timer_min: 5
-    spawn_rate_level_multiplier: 4
+    retry_timer_min: 3            # era 5
+    spawn_rate_level_multiplier: 5   # era 4 - scala più veloce col livello
     spawn_variance:
-      base: 30
-      min: 10
-    spawn_variance_level_multiplier: 2
+      base: 20       # era 30 - meno varianza = più consistente
+      min: 5         # era 10
+    spawn_variance_level_multiplier: 3   # era 2
   tiers:
-    hp_tier_1: 4
-    hp_tier_2: 6
-    hp_tier_3: 10
-    hp_tier_4: 16
+    hp_tier_1: 6       # era 4
+    hp_tier_2: 10      # era 6
+    hp_tier_3: 16      # era 10
+    hp_tier_4: 24      # era 16
     level_threshold_1: 2
     level_threshold_2: 4
-    level_threshold_3: 7
-    weights_level_0_2: [70, 20, 8, 2]
-    weights_level_3_4: [55, 28, 13, 4]
-    weights_level_5_7: [35, 35, 20, 10]
-    weights_level_8_plus: [20, 30, 30, 20]
+    level_threshold_3: 6    # era 7 - tier alti prima
+    weights_level_0_2: [60, 28, 10, 2]
+    weights_level_3_4: [45, 35, 15, 5]
+    weights_level_5_7: [30, 35, 25, 10]
+    weights_level_8_plus: [15, 30, 35, 20]  # più tier 3 e 4
 powers:
   blue_adjacent_boost_seconds: 5.0
   default: {}

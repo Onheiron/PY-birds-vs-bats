@@ -592,7 +592,8 @@ def spawn_obstacle():
         return
 
     level = compute_level_from_score(state.game.score)
-    base_spawn_rate = max(30, 100 - level * 5)
+    # Spawn più frequente: da 50 a livello 1, fino a 10 a livelli alti
+    base_spawn_rate = max(10, 50 - level * 4)
     state.enemies.obstacle_spawn_timer = base_spawn_rate
 
     # Find lanes without obstacles at top
@@ -604,30 +605,33 @@ def spawn_obstacle():
             lanes_without.append(lane)
 
     if not lanes_without:
-        state.enemies.obstacle_spawn_timer = max(10, base_spawn_rate // 4)
+        state.enemies.obstacle_spawn_timer = max(5, base_spawn_rate // 4)
         return
 
-    # Don't spawn if last 2 queue items are obstacles
-    if len(state.enemies.spawn_queue) >= 2:
-        if (state.enemies.spawn_queue[-1].get('type') == 'obstacle' and
-            state.enemies.spawn_queue[-2].get('type') == 'obstacle'):
-            state.enemies.obstacle_spawn_timer = max(10, base_spawn_rate // 4)
+    # Permetti più ostacoli consecutivi ai livelli alti
+    consecutive_limit = 2 + level // 3  # 2 a lv1, 3 a lv3, 4 a lv6, etc.
+    if len(state.enemies.spawn_queue) >= consecutive_limit:
+        obstacle_count = sum(1 for item in state.enemies.spawn_queue[-consecutive_limit:]
+                            if item.get('type') == 'obstacle')
+        if obstacle_count >= consecutive_limit:
+            state.enemies.obstacle_spawn_timer = max(5, base_spawn_rate // 4)
             return
 
     lane = random.choice(lanes_without)
 
-    # Tier based on level
+    # Tier based on level - più aggressivo
     if level <= 2:
-        tier = random.choices([1, 2, 3, 4], weights=[70, 20, 8, 2])[0]
-    elif level <= 4:
         tier = random.choices([1, 2, 3, 4], weights=[50, 30, 15, 5])[0]
-    elif level <= 7:
+    elif level <= 4:
         tier = random.choices([1, 2, 3, 4], weights=[30, 35, 25, 10])[0]
+    elif level <= 6:
+        tier = random.choices([1, 2, 3, 4], weights=[20, 30, 35, 15])[0]
     else:
-        tier = random.choices([1, 2, 3, 4], weights=[15, 30, 35, 20])[0]
+        tier = random.choices([1, 2, 3, 4], weights=[10, 25, 40, 25])[0]
 
-    hp_map = {1: 4, 2: 6, 3: 10, 4: 16}
-    hp = hp_map.get(tier, 4)
+    # HP molto più alti
+    hp_map = {1: 8, 2: 14, 3: 22, 4: 32}
+    hp = hp_map.get(tier, 8)
 
     state.enemies.spawn_queue.append({
         'type': 'obstacle',
@@ -642,28 +646,89 @@ def spawn_bat():
         return
 
     level = compute_level_from_score(state.game.score)
-    if level < 3:  # No bats before level 3
+    if level < 3:  # Bats iniziano a livello 3
         return
 
-    base_spawn_rate = max(60, 150 - level * 8)
+    # Spawn rate PROGRESSIVO e ragionevole:
+    # Lv 3-5:   ogni ~200 frame (raro)
+    # Lv 6-10:  ogni ~150 frame
+    # Lv 11-15: ogni ~100 frame
+    # Lv 16-20: ogni ~70 frame
+    # Lv 21-30: ogni ~50 frame
+    if level <= 5:
+        base_spawn_rate = 200
+    elif level <= 10:
+        base_spawn_rate = 150
+    elif level <= 15:
+        base_spawn_rate = 100
+    elif level <= 20:
+        base_spawn_rate = 70
+    else:
+        base_spawn_rate = 50
+
     state.enemies.bat_spawn_timer = base_spawn_rate
 
-    # Tier based on level
-    if level <= 4:
-        tier = random.choices([1, 2, 3, 4], weights=[70, 20, 8, 2])[0]
-    elif level <= 6:
-        tier = random.choices([1, 2, 3, 4], weights=[40, 35, 20, 5])[0]
-    elif level <= 8:
-        tier = random.choices([1, 2, 3, 4], weights=[20, 35, 30, 15])[0]
+    # Max bats on screen PROGRESSIVO:
+    # Lv 3-5:   max 1
+    # Lv 6-10:  max 2
+    # Lv 11-15: max 3
+    # Lv 16-20: max 4
+    # Lv 21-30: max 5
+    if level <= 5:
+        max_bats = 1
+    elif level <= 10:
+        max_bats = 2
+    elif level <= 15:
+        max_bats = 3
+    elif level <= 20:
+        max_bats = 4
     else:
-        tier = random.choices([1, 2, 3, 4], weights=[10, 25, 40, 25])[0]
+        max_bats = 5
 
-    hp_map = {1: 8, 2: 16, 3: 24, 4: 40}
-    hp = hp_map.get(tier, 8)
+    if len(state.enemies.bats) >= max_bats:
+        state.enemies.bat_spawn_timer = base_spawn_rate // 2
+        return
 
-    # Spawn position
+    # Tier based on level - progressivo
+    if level <= 5:
+        tier = random.choices([1, 2, 3, 4], weights=[70, 25, 5, 0])[0]
+    elif level <= 10:
+        tier = random.choices([1, 2, 3, 4], weights=[50, 35, 12, 3])[0]
+    elif level <= 15:
+        tier = random.choices([1, 2, 3, 4], weights=[30, 40, 22, 8])[0]
+    elif level <= 20:
+        tier = random.choices([1, 2, 3, 4], weights=[15, 35, 35, 15])[0]
+    else:
+        tier = random.choices([1, 2, 3, 4], weights=[5, 25, 45, 25])[0]
+
+    # HP ragionevoli ma sfidanti
+    hp_map = {1: 20, 2: 40, 3: 70, 4: 120}
+    hp = hp_map.get(tier, 20)
+
+    # Spawn position X
     x_pos = random.randint(0, constants.layout.width - 8)
-    target_y = random.randint(5, constants.layout.starting_line - 3)
+
+    # Target Y PROGRESSIVO - più in alto all'inizio, più in basso ai livelli alti
+    # starting_line è dove stanno gli uccelli (es. 26)
+    # All'inizio: target_y tra 3 e 10 (molto in alto, lontano)
+    # Ai livelli alti: target_y tra 15 e starting_line-3 (più vicino agli uccelli)
+    if level <= 5:
+        target_y_min = 3
+        target_y_max = 8
+    elif level <= 10:
+        target_y_min = 5
+        target_y_max = 12
+    elif level <= 15:
+        target_y_min = 8
+        target_y_max = 16
+    elif level <= 20:
+        target_y_min = 10
+        target_y_max = 20
+    else:
+        target_y_min = 12
+        target_y_max = constants.layout.starting_line - 5
+
+    target_y = random.randint(target_y_min, min(target_y_max, constants.layout.starting_line - 3))
 
     state.enemies.spawn_queue.append({
         'type': 'bat',

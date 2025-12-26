@@ -5,6 +5,7 @@ Main entry point with clean game loop.
 """
 
 import time
+import math
 
 from src import functions
 from src.core import state
@@ -22,6 +23,34 @@ except ImportError:
     firebase_client = None
 
 GAME_VERSION = "2.0"
+
+# Timing constants for new game loop
+FIXED_FPS = 60  # Loop fisso a 60 FPS
+FIXED_FRAME_TIME = 1.0 / FIXED_FPS  # ~16.6ms
+MAX_LEVEL = 30
+
+
+def calculate_frames_per_update(level):
+    """
+    Calcola quanti frame del loop fisso passano tra ogni update della fisica.
+    Usa una curva logaritmica: accelera velocemente all'inizio, poi rallenta.
+
+    Level 1:  10 frames/update = 6 updates/sec (lento)
+    Level 30: 2 frames/update = 30 updates/sec (veloce ma giocabile)
+    """
+    # Normalizza level tra 0 e 1
+    t = (level - 1) / (MAX_LEVEL - 1) if MAX_LEVEL > 1 else 0
+    # Curva logaritmica: cresce veloce all'inizio
+    k = 5  # Curvatura
+    if t <= 0:
+        normalized = 0
+    else:
+        normalized = math.log(1 + t * k) / math.log(1 + k)
+    # Mappa da max_frames (lento) a min_frames (veloce)
+    max_frames = 10
+    min_frames = 2
+    frames = max_frames - normalized * (max_frames - min_frames)
+    return max(min_frames, round(frames))
 
 
 def show_game_over_screen():
@@ -107,41 +136,64 @@ def show_game_over_screen():
 
 
 def main():
-    """Main game loop."""
+    """
+    Main game loop con timing migliorato.
+
+    Il loop gira a ~60 FPS fissi per input fluido.
+    La fisica/logica viene aggiornata ogni N frame, dove N dipende dal livello.
+    Questo permette input sempre reattivo mentre il gioco accelera.
+    """
     # Initialize terminal and game state
     functions.setup()
     state.init()
     achievements.init_achievements()
     state.game.start_time = time.time()
 
+    # Contatore frame per decidere quando aggiornare la fisica
+    render_frame = 0
+
     try:
         while not state.game.game_over:
-            # Read input
-            key = render.get_key()
+            frame_start = time.time()
 
-            # Process input
+            # === INPUT (sempre, ogni frame) ===
+            key = render.get_key()
             input_handler.process_input(key)
 
-            # If paused, just render and sleep
+            # Se in pausa, solo render e aspetta
             if state.game.paused:
                 render.render_game()
-                time.sleep(constants.timing.base_sleep)
+                # Mantieni 60 FPS anche in pausa
+                elapsed = time.time() - frame_start
+                sleep_time = FIXED_FRAME_TIME - elapsed
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
                 continue
 
-            # Update physics (movement)
-            physics.update_all()
+            # === PHYSICS/LOGIC UPDATE (ogni N frame basato sul livello) ===
+            frames_per_update = calculate_frames_per_update(state.game.level)
 
-            # Update game logic (collisions, spawning, powerups)
-            game_logic.update_all()
+            if render_frame % frames_per_update == 0:
+                # Update physics (movement)
+                physics.update_all()
 
-            # Render
+                # Update game logic (collisions, spawning, powerups)
+                game_logic.update_all()
+
+                # Increment game frame counter (usato per spawn timing, etc.)
+                state.game.frame_count += 1
+
+            # === RENDER (sempre, ogni frame per fluidità) ===
             render.render_game()
 
-            # Increment frame counter
-            state.game.frame_count += 1
+            # Incrementa contatore frame rendering
+            render_frame += 1
 
-            # Sleep for frame timing
-            time.sleep(game_logic.calculate_frame_sleep())
+            # === TIMING: mantieni ~60 FPS ===
+            elapsed = time.time() - frame_start
+            sleep_time = FIXED_FRAME_TIME - elapsed
+            if sleep_time > 0:
+                time.sleep(sleep_time)
 
     except KeyboardInterrupt:
         # CTRL+C è un'uscita volontaria
