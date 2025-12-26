@@ -114,7 +114,9 @@ def init_achievements():
 def add_notification(text, frame_count, notifications_list):
     """Add a short on-screen notification for a few frames."""
     try:
-        frames = int(v.notification_duration_seconds / v.base_sleep)
+        duration = getattr(v.rendering, 'notification_duration_seconds', 3.0)
+        base_sleep = getattr(v.timing, 'base_sleep', 0.1)
+        frames = int(duration / base_sleep)
         if frames <= 0:
             frames = 1
     except Exception:

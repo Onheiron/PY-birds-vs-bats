@@ -116,7 +116,8 @@ game = SimpleNamespace(
     game_over=False,
     swaps_used=0,
     paused=False,
-    frame_count=0
+    frame_count=0,
+    start_time=None
 )
 
 # ============================================================================
