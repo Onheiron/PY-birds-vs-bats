@@ -810,9 +810,7 @@ def _fb_render_birds(fb):
     """Render birds to framebuffer."""
     for i in range(constants.layout.num_balls):
         if state.birds.lost[i]:
-            # Draw X on floor for lost bird
-            x_pos = constants.layout.lane_positions[state.birds.random_lanes[i]]
-            fb.put(x_pos, constants.layout.height + 2, 'X', DARK_GRAY)
+            # X sul pavimento viene disegnata in _fb_render_floor_and_cursor
             continue
 
         y_pos = state.birds.y[i]
@@ -862,6 +860,12 @@ def _fb_render_floor_and_cursor(fb):
 
     # Floor
     fb.put_string(0, floor_y, floor[:fb.width])
+
+    # Lost birds - X sul pavimento (DOPO il floor, così non viene sovrascritto)
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i]:
+            x_pos = state.birds.cols[i]
+            fb.put(x_pos, floor_y, 'X', DARK_GRAY)
 
     # Cursor - render [^] per ogni lane affetta
     affected_lanes = get_affected_lanes()
