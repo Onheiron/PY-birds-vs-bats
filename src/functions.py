@@ -31,6 +31,20 @@ try:
 except ImportError:
     firebase_client = None
 
+# Audio module (optional) - imported late to avoid circular imports
+_audio_module = None
+
+def _get_audio():
+    """Lazy load audio module."""
+    global _audio_module
+    if _audio_module is None:
+        try:
+            from src.services import audio
+            _audio_module = audio if audio.is_audio_available() else False
+        except ImportError:
+            _audio_module = False
+    return _audio_module if _audio_module else None
+
 
 # Terminal settings for setup/cleanup
 _old_settings = None
@@ -235,8 +249,18 @@ def add_score(amount, by_bird=None):
     raw_amount = amount
     amt = float(amount)
 
+    # Track level before score change
+    old_level = compute_level_from_score(state.game.score)
+
     prestige = compute_prestige()
     state.game.score += amt * prestige
+
+    # Check for level up
+    new_level = compute_level_from_score(state.game.score)
+    if new_level > old_level:
+        audio = _get_audio()
+        if audio:
+            audio.play_sfx('level_up')
 
     if by_bird is not None and 0 <= int(by_bird) < len(state.birds.per_bird_xp):
         xp_award = int(max(0, int(raw_amount)))

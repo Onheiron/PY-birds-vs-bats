@@ -27,6 +27,20 @@ from src.functions import (
     find_bird_in_lane,
 )
 
+# Audio module (optional)
+try:
+    from src.services import audio
+    AUDIO_AVAILABLE = audio.is_audio_available()
+except ImportError:
+    audio = None
+    AUDIO_AVAILABLE = False
+
+
+def play_sfx(name):
+    """Play sound effect if audio is available."""
+    if AUDIO_AVAILABLE and audio:
+        audio.play_sfx(name)
+
 
 # =============================================================================
 # HELPER FUNCTIONS (local wrappers)
@@ -119,6 +133,7 @@ def check_bird_floor_collision():
         state.birds.y[i] = constants.layout.height - 1
         state.birds.per_bird_xp[i] = 0
         state.game.lives -= 1
+        play_sfx('bird_lost')
 
         if state.game.lives <= 0:
             state.game.game_over = True
@@ -176,6 +191,7 @@ def check_bird_obstacle_collision():
                 award_xp(i, 5 * tier)
                 add_score(tier * 50)
                 state.enemies.obstacles.remove(obs)
+                play_sfx('destroy')
             else:
                 _set_ball_vy(i, 1)
                 # Applica stun (1 secondo) - impedisce bounce
@@ -185,6 +201,7 @@ def check_bird_obstacle_collision():
                 state.special.scared_birds[i] = stun_frames
                 if bird_color == BLUE:
                     _reset_bird_power(i)
+                play_sfx('hit')
             break
 
 
@@ -301,6 +318,7 @@ def _handle_bat_death(bat, killer_bird_idx):
     achievements.check_achievements_event('destroy_bat', state.game.frame_count, state.ui.notifications, tier=tier)
 
     state.enemies.bats.remove(bat)
+    play_sfx('destroy')
 
 
 def check_projectile_collision():
@@ -406,6 +424,11 @@ def check_loot_collection():
             state.items.loot_items.remove(loot)
             _apply_loot_effect(loot, i)
             achievements.check_achievements_event('collect', state.game.frame_count, state.ui.notifications, loot=loot_type)
+            # Play sound based on loot type
+            if '_egg' in loot_type:
+                play_sfx('egg')
+            else:
+                play_sfx('powerup')
             break
 
 

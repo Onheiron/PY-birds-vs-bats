@@ -22,6 +22,13 @@ try:
 except ImportError:
     firebase_client = None
 
+try:
+    from src.services import audio
+    AUDIO_AVAILABLE = audio.is_audio_available()
+except ImportError:
+    audio = None
+    AUDIO_AVAILABLE = False
+
 GAME_VERSION = "2.0"
 
 # Timing constants for new game loop
@@ -153,6 +160,10 @@ def main():
     achievements.init_achievements()
     state.game.start_time = time.time()
 
+    # Start background music
+    if AUDIO_AVAILABLE and audio:
+        audio.start_music()
+
     # Contatore frame per decidere quando aggiornare la fisica
     render_frame = 0
 
@@ -203,6 +214,15 @@ def main():
         # CTRL+C è un'uscita volontaria
         state.game.quit_requested = True
     finally:
+        # Stop music but keep mixer running for game over sound
+        if AUDIO_AVAILABLE and audio:
+            audio.stop_music()
+            # Play game over sound if it's a real game over
+            if state.game.game_over and not state.game.quit_requested:
+                audio.play_sfx('game_over')
+                time.sleep(1.5)  # Wait for game over sound to finish
+            audio.cleanup()
+
         functions.cleanup()
         # Mostra game over screen SOLO se è un game over reale (non quit volontario)
         if state.game.game_over and not state.game.quit_requested:

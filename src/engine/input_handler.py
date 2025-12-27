@@ -13,6 +13,20 @@ from src.services import achievements
 from src.entities.sprites import *
 from src.entities import bird_types
 
+# Audio module (optional)
+try:
+    from src.services import audio
+    AUDIO_AVAILABLE = audio.is_audio_available()
+except ImportError:
+    audio = None
+    AUDIO_AVAILABLE = False
+
+
+def play_sfx(name):
+    """Play sound effect if audio is available."""
+    if AUDIO_AVAILABLE and audio:
+        audio.play_sfx(name)
+
 
 def _find_bird_in_lane(lane):
     """Return bird index for given lane, or -1 if not found."""
@@ -231,6 +245,7 @@ def _bounce_bird_up(bird_idx):
 
     _set_ball_vy(bird_idx, -1)
     _reset_bird_power(bird_idx)
+    play_sfx('bounce')
 
     # CLOCKWORK charge restoration
     if bird_color == CLOCKWORK:
