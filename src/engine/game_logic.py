@@ -64,7 +64,7 @@ _last_bird_sync_frame = 0
 _last_bird_set = None
 
 
-def sync_active_birds_audio():
+def sync_active_birds_audio(force=False):
     """Sync the active bird types with the audio system for dynamic music."""
     global _last_bird_sync_frame, _last_bird_set
 
@@ -72,7 +72,8 @@ def sync_active_birds_audio():
         return
 
     # Only sync every 60 frames (~1 second) to avoid blocking
-    if state.game.frame_count - _last_bird_sync_frame < 60:
+    # Unless force=True (used at game start)
+    if not force and state.game.frame_count - _last_bird_sync_frame < 60:
         return
     _last_bird_sync_frame = state.game.frame_count
 
@@ -84,8 +85,8 @@ def sync_active_birds_audio():
             if bird_type:
                 active_types.add(bird_type)
 
-    # Only update if birds actually changed
-    if active_types != _last_bird_set:
+    # Only update if birds actually changed (or force)
+    if force or active_types != _last_bird_set:
         _last_bird_set = active_types
         audio.update_active_birds(active_types)
 

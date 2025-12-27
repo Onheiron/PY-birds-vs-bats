@@ -160,8 +160,10 @@ def main():
     achievements.init_achievements()
     state.game.start_time = time.time()
 
-    # Start background music
+    # Start background music with correct bird composition
     if AUDIO_AVAILABLE and audio:
+        # Sync active birds BEFORE starting music (force=True to bypass rate limiter)
+        game_logic.sync_active_birds_audio(force=True)
         audio.start_music()
 
     # Contatore frame per decidere quando aggiornare la fisica

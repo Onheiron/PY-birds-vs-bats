@@ -225,21 +225,40 @@ def pad_wave(freq, duration, volume=0.5):
     return (wave * envelope * volume * MASTER_VOLUME).astype(np.float32)
 
 
-def bass_wave(freq, duration, volume=0.6):
-    """Deep bass - DINOSAUR bird. Very low, punchy, sub-heavy."""
+def bass_wave(freq, duration, volume=1.0):
+    """
+    DINOSAUR ROAR - Primordial, earth-shaking, SPEAKER-DESTROYING bass!
+    This is a LEGENDARY bird - it must SHAKE THE FUCKING ROOM!
+    """
     if freq == 0:
         return np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
     t = np.linspace(0, duration, int(SAMPLE_RATE * duration), False)
-    # Heavy sub bass with punch
-    wave = (np.sin(2 * np.pi * freq * t) * 0.4 +           # Fundamental
-            np.sin(2 * np.pi * freq * 0.5 * t) * 0.5 +     # Sub-octave (heavy!)
-            np.sin(2 * np.pi * freq * 2 * t) * 0.2 +       # First harmonic
-            np.sin(2 * np.pi * freq * 0.25 * t) * 0.3)     # Double sub!
-    # Punchy attack
-    attack = np.minimum(t * 50, 1.0)
-    decay = np.exp(-t * 4)
-    envelope = attack * (0.3 + 0.7 * decay)
-    return (wave * envelope * volume * MASTER_VOLUME).astype(np.float32)
+
+    # EARTHQUAKE sub bass layers - destroy your speakers
+    sub1 = np.sin(2 * np.pi * freq * t)                    # Fundamental - LOUD
+    sub2 = np.sin(2 * np.pi * freq * 0.5 * t)              # Octave below - LOUDER
+    sub3 = np.sin(2 * np.pi * freq * 0.25 * t)             # 2 octaves below - MASSIVE
+
+    # Add HEAVY growl with more distortion
+    growl = np.sin(2 * np.pi * freq * 2 * t) * 0.5
+    growl = np.tanh(growl * 3)  # More distortion for ANGRY growl
+
+    # Add INTENSE rumble - prehistoric earthquake
+    rumble = 1 + 0.25 * np.sin(2 * np.pi * 2.5 * t)  # Slower, deeper wobble
+
+    # Combine all layers - SUB HEAVY MIX
+    wave = (sub1 * 0.5 + sub2 * 0.7 + sub3 * 0.6 + growl * 0.4) * rumble
+
+    # PUNCHY attack - STOMP that shakes the earth
+    attack = np.minimum(t * 100, 1.0)  # Even faster attack
+    # Long sustain - dinosaurs are MASSIVE
+    decay = np.exp(-t * 1.8)  # Even slower decay - more sustain
+    envelope = attack * (0.5 + 0.5 * decay)
+
+    # HEAVY compression to make it PHAT AS FUCK
+    wave = np.tanh(wave * 1.8) * envelope
+
+    return (wave * volume * MASTER_VOLUME).astype(np.float32)
 
 
 def glitch_wave(freq, duration, volume=0.5):
@@ -1046,23 +1065,23 @@ def create_dynamic_music(theme, active_birds):
     # Organized by frequency range for balanced sound
     VOLUMES = {
         # HIGH (bright, cutting through)
-        'YELLOW': 0.20,    # Lead melody - square wave
-        'GOLD': 0.15,      # Sparkles - glockenspiel
-        'WHITE': 0.18,     # Bell accents
-        'CLOCKWORK': 0.10, # Ticks - very high, subtle
+        'YELLOW': 0.18,    # Lead melody - square wave
+        'GOLD': 0.14,      # Sparkles - glockenspiel
+        'WHITE': 0.16,     # Bell accents
+        'CLOCKWORK': 0.08, # Ticks - very high, subtle
         # MID (body of the sound)
-        'RED': 0.22,       # Harmony - thick sawtooth
-        'BLUE': 0.18,      # Countermelody - warm triangle
-        'ORANGE': 0.20,    # Distorted power chords
-        'PATCHWORK': 0.14, # Arpeggio - mid
+        'RED': 0.20,       # Harmony - thick sawtooth
+        'BLUE': 0.16,      # Countermelody - warm triangle
+        'ORANGE': 0.18,    # Distorted power chords
+        'PATCHWORK': 0.12, # Arpeggio - mid
         # LOW-MID (warmth)
-        'PURPLE': 0.20,    # PWM pad - fills the space
-        'COOKIE': 0.16,    # Pluck - rhythmic low-mid
-        # BASS (foundation)
-        'DINOSAUR': 0.40,  # Deep sub bass - LOUD foundation!
-        'STEALTH': 0.25,   # Atmospheric low pad
+        'PURPLE': 0.18,    # PWM pad - fills the space
+        'COOKIE': 0.14,    # Pluck - rhythmic low-mid
+        # LEGENDARY BASS - DINOSAUR DESTROYS SPEAKERS!!!
+        'DINOSAUR': 0.90,  # PRIMORDIAL ROAR - SHAKE THE FUCKING ROOM!
+        'STEALTH': 0.22,   # Atmospheric low pad
         # CHAOS
-        'GLITCH': 0.08,    # Chaos - subtle
+        'GLITCH': 0.06,    # Chaos - subtle
     }
 
     # Add each active bird's track
