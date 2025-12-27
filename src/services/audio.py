@@ -404,7 +404,7 @@ def create_theme_1():
     h = get_scale_notes('C', 'major', 5)   # High octave (WHITE, GOLD)
     hh = get_scale_notes('C', 'major', 6)  # Very high (CLOCKWORK clicks)
 
-    tempo = 0.25  # Slow and chill at start!
+    tempo = 0.35  # Very slow and chill at start!
 
     # 16 notes per section, 4 sections = 64 notes total loop
     # Each bird has UNIQUE notes that complement each other!
@@ -506,7 +506,7 @@ def create_theme_2():
     h = get_scale_notes('C', 'ionian_sharp5', 5)   # High (WHITE, GOLD)
     hh = get_scale_notes('C', 'ionian_sharp5', 6)  # Very high (CLOCKWORK)
 
-    tempo = 0.28  # Slightly faster, building tension
+    tempo = 0.38  # Building tension, still relaxed
 
     tracks = {
         'YELLOW': [s[0], 0, s[1], 0, s[2], 0, s[4], 0,
@@ -592,7 +592,7 @@ def create_theme_3():
     h = get_scale_notes('B', 'locrian', 5)   # High (WHITE, GOLD)
     hh = get_scale_notes('B', 'locrian', 6)  # Very high (CLOCKWORK)
 
-    tempo = 0.30  # Slow, desolate
+    tempo = 0.40  # Slow, desolate, heavy
 
     tracks = {
         'YELLOW': [s[0], 0, s[1], s[0], 0, 0, s[0], 0,
@@ -678,7 +678,7 @@ def create_theme_4():
     h = get_scale_notes('E', 'phrygian', 5)   # High (WHITE, GOLD)
     hh = get_scale_notes('E', 'phrygian', 6)  # Very high (CLOCKWORK)
 
-    tempo = 0.26  # Ritualistic, driving
+    tempo = 0.34  # Ritualistic, steady pulse
 
     tracks = {
         'YELLOW': [s[0], s[1], s[0], 0, s[0], s[1], s[2], s[1],
@@ -764,7 +764,7 @@ def create_theme_5():
     h = get_scale_notes('D', 'dorian', 5)   # High (WHITE, GOLD)
     hh = get_scale_notes('D', 'dorian', 6)  # Very high (CLOCKWORK)
 
-    tempo = 0.22  # Epic, intense
+    tempo = 0.30  # Epic battle, building intensity
 
     tracks = {
         'YELLOW': [s[0], 0, s[0], s[2], s[4], s[5], s[4], 0,
@@ -850,7 +850,7 @@ def create_theme_6():
     h = get_scale_notes('A', 'minor', 5)   # High (WHITE, GOLD)
     hh = get_scale_notes('A', 'minor', 6)  # Very high (CLOCKWORK)
 
-    tempo = 0.28  # Bittersweet, reflective
+    tempo = 0.38  # Bittersweet, reflective, peaceful
 
     tracks = {
         'YELLOW': [s[0], s[2], s[4], s[2], s[0], 0, 0, 0,
