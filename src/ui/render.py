@@ -31,7 +31,7 @@ TREE_PATTERN_HEIGHT = len(TREE_PATTERN)
 TREE_PATTERN_WIDTH = 24  # Lunghezza fissa
 
 # Colore verde scurissimo per lo sfondo
-TREE_BG_COLOR = "\033[38;5;235m"  # Verde/grigio molto scuro
+TREE_BG_COLOR = "\033[38;5;234m"  # Verde scuro (non grigio!)
 
 # =============================================================================
 # FRAMEBUFFER - Double buffering per rendering differenziale
@@ -756,16 +756,33 @@ def _fb_render_starting_line(fb):
 def _fb_render_obstacles(fb):
     """Render obstacles to framebuffer."""
     for obs in state.enemies.obstacles:
-        max_hp = constants.obstacle.max_hp_by_tier.get(obs.get('tier', 1), obs.get('hp', 1))
+        tier = obs.get('tier', 1)
+        max_hp = constants.obstacle.max_hp_by_tier.get(tier, obs.get('hp', 1))
         obs_color = color_from_hp(constants.colors.obstacles_base_rgb, obs.get('hp', 0), max_hp)
 
-        for line_idx, line in enumerate(OBSTACLE_SPRITE):
+        # Usa lo sprite del tier corretto
+        sprite = OBSTACLE_SPRITES.get(tier, OBSTACLE_SPRITE_T1)
+        sprite_width = max(len(line) for line in sprite)
+        lane_width = OBSTACLE_LANE_WIDTH.get(tier, 1)
+
+        # Calcola la posizione x centrale per lo sprite
+        start_lane = obs['lane']
+        end_lane = min(start_lane + lane_width - 1, constants.layout.num_lanes - 1)
+
+        # Centro tra la prima e l'ultima lane occupata
+        start_x = constants.layout.lane_positions[start_lane]
+        end_x = constants.layout.lane_positions[end_lane]
+        center_x = (start_x + end_x) // 2
+        x_offset = sprite_width // 2
+
+        for line_idx, line in enumerate(sprite):
             y_pos = obs['y_pos'] + line_idx
             if 0 <= y_pos < constants.layout.height:
-                x_pos = constants.layout.lane_positions[obs['lane']] - 1
                 for i, char in enumerate(line):
                     if char != ' ':  # Solo caratteri non-spazio
-                        fb.put(x_pos + i, y_pos + 2, char, obs_color)
+                        x_pos = center_x - x_offset + i
+                        if 0 <= x_pos < constants.layout.width:
+                            fb.put(x_pos, y_pos + 2, char, obs_color)
 
 
 def _fb_render_bats(fb):

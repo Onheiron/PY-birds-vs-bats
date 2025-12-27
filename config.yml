@@ -127,10 +127,10 @@ bat_enemy:
     weights_level_8_plus: [10, 25, 40, 25]  # tier 3 e 4 molto più comuni
 obstacle:
   max_hp_by_tier:
-    1: 6       # era 4 (+50%)
-    2: 10      # era 6 (+67%)
-    3: 16      # era 10 (+60%)
-    4: 24      # era 16 (+50%)
+    1: 4       # 2 colpi giallo, 2 rosso, 1 blu
+    2: 6       # 3 colpi giallo, 2 rosso, 2 blu
+    3: 12      # coop 2 lane
+    4: 27      # coop 3 lane
   spawning:
     base_spawn_rate:
       base: 40       # era 60 - spawn più frequente

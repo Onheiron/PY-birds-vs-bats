@@ -124,6 +124,14 @@ def check_bird_floor_collision():
             state.game.game_over = True
 
 
+def _get_obstacle_lanes(obs):
+    """Ritorna il set di lane occupate da un ostacolo."""
+    obs_tier = obs.get('tier', 1)
+    obs_width = OBSTACLE_LANE_WIDTH.get(obs_tier, 1)
+    obs_lane = obs['lane']
+    return set(range(obs_lane, min(obs_lane + obs_width, constants.layout.num_lanes)))
+
+
 def check_bird_obstacle_collision():
     """Check bird-obstacle collisions."""
     for i in range(constants.layout.num_balls):
@@ -143,9 +151,15 @@ def check_bird_obstacle_collision():
             continue
 
         for obs in state.enemies.obstacles[:]:
-            if obs['lane'] != bird_lane:
+            # Check if bird lane is within obstacle's lanes
+            obs_lanes = _get_obstacle_lanes(obs)
+            if bird_lane not in obs_lanes:
                 continue
-            if abs(next_y - obs['y_pos']) > 1:
+
+            # Check vertical proximity (consider sprite height)
+            obs_tier = obs.get('tier', 1)
+            sprite_height = len(OBSTACLE_SPRITES.get(obs_tier, OBSTACLE_SPRITE_T1))
+            if next_y < obs['y_pos'] - 1 or next_y > obs['y_pos'] + sprite_height:
                 continue
 
             # Hit obstacle
@@ -324,9 +338,15 @@ def check_projectile_collision():
 
         # Check obstacle collision
         for obs in state.enemies.obstacles[:]:
-            if obs['lane'] != proj['lane']:
+            # Check if projectile lane is within obstacle's lanes
+            obs_lanes = _get_obstacle_lanes(obs)
+            if proj['lane'] not in obs_lanes:
                 continue
-            if abs(proj['y_pos'] - obs['y_pos']) > 2:
+
+            # Check vertical proximity (consider sprite height)
+            obs_tier = obs.get('tier', 1)
+            sprite_height = len(OBSTACLE_SPRITES.get(obs_tier, OBSTACLE_SPRITE_T1))
+            if proj['y_pos'] < obs['y_pos'] - 1 or proj['y_pos'] > obs['y_pos'] + sprite_height:
                 continue
 
             damage = proj.get('damage', 1)
@@ -574,13 +594,27 @@ def check_bat_obstacle_collision():
         bat_bottom = bat['y_pos'] + 1
 
         for obs in state.enemies.obstacles[:]:
-            obs_lane_x = constants.layout.lane_positions[obs['lane']]
-            obs_left = obs_lane_x - 1
-            obs_right = obs_lane_x + 1
-            obs_y = obs['y_pos']
+            # Calcola l'area occupata dall'ostacolo (multi-lane)
+            tier = obs.get('tier', 1)
+            lane_width = OBSTACLE_LANE_WIDTH.get(tier, 1)
+            sprite = OBSTACLE_SPRITES.get(tier, OBSTACLE_SPRITE_T1)
+            sprite_width = max(len(line) for line in sprite)
+            sprite_height = len(sprite)
+
+            start_lane = obs['lane']
+            end_lane = min(start_lane + lane_width - 1, constants.layout.num_lanes - 1)
+
+            start_x = constants.layout.lane_positions[start_lane]
+            end_x = constants.layout.lane_positions[end_lane]
+            center_x = (start_x + end_x) // 2
+
+            obs_left = center_x - sprite_width // 2
+            obs_right = center_x + sprite_width // 2
+            obs_top = obs['y_pos']
+            obs_bottom = obs['y_pos'] + sprite_height
 
             horizontal_overlap = not (bat_right < obs_left or bat_left > obs_right)
-            vertical_overlap = abs(bat_top - obs_y) <= 1 or abs(bat_bottom - obs_y) <= 1
+            vertical_overlap = not (bat_bottom < obs_top or bat_top > obs_bottom)
 
             if horizontal_overlap and vertical_overlap:
                 state.enemies.obstacles.remove(obs)
@@ -601,15 +635,41 @@ def spawn_obstacle():
     base_spawn_rate = max(10, 50 - level * 4)
     state.enemies.obstacle_spawn_timer = base_spawn_rate
 
-    # Find lanes without obstacles at top
-    lanes_without = []
-    for lane in range(constants.layout.num_lanes):
-        has_obstacle = any(obs['lane'] == lane and obs['y_pos'] < 5
-                          for obs in state.enemies.obstacles)
-        if not has_obstacle:
-            lanes_without.append(lane)
+    # Tier based on level - più aggressivo
+    if level <= 2:
+        tier = random.choices([1, 2, 3, 4], weights=[50, 30, 15, 5])[0]
+    elif level <= 4:
+        tier = random.choices([1, 2, 3, 4], weights=[30, 35, 25, 10])[0]
+    elif level <= 6:
+        tier = random.choices([1, 2, 3, 4], weights=[20, 30, 35, 15])[0]
+    else:
+        tier = random.choices([1, 2, 3, 4], weights=[10, 25, 40, 25])[0]
 
-    if not lanes_without:
+    # Larghezza in lane per questo tier
+    lane_width = OBSTACLE_LANE_WIDTH.get(tier, 1)
+
+    # Trova gruppi di lane consecutive libere
+    def get_lanes_occupied_by_obstacle(obs):
+        """Ritorna set di lane occupate da un ostacolo."""
+        obs_tier = obs.get('tier', 1)
+        obs_width = OBSTACLE_LANE_WIDTH.get(obs_tier, 1)
+        obs_lane = obs['lane']
+        return set(range(obs_lane, min(obs_lane + obs_width, constants.layout.num_lanes)))
+
+    # Mappa quali lane sono occupate
+    occupied_lanes = set()
+    for obs in state.enemies.obstacles:
+        if obs['y_pos'] < 5:  # Solo ostacoli vicini al top
+            occupied_lanes.update(get_lanes_occupied_by_obstacle(obs))
+
+    # Trova posizioni valide per il nuovo ostacolo (lane iniziale)
+    valid_start_lanes = []
+    for start_lane in range(constants.layout.num_lanes - lane_width + 1):
+        lanes_needed = set(range(start_lane, start_lane + lane_width))
+        if not lanes_needed & occupied_lanes:
+            valid_start_lanes.append(start_lane)
+
+    if not valid_start_lanes:
         state.enemies.obstacle_spawn_timer = max(5, base_spawn_rate // 4)
         return
 
@@ -622,21 +682,11 @@ def spawn_obstacle():
             state.enemies.obstacle_spawn_timer = max(5, base_spawn_rate // 4)
             return
 
-    lane = random.choice(lanes_without)
+    lane = random.choice(valid_start_lanes)
 
-    # Tier based on level - più aggressivo
-    if level <= 2:
-        tier = random.choices([1, 2, 3, 4], weights=[50, 30, 15, 5])[0]
-    elif level <= 4:
-        tier = random.choices([1, 2, 3, 4], weights=[30, 35, 25, 10])[0]
-    elif level <= 6:
-        tier = random.choices([1, 2, 3, 4], weights=[20, 30, 35, 15])[0]
-    else:
-        tier = random.choices([1, 2, 3, 4], weights=[10, 25, 40, 25])[0]
-
-    # HP molto più alti
-    hp_map = {1: 8, 2: 14, 3: 22, 4: 32}
-    hp = hp_map.get(tier, 8)
+    # HP bilanciati per danno uccelli (giallo 2, rosso 3, blu 4)
+    hp_map = {1: 4, 2: 6, 3: 12, 4: 27}
+    hp = hp_map.get(tier, 4)
 
     state.enemies.spawn_queue.append({
         'type': 'obstacle',

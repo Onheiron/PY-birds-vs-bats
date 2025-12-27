@@ -116,10 +116,54 @@ BAT_FRAME_2 = [
 # Background pattern
 BG_PATTERN = "/\\/\\/\\"
 
-# Obstacle sprites - single line, compact
-OBSTACLE_SPRITE = [
-    "***"
+# Obstacle sprites - tree tops, tiered by size
+# Tier 1: piccolo, 1 lane (3 chars wide)
+OBSTACLE_SPRITE_T1 = [
+    " * ",
+    "/v\\",
 ]
+
+# Tier 2: medio, 1 lane (5 chars wide, centered)
+OBSTACLE_SPRITE_T2 = [
+    "  *  ",
+    " /v\\ ",
+    "/vvv\\",
+]
+
+# Tier 3: grande, 2 lanes (9 chars wide)
+OBSTACLE_SPRITE_T3 = [
+    "    /\\  ",
+    " /\\/vv\\ ",
+    "/vv\\vvv\\",
+]
+
+# Tier 4: enorme, 3 lanes (13 chars wide)
+OBSTACLE_SPRITE_T4 = [
+    "    /\\       ",
+    "   /vv\\  *   ",
+    "  /v/\\v\\/v\\  ",
+    " /v/vv\\/vvv\\ ",
+    "/v/vvvv\\vvvv\\",
+]
+
+# Mappa tier -> sprite
+OBSTACLE_SPRITES = {
+    1: OBSTACLE_SPRITE_T1,
+    2: OBSTACLE_SPRITE_T2,
+    3: OBSTACLE_SPRITE_T3,
+    4: OBSTACLE_SPRITE_T4,
+}
+
+# Larghezza in lane per ogni tier
+OBSTACLE_LANE_WIDTH = {
+    1: 1,  # 1 lane
+    2: 1,  # 1 lane
+    3: 2,  # 2 lanes
+    4: 3,  # 3 lanes
+}
+
+# Legacy: mantieni per compatibilità
+OBSTACLE_SPRITE = OBSTACLE_SPRITE_T1
 
 # Base colors (full HP) for color interpolation
 BATS_BASE_RGB = (255, 0, 255)   # magenta FF00FF
