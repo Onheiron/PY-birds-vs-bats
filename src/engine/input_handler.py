@@ -245,7 +245,7 @@ def _bounce_bird_up(bird_idx):
 
     _set_ball_vy(bird_idx, -1)
     _reset_bird_power(bird_idx)
-    play_sfx('bounce')
+    # play_sfx('bounce')  # Disabled - too frequent, clashes with music
 
     # CLOCKWORK charge restoration
     if bird_color == CLOCKWORK:

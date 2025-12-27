@@ -753,18 +753,33 @@ def create_theme_6():
 
 def get_theme_for_level(level):
     """Get the appropriate theme for the current level."""
-    if level <= 5:
+    # TEMP: Change theme every level for testing (normally every 5 levels)
+    theme_idx = ((level - 1) % 6) + 1
+    if theme_idx == 1:
         return create_theme_1()
-    elif level <= 10:
+    elif theme_idx == 2:
         return create_theme_2()
-    elif level <= 15:
+    elif theme_idx == 3:
         return create_theme_3()
-    elif level <= 20:
+    elif theme_idx == 4:
         return create_theme_4()
-    elif level <= 25:
+    elif theme_idx == 5:
         return create_theme_5()
     else:
         return create_theme_6()
+    # ORIGINAL CODE (restore when done testing):
+    # if level <= 5:
+    #     return create_theme_1()
+    # elif level <= 10:
+    #     return create_theme_2()
+    # elif level <= 15:
+    #     return create_theme_3()
+    # elif level <= 20:
+    #     return create_theme_4()
+    # elif level <= 25:
+    #     return create_theme_5()
+    # else:
+    #     return create_theme_6()
 
 
 def generate_track_for_bird(bird_type, notes, note_dur, scale, volume=0.25):
@@ -1202,14 +1217,20 @@ def update_music_for_level(level):
     """Update music when level changes."""
     global _current_level
 
-    old_theme_range = (_current_level - 1) // 5
-    new_theme_range = (level - 1) // 5
-
+    # TEMP: Change every level for testing (normally every 5)
+    old_level = _current_level
     _current_level = level
 
-    # Only regenerate if theme changed
-    if old_theme_range != new_theme_range and _music_playing:
+    # Regenerate if level changed
+    if old_level != level and _music_playing:
         _schedule_music_regen()
+
+    # ORIGINAL CODE (restore when done testing):
+    # old_theme_range = (_current_level - 1) // 5
+    # new_theme_range = (level - 1) // 5
+    # _current_level = level
+    # if old_theme_range != new_theme_range and _music_playing:
+    #     _schedule_music_regen()
 
 
 def update_active_birds(bird_types):
