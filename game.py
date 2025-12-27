@@ -102,6 +102,10 @@ def show_game_over_screen():
     # Prompt for leaderboard name
     try:
         name = input("Enter name for leaderboard (leave blank to skip): ").strip()[:name_max_length]
+    except (KeyboardInterrupt, EOFError):
+        # CTRL+C or CTRL+D to skip
+        print()  # New line after ^C
+        name = ""
     except Exception:
         name = ""
 

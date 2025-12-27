@@ -56,7 +56,43 @@ def setup():
 def cleanup():
     """Restore terminal to normal state."""
     global _old_settings, _old_flags
-    print("\033[?25h", end="", flush=True)  # Show cursor
+
+    if os.name != 'nt':
+        fd = sys.stdin.fileno()
+
+        # FIRST: Restore stdin to blocking mode (before termios!)
+        if _old_flags is not None:
+            try:
+                fcntl.fcntl(fd, fcntl.F_SETFL, _old_flags)
+            except Exception:
+                pass
+
+        # SECOND: Restore stdout to blocking mode
+        try:
+            stdout_fd = sys.stdout.fileno()
+            stdout_flags = fcntl.fcntl(stdout_fd, fcntl.F_GETFL)
+            fcntl.fcntl(stdout_fd, fcntl.F_SETFL, stdout_flags & ~os.O_NONBLOCK)
+        except Exception:
+            pass
+
+        # THIRD: Restore terminal to cooked mode
+        if _old_settings is not None:
+            try:
+                termios.tcsetattr(fd, termios.TCSADRAIN, _old_settings)
+            except Exception:
+                pass
+
+        # FALLBACK: If all else fails, use stty sane
+        try:
+            os.system('stty sane 2>/dev/null')
+        except Exception:
+            pass
+
+    # Show cursor and clear screen
+    try:
+        os.write(sys.stdout.fileno(), b"\033[?25h\033[2J\033[H")
+    except Exception:
+        pass
 
     # Cleanup firebase if available
     if firebase_client:
@@ -65,23 +101,13 @@ def cleanup():
             if callable(obj):
                 try:
                     obj()
-                except:
+                except Exception:
                     pass
             elif obj and hasattr(obj, 'close'):
                 try:
                     obj.close()
-                except:
+                except Exception:
                     pass
-
-    # Restore terminal settings
-    if os.name != 'nt' and _old_settings is not None:
-        try:
-            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, _old_settings)
-            fcntl.fcntl(sys.stdin, fcntl.F_SETFL, _old_flags)
-        except:
-            pass
-
-    os.system('cls' if os.name == 'nt' else 'clear')
 
 
 # =============================================================================
