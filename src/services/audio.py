@@ -276,6 +276,49 @@ def glitch_wave(freq, duration, volume=0.5):
     return (wave * volume * MASTER_VOLUME).astype(np.float32)
 
 
+def bat_dissonant_wave(freq, duration, volume=0.5):
+    """
+    BAT - Dissonant distorted chord pad.
+    Creates eerie, unsettling harmonies with tritones and minor 2nds.
+    Follows the mode but adds dissonant intervals (b9, #11, b13).
+    """
+    if freq == 0:
+        return np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
+    t = np.linspace(0, duration, int(SAMPLE_RATE * duration), False)
+
+    # Root note with distortion
+    root = np.sin(2 * np.pi * freq * t)
+
+    # DISSONANT intervals relative to root:
+    # Minor 2nd (1 semitone up) - very dissonant
+    minor_2nd = np.sin(2 * np.pi * freq * (2 ** (1/12)) * t) * 0.4
+    # Tritone (#4/b5) - the devil's interval
+    tritone = np.sin(2 * np.pi * freq * (2 ** (6/12)) * t) * 0.5
+    # Minor 6th (b13) - eerie
+    minor_6th = np.sin(2 * np.pi * freq * (2 ** (8/12)) * t) * 0.35
+    # Major 7th - tension
+    major_7th = np.sin(2 * np.pi * freq * (2 ** (11/12)) * t) * 0.3
+
+    # Combine into dissonant cluster
+    wave = root + minor_2nd + tritone + minor_6th + major_7th
+
+    # Heavy distortion - bats are creepy!
+    wave = np.tanh(wave * 2.0)
+
+    # Add subtle LFO wobble for unease
+    wobble = 1 + 0.08 * np.sin(2 * np.pi * 3.5 * t)
+    wave = wave * wobble
+
+    # Creepy attack/decay envelope
+    attack = np.minimum(t * 15, 1.0)  # Medium attack
+    decay = np.exp(-t * 2.5)  # Medium decay
+    envelope = attack * (0.3 + 0.7 * decay)
+
+    wave = wave * envelope
+
+    return (wave * volume * MASTER_VOLUME).astype(np.float32)
+
+
 def arpeggio_wave(freqs, duration, volume=0.5):
     """Quick arpeggio through notes - PATCHWORK bird."""
     samples = int(SAMPLE_RATE * duration)
@@ -357,6 +400,7 @@ BIRD_INSTRUMENTS = {
     'STEALTH': {'gen': pad_wave, 'role': 'atmosphere'},
     'DINOSAUR': {'gen': bass_wave, 'role': 'bass'},
     'GLITCH': {'gen': glitch_wave, 'role': 'chaos'},
+    'BAT': {'gen': bat_dissonant_wave, 'role': 'dissonance'},  # Creepy dissonant chords!
 }
 
 
@@ -409,7 +453,8 @@ def get_scale_notes(root, mode, octave=4):
 
 # =============================================================================
 # THEME DEFINITIONS - 6 MUSICAL THEMES
-# Each theme has 13 unique tracks (one per bird type) + drums
+# Each theme has 14 unique tracks (one per bird/bat type) + drums
+# BAT track adds DISSONANT chords that follow the mode but with alterations!
 # =============================================================================
 
 def create_theme_1():
@@ -506,6 +551,14 @@ def create_theme_1():
                    s[6], 0, s[1], 0, s[5], 0, s[3], 0,
                    0, s[4], 0, s[0], 0, s[7], s[2], 0,
                    s[5], 0, 0, s[9], 0, s[4], 0, s[0]],
+
+        # BAT - Dissonant chord pad (follows root chords but ALTERED!)
+        # In C Major: plays altered tensions that clash with the happy key
+        # Uses b (octave 2) for dark, eerie dissonance
+        'BAT': [b[0], 0, 0, 0, b[1], 0, 0, 0,   # C then Db (b9 dissonance!)
+                b[3], 0, 0, b[6], 0, 0, 0, 0,   # F then B (tritone!)
+                b[0], 0, b[1], 0, 0, 0, b[6], 0,  # C, Db, B - maximum tension
+                b[0], 0, 0, 0, b[1], b[6], 0, 0],  # Cluster of doom
     }
 
     drums = [1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
@@ -592,6 +645,13 @@ def create_theme_2():
                    0, s[2], s[4], 0, 0, 0, s[6], 0,
                    s[0], 0, s[4], 0, 0, s[2], 0, s[5],
                    0, s[0], 0, s[4], s[6], 0, 0, 0],
+
+        # BAT - Dissonant pad (Ionian #5 already eerie, add MORE tension!)
+        # Tritones and b9s to amplify the creeping unease
+        'BAT': [b[0], 0, b[1], 0, 0, 0, b[4], 0,   # C, Db, then augmented G#
+                b[4], 0, 0, 0, b[1], 0, b[6], 0,   # G#, Db, B - dissonant cluster
+                b[0], 0, 0, b[4], 0, b[1], 0, 0,   # Root with #5 and b9
+                b[0], b[1], 0, 0, b[4], 0, b[6], 0],  # Maximum creep
     }
 
     drums = [1, 0, 3, 0, 1, 0, 3, 0, 1, 3, 0, 3, 1, 2, 0, 0,
@@ -678,6 +738,13 @@ def create_theme_3():
                    0, s[3], 0, 0, s[0], 0, 0, 0,
                    s[4], 0, 0, 0, 0, s[3], 0, s[0],
                    0, 0, s[1], 0, 0, 0, s[0], 0],
+
+        # BAT - Locrian is already diminished, pile on MORE dissonance!
+        # Tritone (b5) is native to Locrian, add chromatic tensions
+        'BAT': [b[0], 0, 0, b[4], 0, 0, 0, 0,   # B then F (natural tritone)
+                b[1], 0, 0, 0, b[4], 0, b[0], 0,   # C, F, B - cluster
+                b[0], b[1], 0, 0, 0, b[4], 0, 0,   # Semitone clash + tritone
+                b[0], 0, b[4], b[1], 0, 0, b[0], 0],  # Desolate chord stabs
     }
 
     drums = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0, 1, 0, 0, 0,
@@ -764,6 +831,13 @@ def create_theme_4():
                    0, s[4], s[7], 0, 0, s[3], 0, s[0],
                    s[0], 0, s[4], 0, s[1], 0, 0, s[4],
                    0, s[0], 0, s[4], 0, s[1], 0, 0],
+
+        # BAT - Phrygian b2 is already dark, add tritones for EVIL ritual vibes
+        # E Phrygian: E-F-G-A-B-C-D, BAT adds Bb (tritone) for satanic flavor
+        'BAT': [b[0], 0, b[1], 0, 0, 0, 0, b[1],   # E, F, F - ritual drone
+                0, 0, b[4], 0, b[1], 0, 0, 0,      # A, F - tension
+                b[0], 0, 0, b[1], 0, 0, b[4], 0,   # E, F, A - dark chord
+                b[0], b[1], b[4], 0, b[0], 0, b[1], 0],  # Ritualistic pulse
     }
 
     drums = [1, 3, 3, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 2, 2, 0,
@@ -850,6 +924,13 @@ def create_theme_5():
                    s[9], 0, 0, s[4], s[6], 0, s[7], 0,
                    0, s[2], 0, s[5], s[7], 0, 0, s[2],
                    s[0], 0, s[4], 0, s[9], s[7], 0, s[4]],
+
+        # BAT - Dorian is heroic, BAT corrupts it with chromatic evil!
+        # D Dorian: D-E-F-G-A-B-C, BAT adds Eb and Ab for sinister tension
+        'BAT': [b[0], 0, 0, b[1], 0, 0, b[4], 0,   # D, Eb (b9), G
+                b[5], 0, b[1], 0, 0, 0, b[0], 0,   # A, Eb, D - tension
+                b[0], 0, b[4], 0, b[1], 0, 0, b[5],  # Power with dissonance
+                b[0], b[1], 0, b[4], 0, b[1], b[0], 0],  # Corrupted heroic chords
     }
 
     drums = [1, 3, 2, 3, 1, 3, 2, 3, 1, 1, 2, 3, 1, 2, 1, 2,
@@ -936,6 +1017,13 @@ def create_theme_6():
                    s[5], 0, s[6], 0, 0, s[4], 0, 0,
                    0, s[0], 0, s[7], 0, 0, s[0], 0,
                    0, s[0], 0, s[4], s[5], 0, 0, 0],
+
+        # BAT - A Minor is melancholic, BAT makes it haunted and ghostly
+        # A Minor: A-B-C-D-E-F-G, BAT adds Bb and Eb for spectral dissonance
+        'BAT': [b[0], 0, 0, 0, b[1], 0, 0, 0,   # A, Bb (b9) - haunting
+                b[3], 0, 0, b[1], 0, 0, 0, 0,   # D, Bb - ghostly
+                b[0], 0, b[1], 0, 0, 0, b[3], 0,  # Spectral chord motion
+                b[0], 0, 0, b[1], 0, b[3], 0, 0],  # Bittersweet darkness
     }
 
     drums = [1, 0, 0, 3, 0, 0, 2, 0, 1, 0, 3, 0, 1, 0, 0, 0,
@@ -1080,8 +1168,9 @@ def create_dynamic_music(theme, active_birds):
         # LEGENDARY BASS - DINOSAUR DESTROYS SPEAKERS!!!
         'DINOSAUR': 0.90,  # PRIMORDIAL ROAR - SHAKE THE FUCKING ROOM!
         'STEALTH': 0.22,   # Atmospheric low pad
-        # CHAOS
+        # CHAOS & DISSONANCE
         'GLITCH': 0.06,    # Chaos - subtle
+        'BAT': 0.35,       # Dissonant chord pad - eerie, unsettling, should be heard!
     }
 
     # Add each active bird's track
