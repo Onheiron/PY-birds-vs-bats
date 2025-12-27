@@ -1283,6 +1283,43 @@ def sfx_bird_lost():
     return apply_fade_out(wave)
 
 
+def sfx_bat_death():
+    """
+    Bat death screech - high-pitched ultrasonic shriek!
+    Like a bat's dying cry - starts very high, wobbles, descends rapidly.
+    """
+    samples = int(SAMPLE_RATE * 0.25)
+    t = np.linspace(0, 0.25, samples, False)
+
+    # Start at ultrasonic-ish frequency (2500Hz), descend to 800Hz
+    # Bats echolocate at 20-120kHz, but we use audible range that "feels" batty
+    freq_start = 2500
+    freq_end = 800
+    freq = freq_start * np.exp(-t * 4.5)  # Exponential descent
+    freq = np.maximum(freq, freq_end)
+
+    # Add rapid vibrato/wobble like a dying shriek
+    wobble = 1 + 0.15 * np.sin(2 * np.pi * 35 * t)  # Fast tremolo
+    freq = freq * wobble
+
+    # Generate the shriek with phase accumulation
+    phase = np.cumsum(freq) / SAMPLE_RATE
+    wave = np.sin(2 * np.pi * phase)
+
+    # Add some harsh harmonics for that screechy quality
+    wave += 0.3 * np.sin(4 * np.pi * phase)  # 2nd harmonic
+    wave += 0.15 * np.sin(6 * np.pi * phase)  # 3rd harmonic
+
+    # Quick attack, medium decay - like a sudden scream
+    envelope = np.exp(-t * 8)
+    wave = wave * envelope
+
+    # Normalize
+    wave = wave / np.max(np.abs(wave)) * 0.5
+
+    return (wave * MASTER_VOLUME).astype(np.float32)
+
+
 # =============================================================================
 # SOUND EFFECT CACHE
 # =============================================================================
@@ -1302,6 +1339,7 @@ def _get_cached_sfx(name):
             'level_up': sfx_level_up,
             'game_over': sfx_game_over,
             'bird_lost': sfx_bird_lost,
+            'bat_death': sfx_bat_death,  # Shrieking bat death sound!
         }
         if name in sfx_map:
             _sfx_cache[name] = sfx_map[name]()

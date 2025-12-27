@@ -367,7 +367,7 @@ def _handle_bat_death(bat, killer_bird_idx):
     achievements.check_achievements_event('destroy_bat', state.game.frame_count, state.ui.notifications, tier=tier)
 
     state.enemies.bats.remove(bat)
-    play_sfx('destroy')
+    play_sfx('bat_death')  # Shrieking bat death sound!
 
 
 def check_projectile_collision():
