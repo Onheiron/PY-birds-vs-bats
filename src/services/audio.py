@@ -28,6 +28,7 @@ _music_playing = False
 _current_level = 1
 _current_theme = None
 _theme_cache = {}
+_game_speed_multiplier = 1.0  # 1.0 = base speed, higher = faster game
 
 # Sound mixing state
 _sfx_lock = threading.Lock()
@@ -87,20 +88,29 @@ def square_wave(freq, duration, duty_cycle=0.5, volume=0.5):
 
 
 def triangle_wave(freq, duration, volume=0.5):
-    """Generate triangle wave (NES Triangle channel) - BLUE bird."""
+    """Generate triangle wave (NES Triangle channel) - BLUE bird. Soft, flute-like."""
     if freq == 0:
         return np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
     t = np.linspace(0, duration, int(SAMPLE_RATE * duration), False)
+    # Basic triangle
     wave = 2 * np.abs(2 * (t * freq % 1) - 1) - 1
+    # Add subtle vibrato for warmth
+    vibrato = 1 + 0.003 * np.sin(2 * np.pi * 5 * t)
+    wave = 2 * np.abs(2 * (t * freq * vibrato % 1) - 1) - 1
     return (wave * volume * MASTER_VOLUME).astype(np.float32)
 
 
 def sawtooth_wave(freq, duration, volume=0.5):
-    """Generate sawtooth wave - RED bird (aggressive)."""
+    """Generate sawtooth wave - RED bird. Aggressive, buzzy, mid-range."""
     if freq == 0:
         return np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
     t = np.linspace(0, duration, int(SAMPLE_RATE * duration), False)
-    wave = 2 * (t * freq % 1) - 1
+    # Main sawtooth with slight detune for thickness
+    wave1 = 2 * (t * freq % 1) - 1
+    wave2 = 2 * (t * freq * 1.005 % 1) - 1  # Slightly detuned
+    wave = (wave1 * 0.6 + wave2 * 0.4)
+    # Add some grit
+    wave = np.clip(wave * 1.2, -1, 1)
     return (wave * volume * MASTER_VOLUME).astype(np.float32)
 
 
@@ -120,13 +130,17 @@ def noise(duration, volume=0.3):
     return (wave * volume * MASTER_VOLUME).astype(np.float32)
 
 
-def pwm_wave(freq, duration, mod_freq=5, volume=0.5):
-    """Pulse Width Modulation wave - PURPLE bird."""
+def pwm_wave(freq, duration, mod_freq=3, volume=0.5):
+    """Pulse Width Modulation wave - PURPLE bird. Synthy, evolving, mid-low."""
     if freq == 0:
         return np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
     t = np.linspace(0, duration, int(SAMPLE_RATE * duration), False)
-    duty = 0.25 + 0.25 * np.sin(2 * np.pi * mod_freq * t)  # Duty cycles from 0.0 to 0.5
+    # Slower modulation for pad-like feel
+    duty = 0.15 + 0.35 * np.sin(2 * np.pi * mod_freq * t)
     wave = np.where((t * freq) % 1 < duty, 1, -1)
+    # Add sub layer for depth
+    sub = np.sin(2 * np.pi * freq * 0.5 * t) * 0.3
+    wave = wave * 0.7 + sub
     return (wave * volume * MASTER_VOLUME).astype(np.float32)
 
 
@@ -185,39 +199,47 @@ def tick_wave(freq, duration, volume=0.5):
 
 
 def distorted_wave(freq, duration, volume=0.5):
-    """Distorted lead - ORANGE/PHOENIX bird."""
+    """Distorted lead - ORANGE/PHOENIX bird. Heavy, crunchy, power chords."""
     if freq == 0:
         return np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
     t = np.linspace(0, duration, int(SAMPLE_RATE * duration), False)
-    wave = np.sin(2 * np.pi * freq * t)
-    # Hard clipping distortion
-    wave = np.clip(wave * 3, -1, 1)
+    # Power chord: root + fifth
+    wave = np.sin(2 * np.pi * freq * t) + 0.7 * np.sin(2 * np.pi * freq * 1.5 * t)
+    # Heavy clipping distortion
+    wave = np.tanh(wave * 2.5)  # Softer distortion than hard clip
+    wave = np.clip(wave * 1.5, -1, 1)  # Then hard clip for extra grit
     return (wave * volume * MASTER_VOLUME).astype(np.float32)
 
 
 def pad_wave(freq, duration, volume=0.5):
-    """Soft pad with fade - STEALTH bird."""
+    """Soft ambient pad - STEALTH bird. Low, dark, atmospheric."""
     if freq == 0:
         return np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
     t = np.linspace(0, duration, int(SAMPLE_RATE * duration), False)
-    wave = (np.sin(2 * np.pi * freq * t) * 0.5 +
-            np.sin(2 * np.pi * freq * 0.5 * t) * 0.3 +
-            np.sin(2 * np.pi * freq * 1.5 * t) * 0.2)
+    # Dark pad with sub emphasis
+    wave = (np.sin(2 * np.pi * freq * t) * 0.3 +
+            np.sin(2 * np.pi * freq * 0.5 * t) * 0.5 +   # Sub octave dominant
+            np.sin(2 * np.pi * freq * 0.25 * t) * 0.2)   # Double sub
     # Slow attack and release
-    envelope = np.sin(np.pi * t / duration) ** 0.5
+    envelope = np.sin(np.pi * t / duration) ** 0.3  # Slower attack
     return (wave * envelope * volume * MASTER_VOLUME).astype(np.float32)
 
 
 def bass_wave(freq, duration, volume=0.6):
-    """Deep bass - DINOSAUR bird."""
+    """Deep bass - DINOSAUR bird. Very low, punchy, sub-heavy."""
     if freq == 0:
         return np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
     t = np.linspace(0, duration, int(SAMPLE_RATE * duration), False)
-    # Sub bass with harmonics
-    wave = (np.sin(2 * np.pi * freq * t) * 0.6 +
-            np.sin(2 * np.pi * freq * 2 * t) * 0.3 +
-            np.sin(2 * np.pi * freq * 0.5 * t) * 0.4)  # Sub-octave
-    return (wave * volume * MASTER_VOLUME).astype(np.float32)
+    # Heavy sub bass with punch
+    wave = (np.sin(2 * np.pi * freq * t) * 0.4 +           # Fundamental
+            np.sin(2 * np.pi * freq * 0.5 * t) * 0.5 +     # Sub-octave (heavy!)
+            np.sin(2 * np.pi * freq * 2 * t) * 0.2 +       # First harmonic
+            np.sin(2 * np.pi * freq * 0.25 * t) * 0.3)     # Double sub!
+    # Punchy attack
+    attack = np.minimum(t * 50, 1.0)
+    decay = np.exp(-t * 4)
+    envelope = attack * (0.3 + 0.7 * decay)
+    return (wave * envelope * volume * MASTER_VOLUME).astype(np.float32)
 
 
 def glitch_wave(freq, duration, volume=0.5):
@@ -368,383 +390,539 @@ def get_scale_notes(root, mode, octave=4):
 
 # =============================================================================
 # THEME DEFINITIONS - 6 MUSICAL THEMES
+# Each theme has 13 unique tracks (one per bird type) + drums
 # =============================================================================
 
 def create_theme_1():
     """
     Theme 1: Soaring The Woods (Levels 1-5)
-    Key: C Major (Ionian)
-    Mood: Bright, hopeful, adventurous
+    Key: C Major - Bright, hopeful, adventurous
     """
-    scale = get_scale_notes('C', 'major', 4)
-    bass_scale = get_scale_notes('C', 'major', 2)
+    s = get_scale_notes('C', 'major', 4)   # Melody octave (YELLOW, RED - high)
+    b = get_scale_notes('C', 'major', 2)   # Bass octave (DINOSAUR, STEALTH - very low)
+    l = get_scale_notes('C', 'major', 3)   # Low-mid octave (BLUE, PURPLE, COOKIE - warm)
+    h = get_scale_notes('C', 'major', 5)   # High octave (WHITE, GOLD)
+    hh = get_scale_notes('C', 'major', 6)  # Very high (CLOCKWORK clicks)
 
-    # BPM ~120, note = 0.125s (eighth note)
-    note_dur = 0.125
+    tempo = 0.25  # Slow and chill at start!
 
-    # Structure: Intro (memorable hook) -> Development -> Chorus (hook repeated)
+    # 16 notes per section, 4 sections = 64 notes total loop
+    # Each bird has UNIQUE notes that complement each other!
 
-    # === INTRO MOTIF (memorable hook) ===
-    # C E G E | C E G C5 | (ascending hopeful)
-    intro_melody = [scale[0], scale[2], scale[4], scale[2],
-                    scale[0], scale[2], scale[4], scale[7],
-                    scale[0], scale[2], scale[4], scale[2],
-                    scale[4], scale[7], scale[4], scale[2]]
+    tracks = {
+        # YELLOW - Square wave lead melody (main theme)
+        'YELLOW': [s[0], s[2], s[4], s[2], s[0], s[2], s[4], s[7],
+                   s[4], s[5], s[6], s[7], s[6], s[5], s[4], s[2],
+                   s[0], s[2], s[4], s[2], s[4], s[7], s[4], s[7],
+                   s[0], s[2], s[4], s[2], s[4], s[7], s[9], s[7]],
 
-    intro_bass = [bass_scale[0], 0, bass_scale[4], 0,
-                  bass_scale[2], 0, bass_scale[4], 0,
-                  bass_scale[0], 0, bass_scale[4], 0,
-                  bass_scale[5], 0, bass_scale[4], 0]
+        # RED - Sawtooth harmony (thirds above melody)
+        'RED': [s[2], s[4], s[6], s[4], s[2], s[4], s[6], s[9],
+                s[6], s[7], 0, s[9], 0, s[7], s[6], s[4],
+                s[2], s[4], s[6], s[4], s[6], s[9], s[6], s[9],
+                s[2], s[4], s[6], s[4], s[6], s[9], s[11], s[9]],
 
-    # === DEVELOPMENT (scales wandering) ===
-    dev_melody = [scale[4], scale[5], scale[6], scale[7],
-                  scale[6], scale[5], scale[4], scale[2],
-                  scale[2], scale[3], scale[4], scale[5],
-                  scale[4], scale[2], scale[0], 0]
+        # BLUE - Triangle wave countermelody (LOW-MID octave for warmth!)
+        'BLUE': [l[7], l[4], l[2], l[4], l[7], l[4], l[2], 0,
+                 l[2], 0, l[4], 0, l[2], 0, l[7], l[4],
+                 l[7], l[4], l[2], l[4], l[2], 0, l[2], 0,
+                 l[7], l[4], l[2], l[4], l[2], 0, 0, 0],
 
-    dev_bass = [bass_scale[3], 0, bass_scale[5], 0,
-                bass_scale[4], 0, bass_scale[2], 0,
-                bass_scale[5], 0, bass_scale[4], 0,
-                bass_scale[0], 0, 0, 0]
+        # DINOSAUR - Deep bass (root notes, octaves)
+        'DINOSAUR': [b[0], 0, b[0], 0, b[4], 0, b[4], 0,
+                     b[3], 0, b[5], 0, b[4], 0, b[2], 0,
+                     b[0], b[0], b[4], 0, b[2], b[2], b[4], 0,
+                     b[0], b[0], b[4], 0, b[5], b[4], b[2], b[0]],
 
-    # === CHORUS (hook emphasized and repeated) ===
-    chorus_melody = [scale[0], scale[2], scale[4], scale[2],
-                     scale[4], scale[7], scale[4], scale[7],
-                     scale[0], scale[2], scale[4], scale[2],
-                     scale[4], scale[7], scale[9], scale[7]]
+        # PURPLE - PWM pad (sustained chords, LOW-MID octave)
+        'PURPLE': [l[0], 0, 0, 0, l[4], 0, 0, 0,
+                   l[3], 0, 0, 0, l[4], 0, 0, 0,
+                   l[0], 0, 0, 0, l[2], 0, 0, 0,
+                   l[0], 0, 0, 0, l[5], 0, l[4], 0],
 
-    chorus_bass = [bass_scale[0], bass_scale[0], bass_scale[4], 0,
-                   bass_scale[2], bass_scale[2], bass_scale[4], 0,
-                   bass_scale[0], bass_scale[0], bass_scale[4], 0,
-                   bass_scale[5], bass_scale[4], bass_scale[2], bass_scale[0]]
+        # WHITE - Bell accents (sparse, HIGH octave)
+        'WHITE': [h[0], 0, 0, 0, 0, 0, 0, h[4],
+                  0, 0, 0, 0, h[7], 0, 0, 0,
+                  h[0], 0, 0, 0, 0, 0, 0, h[4],
+                  0, 0, 0, 0, h[9], 0, h[7], 0],
 
-    # Drums: kick=1, snare=2, hihat=3
-    intro_drums = [1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3]
-    dev_drums = [1, 3, 3, 3, 1, 3, 2, 3, 1, 3, 3, 3, 1, 2, 1, 2]
-    chorus_drums = [1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 1, 2, 2]
+        # ORANGE - Distorted power notes (fifths)
+        'ORANGE': [s[0], 0, s[4], 0, s[0], 0, s[4], 0,
+                   s[3], 0, s[7], 0, s[4], 0, 0, 0,
+                   s[0], 0, s[4], 0, s[2], 0, s[6], 0,
+                   s[0], 0, s[4], 0, s[5], 0, s[4], 0],
 
-    return {
-        'name': 'Soaring The Woods',
-        'tempo': note_dur,
-        'sections': [
-            {'melody': intro_melody, 'bass': intro_bass, 'drums': intro_drums, 'type': 'intro'},
-            {'melody': dev_melody, 'bass': dev_bass, 'drums': dev_drums, 'type': 'development'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-        ],
-        'scale': scale,
-        'bass_scale': bass_scale,
+        # GOLD - Glockenspiel sparkles (arpeggiated high)
+        'GOLD': [h[0], h[2], h[4], 0, h[0], h[2], h[4], h[7],
+                 h[4], 0, h[6], 0, h[7], 0, h[4], 0,
+                 h[0], h[2], h[4], 0, h[4], h[7], h[4], 0,
+                 h[0], h[2], h[4], h[7], h[4], 0, h[9], h[7]],
+
+        # PATCHWORK - Arpeggio (fast cycling through chord)
+        'PATCHWORK': [s[0], s[2], s[4], s[7], s[4], s[2], s[0], s[2],
+                      s[3], s[5], s[7], s[5], s[4], s[6], s[4], s[2],
+                      s[0], s[2], s[4], s[2], s[2], s[4], s[6], s[4],
+                      s[0], s[2], s[4], s[7], s[5], s[4], s[2], s[0]],
+
+        # COOKIE - Pluck (rhythmic, offbeat, LOW-MID)
+        'COOKIE': [0, l[0], 0, l[2], 0, l[4], 0, l[2],
+                   0, l[3], 0, l[5], 0, l[4], 0, l[2],
+                   0, l[0], 0, l[2], 0, l[4], 0, l[2],
+                   0, l[0], 0, l[4], 0, l[5], 0, l[4]],
+
+        # CLOCKWORK - Mechanical tick (rhythmic, VERY HIGH clicks)
+        'CLOCKWORK': [hh[0], 0, hh[4], 0, hh[0], 0, hh[4], 0,
+                      hh[0], 0, hh[4], 0, hh[0], hh[4], 0, 0,
+                      hh[0], 0, hh[4], 0, hh[0], 0, hh[4], 0,
+                      hh[0], 0, hh[4], 0, hh[0], hh[0], hh[4], hh[4]],
+
+        # STEALTH - Atmospheric pad (very long notes, VERY LOW)
+        'STEALTH': [b[0], 0, 0, 0, 0, 0, 0, 0,
+                    b[3], 0, 0, 0, 0, 0, 0, 0,
+                    b[0], 0, 0, 0, 0, 0, 0, 0,
+                    b[5], 0, 0, 0, b[4], 0, 0, 0],
+
+        # GLITCH - Chaos (random from scale)
+        'GLITCH': [s[0], 0, s[7], 0, s[2], s[9], 0, s[4],
+                   s[6], 0, s[1], 0, s[5], 0, s[3], 0,
+                   0, s[4], 0, s[0], 0, s[7], s[2], 0,
+                   s[5], 0, 0, s[9], 0, s[4], 0, s[0]],
     }
+
+    drums = [1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
+             1, 3, 3, 3, 1, 3, 2, 3, 1, 3, 3, 3, 1, 2, 1, 2]
+
+    return {'name': 'Soaring The Woods', 'tempo': tempo, 'tracks': tracks, 'drums': drums, 'scale': s}
 
 
 def create_theme_2():
     """
     Theme 2: Creeps (Levels 6-10)
-    Key: C Ionian #5 (Augmented feel)
-    Mood: Growing menace, unease, bats emerging
+    Key: C Ionian #5 - Growing menace, unease
     """
-    scale = get_scale_notes('C', 'ionian_sharp5', 4)
-    bass_scale = get_scale_notes('C', 'ionian_sharp5', 2)
+    s = get_scale_notes('C', 'ionian_sharp5', 4)   # Melody (YELLOW, RED - high)
+    b = get_scale_notes('C', 'ionian_sharp5', 2)   # Bass (DINOSAUR, STEALTH)
+    l = get_scale_notes('C', 'ionian_sharp5', 3)   # Low-mid (BLUE, PURPLE, COOKIE)
+    h = get_scale_notes('C', 'ionian_sharp5', 5)   # High (WHITE, GOLD)
+    hh = get_scale_notes('C', 'ionian_sharp5', 6)  # Very high (CLOCKWORK)
 
-    note_dur = 0.14  # Slightly slower, more ominous
+    tempo = 0.28  # Slightly faster, building tension
 
-    # === INTRO (creeping chromatic) ===
-    intro_melody = [scale[0], 0, scale[1], 0,
-                    scale[2], 0, scale[4], 0,  # Augmented 5th!
-                    scale[0], 0, scale[1], 0,
-                    scale[4], scale[2], scale[1], scale[0]]
+    tracks = {
+        'YELLOW': [s[0], 0, s[1], 0, s[2], 0, s[4], 0,
+                   s[4], s[5], s[4], s[2], s[4], 0, s[4], 0,
+                   s[0], s[4], s[0], s[4], s[2], s[5], s[2], s[5],
+                   s[0], s[4], s[0], s[4], s[2], s[0], s[4], 0],
 
-    intro_bass = [bass_scale[0], 0, 0, bass_scale[0],
-                  bass_scale[4], 0, 0, bass_scale[4],
-                  bass_scale[0], 0, 0, bass_scale[0],
-                  bass_scale[4], bass_scale[2], 0, 0]
+        'RED': [s[2], 0, s[3], 0, s[4], 0, s[6], 0,
+                s[6], 0, s[6], s[4], s[6], 0, s[6], 0,
+                s[2], s[6], s[2], s[6], s[4], 0, s[4], 0,
+                s[2], s[6], s[2], s[6], s[4], s[2], s[6], 0],
 
-    # === DEVELOPMENT (tension building) ===
-    dev_melody = [scale[4], scale[5], scale[4], scale[2],
-                  scale[4], scale[5], scale[6], scale[4],
-                  scale[2], scale[4], scale[2], scale[0],
-                  scale[4], 0, scale[4], 0]
+        'BLUE': [l[4], 0, 0, 0, l[6], 0, 0, l[4],
+                 l[2], 0, l[2], 0, 0, 0, l[2], 0,
+                 l[4], 0, l[4], 0, 0, l[2], 0, l[2],
+                 l[4], 0, l[4], 0, 0, l[4], 0, 0],
 
-    dev_bass = [bass_scale[2], 0, bass_scale[4], 0,
-                bass_scale[5], 0, bass_scale[4], 0,
-                bass_scale[2], 0, bass_scale[0], 0,
-                bass_scale[4], bass_scale[4], 0, 0]
+        'DINOSAUR': [b[0], 0, 0, b[0], b[4], 0, 0, b[4],
+                     b[2], 0, b[4], 0, b[4], b[4], 0, 0,
+                     b[0], 0, b[0], 0, b[2], 0, b[2], 0,
+                     b[0], 0, b[4], 0, b[2], b[0], 0, 0],
 
-    # === CHORUS (menace revealed) ===
-    chorus_melody = [scale[0], scale[4], scale[0], scale[4],
-                     scale[2], scale[5], scale[2], scale[5],
-                     scale[0], scale[4], scale[7], scale[4],
-                     scale[2], scale[0], scale[4], 0]
+        'PURPLE': [l[4], 0, 0, 0, 0, 0, 0, 0,
+                   l[6], 0, 0, 0, 0, 0, 0, 0,
+                   l[4], 0, 0, 0, l[2], 0, 0, 0,
+                   l[4], 0, 0, 0, 0, 0, 0, 0],
 
-    chorus_bass = [bass_scale[0], 0, bass_scale[0], 0,
-                   bass_scale[2], 0, bass_scale[2], 0,
-                   bass_scale[0], 0, bass_scale[4], 0,
-                   bass_scale[2], bass_scale[0], 0, 0]
+        'WHITE': [0, 0, 0, 0, h[4], 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, h[6], 0,
+                  h[0], 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, h[4], 0, 0, 0, 0, 0],
 
-    intro_drums = [1, 0, 3, 0, 1, 0, 3, 0, 1, 0, 3, 0, 1, 2, 0, 0]
-    dev_drums = [1, 3, 0, 3, 1, 3, 2, 0, 1, 3, 0, 3, 1, 0, 2, 2]
-    chorus_drums = [1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 1, 2, 2]
+        'ORANGE': [s[0], 0, 0, s[4], 0, 0, s[4], 0,
+                   s[4], 0, 0, s[4], s[6], 0, 0, 0,
+                   s[0], 0, s[4], 0, s[2], 0, s[5], 0,
+                   s[0], 0, s[4], 0, s[2], 0, 0, 0],
 
-    return {
-        'name': 'Creeps',
-        'tempo': note_dur,
-        'sections': [
-            {'melody': intro_melody, 'bass': intro_bass, 'drums': intro_drums, 'type': 'intro'},
-            {'melody': dev_melody, 'bass': dev_bass, 'drums': dev_drums, 'type': 'development'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-        ],
-        'scale': scale,
-        'bass_scale': bass_scale,
+        'GOLD': [h[0], 0, h[1], 0, h[2], 0, h[4], 0,
+                 h[4], 0, 0, h[4], 0, 0, h[4], 0,
+                 h[0], 0, h[4], 0, h[2], 0, h[5], 0,
+                 h[0], 0, h[4], 0, 0, h[0], h[4], 0],
+
+        'PATCHWORK': [s[0], s[4], s[6], s[4], s[0], s[4], s[6], s[4],
+                      s[2], s[4], s[6], s[4], s[4], s[6], 0, s[4],
+                      s[0], s[4], s[0], s[4], s[2], s[5], s[2], s[5],
+                      s[0], s[4], s[0], s[4], s[2], s[0], 0, 0],
+
+        'COOKIE': [0, l[0], 0, 0, 0, l[4], 0, 0,
+                   0, l[2], 0, l[4], 0, 0, 0, 0,
+                   0, l[0], 0, l[4], 0, l[2], 0, l[5],
+                   0, l[0], 0, l[4], 0, l[2], 0, 0],
+
+        'CLOCKWORK': [hh[0], 0, 0, hh[4], hh[0], 0, 0, hh[4],
+                      hh[0], 0, 0, hh[4], hh[0], hh[4], 0, 0,
+                      hh[0], 0, hh[4], 0, hh[0], 0, hh[4], 0,
+                      hh[0], 0, hh[4], 0, hh[0], hh[4], 0, 0],
+
+        'STEALTH': [b[0], 0, 0, 0, 0, 0, 0, 0,
+                    b[4], 0, 0, 0, 0, 0, 0, 0,
+                    b[0], 0, 0, 0, b[2], 0, 0, 0,
+                    b[0], 0, 0, 0, 0, 0, 0, 0],
+
+        'GLITCH': [s[4], 0, 0, s[0], 0, s[6], 0, 0,
+                   0, s[2], s[4], 0, 0, 0, s[6], 0,
+                   s[0], 0, s[4], 0, 0, s[2], 0, s[5],
+                   0, s[0], 0, s[4], s[6], 0, 0, 0],
     }
+
+    drums = [1, 0, 3, 0, 1, 0, 3, 0, 1, 3, 0, 3, 1, 2, 0, 0,
+             1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 1, 2, 2]
+
+    return {'name': 'Creeps', 'tempo': tempo, 'tracks': tracks, 'drums': drums, 'scale': s}
 
 
 def create_theme_3():
     """
     Theme 3: Entering The Wastes (Levels 11-15)
-    Key: B Locrian
-    Mood: Desolate, dark, unstable - arrival at rotten lands
+    Key: B Locrian - Desolate, dark, unstable
     """
-    scale = get_scale_notes('B', 'locrian', 4)
-    bass_scale = get_scale_notes('B', 'locrian', 2)
+    s = get_scale_notes('B', 'locrian', 4)   # Melody (YELLOW, RED - high)
+    b = get_scale_notes('B', 'locrian', 2)   # Bass (DINOSAUR, STEALTH)
+    l = get_scale_notes('B', 'locrian', 3)   # Low-mid (BLUE, PURPLE, COOKIE)
+    h = get_scale_notes('B', 'locrian', 5)   # High (WHITE, GOLD)
+    hh = get_scale_notes('B', 'locrian', 6)  # Very high (CLOCKWORK)
 
-    note_dur = 0.16  # Slower, heavier
+    tempo = 0.30  # Slow, desolate
 
-    # === INTRO (descending into darkness) ===
-    intro_melody = [scale[7], scale[6], scale[5], scale[4],
-                    scale[3], scale[2], scale[1], scale[0],
-                    scale[0], 0, scale[1], scale[0],
-                    0, 0, scale[0], 0]
+    tracks = {
+        'YELLOW': [s[0], 0, s[1], s[0], 0, 0, s[0], 0,
+                   s[0], s[2], s[0], s[2], s[0], s[1], s[0], 0,
+                   s[0], 0, s[4], 0, s[3], s[2], s[1], s[0],
+                   s[0], 0, s[4], s[3], s[2], s[1], s[0], 0],
 
-    intro_bass = [bass_scale[0], 0, 0, 0,
-                  bass_scale[0], 0, bass_scale[4], 0,
-                  bass_scale[0], 0, 0, 0,
-                  bass_scale[0], bass_scale[0], 0, 0]
+        'RED': [s[4], 0, 0, s[4], 0, 0, s[4], 0,
+                s[3], 0, s[3], 0, s[2], 0, 0, 0,
+                s[4], 0, 0, 0, 0, s[4], s[3], s[2],
+                s[4], 0, 0, 0, s[4], s[3], s[2], 0],
 
-    # === DEVELOPMENT (wandering lost) ===
-    dev_melody = [scale[0], scale[2], scale[0], scale[2],
-                  scale[3], scale[4], scale[3], scale[2],
-                  scale[0], scale[1], scale[0], 0,
-                  scale[4], scale[3], scale[2], scale[0]]
+        'BLUE': [0, l[0], 0, 0, l[4], 0, 0, l[2],
+                 l[3], 0, 0, l[3], 0, 0, l[2], 0,
+                 0, l[0], 0, l[4], 0, 0, 0, 0,
+                 0, l[0], 0, 0, 0, 0, 0, 0],
 
-    dev_bass = [bass_scale[0], 0, bass_scale[4], 0,
-                bass_scale[3], 0, bass_scale[2], 0,
-                bass_scale[0], 0, 0, 0,
-                bass_scale[4], 0, bass_scale[0], 0]
+        'DINOSAUR': [b[0], 0, 0, 0, b[0], 0, b[4], 0,
+                     b[0], 0, b[4], 0, b[3], 0, b[2], 0,
+                     b[0], b[0], 0, 0, b[3], 0, b[0], 0,
+                     b[0], b[0], 0, 0, b[4], b[3], b[0], 0],
 
-    # === CHORUS (dread settles in) ===
-    chorus_melody = [scale[0], 0, scale[4], 0,
-                     scale[3], scale[2], scale[1], scale[0],
-                     scale[0], 0, scale[4], scale[3],
-                     scale[2], scale[1], scale[0], 0]
+        'PURPLE': [l[0], 0, 0, 0, 0, 0, 0, 0,
+                   l[3], 0, 0, 0, 0, 0, 0, 0,
+                   l[0], 0, 0, 0, 0, 0, 0, 0,
+                   l[4], 0, 0, 0, l[0], 0, 0, 0],
 
-    chorus_bass = [bass_scale[0], bass_scale[0], 0, 0,
-                   bass_scale[3], 0, bass_scale[0], 0,
-                   bass_scale[0], bass_scale[0], 0, 0,
-                   bass_scale[4], bass_scale[3], bass_scale[0], 0]
+        'WHITE': [0, 0, 0, 0, 0, 0, 0, h[0],
+                  0, 0, 0, 0, 0, 0, 0, 0,
+                  h[0], 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, h[4], 0, 0, 0],
 
-    intro_drums = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0, 1, 0, 0, 0]
-    dev_drums = [1, 0, 0, 3, 1, 0, 2, 0, 1, 0, 0, 3, 1, 2, 0, 0]
-    chorus_drums = [1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 1, 2, 0]
+        'ORANGE': [s[0], 0, 0, 0, s[0], 0, s[4], 0,
+                   s[3], 0, 0, 0, s[2], 0, 0, 0,
+                   s[0], 0, s[4], 0, 0, 0, s[0], 0,
+                   s[0], 0, s[4], 0, 0, 0, 0, 0],
 
-    return {
-        'name': 'Entering The Wastes',
-        'tempo': note_dur,
-        'sections': [
-            {'melody': intro_melody, 'bass': intro_bass, 'drums': intro_drums, 'type': 'intro'},
-            {'melody': dev_melody, 'bass': dev_bass, 'drums': dev_drums, 'type': 'development'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-        ],
-        'scale': scale,
-        'bass_scale': bass_scale,
+        'GOLD': [0, 0, h[0], 0, 0, 0, h[1], 0,
+                 0, 0, h[0], 0, 0, 0, 0, 0,
+                 h[0], 0, 0, h[4], 0, 0, 0, 0,
+                 0, 0, h[0], 0, h[4], 0, h[0], 0],
+
+        'PATCHWORK': [s[0], s[1], s[0], 0, s[0], s[4], s[0], 0,
+                      s[0], s[3], s[2], s[3], s[2], s[1], s[0], 0,
+                      s[0], s[1], 0, s[4], s[3], s[2], s[1], s[0],
+                      s[0], s[1], 0, s[4], s[3], s[2], s[1], 0],
+
+        'COOKIE': [0, l[0], 0, 0, 0, 0, 0, l[4],
+                   0, l[0], 0, l[3], 0, 0, 0, l[2],
+                   0, l[0], 0, 0, 0, l[3], 0, 0,
+                   0, l[0], 0, 0, 0, l[4], 0, 0],
+
+        'CLOCKWORK': [hh[0], 0, 0, 0, hh[0], 0, 0, 0,
+                      hh[0], 0, 0, 0, hh[0], 0, hh[4], 0,
+                      hh[0], 0, hh[4], 0, hh[0], 0, hh[4], 0,
+                      hh[0], 0, hh[4], 0, hh[0], hh[0], hh[4], 0],
+
+        'STEALTH': [b[0], 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    b[0], 0, 0, 0, 0, 0, 0, 0,
+                    b[4], 0, 0, 0, 0, 0, 0, 0],
+
+        'GLITCH': [s[0], 0, 0, s[4], 0, 0, s[1], 0,
+                   0, s[3], 0, 0, s[0], 0, 0, 0,
+                   s[4], 0, 0, 0, 0, s[3], 0, s[0],
+                   0, 0, s[1], 0, 0, 0, s[0], 0],
     }
+
+    drums = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0, 1, 0, 0, 0,
+             1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 1, 2, 0]
+
+    return {'name': 'Entering The Wastes', 'tempo': tempo, 'tracks': tracks, 'drums': drums, 'scale': s}
 
 
 def create_theme_4():
     """
     Theme 4: The Circle (Levels 16-20)
-    Key: E Phrygian
-    Mood: Ancient evil, ritualistic, ominous power center
+    Key: E Phrygian - Ancient evil, ritualistic
     """
-    scale = get_scale_notes('E', 'phrygian', 4)
-    bass_scale = get_scale_notes('E', 'phrygian', 2)
+    s = get_scale_notes('E', 'phrygian', 4)   # Melody (YELLOW, RED - high)
+    b = get_scale_notes('E', 'phrygian', 2)   # Bass (DINOSAUR, STEALTH)
+    l = get_scale_notes('E', 'phrygian', 3)   # Low-mid (BLUE, PURPLE, COOKIE)
+    h = get_scale_notes('E', 'phrygian', 5)   # High (WHITE, GOLD)
+    hh = get_scale_notes('E', 'phrygian', 6)  # Very high (CLOCKWORK)
 
-    note_dur = 0.13  # Faster, more urgent
+    tempo = 0.26  # Ritualistic, driving
 
-    # === INTRO (ritual begins - Spanish/Arabic feel) ===
-    intro_melody = [scale[0], scale[1], scale[0], 0,
-                    scale[0], scale[1], scale[2], scale[1],
-                    scale[0], scale[1], scale[0], 0,
-                    scale[4], scale[3], scale[2], scale[0]]
+    tracks = {
+        'YELLOW': [s[0], s[1], s[0], 0, s[0], s[1], s[2], s[1],
+                   s[4], s[5], s[4], s[3], s[2], s[1], s[0], s[1],
+                   s[0], s[4], s[0], s[4], s[0], s[1], s[4], s[1],
+                   s[0], s[4], s[0], s[4], s[1], s[0], 0, 0],
 
-    intro_bass = [bass_scale[0], 0, bass_scale[0], 0,
-                  bass_scale[4], 0, bass_scale[0], 0,
-                  bass_scale[0], 0, bass_scale[0], 0,
-                  bass_scale[4], bass_scale[3], bass_scale[0], 0]
+        'RED': [s[4], 0, s[4], 0, s[4], 0, s[5], 0,
+                s[7], 0, s[7], s[5], s[4], 0, s[4], 0,
+                s[4], 0, s[4], 0, s[4], 0, s[7], 0,
+                s[4], 0, s[4], 0, s[4], s[3], s[1], 0],
 
-    # === DEVELOPMENT (circling the center) ===
-    dev_melody = [scale[4], scale[5], scale[4], scale[3],
-                  scale[2], scale[3], scale[4], scale[3],
-                  scale[2], scale[1], scale[0], scale[1],
-                  scale[2], scale[3], scale[4], 0]
+        'BLUE': [0, l[0], 0, l[1], 0, l[0], 0, 0,
+                 0, l[4], 0, 0, 0, l[3], 0, l[0],
+                 l[0], 0, l[4], 0, l[0], 0, 0, l[4],
+                 l[0], 0, l[4], 0, 0, l[0], 0, 0],
 
-    dev_bass = [bass_scale[4], 0, bass_scale[3], 0,
-                bass_scale[2], 0, bass_scale[4], 0,
-                bass_scale[0], 0, bass_scale[2], 0,
-                bass_scale[4], 0, 0, 0]
+        'DINOSAUR': [b[0], 0, b[0], 0, b[4], 0, b[0], 0,
+                     b[4], 0, b[3], 0, b[2], 0, b[4], 0,
+                     b[0], 0, b[4], 0, b[0], 0, b[4], 0,
+                     b[0], 0, b[4], 0, b[0], b[0], b[0], 0],
 
-    # === CHORUS (power revealed) ===
-    chorus_melody = [scale[0], scale[4], scale[0], scale[4],
-                     scale[0], scale[1], scale[4], scale[1],
-                     scale[0], scale[4], scale[7], scale[4],
-                     scale[1], scale[0], 0, 0]
+        'PURPLE': [l[0], 0, 0, 0, l[4], 0, 0, 0,
+                   l[4], 0, 0, 0, l[3], 0, 0, 0,
+                   l[0], 0, 0, 0, l[0], 0, 0, 0,
+                   l[0], 0, 0, 0, l[1], 0, 0, 0],
 
-    chorus_bass = [bass_scale[0], 0, bass_scale[4], 0,
-                   bass_scale[0], 0, bass_scale[4], 0,
-                   bass_scale[0], 0, bass_scale[4], 0,
-                   bass_scale[0], bass_scale[0], bass_scale[0], 0]
+        'WHITE': [h[0], 0, 0, 0, 0, 0, 0, h[1],
+                  0, 0, 0, h[4], 0, 0, 0, 0,
+                  h[0], 0, 0, 0, 0, 0, 0, h[4],
+                  0, 0, 0, 0, h[1], 0, 0, 0],
 
-    intro_drums = [1, 3, 3, 3, 1, 3, 2, 3, 1, 3, 3, 3, 1, 2, 2, 0]
-    dev_drums = [1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 2]
-    chorus_drums = [1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 2, 1, 2]
+        'ORANGE': [s[0], 0, s[4], 0, s[0], 0, s[4], 0,
+                   s[4], 0, s[7], 0, s[4], 0, 0, 0,
+                   s[0], 0, s[4], 0, s[0], 0, s[4], 0,
+                   s[0], 0, s[4], 0, s[1], 0, 0, 0],
 
-    return {
-        'name': 'The Circle',
-        'tempo': note_dur,
-        'sections': [
-            {'melody': intro_melody, 'bass': intro_bass, 'drums': intro_drums, 'type': 'intro'},
-            {'melody': dev_melody, 'bass': dev_bass, 'drums': dev_drums, 'type': 'development'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-        ],
-        'scale': scale,
-        'bass_scale': bass_scale,
+        'GOLD': [h[0], h[1], h[0], 0, h[0], h[1], h[2], h[1],
+                 h[4], 0, h[4], 0, h[3], 0, h[0], h[1],
+                 h[0], 0, h[4], 0, h[0], h[1], 0, h[4],
+                 h[0], 0, h[4], 0, h[1], h[0], 0, 0],
+
+        'PATCHWORK': [s[0], s[1], s[4], s[1], s[0], s[1], s[4], s[1],
+                      s[4], s[5], s[7], s[5], s[4], s[3], s[1], s[0],
+                      s[0], s[4], s[0], s[4], s[0], s[1], s[4], s[1],
+                      s[0], s[4], s[0], s[4], s[1], s[0], 0, 0],
+
+        'COOKIE': [0, l[0], 0, l[1], 0, l[0], 0, l[1],
+                   0, l[4], 0, l[3], 0, l[2], 0, l[0],
+                   0, l[0], 0, l[4], 0, l[0], 0, l[4],
+                   0, l[0], 0, l[4], 0, l[1], 0, 0],
+
+        'CLOCKWORK': [hh[0], hh[4], hh[4], hh[4], hh[0], hh[4], hh[4], hh[4],
+                      hh[0], hh[4], hh[4], hh[4], hh[0], hh[4], hh[4], 0,
+                      hh[0], hh[0], hh[4], hh[4], hh[0], hh[0], hh[4], hh[4],
+                      hh[0], hh[0], hh[4], hh[4], hh[0], hh[4], hh[0], hh[4]],
+
+        'STEALTH': [b[0], 0, 0, 0, 0, 0, 0, 0,
+                    b[4], 0, 0, 0, 0, 0, 0, 0,
+                    b[0], 0, 0, 0, 0, 0, 0, 0,
+                    b[0], 0, 0, 0, b[1], 0, 0, 0],
+
+        'GLITCH': [s[0], s[1], 0, 0, s[4], 0, s[1], 0,
+                   0, s[4], s[7], 0, 0, s[3], 0, s[0],
+                   s[0], 0, s[4], 0, s[1], 0, 0, s[4],
+                   0, s[0], 0, s[4], 0, s[1], 0, 0],
     }
+
+    drums = [1, 3, 3, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 2, 2, 0,
+             1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 2, 1, 2]
+
+    return {'name': 'The Circle', 'tempo': tempo, 'tracks': tracks, 'drums': drums, 'scale': s}
 
 
 def create_theme_5():
     """
     Theme 5: The Leech (Levels 21-25)
-    Key: D Dorian
-    Mood: Epic battle, tension, heroic struggle against the giant bat
+    Key: D Dorian - Epic battle, heroic
     """
-    scale = get_scale_notes('D', 'dorian', 4)
-    bass_scale = get_scale_notes('D', 'dorian', 2)
+    s = get_scale_notes('D', 'dorian', 4)   # Melody (YELLOW, RED - high)
+    b = get_scale_notes('D', 'dorian', 2)   # Bass (DINOSAUR, STEALTH)
+    l = get_scale_notes('D', 'dorian', 3)   # Low-mid (BLUE, PURPLE, COOKIE)
+    h = get_scale_notes('D', 'dorian', 5)   # High (WHITE, GOLD)
+    hh = get_scale_notes('D', 'dorian', 6)  # Very high (CLOCKWORK)
 
-    note_dur = 0.11  # Fast, intense battle music
+    tempo = 0.22  # Epic, intense
 
-    # === INTRO (the beast appears) ===
-    intro_melody = [scale[0], 0, scale[0], scale[2],
-                    scale[4], scale[5], scale[4], 0,
-                    scale[0], 0, scale[0], scale[2],
-                    scale[4], scale[7], scale[4], scale[2]]
+    tracks = {
+        'YELLOW': [s[0], 0, s[0], s[2], s[4], s[5], s[4], 0,
+                   s[7], s[6], s[5], s[4], s[5], s[6], s[7], s[9],
+                   s[0], s[2], s[4], s[5], s[7], s[5], s[4], s[2],
+                   s[0], s[2], s[4], s[7], s[9], s[7], s[5], s[4]],
 
-    intro_bass = [bass_scale[0], bass_scale[0], 0, bass_scale[0],
-                  bass_scale[4], 0, bass_scale[4], 0,
-                  bass_scale[0], bass_scale[0], 0, bass_scale[0],
-                  bass_scale[5], 0, bass_scale[4], 0]
+        'RED': [s[4], 0, s[4], s[5], s[7], 0, s[7], 0,
+                s[9], 0, s[7], s[6], s[7], 0, s[9], 0,
+                s[4], s[5], s[7], 0, s[9], s[7], s[7], s[5],
+                s[4], s[5], s[7], s[9], 0, s[9], s[7], s[6]],
 
-    # === DEVELOPMENT (the fight rages) ===
-    dev_melody = [scale[7], scale[6], scale[5], scale[4],
-                  scale[5], scale[6], scale[7], scale[9],
-                  scale[7], scale[5], scale[4], scale[2],
-                  scale[4], scale[5], scale[4], 0]
+        'BLUE': [0, l[0], 0, 0, l[2], 0, l[2], l[4],
+                 l[5], 0, 0, l[2], 0, l[4], 0, 0,
+                 0, 0, l[2], l[4], l[5], 0, l[2], 0,
+                 0, 0, l[2], 0, l[7], 0, l[4], l[2]],
 
-    dev_bass = [bass_scale[5], 0, bass_scale[4], 0,
-                bass_scale[5], 0, bass_scale[6], 0,
-                bass_scale[5], 0, bass_scale[4], 0,
-                bass_scale[0], bass_scale[0], 0, 0]
+        'DINOSAUR': [b[0], b[0], 0, b[0], b[4], 0, b[4], 0,
+                     b[5], 0, b[4], 0, b[5], 0, b[6], 0,
+                     b[0], 0, b[4], 0, b[5], 0, b[4], 0,
+                     b[0], 0, b[4], 0, b[5], b[4], b[2], b[0]],
 
-    # === CHORUS (heroic stand) ===
-    chorus_melody = [scale[0], scale[2], scale[4], scale[5],
-                     scale[7], scale[5], scale[4], scale[2],
-                     scale[0], scale[2], scale[4], scale[7],
-                     scale[9], scale[7], scale[5], scale[4]]
+        'PURPLE': [l[0], 0, 0, 0, l[4], 0, 0, 0,
+                   l[5], 0, 0, 0, l[6], 0, 0, 0,
+                   l[0], 0, 0, 0, l[5], 0, 0, 0,
+                   l[0], 0, 0, 0, l[5], 0, l[4], 0],
 
-    chorus_bass = [bass_scale[0], 0, bass_scale[4], 0,
-                   bass_scale[5], 0, bass_scale[4], 0,
-                   bass_scale[0], 0, bass_scale[4], 0,
-                   bass_scale[5], bass_scale[4], bass_scale[2], bass_scale[0]]
+        'WHITE': [h[0], 0, 0, 0, 0, h[5], 0, 0,
+                  h[7], 0, 0, 0, 0, 0, h[9], 0,
+                  h[0], 0, 0, h[4], 0, h[7], 0, 0,
+                  h[0], 0, 0, h[7], h[9], 0, h[5], h[4]],
 
-    intro_drums = [1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 1, 2, 2]
-    dev_drums = [1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 2, 1, 2]
-    chorus_drums = [1, 3, 1, 2, 1, 3, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2]
+        'ORANGE': [s[0], 0, s[4], 0, s[0], 0, s[4], 0,
+                   s[5], 0, s[9], 0, s[5], 0, s[9], 0,
+                   s[0], 0, s[4], 0, s[5], 0, s[4], 0,
+                   s[0], 0, s[4], 0, s[5], s[4], s[2], 0],
 
-    return {
-        'name': 'The Leech',
-        'tempo': note_dur,
-        'sections': [
-            {'melody': intro_melody, 'bass': intro_bass, 'drums': intro_drums, 'type': 'intro'},
-            {'melody': dev_melody, 'bass': dev_bass, 'drums': dev_drums, 'type': 'development'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-        ],
-        'scale': scale,
-        'bass_scale': bass_scale,
+        'GOLD': [h[0], 0, h[0], h[2], h[4], h[5], h[4], 0,
+                 h[7], h[6], h[5], h[4], h[5], h[6], h[7], h[9],
+                 h[0], h[2], h[4], h[5], h[7], h[5], h[4], h[2],
+                 h[0], h[2], h[4], h[7], h[9], h[7], h[5], h[4]],
+
+        'PATCHWORK': [s[0], s[2], s[4], s[5], s[4], s[2], s[0], s[2],
+                      s[5], s[6], s[7], s[6], s[5], s[4], s[7], s[9],
+                      s[0], s[2], s[4], s[5], s[7], s[5], s[4], s[2],
+                      s[0], s[2], s[4], s[7], s[9], s[7], s[5], s[4]],
+
+        'COOKIE': [0, l[0], 0, l[2], 0, l[4], 0, l[5],
+                   0, l[7], 0, l[5], 0, l[6], 0, l[9],
+                   0, l[0], 0, l[4], 0, l[5], 0, l[2],
+                   0, l[0], 0, l[4], 0, l[7], 0, l[4]],
+
+        'CLOCKWORK': [hh[0], hh[4], hh[0], hh[4], hh[0], hh[4], hh[0], hh[4],
+                      hh[0], hh[0], hh[4], hh[4], hh[0], hh[0], hh[4], hh[4],
+                      hh[0], hh[4], hh[0], hh[4], hh[0], hh[4], hh[0], hh[4],
+                      hh[0], hh[0], hh[0], hh[4], hh[0], hh[0], hh[0], hh[4]],
+
+        'STEALTH': [b[0], 0, 0, 0, b[4], 0, 0, 0,
+                    b[5], 0, 0, 0, b[4], 0, 0, 0,
+                    b[0], 0, 0, 0, b[5], 0, 0, 0,
+                    b[0], 0, 0, 0, b[5], 0, b[4], 0],
+
+        'GLITCH': [s[0], 0, s[4], s[2], 0, s[5], s[7], 0,
+                   s[9], 0, 0, s[4], s[6], 0, s[7], 0,
+                   0, s[2], 0, s[5], s[7], 0, 0, s[2],
+                   s[0], 0, s[4], 0, s[9], s[7], 0, s[4]],
     }
+
+    drums = [1, 3, 2, 3, 1, 3, 2, 3, 1, 1, 2, 3, 1, 2, 1, 2,
+             1, 3, 1, 2, 1, 3, 1, 2, 1, 3, 1, 2, 1, 1, 1, 2]
+
+    return {'name': 'The Leech', 'tempo': tempo, 'tracks': tracks, 'drums': drums, 'scale': s}
 
 
 def create_theme_6():
     """
     Theme 6: Homebound (Levels 26-30)
-    Key: A Minor (Aeolian)
-    Mood: Bittersweet victory, melancholic return, survivors scarred
+    Key: A Minor - Bittersweet, melancholic
     """
-    scale = get_scale_notes('A', 'minor', 4)
-    bass_scale = get_scale_notes('A', 'minor', 2)
+    s = get_scale_notes('A', 'minor', 4)   # Melody (YELLOW, RED - high)
+    b = get_scale_notes('A', 'minor', 2)   # Bass (DINOSAUR, STEALTH)
+    l = get_scale_notes('A', 'minor', 3)   # Low-mid (BLUE, PURPLE, COOKIE)
+    h = get_scale_notes('A', 'minor', 5)   # High (WHITE, GOLD)
+    hh = get_scale_notes('A', 'minor', 6)  # Very high (CLOCKWORK)
 
-    note_dur = 0.15  # Slower, reflective
+    tempo = 0.28  # Bittersweet, reflective
 
-    # === INTRO (the long walk home) ===
-    intro_melody = [scale[0], scale[2], scale[4], scale[2],
-                    scale[0], 0, 0, 0,
-                    scale[4], scale[5], scale[4], scale[2],
-                    scale[0], 0, 0, 0]
+    tracks = {
+        'YELLOW': [s[0], s[2], s[4], s[2], s[0], 0, 0, 0,
+                   s[7], 0, s[6], s[5], s[4], s[5], s[4], 0,
+                   s[0], s[2], s[4], s[7], s[4], s[2], s[0], 0,
+                   s[0], s[2], s[4], s[5], s[4], s[2], s[0], 0],
 
-    intro_bass = [bass_scale[0], 0, 0, 0,
-                  bass_scale[0], 0, bass_scale[4], 0,
-                  bass_scale[5], 0, 0, 0,
-                  bass_scale[0], 0, 0, 0]
+        'RED': [s[4], s[6], s[7], s[6], s[4], 0, 0, 0,
+                s[9], 0, 0, s[7], s[6], 0, s[6], 0,
+                s[4], s[6], 0, s[9], s[7], s[6], s[4], 0,
+                s[4], s[6], 0, s[7], s[6], s[4], s[4], 0],
 
-    # === DEVELOPMENT (memories of fallen friends) ===
-    dev_melody = [scale[7], 0, scale[6], scale[5],
-                  scale[4], scale[5], scale[4], 0,
-                  scale[2], 0, scale[4], scale[2],
-                  scale[0], 0, 0, 0]
+        'BLUE': [0, l[0], 0, l[0], 0, l[4], 0, l[2],
+                 l[5], 0, l[4], 0, 0, l[2], 0, 0,
+                 0, l[0], 0, l[4], 0, 0, 0, l[0],
+                 0, l[0], 0, l[2], 0, 0, 0, 0],
 
-    dev_bass = [bass_scale[5], 0, bass_scale[4], 0,
-                bass_scale[3], 0, bass_scale[2], 0,
-                bass_scale[0], 0, bass_scale[4], 0,
-                bass_scale[0], 0, 0, 0]
+        'DINOSAUR': [b[0], 0, 0, 0, b[0], 0, b[4], 0,
+                     b[5], 0, b[4], 0, b[3], 0, b[2], 0,
+                     b[0], 0, b[4], 0, b[3], 0, b[0], 0,
+                     b[0], 0, b[4], 0, b[5], b[4], b[0], 0],
 
-    # === CHORUS (home at last, but changed forever) ===
-    chorus_melody = [scale[0], scale[2], scale[4], scale[7],
-                     scale[4], scale[2], scale[0], 0,
-                     scale[0], scale[2], scale[4], scale[5],
-                     scale[4], scale[2], scale[0], 0]
+        'PURPLE': [l[0], 0, 0, 0, 0, 0, 0, 0,
+                   l[5], 0, 0, 0, l[4], 0, 0, 0,
+                   l[0], 0, 0, 0, l[3], 0, 0, 0,
+                   l[0], 0, 0, 0, l[5], 0, l[4], 0],
 
-    chorus_bass = [bass_scale[0], 0, bass_scale[4], 0,
-                   bass_scale[3], 0, bass_scale[0], 0,
-                   bass_scale[0], 0, bass_scale[4], 0,
-                   bass_scale[5], bass_scale[4], bass_scale[0], 0]
+        'WHITE': [h[0], 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, h[5], 0, 0, 0, 0,
+                  h[0], 0, 0, h[7], 0, 0, 0, 0,
+                  0, 0, 0, 0, h[5], 0, h[4], 0],
 
-    intro_drums = [1, 0, 0, 3, 0, 0, 2, 0, 1, 0, 0, 3, 0, 0, 2, 0]
-    dev_drums = [1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 0, 0]
-    chorus_drums = [1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 0, 2, 0]
+        'ORANGE': [s[0], 0, s[4], 0, s[0], 0, 0, 0,
+                   s[5], 0, 0, s[4], 0, 0, s[4], 0,
+                   s[0], 0, s[4], 0, s[3], 0, s[0], 0,
+                   s[0], 0, s[4], 0, s[5], 0, 0, 0],
 
-    return {
-        'name': 'Homebound',
-        'tempo': note_dur,
-        'sections': [
-            {'melody': intro_melody, 'bass': intro_bass, 'drums': intro_drums, 'type': 'intro'},
-            {'melody': dev_melody, 'bass': dev_bass, 'drums': dev_drums, 'type': 'development'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-            {'melody': chorus_melody, 'bass': chorus_bass, 'drums': chorus_drums, 'type': 'chorus'},
-        ],
-        'scale': scale,
-        'bass_scale': bass_scale,
+        'GOLD': [h[0], h[2], h[4], h[2], h[0], 0, 0, 0,
+                 h[7], 0, h[6], h[5], h[4], h[5], h[4], 0,
+                 h[0], h[2], h[4], h[7], h[4], h[2], h[0], 0,
+                 h[0], h[2], h[4], h[5], h[4], h[2], h[0], 0],
+
+        'PATCHWORK': [s[0], s[2], s[4], s[2], s[0], s[2], s[0], 0,
+                      s[5], s[6], s[5], s[4], s[2], s[4], s[2], 0,
+                      s[0], s[2], s[4], s[7], s[4], s[2], s[0], 0,
+                      s[0], s[2], s[4], s[5], s[4], s[2], s[0], 0],
+
+        'COOKIE': [0, l[0], 0, l[2], 0, 0, 0, 0,
+                   0, l[5], 0, l[4], 0, l[2], 0, 0,
+                   0, l[0], 0, l[4], 0, 0, 0, 0,
+                   0, l[0], 0, l[2], 0, l[4], 0, 0],
+
+        'CLOCKWORK': [hh[0], 0, 0, hh[4], 0, 0, hh[4], 0,
+                      hh[0], 0, hh[4], 0, hh[0], 0, hh[4], 0,
+                      hh[0], hh[4], 0, hh[4], hh[0], hh[4], 0, hh[4],
+                      hh[0], 0, 0, hh[4], hh[0], 0, hh[4], 0],
+
+        'STEALTH': [b[0], 0, 0, 0, 0, 0, 0, 0,
+                    b[5], 0, 0, 0, 0, 0, 0, 0,
+                    b[0], 0, 0, 0, b[3], 0, 0, 0,
+                    b[0], 0, 0, 0, 0, 0, 0, 0],
+
+        'GLITCH': [s[0], 0, 0, s[2], 0, s[4], 0, 0,
+                   s[5], 0, s[6], 0, 0, s[4], 0, 0,
+                   0, s[0], 0, s[7], 0, 0, s[0], 0,
+                   0, s[0], 0, s[4], s[5], 0, 0, 0],
     }
+
+    drums = [1, 0, 0, 3, 0, 0, 2, 0, 1, 0, 3, 0, 1, 0, 0, 0,
+             1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 0, 2, 0]
+
+    return {'name': 'Homebound', 'tempo': tempo, 'tracks': tracks, 'drums': drums, 'scale': s}
 
 
 # =============================================================================
@@ -837,106 +1015,76 @@ def generate_drums(pattern, note_dur, volume=0.2):
 def create_dynamic_music(theme, active_birds):
     """
     Create music with instruments based on active birds.
-
-    The music always has drums as base.
-    Each bird type present adds its instrument playing a part:
-    - DINOSAUR/bass birds: play bass line
-    - YELLOW/BLUE/lead birds: play melody
-    - Others: play harmonies or accents
+    Each bird type has its own unique pre-composed track in the theme.
+    Drums always play as base.
+    Tempo scales with game speed!
     """
-    sections = theme['sections']
-    tempo = theme['tempo']
-    scale = theme['scale']
+    global _game_speed_multiplier
 
-    all_waves = []
+    tracks = theme['tracks']
+    drums = theme['drums']
+    base_tempo = theme['tempo']
 
-    for section in sections:
-        melody = section['melody']
-        bass = section['bass']
-        drums = section['drums']
+    # Scale tempo with game speed (faster game = faster music)
+    # Speed multiplier > 1 means game is faster, so we divide tempo
+    tempo = base_tempo / _game_speed_multiplier
 
-        section_len = int(SAMPLE_RATE * tempo * len(melody))
-        section_wave = np.zeros(section_len, dtype=np.float32)
+    # Calculate total length (all tracks should have same length)
+    track_len = len(drums)
+    total_samples = int(SAMPLE_RATE * tempo * track_len)
 
-        # Always add drums (base rhythm)
-        drum_wave = generate_drums(drums, tempo, volume=0.15)
-        if len(drum_wave) <= section_len:
-            section_wave[:len(drum_wave)] += drum_wave
+    music_wave = np.zeros(total_samples, dtype=np.float32)
+
+    # Always add drums (base rhythm)
+    drum_wave = generate_drums(drums, tempo, volume=0.25)
+    if len(drum_wave) <= total_samples:
+        music_wave[:len(drum_wave)] += drum_wave
+    else:
+        music_wave += drum_wave[:total_samples]
+
+    # Volume levels per instrument type for good mix
+    # Organized by frequency range for balanced sound
+    VOLUMES = {
+        # HIGH (bright, cutting through)
+        'YELLOW': 0.20,    # Lead melody - square wave
+        'GOLD': 0.15,      # Sparkles - glockenspiel
+        'WHITE': 0.18,     # Bell accents
+        'CLOCKWORK': 0.10, # Ticks - very high, subtle
+        # MID (body of the sound)
+        'RED': 0.22,       # Harmony - thick sawtooth
+        'BLUE': 0.18,      # Countermelody - warm triangle
+        'ORANGE': 0.20,    # Distorted power chords
+        'PATCHWORK': 0.14, # Arpeggio - mid
+        # LOW-MID (warmth)
+        'PURPLE': 0.20,    # PWM pad - fills the space
+        'COOKIE': 0.16,    # Pluck - rhythmic low-mid
+        # BASS (foundation)
+        'DINOSAUR': 0.40,  # Deep sub bass - LOUD foundation!
+        'STEALTH': 0.25,   # Atmospheric low pad
+        # CHAOS
+        'GLITCH': 0.08,    # Chaos - subtle
+    }
+
+    # Add each active bird's track
+    for bird_type in active_birds:
+        if bird_type not in tracks:
+            continue
+
+        notes = tracks[bird_type]
+        vol = VOLUMES.get(bird_type, 0.15)
+
+        bird_wave = generate_track_for_bird(bird_type, notes, tempo, None, vol)
+        if len(bird_wave) <= total_samples:
+            music_wave[:len(bird_wave)] += bird_wave
         else:
-            section_wave += drum_wave[:section_len]
+            music_wave += bird_wave[:total_samples]
 
-        # Add instruments based on active birds
-        for bird_type in active_birds:
-            instrument = BIRD_INSTRUMENTS.get(bird_type)
-            if not instrument:
-                continue
-
-            role = instrument['role']
-
-            # Determine which notes this bird plays
-            if role == 'bass':
-                notes = bass
-                vol = 0.3
-            elif role in ['lead', 'melody', 'lead2']:
-                notes = melody
-                vol = 0.2
-            elif role == 'harmony':
-                # Play melody transposed down
-                notes = [n * 0.5 if n > 0 else 0 for n in melody]
-                vol = 0.15
-            elif role == 'pad':
-                # Long notes from bass
-                notes = [bass[i] if i % 4 == 0 else 0 for i in range(len(bass))]
-                vol = 0.1
-            elif role == 'arpeggio':
-                # Fast arpeggios on melody notes
-                notes = melody
-                vol = 0.15
-            elif role == 'accent':
-                # Sparse accents
-                notes = [melody[i] * 2 if i % 8 == 0 else 0 for i in range(len(melody))]
-                vol = 0.2
-            elif role == 'sparkle':
-                # High sparkles
-                notes = [melody[i] * 2 if i % 4 == 0 else 0 for i in range(len(melody))]
-                vol = 0.15
-            elif role == 'pluck':
-                # Plucked bass notes
-                notes = [bass[i] if i % 2 == 0 else 0 for i in range(len(bass))]
-                vol = 0.2
-            elif role == 'percussion':
-                # Rhythmic ticks
-                notes = [200 if drums[i] == 1 else 0 for i in range(len(drums))]
-                vol = 0.1
-            elif role == 'atmosphere':
-                # Very sparse pad
-                notes = [bass[0] if i == 0 else 0 for i in range(len(bass))]
-                vol = 0.1
-            elif role == 'chaos':
-                # Random chaos
-                notes = [np.random.choice(melody) if np.random.random() > 0.7 else 0 for _ in melody]
-                vol = 0.1
-            else:
-                notes = melody
-                vol = 0.15
-
-            bird_wave = generate_track_for_bird(bird_type, notes, tempo, scale, vol)
-            if len(bird_wave) <= section_len:
-                section_wave[:len(bird_wave)] += bird_wave
-            else:
-                section_wave += bird_wave[:section_len]
-
-        all_waves.append(section_wave)
-
-    # Concatenate all sections
-    full_wave = np.concatenate(all_waves)
-
-    # Normalize
-    max_val = np.max(np.abs(full_wave))
+    # Normalize to prevent clipping
+    max_val = np.max(np.abs(music_wave))
     if max_val > 0:
-        full_wave = full_wave / max_val * 0.7
+        music_wave = music_wave / max_val * 0.75
 
-    return full_wave.astype(np.float32)
+    return music_wave.astype(np.float32)
 
 
 def create_game_music():
@@ -1244,6 +1392,44 @@ def update_active_birds(bird_types):
             # Regenerate music with new bird composition (async)
             if _music_playing:
                 _schedule_music_regen()
+
+
+def update_game_speed(level, base_sleep=0.2, multiplier=0.88, min_sleep=0.02):
+    """
+    Update music tempo based on game speed.
+    Higher levels = faster game = faster music.
+    Music tempo increases MORE GRADUALLY than game speed!
+
+    Args:
+        level: Current game level
+        base_sleep: Base sleep time (from config)
+        multiplier: Frame sleep level multiplier (from config)
+        min_sleep: Minimum sleep time (from config)
+    """
+    global _game_speed_multiplier
+
+    # Music tempo increases gradually over 30 levels
+    # Level 1: 1.0x (base tempo)
+    # Level 10: ~1.15x
+    # Level 20: ~1.35x
+    # Level 30: ~1.6x
+    # This is much gentler than game speed increase!
+
+    # Use a gentler curve: 2% increase per level (compounding)
+    # 1.02^30 ≈ 1.81 at level 30
+    music_multiplier = 0.97  # Gentler than game's 0.88
+
+    # Calculate music speed multiplier
+    new_multiplier = 1.0 / (music_multiplier ** (level - 1))
+
+    # Cap between 1.0x and 1.8x speed
+    new_multiplier = min(1.8, max(1.0, new_multiplier))
+
+    if abs(new_multiplier - _game_speed_multiplier) > 0.02:
+        _game_speed_multiplier = new_multiplier
+        # Regenerate music with new tempo
+        if _music_playing:
+            _schedule_music_regen()
 
 
 def set_audio_enabled(enabled):

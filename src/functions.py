@@ -262,6 +262,13 @@ def add_score(amount, by_bird=None):
         if audio:
             audio.play_sfx('level_up')
             audio.update_music_for_level(new_level)
+            # Update music tempo based on game speed
+            audio.update_game_speed(
+                new_level,
+                base_sleep=constants.timing.base_sleep,
+                multiplier=constants.timing.frame_sleep_level_multiplier,
+                min_sleep=constants.timing.min_sleep
+            )
 
     if by_bird is not None and 0 <= int(by_bird) < len(state.birds.per_bird_xp):
         xp_award = int(max(0, int(raw_amount)))
