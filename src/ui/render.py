@@ -16,6 +16,24 @@ ceiling = "=" * constants.layout.width
 floor = ceiling
 
 # =============================================================================
+# TREE BACKGROUND PATTERN - Seamless scrolling forest canopy
+# =============================================================================
+# Pattern 6 righe x 24 caratteri - solo cime, piccole e irregolari
+TREE_PATTERN = [
+    "^  ^    ^  ^   ^    ^   ",
+    " ^^  ^    ^^  ^  ^^   ^ ",
+    "^   ^  ^^   ^   ^  ^  ^^",
+    "  ^^  ^   ^^  ^^   ^^ ^ ",
+    " ^  ^^  ^   ^   ^^  ^   ",
+    "^    ^ ^^  ^^ ^   ^  ^^ ",
+]
+TREE_PATTERN_HEIGHT = len(TREE_PATTERN)
+TREE_PATTERN_WIDTH = 24  # Lunghezza fissa
+
+# Colore verde scurissimo per lo sfondo
+TREE_BG_COLOR = "\033[38;5;235m"  # Verde/grigio molto scuro
+
+# =============================================================================
 # FRAMEBUFFER - Double buffering per rendering differenziale
 # =============================================================================
 
@@ -658,6 +676,7 @@ def render_game():
 
     # Render all components to framebuffer
     _fb_render_header(fb)
+    _fb_render_background(fb)  # Sfondo alberi PRIMA di tutto il resto
     _fb_render_starting_line(fb)
     _fb_render_obstacles(fb)
     _fb_render_bats(fb)
@@ -681,6 +700,26 @@ def render_game():
 # =============================================================================
 # FRAMEBUFFER RENDER FUNCTIONS
 # =============================================================================
+
+def _fb_render_background(fb):
+    """Render scrolling tree canopy background."""
+    offset = state.ui.bg_offset
+
+    # L'area di gioco va dalla riga 2 (dopo header) alla riga height+1 (prima del floor)
+    for screen_y in range(constants.layout.height):
+        # Calcola quale riga del pattern usare (scroll verso l'ALTO - direzione opposta agli ostacoli)
+        # Sottraiamo l'offset invece di sommarlo
+        pattern_y = (screen_y - offset) % TREE_PATTERN_HEIGHT
+        pattern_line = TREE_PATTERN[pattern_y]
+
+        # Riempi l'intera larghezza ripetendo il pattern orizzontalmente
+        for screen_x in range(constants.layout.width):
+            pattern_x = screen_x % TREE_PATTERN_WIDTH
+            char = pattern_line[pattern_x]
+            # Solo i caratteri non-spazio (le linee degli alberi)
+            if char != ' ':
+                fb.put(screen_x, screen_y + 2, char, TREE_BG_COLOR)
+
 
 def _fb_render_header(fb):
     """Render header to framebuffer."""
