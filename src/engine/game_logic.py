@@ -42,6 +42,54 @@ def play_sfx(name):
         audio.play_sfx(name)
 
 
+# Mapping from ANSI color codes to bird type names for audio
+COLOR_TO_BIRD_TYPE = {
+    YELLOW: 'YELLOW',
+    RED: 'RED',
+    BLUE: 'BLUE',
+    PURPLE: 'PURPLE',
+    WHITE: 'WHITE',
+    ORANGE: 'ORANGE',
+    GOLD: 'GOLD',
+    PATCHWORK: 'PATCHWORK',
+    COOKIE: 'COOKIE',
+    CLOCKWORK: 'CLOCKWORK',
+    STEALTH: 'STEALTH',
+    DINOSAUR: 'DINOSAUR',
+    GLITCH: 'GLITCH',
+}
+
+
+_last_bird_sync_frame = 0
+_last_bird_set = None
+
+
+def sync_active_birds_audio():
+    """Sync the active bird types with the audio system for dynamic music."""
+    global _last_bird_sync_frame, _last_bird_set
+
+    if not AUDIO_AVAILABLE or not audio:
+        return
+
+    # Only sync every 60 frames (~1 second) to avoid blocking
+    if state.game.frame_count - _last_bird_sync_frame < 60:
+        return
+    _last_bird_sync_frame = state.game.frame_count
+
+    active_types = set()
+    for i in range(len(state.birds.colors)):
+        if not state.birds.lost[i]:
+            color = state.birds.colors[i]
+            bird_type = COLOR_TO_BIRD_TYPE.get(color)
+            if bird_type:
+                active_types.add(bird_type)
+
+    # Only update if birds actually changed
+    if active_types != _last_bird_set:
+        _last_bird_set = active_types
+        audio.update_active_birds(active_types)
+
+
 # =============================================================================
 # HELPER FUNCTIONS (local wrappers)
 # =============================================================================
@@ -1053,3 +1101,6 @@ def update_all():
 
     # Cleanup
     despawn_old_entities()
+
+    # Sync bird types with audio (dynamic music)
+    sync_active_birds_audio()

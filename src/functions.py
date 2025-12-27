@@ -261,6 +261,7 @@ def add_score(amount, by_bird=None):
         audio = _get_audio()
         if audio:
             audio.play_sfx('level_up')
+            audio.update_music_for_level(new_level)
 
     if by_bird is not None and 0 <= int(by_bird) < len(state.birds.per_bird_xp):
         xp_award = int(max(0, int(raw_amount)))
