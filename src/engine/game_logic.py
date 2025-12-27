@@ -688,9 +688,15 @@ def spawn_obstacle():
     hp_map = {1: 4, 2: 6, 3: 12, 4: 27}
     hp = hp_map.get(tier, 4)
 
+    # Calcola altezza sprite per far entrare l'ostacolo gradualmente dall'alto
+    sprite = OBSTACLE_SPRITES.get(tier, OBSTACLE_SPRITE_T1)
+    sprite_height = len(sprite)
+    # Spawn fuori schermo: y negativo così entra gradualmente
+    start_y = -sprite_height + 1
+
     state.enemies.spawn_queue.append({
         'type': 'obstacle',
-        'data': {'lane': lane, 'y_pos': 1, 'tier': tier, 'hp': hp}
+        'data': {'lane': lane, 'y_pos': start_y, 'tier': tier, 'hp': hp}
     })
 
 
@@ -785,11 +791,15 @@ def spawn_bat():
 
     target_y = random.randint(target_y_min, min(target_y_max, constants.layout.starting_line - 3))
 
+    # Pipistrelli hanno sprite di 2 righe, spawn fuori schermo
+    bat_sprite_height = 2
+    start_y = -bat_sprite_height + 1
+
     state.enemies.spawn_queue.append({
         'type': 'bat',
         'data': {
             'x_pos': x_pos,
-            'y_pos': 1,
+            'y_pos': start_y,
             'direction': random.choice([-1, 1]),
             'tier': tier,
             'hp': hp,
