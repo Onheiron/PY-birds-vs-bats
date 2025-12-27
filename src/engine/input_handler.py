@@ -187,6 +187,10 @@ def handle_bounce():
         if bird_idx in state.special.scared_birds and bird_color != PURPLE:
             continue
 
+        # Can't bounce stunned birds (from obstacle collision)
+        if bird_idx in state.special.stunned_birds:
+            continue
+
         # Bird moving down - bounce it up
         if state.birds.vy[bird_idx] == 1:
             _bounce_bird_up(bird_idx)
@@ -439,6 +443,8 @@ def _power_white(bird_idx, bird_lane):
 
         if state.birds.vy[adj_bird] == 1:  # Falling - bounce it
             if adj_bird in state.special.scared_birds and adj_color != PURPLE:
+                continue
+            if adj_bird in state.special.stunned_birds:
                 continue
             if adj_color == GLITCH and random.random() < constants.glitch.bounce_ignore_chance:
                 continue

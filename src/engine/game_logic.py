@@ -164,6 +164,11 @@ def check_bird_obstacle_collision():
                 state.enemies.obstacles.remove(obs)
             else:
                 _set_ball_vy(i, 1)
+                # Applica stun (1 secondo) - impedisce bounce
+                stun_frames = int(1.0 / constants.timing.base_sleep)
+                state.special.stunned_birds[i] = stun_frames
+                # Aggiungi a scared_birds per speed boost in caduta (1 secondo)
+                state.special.scared_birds[i] = stun_frames
                 if bird_color == BLUE:
                     _reset_bird_power(i)
             break
@@ -807,6 +812,12 @@ def update_special_bird_states():
         state.special.scared_birds[bird_idx] -= 1
         if state.special.scared_birds[bird_idx] <= 0:
             del state.special.scared_birds[bird_idx]
+
+    # Stunned birds (from obstacle collision - short duration, no speed boost)
+    for bird_idx in list(state.special.stunned_birds.keys()):
+        state.special.stunned_birds[bird_idx] -= 1
+        if state.special.stunned_birds[bird_idx] <= 0:
+            del state.special.stunned_birds[bird_idx]
 
     # Stealth timers
     for bird_idx in list(state.special.stealth_timers.keys()):

@@ -44,6 +44,9 @@ special = SimpleNamespace(
     
     # Scared birds
     scared_birds={},
+
+    # Stunned birds (from obstacle collision - short duration, no speed boost)
+    stunned_birds={},
     
     # Stealth
     stealth_timers={},
@@ -189,6 +192,7 @@ def init():
     special.speed_boosts = {}
     special.dinosaur_up_presses = {}
     special.scared_birds = {}
+    special.stunned_birds = {}
     special.stealth_timers = {}
     special.stealth_prev_speeds = {}
     special.clockwork_charge = {}
