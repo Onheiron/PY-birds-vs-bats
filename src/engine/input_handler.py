@@ -536,6 +536,25 @@ def handle_xp_toggle():
     _add_notification(msg)
 
 
+def handle_audio_toggle():
+    """Toggle audio on/off (mute/unmute)."""
+    if not AUDIO_AVAILABLE or not audio:
+        _add_notification('Audio not available')
+        return
+
+    # Toggle audio state
+    current = getattr(audio, '_audio_enabled', True)
+    new_state = not current
+    audio.set_audio_enabled(new_state)
+
+    if new_state:
+        # Re-enable audio and restart music
+        audio.start_music()
+        _add_notification('Audio: ON')
+    else:
+        _add_notification('Audio: OFF')
+
+
 def process_input(key):
     """Process a single key input and update game state."""
     if key is None:
@@ -566,6 +585,8 @@ def process_input(key):
         handle_movement('RIGHT')
     elif key in ('X', 'x'):
         handle_xp_toggle()
+    elif key in ('M', 'm'):
+        handle_audio_toggle()
     elif key == 'UP':
         handle_bounce()
     elif key == 'DOWN':

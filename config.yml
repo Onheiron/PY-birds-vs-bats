@@ -287,6 +287,8 @@ controls:
   quit: QUIT
   toggle_xp: x
   toggle_xp_alt: X
+  toggle_audio: m
+  toggle_audio_alt: M
 game:
   version: 0.8.0
 synergy:

@@ -317,6 +317,8 @@
         "key_pause_alt": {"type": "string", "default": "P"},
         "key_toggle_xp": {"type": "string", "default": "x"},
         "key_toggle_xp_alt": {"type": "string", "default": "X"},
+        "key_toggle_audio": {"type": "string", "default": "m"},
+        "key_toggle_audio_alt": {"type": "string", "default": "M"},
         "key_quit": {"type": "string", "default": "QUIT"}
       }
     }
