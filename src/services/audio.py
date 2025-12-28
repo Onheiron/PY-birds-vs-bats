@@ -23,7 +23,7 @@ SFX_COOLDOWN = 0.05  # Minimum seconds between same sound effect
 MUSIC_VOLUME = 0.5   # Music volume relative to master
 
 # Audio state
-_audio_enabled = True
+_audio_enabled = False
 _music_playing = False
 _current_level = 1
 _current_theme = None

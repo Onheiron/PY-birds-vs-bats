@@ -6,6 +6,7 @@ Main entry point with clean game loop.
 
 import time
 import math
+import re
 
 from src import functions
 from src.core import state
@@ -61,16 +62,37 @@ def calculate_frames_per_update(level):
 
 
 def show_game_over_screen():
-    """Display the game over screen with final stats and leaderboard submission."""
-    # Get config values with defaults
-    separator_width = getattr(constants.game_over, 'separator_width', 50)
+    """Display the game over screen with final stats, name input, and menu.
+
+    Uses the same framebuffer system as the game for consistent rendering.
+
+    Returns:
+        'retry' to play again, 'exit' to quit
+    """
+    from src.ui.render import TOTAL_WIDTH, SIDE_PANEL_WIDTH, GAME_X_OFFSET
+    import sys
+
+    # Get the existing framebuffer (same one used by the game)
+    fb = render.get_framebuffer()
+
+    # CRITICAL: Force full redraw by clearing BOTH buffers
+    fb.first_frame = True
+    for y in range(fb.height):
+        for x in range(fb.width):
+            fb.current[y][x] = (' ', '')
+            fb.previous[y][x] = ('\x00', '')  # Different char forces redraw
+
+    # Colors
+    PANEL_BORDER = "\033[38;5;238m"
+    PANEL_BG = "\033[38;5;233m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+
+    # Get config values
     time_divider = getattr(constants.game_over, 'time_divider', 3600)
     time_remainder = getattr(constants.game_over, 'time_remainder', 3600)
     minutes_divider = getattr(constants.game_over, 'minutes_divider', 60)
     name_max_length = getattr(constants.game_over, 'leaderboard_name_max_length', 20)
-
-    # Clear screen and show cursor
-    print("\033[2J\033[H\033[?25h")
 
     # Calculate elapsed time
     elapsed = 0
@@ -86,50 +108,177 @@ def show_game_over_screen():
     else:
         elapsed_str = f"{minutes:02d}:{seconds:02d}"
 
-    # Calculate avg points per minute
+    # Calculate avg points per minute for Firebase
     minutes_played = float(elapsed) / float(minutes_divider) if elapsed > 0 else 0.0
     avg_ppm = float(state.game.score) / minutes_played if minutes_played > 0 else float(state.game.score)
 
-    # Display game over screen
-    print("\r")
-    print("\r")
-    print("\r")
-    print("\r")
-    print(f"{RED}{'=' * separator_width}{RESET}\r")
-    print(f"{RED}                   GAME OVER                     {RESET}\r")
-    print(f"{RED}{'=' * separator_width}{RESET}\r")
-    print("\r")
-    print(f"  Final Score:      {int(state.game.score)}\r")
-    print(f"  Level Reached:    {state.game.level}\r")
-    print("\r")
-    print(f"  Time Played:      {elapsed_str} ({elapsed} s)\r")
-    print(f"{RED}{'=' * separator_width}{RESET}\r")
-    print("\r")
+    def draw_game_over(selected, player_name="", phase="menu"):
+        """Draw game over screen to framebuffer.
 
-    # Prompt for leaderboard name
-    try:
-        name = input("Enter name for leaderboard (leave blank to skip): ").strip()[:name_max_length]
-    except (KeyboardInterrupt, EOFError):
-        # CTRL+C or CTRL+D to skip
-        print()  # New line after ^C
-        name = ""
-    except Exception:
-        name = ""
+        phase: 'name' for name input, 'menu' for retry/exit menu
+        """
+        fb.clear()
 
-    # Submit to Firebase if available
+        # Header row 0: GAME OVER centered
+        header = "GAME OVER"
+        hpad = (TOTAL_WIDTH - len(header)) // 2
+        for i, ch in enumerate(header):
+            fb.put(hpad + i, 0, ch)
+
+        # Row 1: separator
+        for x in range(TOTAL_WIDTH):
+            fb.put(x, 1, '=')
+
+        # Side panels for rows 2 to height+1
+        for y in range(2, constants.layout.height + 2):
+            # Left panel
+            fb.put(0, y, '|', PANEL_BORDER)
+            for x in range(1, SIDE_PANEL_WIDTH - 1):
+                if (x + y) % 4 == 0:
+                    fb.put(x, y, '.', PANEL_BG)
+            fb.put(SIDE_PANEL_WIDTH - 1, y, '|', PANEL_BORDER)
+            # Right panel
+            right_start = GAME_X_OFFSET + constants.layout.width
+            fb.put(right_start, y, '|', PANEL_BORDER)
+            for x in range(1, SIDE_PANEL_WIDTH - 1):
+                if (x + y) % 4 == 0:
+                    fb.put(right_start + x, y, '.', PANEL_BG)
+            fb.put(right_start + SIDE_PANEL_WIDTH - 1, y, '|', PANEL_BORDER)
+
+        # Content - vertically centered
+        center_y = constants.layout.height // 2 + 2
+        game_center_x = GAME_X_OFFSET + constants.layout.width // 2
+
+        # GAME OVER box
+        box_lines = [
+            "##############################",
+            "#        GAME  OVER          #",
+            "##############################",
+        ]
+        for i, line in enumerate(box_lines):
+            y = center_y - 6 + i
+            x = game_center_x - len(line) // 2
+            fb.put_string(x, y, line, RED)
+
+        # Stats
+        stats = [
+            f"Final Score:    {int(state.game.score):,}",
+            f"Level Reached:  {state.game.level}",
+            f"Time Played:    {elapsed_str}",
+        ]
+        for i, line in enumerate(stats):
+            y = center_y - 2 + i
+            x = game_center_x - len(line) // 2
+            fb.put_string(x, y, line)
+
+        if phase == "name":
+            # Name input prompt
+            prompt = "Enter name for leaderboard:"
+            name_y = center_y + 3
+            fb.put_string(game_center_x - len(prompt) // 2, name_y, prompt, YELLOW)
+
+            # Name input field with cursor
+            field = f"[ {player_name}_" + " " * (name_max_length - len(player_name)) + " ]"
+            fb.put_string(game_center_x - len(field) // 2, name_y + 1, field, GREEN)
+
+            # Instructions
+            instr = "(ENTER to confirm, ESC to skip)"
+            fb.put_string(game_center_x - len(instr) // 2, name_y + 3, instr)
+        else:
+            # Menu
+            menu_y = center_y + 3
+            if selected == 0:
+                retry_text = "> [ RETRY ] <"
+                exit_text = "    EXIT"
+                fb.put_string(game_center_x - len(retry_text) // 2, menu_y, retry_text, GREEN)
+                fb.put_string(game_center_x - len(exit_text) // 2, menu_y + 1, exit_text)
+            else:
+                retry_text = "    RETRY"
+                exit_text = "> [  EXIT ] <"
+                fb.put_string(game_center_x - len(retry_text) // 2, menu_y, retry_text)
+                fb.put_string(game_center_x - len(exit_text) // 2, menu_y + 1, exit_text, GREEN)
+
+        # Floor separator
+        floor_y = constants.layout.height + 2
+        for x in range(TOTAL_WIDTH):
+            fb.put(x, floor_y, '=')
+
+        # Footer
+        if phase == "name":
+            footer = "Type your name | ENTER confirm | ESC skip"
+        else:
+            footer = "UP/DOWN select | SPACE confirm"
+        fpad = (TOTAL_WIDTH - len(footer)) // 2
+        fb.put_string(fpad, floor_y + 1, footer)
+
+        # Render to screen
+        output = fb.render()
+        try:
+            sys.stdout.write(output)
+            sys.stdout.flush()
+        except BlockingIOError:
+            pass
+
+    # Phase 1: Name input
+    player_name = ""
+    name_done = False
+
+    while not name_done:
+        # Always render every frame (like the game does)
+        draw_game_over(0, player_name, "name")
+
+        key = render.get_key()
+        if key == 'QUIT' or key == 'ESC':
+            player_name = ""
+            name_done = True
+        elif key == 'ENTER':
+            name_done = True
+        elif key == 'BACKSPACE':
+            if player_name:
+                player_name = player_name[:-1]
+        elif key == 'SPACE':
+            if len(player_name) < name_max_length:
+                player_name += " "
+        elif isinstance(key, str) and len(key) == 1 and key.isprintable():
+            if len(player_name) < name_max_length:
+                player_name += key
+
+        time.sleep(0.016)
+
+    # Phase 2: Menu selection
+    selected = 0
+    menu_done = False
+
+    while not menu_done:
+        # Always render every frame
+        draw_game_over(selected, player_name, "menu")
+
+        key = render.get_key()
+        if key == 'UP':
+            selected = 0
+        elif key == 'DOWN':
+            selected = 1
+        elif key == 'ENTER' or key == 'SPACE':
+            menu_done = True
+        elif key == 'QUIT' or key == 'ESC':
+            selected = 1
+            menu_done = True
+
+        time.sleep(0.016)
+
+    # Submit stats to Firebase
     if firebase_client:
         try:
-            if name:
+            if player_name.strip():
                 functions.background_call(
                     firebase_client.send_score,
-                    name,
+                    player_name.strip(),
                     int(state.game.score),
                     elapsed,
                     elapsed_str,
                     GAME_VERSION,
                     avg_ppm
                 )
-            # Log game over event
             functions.background_call(
                 firebase_client.log_event,
                 'game_over',
@@ -145,17 +294,17 @@ def show_game_over_screen():
         except Exception:
             pass
 
+    return 'retry' if selected == 0 else 'exit'
 
-def main():
-    """
-    Main game loop con timing migliorato.
 
-    Il loop gira a ~60 FPS fissi per input fluido.
-    La fisica/logica viene aggiornata ogni N frame, dove N dipende dal livello.
-    Questo permette input sempre reattivo mentre il gioco accelera.
+def run_game():
     """
-    # Initialize terminal and game state
-    functions.setup()
+    Run a single game session.
+
+    Returns:
+        'retry' if player wants to play again, 'exit' to quit, 'quit' if user pressed Ctrl+C
+    """
+    # Initialize game state
     state.init()
     achievements.init_achievements()
     state.game.start_time = time.time()
@@ -215,20 +364,51 @@ def main():
     except KeyboardInterrupt:
         # CTRL+C è un'uscita volontaria
         state.game.quit_requested = True
-    finally:
-        # Stop music but keep mixer running for game over sound
-        if AUDIO_AVAILABLE and audio:
-            audio.stop_music()
-            # Play game over sound if it's a real game over
-            if state.game.game_over and not state.game.quit_requested:
-                audio.play_sfx('game_over')
-                time.sleep(1.5)  # Wait for game over sound to finish
-            audio.cleanup()
 
-        functions.cleanup()
-        # Mostra game over screen SOLO se è un game over reale (non quit volontario)
+    # Stop music but keep mixer running for game over sound
+    if AUDIO_AVAILABLE and audio:
+        audio.stop_music()
+        # Play game over sound if it's a real game over
         if state.game.game_over and not state.game.quit_requested:
-            show_game_over_screen()
+            audio.play_sfx('game_over')
+            time.sleep(1.5)  # Wait for game over sound to finish
+
+    # Return action based on game state
+    if state.game.quit_requested:
+        return 'quit'
+
+    # Show game over screen and get user choice
+    return show_game_over_screen()
+
+
+def main():
+    """
+    Main entry point with retry support.
+
+    Il loop gira a ~60 FPS fissi per input fluido.
+    La fisica/logica viene aggiornata ogni N frame, dove N dipende dal livello.
+    Questo permette input sempre reattivo mentre il gioco accelera.
+    """
+    # Initialize terminal once
+    functions.setup()
+
+    try:
+        while True:
+            result = run_game()
+
+            if result == 'retry':
+                # Reset framebuffer for new game
+                render._framebuffer = None
+                continue
+            else:
+                # Exit or quit
+                break
+
+    finally:
+        # Cleanup audio and terminal
+        if AUDIO_AVAILABLE and audio:
+            audio.cleanup()
+        functions.cleanup()
 
 
 if __name__ == '__main__':

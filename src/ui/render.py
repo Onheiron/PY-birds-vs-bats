@@ -277,6 +277,13 @@ def get_key():
                 last = 'SPACE'
             elif ch == '\x03' or ch == 'q':
                 last = 'QUIT'
+            elif ch == '\r' or ch == '\n':
+                last = 'ENTER'
+            elif ch == '\x7f' or ch == '\x08':
+                last = 'BACKSPACE'
+            elif ch == '\x1b':
+                # Lone ESC (not part of arrow sequence)
+                last = 'ESC'
             else:
                 # printable char
                 if len(ch) == 1 and ch.isprintable():
