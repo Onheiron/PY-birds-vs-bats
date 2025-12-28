@@ -11,7 +11,15 @@ from src.core import constants
 from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane
 from src.core import state
 
-# Pre-build static parts
+# =============================================================================
+# WIDESCREEN LAYOUT - 16:9 ratio for Steam Deck
+# =============================================================================
+# Game area stays the same, we add side panels to fill the screen
+SIDE_PANEL_WIDTH = 20  # Width of each side panel
+TOTAL_WIDTH = constants.layout.width + (SIDE_PANEL_WIDTH * 2)  # Total screen width
+GAME_X_OFFSET = SIDE_PANEL_WIDTH  # X offset where game area starts
+
+# Pre-build static parts (now with offset consideration)
 ceiling = "=" * constants.layout.width
 floor = ceiling
 
@@ -167,8 +175,8 @@ def get_framebuffer():
     if _framebuffer is None:
         # Height: header(2) + game area + floor(1) + cursor(1) + notification(1) + footer(2) + extra
         total_height = constants.layout.height + 8
-        # Width: molto più largo per header con prestige
-        _framebuffer = FrameBuffer(constants.layout.width + 60, total_height)
+        # Width: game area + side panels for 16:9 widescreen
+        _framebuffer = FrameBuffer(TOTAL_WIDTH, total_height)
     return _framebuffer
 
 # Color helpers: map HP ratio to RGB truecolor escape
@@ -675,6 +683,7 @@ def render_game():
     state.game.level = compute_level_from_score(state.game.score)
 
     # Render all components to framebuffer
+    _fb_render_side_panels(fb)  # Side panels FIRST (background)
     _fb_render_header(fb)
     _fb_render_background(fb)  # Sfondo alberi PRIMA di tutto il resto
     _fb_render_starting_line(fb)
@@ -701,6 +710,49 @@ def render_game():
 # FRAMEBUFFER RENDER FUNCTIONS
 # =============================================================================
 
+# Side panel placeholder colors
+PANEL_BORDER_COLOR = "\033[38;5;238m"  # Dark gray border
+PANEL_BG_COLOR = "\033[38;5;233m"      # Very dark background
+
+def _fb_render_side_panels(fb):
+    """
+    Render left and right side panels (placeholder for Steam Deck 16:9 layout).
+    Panels are ONLY in the middle section (between header and footer).
+    Header (rows 0-1) and footer (row floor+) span full width.
+    """
+    # Panel area: from row 2 (after header) to row height+1 (before floor)
+    # That's the game area height
+    panel_start_y = 2
+    panel_end_y = constants.layout.height + 2  # exclusive (floor row)
+
+    right_start = GAME_X_OFFSET + constants.layout.width
+
+    # Left panel - vertical border and placeholder content
+    for y in range(panel_start_y, panel_end_y):
+        # Outer border
+        fb.put(0, y, '│', PANEL_BORDER_COLOR)
+        # Inner content (placeholder dots)
+        for x in range(1, SIDE_PANEL_WIDTH - 1):
+            char = '·' if (x + y) % 4 == 0 else ' '
+            if char != ' ':
+                fb.put(x, y, char, PANEL_BG_COLOR)
+        # Inner border (separates panel from game)
+        fb.put(SIDE_PANEL_WIDTH - 1, y, '│', PANEL_BORDER_COLOR)
+
+    # Right panel - vertical border and placeholder content
+    for y in range(panel_start_y, panel_end_y):
+        # Inner border (separates game from panel)
+        fb.put(right_start, y, '│', PANEL_BORDER_COLOR)
+        # Inner content (placeholder dots)
+        for x in range(1, SIDE_PANEL_WIDTH - 1):
+            px = right_start + x
+            char = '·' if (x + y) % 4 == 0 else ' '
+            if char != ' ':
+                fb.put(px, y, char, PANEL_BG_COLOR)
+        # Outer border
+        fb.put(right_start + SIDE_PANEL_WIDTH - 1, y, '│', PANEL_BORDER_COLOR)
+
+
 def _fb_render_background(fb):
     """Render scrolling tree canopy background."""
     offset = state.ui.bg_offset
@@ -718,11 +770,11 @@ def _fb_render_background(fb):
             char = pattern_line[pattern_x]
             # Solo i caratteri non-spazio (le linee degli alberi)
             if char != ' ':
-                fb.put(screen_x, screen_y + 2, char, TREE_BG_COLOR)
+                fb.put(GAME_X_OFFSET + screen_x, screen_y + 2, char, TREE_BG_COLOR)
 
 
 def _fb_render_header(fb):
-    """Render header to framebuffer."""
+    """Render header to framebuffer - spans FULL screen width."""
     level = state.game.level
     next_level_score = calculate_level_threshold(level + 1)
     lives_display = "●" * state.game.lives + "◌" * (5 - state.game.lives)
@@ -732,8 +784,14 @@ def _fb_render_header(fb):
         prestige_val = 1.0
 
     score_line = f"Score: {int(state.game.score):,} | Level: {level} | Next: {int(next_level_score):,} | Lives: {lives_display} | Prestige: x{prestige_val:.2f}"
-    fb.put_string(0, 0, score_line[:fb.width])
-    fb.put_string(0, 1, ceiling[:fb.width])
+    # Header spans FULL width - center the text
+    padding = max(0, (TOTAL_WIDTH - len(score_line)) // 2)
+    padded_score = " " * padding + score_line
+    fb.put_string(0, 0, padded_score[:TOTAL_WIDTH])
+
+    # Full-width separator line
+    full_ceiling = "=" * TOTAL_WIDTH
+    fb.put_string(0, 1, full_ceiling)
 
 
 def _fb_render_starting_line(fb):
@@ -750,7 +808,7 @@ def _fb_render_starting_line(fb):
         color = ''
 
     for i, char in enumerate(line[:constants.layout.width]):
-        fb.put(i, starting_line_y + 2, char, color)
+        fb.put(GAME_X_OFFSET + i, starting_line_y + 2, char, color)
 
 
 def _fb_render_obstacles(fb):
@@ -782,7 +840,7 @@ def _fb_render_obstacles(fb):
                     if char != ' ':  # Solo caratteri non-spazio
                         x_pos = center_x - x_offset + i
                         if 0 <= x_pos < constants.layout.width:
-                            fb.put(x_pos, y_pos + 2, char, obs_color)
+                            fb.put(GAME_X_OFFSET + x_pos, y_pos + 2, char, obs_color)
 
 
 def _fb_render_bats(fb):
@@ -799,7 +857,7 @@ def _fb_render_bats(fb):
             if 0 <= y_pos < constants.layout.height:
                 for i, char in enumerate(line):
                     if char != ' ':  # Solo caratteri non-spazio
-                        fb.put(bat['x_pos'] + i, y_pos + 2, char, bat_color)
+                        fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + 2, char, bat_color)
 
 
 def _fb_render_loot(fb):
@@ -849,7 +907,7 @@ def _fb_render_loot(fb):
                 char = '?'
                 color = WHITE
 
-            fb.put(loot['x_pos'], y_pos + 2, char, color)
+            fb.put(GAME_X_OFFSET + loot['x_pos'], y_pos + 2, char, color)
 
 
 def _fb_render_projectiles(fb):
@@ -859,7 +917,7 @@ def _fb_render_projectiles(fb):
         if 0 <= y_pos < constants.layout.height:
             symbol = '•' if proj.get('powered', False) else '⋅'  # • piccolo, non ● grande
             proj_color = proj.get('color', RED)
-            fb.put(proj['x_pos'], y_pos + 2, symbol, proj_color)
+            fb.put(GAME_X_OFFSET + proj['x_pos'], y_pos + 2, symbol, proj_color)
 
 
 def _fb_render_birds(fb):
@@ -893,10 +951,10 @@ def _fb_render_birds(fb):
         for line_idx, line in enumerate(sprite):
             by = y_pos + line_idx
             if 0 <= by < constants.layout.height:
-                x_offset = len(line) // 2
+                x_off = len(line) // 2
                 for ci, char in enumerate(line):
                     if char != ' ':
-                        fb.put(x_pos - x_offset + ci, by + 2, char, bird_color)
+                        fb.put(GAME_X_OFFSET + x_pos - x_off + ci, by + 2, char, bird_color)
 
         # Purple bird charging orb
         if state.birds.colors[i] == PURPLE and state.special.purple_state[i] == 2:
@@ -907,21 +965,22 @@ def _fb_render_birds(fb):
                 sym = '⋅' if s <= 0 else ('•' if s == 1 else '●')
                 orb_y = y_pos + 1
                 if 0 <= orb_y < constants.layout.height:
-                    fb.put(x_pos, orb_y + 2, sym, PURPLE)
+                    fb.put(GAME_X_OFFSET + x_pos, orb_y + 2, sym, PURPLE)
 
 
 def _fb_render_floor_and_cursor(fb):
     """Render floor and cursor to framebuffer."""
     floor_y = constants.layout.height + 2
 
-    # Floor
-    fb.put_string(0, floor_y, floor[:fb.width])
+    # Floor - FULL width separator
+    full_floor = "=" * TOTAL_WIDTH
+    fb.put_string(0, floor_y, full_floor)
 
     # Lost birds - X sul pavimento (DOPO il floor, così non viene sovrascritto)
     for i in range(constants.layout.num_balls):
         if state.birds.lost[i]:
             x_pos = state.birds.cols[i]
-            fb.put(x_pos, floor_y, 'X', DARK_GRAY)
+            fb.put(GAME_X_OFFSET + x_pos, floor_y, 'X', DARK_GRAY)
 
     # Cursor - render [^] per ogni lane affetta
     affected_lanes = get_affected_lanes()
@@ -945,16 +1004,16 @@ def _fb_render_floor_and_cursor(fb):
                 color = fallback_cursor_color
 
             # Render [^]
-            fb.put(x_pos, floor_y + 1, '[', color)
-            fb.put(x_pos + 1, floor_y + 1, '^', color)
-            fb.put(x_pos + 2, floor_y + 1, ']', color)
+            fb.put(GAME_X_OFFSET + x_pos, floor_y + 1, '[', color)
+            fb.put(GAME_X_OFFSET + x_pos + 1, floor_y + 1, '^', color)
+            fb.put(GAME_X_OFFSET + x_pos + 2, floor_y + 1, ']', color)
 
     # Selected lane indicator for swap - mostra [*]
     if state.player.selected_lane is not None:
         sel_x = constants.layout.lane_positions[state.player.selected_lane] - 1
-        fb.put(sel_x, floor_y + 1, '[', YELLOW)
-        fb.put(sel_x + 1, floor_y + 1, '*', YELLOW)
-        fb.put(sel_x + 2, floor_y + 1, ']', YELLOW)
+        fb.put(GAME_X_OFFSET + sel_x, floor_y + 1, '[', YELLOW)
+        fb.put(GAME_X_OFFSET + sel_x + 1, floor_y + 1, '*', YELLOW)
+        fb.put(GAME_X_OFFSET + sel_x + 2, floor_y + 1, ']', YELLOW)
 
 
 def _grade_letter_color(letter, fallback):
@@ -977,13 +1036,16 @@ def _grade_letter_color(letter, fallback):
 
 
 def _fb_render_footer(fb):
-    """Render footer to framebuffer."""
+    """Render footer to framebuffer - spans FULL screen width."""
     # height+2=floor, +3=cursore/notifica, +4=footer
     footer_y = constants.layout.height + 4
     active_balls = sum(1 for lost in state.birds.lost if not lost)
     swap_hint = " | SPACE to swap" if state.player.selected_lane is not None else ""
-    footer_text = f"← → move | ↑ bounce | Ctrl+C quit | Birds: {active_balls}/{constants.layout.num_balls}{swap_hint}"
-    fb.put_string(0, footer_y, footer_text[:fb.width])
+    footer_text = f"← → move | ↑ bounce | M mute | Ctrl+C quit | Birds: {active_balls}/{constants.layout.num_balls}{swap_hint}"
+    # Footer spans FULL width - center the text
+    padding = max(0, (TOTAL_WIDTH - len(footer_text)) // 2)
+    padded_footer = " " * padding + footer_text
+    fb.put_string(0, footer_y, padded_footer[:TOTAL_WIDTH])
 
     if state.ui.show_xp_overlay:
         parts = []
@@ -991,7 +1053,9 @@ def _fb_render_footer(fb):
             label, _ = compute_grade_from_xp(state.birds.per_bird_xp[i])
             parts.append(f"{label}({int(state.birds.per_bird_xp[i])})")
         xp_summary = ' '.join(parts)
-        fb.put_string(0, footer_y + 1, f"XP: {xp_summary[:fb.width-4]}")
+        xp_line = f"XP: {xp_summary}"
+        xp_padding = max(0, (TOTAL_WIDTH - len(xp_line)) // 2)
+        fb.put_string(0, footer_y + 1, " " * xp_padding + xp_line[:TOTAL_WIDTH])
 
 
 def _fb_render_notifications(fb):
@@ -1002,7 +1066,7 @@ def _fb_render_notifications(fb):
         # Stessa riga del cursore (height+3), ma renderizzata PRIMA
         # così il cursore la sovrascrive dove serve
         notif_y = constants.layout.height + 3
-        fb.put_string(0, notif_y, text[:fb.width], YELLOW)
+        fb.put_string(GAME_X_OFFSET, notif_y, text[:constants.layout.width], YELLOW)
     state.ui.notifications[:] = active_notifications
 
 
@@ -1011,4 +1075,4 @@ def _fb_render_pause_overlay(fb):
     if state.game.paused:
         pause_y = constants.layout.height // 2 + 2
         pause_x = max(0, (constants.layout.width // 2) - 3)
-        fb.put_string(pause_x, pause_y, "PAUSED", YELLOW)
+        fb.put_string(GAME_X_OFFSET + pause_x, pause_y, "PAUSED", YELLOW)
