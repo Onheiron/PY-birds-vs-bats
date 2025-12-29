@@ -41,8 +41,8 @@ def update_bird_positions():
         # GLITCH random speed each frame
         if state.birds.colors[i] == GLITCH:
             state.birds.speeds[i] = random.randint(
-                constants.glitch.speed_min,
-                constants.glitch.speed_max
+                constants.glitch.speed.min,
+                constants.glitch.speed.max
             )
 
         current_speed = state.birds.speeds[i]
@@ -280,7 +280,7 @@ def _glitch_duplicate(source_idx):
         # Resurrect as GLITCH
         state.birds.lost[target_idx] = False
         state.birds.colors[target_idx] = GLITCH_COLOR
-        state.birds.speeds[target_idx] = random.randint(constants.glitch.speed_min, constants.glitch.speed_max)
+        state.birds.speeds[target_idx] = random.randint(constants.glitch.speed.min, constants.glitch.speed.max)
         state.birds.y[target_idx] = constants.layout.starting_line
         state.birds.vy[target_idx] = -1
         state.birds.per_bird_xp[target_idx] = 0
@@ -289,7 +289,7 @@ def _glitch_duplicate(source_idx):
     else:
         # Replace existing bird
         state.birds.colors[target_idx] = GLITCH_COLOR
-        state.birds.speeds[target_idx] = random.randint(constants.glitch.speed_min, constants.glitch.speed_max)
+        state.birds.speeds[target_idx] = random.randint(constants.glitch.speed.min, constants.glitch.speed.max)
         state.birds.per_bird_xp[target_idx] = 0
         state.birds.y[target_idx] = constants.layout.starting_line
         state.birds.vy[target_idx] = -1
