@@ -8,7 +8,7 @@ if os.name == 'nt':
 
 from src.entities.sprites import *
 from src.core import constants
-from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane, get_mph_for_speed
+from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane, get_mph_for_speed, get_level_milestones, compute_level_from_miles
 from src.core import state
 
 # =============================================================================
@@ -692,6 +692,7 @@ def render_game():
     _fb_render_side_panels(fb)  # Side panels FIRST (background)
     _fb_render_header(fb)
     _fb_render_background(fb)  # Sfondo alberi PRIMA di tutto il resto
+    _fb_render_right_panel_level_signs(fb)  # Level signs on top of background
     _fb_render_starting_line(fb)
     _fb_render_obstacles(fb)
     _fb_render_right_panel_barriers(fb)  # Decorative barriers in right panel
@@ -925,6 +926,183 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
     pct_str = f"{momentum_pct:.0f}%"
     pct_x = 2 + (bar_width - len(pct_str)) // 2
     fb.put_string(pct_x, y, pct_str, PANEL_VALUE_COLOR)
+
+
+def _fb_render_right_panel_level_signs(fb):
+    """Render level signs in right panel.
+
+    Top sign: Next level - stays at top until "level line" would enter screen,
+              then scrolls down synchronized with the imaginary level line
+    Bottom sign: Current level - shows distance traveled since reaching it
+    """
+    panel_start_y = 2
+    panel_end_y = constants.layout.height + 2
+    panel_height = panel_end_y - panel_start_y
+    right_start = GAME_X_OFFSET + constants.layout.width
+
+    # Sign colors
+    SIGN_BORDER_COLOR = "\033[38;5;94m"   # Brown wood color
+    SIGN_TEXT_COLOR = "\033[38;5;230m"    # Cream/beige text
+    SIGN_ARROW_COLOR = "\033[38;5;220m"   # Yellow arrow
+
+    # Get level info
+    miles = state.game.miles
+    milestones = get_level_milestones()
+    current_level = state.game.level
+    current_group = state.game.level_group
+    current_sub = state.game.level_sub
+
+    # Panel inner area (excluding borders)
+    inner_start_x = right_start + 1
+    inner_width = SIDE_PANEL_WIDTH - 2  # 18 chars
+
+    # Sign dimensions: 16 chars wide
+    # ╔══/\═════════╗  (16 chars: ╔ + ══ + /\ + ═════════ + ╗)
+    # ║ Level X-Y   ║  (16 chars: ║ + space + 12 chars + space + ║)
+    # ║ x.x miles   ║
+    # ╚══════════════╝
+    sign_width = 16
+    sign_x = inner_start_x + (inner_width - sign_width) // 2
+
+    # === Calculate thresholds ===
+    if current_level > 1:
+        prev_threshold = milestones[current_level - 2]
+    else:
+        prev_threshold = 0
+
+    if current_level <= len(milestones):
+        current_threshold = milestones[current_level - 1]
+    else:
+        current_threshold = milestones[-1]
+
+    # Next level info
+    next_level = current_level + 1
+    if next_level <= 18:
+        next_group = ((next_level - 1) // 3) + 1
+        next_sub = ((next_level - 1) % 3) + 1
+    else:
+        next_group, next_sub = 6, 3
+
+    # Distance to next level
+    miles_to_next = max(0, current_threshold - miles)
+
+    # Distance from previous level
+    miles_from_prev = max(0, miles - prev_threshold)
+
+    # === Calculate sign Y position based on when "level line" enters screen ===
+    # The sign should start moving when the level line would enter the top of screen
+    # and reach the middle when you hit the level.
+    #
+    # Scroll speed: 1 row every 5 frames
+    # Frame rate: ~60 fps (roughly, depends on game speed)
+    # So scroll speed ≈ 12 rows/second at base rate
+    #
+    # Current speed affects miles/second:
+    #   mph = speed * 40
+    #   miles_per_second = mph / 3600
+    #
+    # Time to reach next level = miles_to_next / miles_per_second
+    # Distance sign should travel = panel_height / 2 (from top to middle)
+    # Time for sign to travel to middle = (panel_height / 2) / scroll_rows_per_second
+    #
+    # Sign starts moving when: time_to_level <= time_for_sign_to_reach_middle
+
+    current_speed = state.game.speed
+    mph = current_speed * 40
+    miles_per_second = mph / 3600.0 if mph > 0 else 0.001
+
+    # Time until we reach next level (in seconds)
+    time_to_level = miles_to_next / miles_per_second if miles_per_second > 0 else 999999
+
+    # Scroll speed: 1 row per 5 frames, assume ~60 fps = 12 rows/second
+    # But this varies with game speed, so estimate based on frame timing
+    scroll_rows_per_second = 12.0  # Approximate
+
+    # Distance from top to middle of panel
+    sign_travel_distance = panel_height // 2
+
+    # Time for the "level line" to travel from top of screen to middle
+    time_for_line_to_middle = sign_travel_distance / scroll_rows_per_second
+
+    # Calculate sign position
+    if time_to_level >= time_for_line_to_middle:
+        # Level line hasn't entered screen yet - sign stays at top
+        top_sign_y = panel_start_y + 1
+    else:
+        # Level line is on screen - sign moves down proportionally
+        # When time_to_level = time_for_line_to_middle, sign is at top (offset 0)
+        # When time_to_level = 0, sign is at middle (offset = sign_travel_distance)
+        progress = 1.0 - (time_to_level / time_for_line_to_middle)
+        progress = max(0, min(1, progress))
+        top_sign_y = panel_start_y + 1 + int(progress * (sign_travel_distance - 4))
+
+    # === TOP SIGN: Next level (with down arrow) ===
+    # ╔══/\═════════╗  (16 chars)
+    # ║ Level X-Y   ║
+    # ║ x.x miles   ║
+    # ╚══════════════╝
+
+    if top_sign_y >= panel_start_y and top_sign_y < panel_end_y - 4:
+        # Row 1: top border with down arrow (16 chars total)
+        # ╔ + ══ + /\ + ═════════ + ╗ = 1 + 2 + 2 + 9 + 1 = 15... need 16
+        # ╔══/\══════════╗ = 1 + 2 + 2 + 10 + 1 = 16
+        fb.put_string(sign_x, top_sign_y, "╔══", SIGN_BORDER_COLOR)
+        fb.put(sign_x + 3, top_sign_y, '/', SIGN_ARROW_COLOR)
+        fb.put(sign_x + 4, top_sign_y, '\\', SIGN_ARROW_COLOR)
+        fb.put_string(sign_x + 5, top_sign_y, "══════════╗", SIGN_BORDER_COLOR)
+
+        # Row 2: Level label (left-aligned, 16 chars total)
+        level_str = f"Level {next_group}-{next_sub}"
+        fb.put(sign_x, top_sign_y + 1, '║', SIGN_BORDER_COLOR)
+        fb.put(sign_x + 1, top_sign_y + 1, ' ', SIGN_TEXT_COLOR)
+        fb.put_string(sign_x + 2, top_sign_y + 1, f"{level_str:<12}", SIGN_TEXT_COLOR)
+        fb.put(sign_x + 14, top_sign_y + 1, ' ', SIGN_TEXT_COLOR)
+        fb.put(sign_x + 15, top_sign_y + 1, '║', SIGN_BORDER_COLOR)
+
+        # Row 3: Distance remaining (left-aligned)
+        dist_str = f"{miles_to_next:.1f} miles"
+        fb.put(sign_x, top_sign_y + 2, '║', SIGN_BORDER_COLOR)
+        fb.put(sign_x + 1, top_sign_y + 2, ' ', SIGN_TEXT_COLOR)
+        fb.put_string(sign_x + 2, top_sign_y + 2, f"{dist_str:<12}", SIGN_TEXT_COLOR)
+        fb.put(sign_x + 14, top_sign_y + 2, ' ', SIGN_TEXT_COLOR)
+        fb.put(sign_x + 15, top_sign_y + 2, '║', SIGN_BORDER_COLOR)
+
+        # Row 4: bottom border (16 chars)
+        fb.put_string(sign_x, top_sign_y + 3, "╚══════════════╝", SIGN_BORDER_COLOR)
+
+    # === BOTTOM SIGN: Current level (with up arrow) ===
+    # ╔══════════════╗
+    # ║ Level X-Y   ║
+    # ║ x.x miles   ║
+    # ╚══\/══════════╝
+
+    bottom_sign_y = panel_end_y - 5
+
+    if bottom_sign_y > panel_start_y + 5:
+        # Row 1: top border (16 chars)
+        fb.put_string(sign_x, bottom_sign_y, "╔══════════════╗", SIGN_BORDER_COLOR)
+
+        # Row 2: Level label (left-aligned)
+        level_str = f"Level {current_group}-{current_sub}"
+        fb.put(sign_x, bottom_sign_y + 1, '║', SIGN_BORDER_COLOR)
+        fb.put(sign_x + 1, bottom_sign_y + 1, ' ', SIGN_TEXT_COLOR)
+        fb.put_string(sign_x + 2, bottom_sign_y + 1, f"{level_str:<12}", SIGN_TEXT_COLOR)
+        fb.put(sign_x + 14, bottom_sign_y + 1, ' ', SIGN_TEXT_COLOR)
+        fb.put(sign_x + 15, bottom_sign_y + 1, '║', SIGN_BORDER_COLOR)
+
+        # Row 3: Distance from previous (left-aligned)
+        dist_str = f"{miles_from_prev:.1f} miles"
+        fb.put(sign_x, bottom_sign_y + 2, '║', SIGN_BORDER_COLOR)
+        fb.put(sign_x + 1, bottom_sign_y + 2, ' ', SIGN_TEXT_COLOR)
+        fb.put_string(sign_x + 2, bottom_sign_y + 2, f"{dist_str:<12}", SIGN_TEXT_COLOR)
+        fb.put(sign_x + 14, bottom_sign_y + 2, ' ', SIGN_TEXT_COLOR)
+        fb.put(sign_x + 15, bottom_sign_y + 2, '║', SIGN_BORDER_COLOR)
+
+        # Row 4: bottom border with up arrow (16 chars)
+        fb.put_string(sign_x, bottom_sign_y + 3, "╚══", SIGN_BORDER_COLOR)
+        fb.put(sign_x + 3, bottom_sign_y + 3, '\\', SIGN_ARROW_COLOR)
+        fb.put(sign_x + 4, bottom_sign_y + 3, '/', SIGN_ARROW_COLOR)
+        fb.put_string(sign_x + 5, bottom_sign_y + 3, "══════════╝", SIGN_BORDER_COLOR)
 
 
 def _fb_render_side_panels(fb):

@@ -148,7 +148,10 @@ player = SimpleNamespace(
 ui = SimpleNamespace(
     show_xp_overlay=False,
     bg_offset=0,
-    notifications=[]
+    notifications=[],
+    # Level sign animation in right panel
+    level_sign_scroll_y=0,      # Y offset for scrolling level sign (0 = at top)
+    level_sign_scrolling=False  # True when sign is scrolling down
 )
 
 
@@ -212,6 +215,8 @@ def init():
     ui.show_xp_overlay = False
     ui.bg_offset = 0
     ui.notifications = []
+    ui.level_sign_scroll_y = 0
+    ui.level_sign_scrolling = False
     
     # Enemies
     enemies.obstacles = []
