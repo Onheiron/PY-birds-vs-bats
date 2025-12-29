@@ -720,33 +720,38 @@ def render_game():
 PANEL_BORDER_COLOR = "\033[38;5;238m"  # Dark gray border
 PANEL_BG_COLOR = "\033[38;5;233m"      # Very dark background
 
-# Speed gauge colors (bottom to top: green -> yellow -> red)
-GAUGE_GREEN = "\033[38;5;46m"   # Bright green
-GAUGE_YELLOW = "\033[38;5;226m" # Bright yellow
-GAUGE_RED = "\033[38;5;196m"    # Bright red
-GAUGE_OFF = "\033[38;5;236m"    # Dark gray (inactive blocks)
-GAUGE_BLOCK = "▓▓▓▓"            # Block character for gauge segments
+# Speed gauge colors (bottom to top: green -> yellow -> red) - muted tones
+GAUGE_GREEN = "\033[38;5;34m"   # Muted green
+GAUGE_YELLOW = "\033[38;5;178m" # Muted yellow/orange
+GAUGE_RED = "\033[38;5;160m"    # Muted red
+GAUGE_OFF = "\033[38;5;238m"    # Dark gray (inactive blocks)
+GAUGE_BLOCK_ON = "██████"       # Solid block for active segments
+GAUGE_BLOCK_OFF = "------"      # Dashes for inactive segments (clearly different)
 
 
 def _fb_render_speed_gauge(fb, panel_start_y, panel_end_y):
     """
     Render speed gauge in the left panel.
-    10 speed levels, 3 rows per level = 30 rows needed.
+    10 speed levels, 2 rows per level = 20 rows needed.
     Colors: green (1-3), yellow (4-6), red (7-10)
+    Format: "NN - ██████ - NN" centered in panel
     """
     current_speed = state.game.speed
     max_speed = 10
-    rows_per_level = 3
+    rows_per_level = 2
 
     # Calculate available height for gauge
     panel_height = panel_end_y - panel_start_y
-    total_gauge_rows = max_speed * rows_per_level  # 30 rows
+    total_gauge_rows = max_speed * rows_per_level  # 20 rows
 
     # Center the gauge vertically if there's extra space
     gauge_start_y = panel_start_y + max(0, (panel_height - total_gauge_rows) // 2)
 
-    # X position for gauge (centered in left panel, leaving space for borders)
-    gauge_x = 2  # After the left border
+    # Calculate centered X position
+    # Format: "NN - ██████ - NN" = 2 + 3 + 6 + 3 + 2 = 16 chars
+    # Panel inner width = SIDE_PANEL_WIDTH - 2 (borders) = 18
+    # So we start at x = 1 + (18 - 16) / 2 = 2
+    gauge_x = 2
 
     # Draw gauge from bottom to top (level 1 at bottom, level 10 at top)
     for level in range(1, max_speed + 1):
@@ -761,22 +766,26 @@ def _fb_render_speed_gauge(fb, panel_start_y, panel_end_y):
         # Is this level active?
         is_active = level <= current_speed
         color = active_color if is_active else GAUGE_OFF
+        block = GAUGE_BLOCK_ON if is_active else GAUGE_BLOCK_OFF
 
         # Calculate Y positions for this level (bottom-up, so level 1 is at bottom)
         # Level 10 is at top (lowest Y), level 1 is at bottom (highest Y)
         level_top_y = gauge_start_y + (max_speed - level) * rows_per_level
 
-        # Draw the 3 rows for this level
+        # Draw the 2 rows for this level
         for row in range(rows_per_level):
             y = level_top_y + row
             if y >= panel_start_y and y < panel_end_y:
-                # Draw the block
-                fb.put_string(gauge_x, y, GAUGE_BLOCK, color)
-
-                # Add level number on middle row of each level
-                if row == 1:
-                    label = f" - {level}"
-                    fb.put_string(gauge_x + len(GAUGE_BLOCK), y, label, color)
+                # First row: show numbers on both sides
+                if row == 0:
+                    # Format: "NN - ██████ - NN"
+                    level_str = f"{level:2d}"
+                    line = f"{level_str} - {block} - {level_str}"
+                    fb.put_string(gauge_x, y, line, color)
+                else:
+                    # Second row: just the block centered
+                    line = f"     {block}     "
+                    fb.put_string(gauge_x, y, line, color)
 
 
 def _fb_render_side_panels(fb):
