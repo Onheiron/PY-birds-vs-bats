@@ -686,8 +686,7 @@ def render_game():
     """Main render function using differential framebuffer."""
     fb = get_framebuffer()
 
-    # Recompute level for rendering
-    state.game.level = compute_level_from_score(state.game.score)
+    # Level is now computed from miles in update_miles(), not from score
 
     # Render all components to framebuffer
     _fb_render_side_panels(fb)  # Side panels FIRST (background)
@@ -781,16 +780,27 @@ def _fb_render_background(fb):
 
 
 def _fb_render_header(fb):
-    """Render header to framebuffer - spans FULL screen width."""
-    level = state.game.level
-    next_level_score = calculate_level_threshold(level + 1)
+    """Render header to framebuffer - spans FULL screen width.
+
+    Shows: Speed (1-10), Miles traveled, Level (G-S format), Lives, Prestige
+    """
+    # Get values from new speed/miles/level system
+    speed = state.game.speed
+    miles = state.game.miles
+    level_group = state.game.level_group
+    level_sub = state.game.level_sub
+    level_display = f"{level_group}-{level_sub}"
+
     lives_display = "●" * state.game.lives + "◌" * (5 - state.game.lives)
 
     prestige_val = compute_prestige()
     if prestige_val is None:
         prestige_val = 1.0
+    prestige_display = f"{prestige_val:.2f}x"
 
-    score_line = f"Score: {int(state.game.score):,} | Level: {level} | Next: {int(next_level_score):,} | Lives: {lives_display} | Prestige: x{prestige_val:.2f}"
+    # Format: Speed: X | Miles: XX.X | Level: G-S | Lives: ●●●◌◌ | Prestige: X.XXx | Score: XXX
+    score_line = f"Speed: {speed} | Miles: {miles:.1f} | Level: {level_display} | Lives: {lives_display} | Prestige: {prestige_display} | Score: {int(state.game.score):,}"
+
     # Header spans FULL width - center the text
     padding = max(0, (TOTAL_WIDTH - len(score_line)) // 2)
     padded_score = " " * padding + score_line

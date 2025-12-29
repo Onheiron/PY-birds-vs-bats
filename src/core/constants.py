@@ -46,6 +46,8 @@ synergy = init.dict_to_namespace(config.get('synergy', {}))
 prestige = init.dict_to_namespace(config.get('prestige', {}))
 bat = init.dict_to_namespace(config.get('bat', {}))
 colors = init.dict_to_namespace(config.get('colors', {}))
+speed = init.dict_to_namespace(config.get('speed', {}))
+levels = init.dict_to_namespace(config.get('levels', {}))
 
 # Special handling for transform limits (uses color codes as keys)
 # This is built from config if 'transform' section exists, otherwise use reasonable defaults

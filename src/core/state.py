@@ -114,14 +114,19 @@ powerups = SimpleNamespace(
 # ============================================================================
 game = SimpleNamespace(
     score=0,
-    level=1,
+    level=1,              # Level as milestone (1-18, displayed as 1-1 to 6-3)
+    level_group=1,        # Group number (1-6)
+    level_sub=1,          # Sub-level within group (1-3)
+    speed=1,              # Speed level (1-10) - controls game pace
+    miles=0.0,            # Miles traveled (accumulated over time based on speed)
     lives=5,
     game_over=False,
     quit_requested=False,  # True quando l'utente esce con Q/CTRL+C
     swaps_used=0,
     paused=False,
     frame_count=0,
-    start_time=None
+    start_time=None,
+    last_mile_update=None  # Timestamp for mile calculation
 )
 
 # ============================================================================
@@ -233,12 +238,17 @@ def init():
     # Game state
     game.score = 0
     game.level = 1
+    game.level_group = 1
+    game.level_sub = 1
+    game.speed = 1
+    game.miles = 0.0
     game.lives = 5
     game.game_over = False
     game.quit_requested = False
     game.swaps_used = 0
     game.paused = False
     game.frame_count = 0
+    game.last_mile_update = None
     
     # Player state
     player.lane = 2

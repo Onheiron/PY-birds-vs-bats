@@ -253,6 +253,27 @@ progression:
   level_score_base: 500.0
   level_score_factor: 1.07
   xp_base: 500.0
+
+# Speed & Miles system
+# Speed (1-10): Controls game pace, uses SAME score progression as old level system (capped at 10)
+# Miles: Distance traveled, accumulated based on current speed
+# Level (1-1 to 6-3): 18 milestones based on miles traveled
+speed:
+  min_speed: 1                    # Starting speed level
+  max_speed: 10                   # Maximum speed level (uses same score thresholds as old levels 1-10)
+  mph_per_level: 40               # Miles per hour per speed level (40 = 40mph at speed 1, 400mph at speed 10)
+  # Frame timing at speed 1 and speed 10 (interpolated between)
+  frame_sleep_at_speed_1: 0.18    # Slower at start
+  frame_sleep_at_speed_10: 0.02   # Fastest at max speed
+
+# Level milestones (18 levels in 6 groups of 3)
+# Distances: 3, 7, 12, 18, 25, 33, 42, 52, 63, 75, 88, 102, 117, 133, 150, 168, 187, 207
+levels:
+  total_levels: 18
+  levels_per_group: 3
+  starting_distance: 3            # First milestone at 3 miles
+  distance_increment_start: 4     # First increment (+4 to get 7)
+  # Milestones auto-calculated: 3, 7, 12, 18, 25, 33, 42, 52, 63, 75, 88, 102, 117, 133, 150, 168, 187, 207
 combo:
   window_frames: 200
   yellow_blue_chain_window: 60

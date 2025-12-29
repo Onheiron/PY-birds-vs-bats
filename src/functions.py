@@ -221,6 +221,158 @@ def compute_grade_from_xp(xp):
 
 
 # =============================================================================
+# SPEED / MILES / LEVEL SYSTEM
+# =============================================================================
+
+def compute_speed_from_score(score):
+    """Compute speed level (1-10) from score.
+
+    Uses the SAME exponential progression as the old level system,
+    but capped at max_speed (10).
+    """
+    max_speed = getattr(constants.speed, 'max_speed', 10)
+
+    # Use the same formula as compute_level_from_score, capped at max_speed
+    speed = 1
+    while score >= calculate_level_threshold(speed + 1):
+        speed += 1
+        if speed >= max_speed:
+            break
+    return speed
+
+
+def get_mph_for_speed(speed_level):
+    """Get miles per hour for a given speed level.
+
+    At speed 1: 40 mph
+    At speed 5: 200 mph
+    At speed 10: 400 mph
+    """
+    mph_per_level = getattr(constants.speed, 'mph_per_level', 40)
+    return speed_level * mph_per_level
+
+
+def get_level_milestones():
+    """Get list of 18 level milestones in miles.
+
+    Returns list of cumulative distances: [3, 7, 12, 18, 25, 33, ...]
+    """
+    total_levels = getattr(constants.levels, 'total_levels', 18)
+    starting_distance = getattr(constants.levels, 'starting_distance', 3)
+    increment_start = getattr(constants.levels, 'distance_increment_start', 4)
+
+    milestones = []
+    current = 0
+    increment = starting_distance
+
+    for _ in range(total_levels):
+        current += increment
+        milestones.append(current)
+        increment += 1
+
+    return milestones
+
+
+def compute_level_from_miles(miles):
+    """Compute level (1-18) from miles traveled.
+
+    Returns (level_number, group, sub) where:
+    - level_number: 1-18
+    - group: 1-6
+    - sub: 1-3
+    """
+    milestones = get_level_milestones()
+    levels_per_group = getattr(constants.levels, 'levels_per_group', 3)
+
+    level = 1
+    for i, threshold in enumerate(milestones):
+        if miles >= threshold:
+            level = i + 2  # Level 2 at first milestone, etc.
+        else:
+            break
+
+    # Cap at max level
+    level = min(level, len(milestones))
+
+    # Calculate group and sub-level
+    group = ((level - 1) // levels_per_group) + 1
+    sub = ((level - 1) % levels_per_group) + 1
+
+    return level, group, sub
+
+
+def format_level_display(level, group, sub):
+    """Format level for display as 'G-S' (e.g., '2-3')."""
+    return f"{group}-{sub}"
+
+
+def update_miles(delta_time):
+    """Update miles traveled based on current speed and elapsed time.
+
+    Args:
+        delta_time: Time elapsed in seconds since last update
+
+    Returns:
+        True if level changed, False otherwise
+    """
+    if delta_time <= 0:
+        return False
+
+    # Get current speed and calculate mph
+    mph = get_mph_for_speed(state.game.speed)
+
+    # Convert mph to miles per second and add
+    miles_per_second = mph / 3600.0
+    state.game.miles += miles_per_second * delta_time
+
+    # Check if level changed
+    old_level = state.game.level
+    new_level, new_group, new_sub = compute_level_from_miles(state.game.miles)
+
+    if new_level != old_level:
+        state.game.level = new_level
+        state.game.level_group = new_group
+        state.game.level_sub = new_sub
+        return True
+
+    return False
+
+
+def update_speed():
+    """Update speed based on current score.
+
+    Returns:
+        True if speed changed, False otherwise
+    """
+    old_speed = state.game.speed
+    new_speed = compute_speed_from_score(state.game.score)
+
+    if new_speed != old_speed:
+        state.game.speed = new_speed
+        return True
+
+    return False
+
+
+def get_frame_sleep_for_speed(speed_level):
+    """Get frame sleep time for given speed level.
+
+    Interpolates between frame_sleep_at_speed_1 and frame_sleep_at_speed_10.
+    """
+    min_speed = getattr(constants.speed, 'min_speed', 1)
+    max_speed = getattr(constants.speed, 'max_speed', 10)
+    sleep_at_1 = getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18)
+    sleep_at_10 = getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
+
+    # Normalize speed to 0-1 range
+    t = (speed_level - min_speed) / (max_speed - min_speed) if max_speed > min_speed else 0
+    t = max(0, min(1, t))
+
+    # Linear interpolation
+    return sleep_at_1 + t * (sleep_at_10 - sleep_at_1)
+
+
+# =============================================================================
 # SCORE & PRESTIGE
 # =============================================================================
 
@@ -249,25 +401,28 @@ def add_score(amount, by_bird=None):
     raw_amount = amount
     amt = float(amount)
 
-    # Track level before score change
-    old_level = compute_level_from_score(state.game.score)
+    # Track speed before score change
+    old_speed = state.game.speed
 
     prestige = compute_prestige()
     state.game.score += amt * prestige
 
-    # Check for level up
-    new_level = compute_level_from_score(state.game.score)
-    if new_level > old_level:
+    # Update speed based on new score
+    speed_changed = update_speed()
+
+    if speed_changed:
         audio = _get_audio()
         if audio:
-            audio.play_sfx('level_up')
-            audio.update_music_for_level(new_level)
+            # Don't play level_up sound here - it's played in game.py when Level milestone changes
+            # Just update music tempo for the new speed
+            audio.update_music_for_level(state.game.speed)
             # Update music tempo based on game speed
+            sleep_time = get_frame_sleep_for_speed(state.game.speed)
             audio.update_game_speed(
-                new_level,
-                base_sleep=constants.timing.base_sleep,
-                multiplier=constants.timing.frame_sleep_level_multiplier,
-                min_sleep=constants.timing.min_sleep
+                state.game.speed,
+                base_sleep=getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18),
+                multiplier=1.0,  # Not used anymore, we use direct interpolation
+                min_sleep=getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
             )
 
     if by_bird is not None and 0 <= int(by_bird) < len(state.birds.per_bird_xp):

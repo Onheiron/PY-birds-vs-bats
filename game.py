@@ -38,26 +38,25 @@ FIXED_FRAME_TIME = 1.0 / FIXED_FPS  # ~16.6ms
 MAX_LEVEL = 30
 
 
-def calculate_frames_per_update(level):
+def calculate_frames_per_update(speed_level):
     """
     Calcola quanti frame del loop fisso passano tra ogni update della fisica.
-    Usa una curva logaritmica: accelera velocemente all'inizio, poi rallenta.
+    Basato sul livello di velocità (1-10).
 
-    Level 1:  10 frames/update = 6 updates/sec (lento)
-    Level 30: 2 frames/update = 30 updates/sec (veloce ma giocabile)
+    Speed 1:  10 frames/update = 6 updates/sec (lento)
+    Speed 10: 2 frames/update = 30 updates/sec (veloce ma giocabile)
     """
-    # Normalizza level tra 0 e 1
-    t = (level - 1) / (MAX_LEVEL - 1) if MAX_LEVEL > 1 else 0
-    # Curva logaritmica: cresce veloce all'inizio
-    k = 5  # Curvatura
-    if t <= 0:
-        normalized = 0
-    else:
-        normalized = math.log(1 + t * k) / math.log(1 + k)
+    min_speed = getattr(constants.speed, 'min_speed', 1)
+    max_speed = getattr(constants.speed, 'max_speed', 10)
+
+    # Normalizza speed tra 0 e 1
+    t = (speed_level - min_speed) / (max_speed - min_speed) if max_speed > min_speed else 0
+    t = max(0, min(1, t))
+
     # Mappa da max_frames (lento) a min_frames (veloce)
     max_frames = 10
     min_frames = 2
-    frames = max_frames - normalized * (max_frames - min_frames)
+    frames = max_frames - t * (max_frames - min_frames)
     return max(min_frames, round(frames))
 
 
@@ -308,6 +307,7 @@ def run_game():
     state.init()
     achievements.init_achievements()
     state.game.start_time = time.time()
+    state.game.last_mile_update = time.time()
 
     # Start background music with correct bird composition
     if AUDIO_AVAILABLE and audio:
@@ -326,18 +326,29 @@ def run_game():
             key = render.get_key()
             input_handler.process_input(key)
 
-            # Se in pausa, solo render e aspetta
+            # Se in pausa, solo render e aspetta (but don't accumulate miles)
             if state.game.paused:
+                state.game.last_mile_update = time.time()  # Reset timer
                 render.render_game()
-                # Mantieni 60 FPS anche in pausa
                 elapsed = time.time() - frame_start
                 sleep_time = FIXED_FRAME_TIME - elapsed
                 if sleep_time > 0:
                     time.sleep(sleep_time)
                 continue
 
-            # === PHYSICS/LOGIC UPDATE (ogni N frame basato sul livello) ===
-            frames_per_update = calculate_frames_per_update(state.game.level)
+            # === UPDATE MILES (based on real time and current speed) ===
+            current_time = time.time()
+            if state.game.last_mile_update is not None:
+                delta_time = current_time - state.game.last_mile_update
+                level_changed = functions.update_miles(delta_time)
+                if level_changed:
+                    # Play level up sound when reaching a new level milestone
+                    if AUDIO_AVAILABLE and audio:
+                        audio.play_sfx('level_up')
+            state.game.last_mile_update = current_time
+
+            # === PHYSICS/LOGIC UPDATE (ogni N frame basato sulla velocità) ===
+            frames_per_update = calculate_frames_per_update(state.game.speed)
 
             if render_frame % frames_per_update == 0:
                 # Update physics (movement)

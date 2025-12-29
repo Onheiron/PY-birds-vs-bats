@@ -12,7 +12,6 @@ from src.core import constants
 from src.services import achievements
 from src.entities.sprites import *
 from src.functions import (
-    compute_level_from_score,
     compute_grade_from_xp,
     compute_prestige,
     add_score,
@@ -702,20 +701,25 @@ def spawn_obstacle():
     if state.enemies.obstacle_spawn_timer > 0:
         return
 
-    level = compute_level_from_score(state.game.score)
+    # Use milestone level (1-18) for spawning, not speed
+    level = state.game.level
     # Spawn più frequente: da 50 a livello 1, fino a 10 a livelli alti
-    base_spawn_rate = max(10, 50 - level * 4)
+    base_spawn_rate = max(10, 50 - level * 2)
     state.enemies.obstacle_spawn_timer = base_spawn_rate
 
-    # Tier based on level - più aggressivo
-    if level <= 2:
-        tier = random.choices([1, 2, 3, 4], weights=[50, 30, 15, 5])[0]
-    elif level <= 4:
+    # Tier based on level (1-18) - progressive difficulty
+    if level <= 3:  # Levels 1-1 to 1-3
+        tier = random.choices([1, 2, 3, 4], weights=[60, 28, 10, 2])[0]
+    elif level <= 6:  # Levels 2-1 to 2-3
+        tier = random.choices([1, 2, 3, 4], weights=[45, 35, 15, 5])[0]
+    elif level <= 9:  # Levels 3-1 to 3-3
         tier = random.choices([1, 2, 3, 4], weights=[30, 35, 25, 10])[0]
-    elif level <= 6:
-        tier = random.choices([1, 2, 3, 4], weights=[20, 30, 35, 15])[0]
-    else:
-        tier = random.choices([1, 2, 3, 4], weights=[10, 25, 40, 25])[0]
+    elif level <= 12:  # Levels 4-1 to 4-3
+        tier = random.choices([1, 2, 3, 4], weights=[20, 35, 30, 15])[0]
+    elif level <= 15:  # Levels 5-1 to 5-3
+        tier = random.choices([1, 2, 3, 4], weights=[10, 30, 38, 22])[0]
+    else:  # Levels 6-1 to 6-3
+        tier = random.choices([1, 2, 3, 4], weights=[5, 20, 45, 30])[0]
 
     # Larghezza in lane per questo tier
     lane_width = OBSTACLE_LANE_WIDTH.get(tier, 1)
@@ -745,8 +749,8 @@ def spawn_obstacle():
         state.enemies.obstacle_spawn_timer = max(5, base_spawn_rate // 4)
         return
 
-    # Permetti più ostacoli consecutivi ai livelli alti
-    consecutive_limit = 2 + level // 3  # 2 a lv1, 3 a lv3, 4 a lv6, etc.
+    # Permetti più ostacoli consecutivi ai livelli alti (level 1-18)
+    consecutive_limit = 2 + level // 4  # 2 at lv1, 3 at lv4, 4 at lv8, 5 at lv12, 6 at lv16
     if len(state.enemies.spawn_queue) >= consecutive_limit:
         obstacle_count = sum(1 for item in state.enemies.spawn_queue[-consecutive_limit:]
                             if item.get('type') == 'obstacle')
@@ -778,42 +782,43 @@ def spawn_bat():
     if state.enemies.bat_spawn_timer > 0:
         return
 
-    level = compute_level_from_score(state.game.score)
-    if level < 3:  # Bats iniziano a livello 3
+    # Use milestone level (1-18) for spawning, not speed
+    level = state.game.level
+    if level < 4:  # Bats start at level 2-1 (milestone 4)
         return
 
-    # Spawn rate PROGRESSIVO e ragionevole:
-    # Lv 3-5:   ogni ~200 frame (raro)
-    # Lv 6-10:  ogni ~150 frame
-    # Lv 11-15: ogni ~100 frame
-    # Lv 16-20: ogni ~70 frame
-    # Lv 21-30: ogni ~50 frame
-    if level <= 5:
+    # Spawn rate PROGRESSIVO based on level (1-18):
+    # Lv 4-6:   ogni ~200 frame (raro)
+    # Lv 7-9:   ogni ~150 frame
+    # Lv 10-12: ogni ~100 frame
+    # Lv 13-15: ogni ~70 frame
+    # Lv 16-18: ogni ~50 frame
+    if level <= 6:
         base_spawn_rate = 200
-    elif level <= 10:
+    elif level <= 9:
         base_spawn_rate = 150
-    elif level <= 15:
+    elif level <= 12:
         base_spawn_rate = 100
-    elif level <= 20:
+    elif level <= 15:
         base_spawn_rate = 70
     else:
         base_spawn_rate = 50
 
     state.enemies.bat_spawn_timer = base_spawn_rate
 
-    # Max bats on screen PROGRESSIVO:
-    # Lv 3-5:   max 1
-    # Lv 6-10:  max 2
-    # Lv 11-15: max 3
-    # Lv 16-20: max 4
-    # Lv 21-30: max 5
-    if level <= 5:
+    # Max bats on screen PROGRESSIVO based on level (1-18):
+    # Lv 4-6:   max 1
+    # Lv 7-9:   max 2
+    # Lv 10-12: max 3
+    # Lv 13-15: max 4
+    # Lv 16-18: max 5
+    if level <= 6:
         max_bats = 1
-    elif level <= 10:
+    elif level <= 9:
         max_bats = 2
-    elif level <= 15:
+    elif level <= 12:
         max_bats = 3
-    elif level <= 20:
+    elif level <= 15:
         max_bats = 4
     else:
         max_bats = 5
@@ -822,16 +827,16 @@ def spawn_bat():
         state.enemies.bat_spawn_timer = base_spawn_rate // 2
         return
 
-    # Tier based on level - progressivo
-    if level <= 5:
+    # Tier based on level (1-18) - progressivo
+    if level <= 6:  # Levels 1-1 to 2-3
         tier = random.choices([1, 2, 3, 4], weights=[70, 25, 5, 0])[0]
-    elif level <= 10:
+    elif level <= 9:  # Levels 3-1 to 3-3
         tier = random.choices([1, 2, 3, 4], weights=[50, 35, 12, 3])[0]
-    elif level <= 15:
+    elif level <= 12:  # Levels 4-1 to 4-3
         tier = random.choices([1, 2, 3, 4], weights=[30, 40, 22, 8])[0]
-    elif level <= 20:
+    elif level <= 15:  # Levels 5-1 to 5-3
         tier = random.choices([1, 2, 3, 4], weights=[15, 35, 35, 15])[0]
-    else:
+    else:  # Levels 6-1 to 6-3
         tier = random.choices([1, 2, 3, 4], weights=[5, 25, 45, 25])[0]
 
     # HP ragionevoli ma sfidanti
@@ -841,23 +846,23 @@ def spawn_bat():
     # Spawn position X
     x_pos = random.randint(0, constants.layout.width - 8)
 
-    # Target Y PROGRESSIVO - più in alto all'inizio, più in basso ai livelli alti
+    # Target Y PROGRESSIVO based on level (1-18) - più in alto all'inizio, più in basso ai livelli alti
     # starting_line è dove stanno gli uccelli (es. 26)
     # All'inizio: target_y tra 3 e 10 (molto in alto, lontano)
     # Ai livelli alti: target_y tra 15 e starting_line-3 (più vicino agli uccelli)
-    if level <= 5:
+    if level <= 6:  # Levels 1-1 to 2-3
         target_y_min = 3
         target_y_max = 8
-    elif level <= 10:
+    elif level <= 9:  # Levels 3-1 to 3-3
         target_y_min = 5
         target_y_max = 12
-    elif level <= 15:
+    elif level <= 12:  # Levels 4-1 to 4-3
         target_y_min = 8
         target_y_max = 16
-    elif level <= 20:
+    elif level <= 15:  # Levels 5-1 to 5-3
         target_y_min = 10
         target_y_max = 20
-    else:
+    else:  # Levels 6-1 to 6-3
         target_y_min = 12
         target_y_max = constants.layout.starting_line - 5
 
@@ -1064,11 +1069,21 @@ def update_score_tick():
 
 
 def calculate_frame_sleep():
-    """Calculate the sleep duration for current frame."""
-    level = compute_level_from_score(state.game.score)
-    # Exponential speed increase: multiplier^level (e.g. 0.88^level)
-    multiplier = getattr(constants.timing, 'frame_sleep_level_multiplier', 0.88)
-    sleep_time = constants.timing.base_sleep * (multiplier ** level)
+    """Calculate the sleep duration for current frame.
+
+    Note: This is now a legacy function. The main game loop uses
+    calculate_frames_per_update() based on state.game.speed instead.
+    """
+    # Use speed-based calculation (interpolated between speed 1 and speed 10)
+    speed = state.game.speed
+    min_speed = getattr(constants.speed, 'min_speed', 1)
+    max_speed = getattr(constants.speed, 'max_speed', 10)
+    sleep_at_1 = getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18)
+    sleep_at_10 = getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
+
+    t = (speed - min_speed) / (max_speed - min_speed) if max_speed > min_speed else 0
+    t = max(0, min(1, t))
+    sleep_time = sleep_at_1 - t * (sleep_at_1 - sleep_at_10)
     return max(constants.timing.min_sleep, sleep_time)
 
 
