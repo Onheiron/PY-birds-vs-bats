@@ -155,7 +155,7 @@ ui = SimpleNamespace(
     level_sign_scroll_y=0,
     level_sign_scrolling=False,
     # Pause menu state
-    pause_menu_index=0  # 0=RICOMINCIA, 1=SALVA & ESCI, 2=BIRDPEDIA, 3=IMPOSTAZIONI
+    pause_menu_index=0  # 0=RICOMINCIA, 1=SALVA & ESCI, 2=BIRDPEDIA, 3=GUIDA, 4=IMPOSTAZIONI
 )
 
 

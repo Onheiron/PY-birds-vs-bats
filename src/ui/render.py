@@ -1658,6 +1658,7 @@ def _fb_render_pause_overlay(fb):
         "RICOMINCIA",
         "SALVA & ESCI",
         "BIRDPEDIA",
+        "GUIDA",
         "IMPOSTAZIONI"
     ]
 

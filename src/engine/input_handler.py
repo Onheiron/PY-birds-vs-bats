@@ -600,6 +600,9 @@ def _execute_pause_menu_action():
         # BIRDPEDIA - placeholder for now
         _add_notification("Birdpedia", title="Coming Soon:")
     elif selected == 3:
+        # GUIDA - placeholder for now
+        _add_notification("Guida", title="Coming Soon:")
+    elif selected == 4:
         # IMPOSTAZIONI - placeholder for now
         _add_notification("Impostazioni", title="Coming Soon:")
 
@@ -644,10 +647,10 @@ def process_input(key):
             state.game.game_over = True
         elif key == 'UP':
             # Navigate menu up
-            state.ui.pause_menu_index = (state.ui.pause_menu_index - 1) % 4
+            state.ui.pause_menu_index = (state.ui.pause_menu_index - 1) % 5
         elif key == 'DOWN':
             # Navigate menu down
-            state.ui.pause_menu_index = (state.ui.pause_menu_index + 1) % 4
+            state.ui.pause_menu_index = (state.ui.pause_menu_index + 1) % 5
         elif key == 'ENTER':
             # Execute selected menu action
             _execute_pause_menu_action()
