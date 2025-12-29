@@ -80,7 +80,10 @@ enemies = SimpleNamespace(
     obstacle_spawn_timer=0,
     bats=[],
     bat_spawn_timer=0,
-    spawn_queue=[]
+    spawn_queue=[],
+    # Decorative barriers in right panel (no collision)
+    right_panel_barriers=[],
+    right_panel_barrier_timer=0
 )
 
 # ============================================================================
@@ -216,6 +219,8 @@ def init():
     enemies.bats = []
     enemies.bat_spawn_timer = 0
     enemies.spawn_queue = []
+    enemies.right_panel_barriers = []
+    enemies.right_panel_barrier_timer = 0
     
     # Items
     items.loot_items = []

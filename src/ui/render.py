@@ -8,7 +8,7 @@ if os.name == 'nt':
 
 from src.entities.sprites import *
 from src.core import constants
-from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane
+from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane, get_mph_for_speed
 from src.core import state
 
 # =============================================================================
@@ -39,7 +39,7 @@ TREE_PATTERN_HEIGHT = len(TREE_PATTERN)
 TREE_PATTERN_WIDTH = 24  # Lunghezza fissa
 
 # Colore verde scurissimo per lo sfondo
-TREE_BG_COLOR = "\033[38;5;234m"  # Verde scuro (non grigio!)
+TREE_BG_COLOR = "\033[38;5;236m"  # Verde scuro (non grigio!)
 
 # =============================================================================
 # FRAMEBUFFER - Double buffering per rendering differenziale
@@ -694,6 +694,7 @@ def render_game():
     _fb_render_background(fb)  # Sfondo alberi PRIMA di tutto il resto
     _fb_render_starting_line(fb)
     _fb_render_obstacles(fb)
+    _fb_render_right_panel_barriers(fb)  # Decorative barriers in right panel
     _fb_render_bats(fb)
     _fb_render_loot(fb)
     _fb_render_projectiles(fb)
@@ -720,72 +721,210 @@ def render_game():
 PANEL_BORDER_COLOR = "\033[38;5;238m"  # Dark gray border
 PANEL_BG_COLOR = "\033[38;5;233m"      # Very dark background
 
-# Speed gauge colors (bottom to top: green -> yellow -> red) - muted tones
-GAUGE_GREEN = "\033[38;5;34m"   # Muted green
-GAUGE_YELLOW = "\033[38;5;178m" # Muted yellow/orange
-GAUGE_RED = "\033[38;5;160m"    # Muted red
+# Speed gauge gradient colors (level 1-10: green -> yellow -> red) - muted tones
+# Using 256-color palette for smooth gradient
+GAUGE_GRADIENT = [
+    "\033[38;5;34m",   # Level 1:  green
+    "\033[38;5;70m",   # Level 2:  green-yellow
+    "\033[38;5;106m",  # Level 3:  yellow-green
+    "\033[38;5;142m",  # Level 4:  yellow
+    "\033[38;5;178m",  # Level 5:  yellow-orange
+    "\033[38;5;214m",  # Level 6:  orange
+    "\033[38;5;208m",  # Level 7:  orange-red
+    "\033[38;5;202m",  # Level 8:  red-orange
+    "\033[38;5;196m",  # Level 9:  bright red
+    "\033[38;5;160m",  # Level 10: dark red
+]
+# Momentum bar gradient (0% -> 100%: red -> yellow -> green)
+MOMENTUM_GRADIENT = [
+    "\033[38;5;160m",  # 0%:   dark red
+    "\033[38;5;196m",  # 6%:   bright red
+    "\033[38;5;202m",  # 12%:  red-orange
+    "\033[38;5;208m",  # 19%:  orange-red
+    "\033[38;5;214m",  # 25%:  orange
+    "\033[38;5;220m",  # 31%:  orange-yellow
+    "\033[38;5;178m",  # 37%:  yellow-orange
+    "\033[38;5;142m",  # 44%:  yellow
+    "\033[38;5;148m",  # 50%:  yellow-lime
+    "\033[38;5;106m",  # 56%:  yellow-green
+    "\033[38;5;112m",  # 62%:  lime-yellow
+    "\033[38;5;70m",   # 69%:  lime
+    "\033[38;5;76m",   # 75%:  lime-green
+    "\033[38;5;40m",   # 81%:  green-lime
+    "\033[38;5;34m",   # 87%:  green
+    "\033[38;5;28m",   # 94%:  dark green
+]
 GAUGE_OFF = "\033[38;5;238m"    # Dark gray (inactive blocks)
 GAUGE_BLOCK_ON = "██████"       # Solid block for active segments
 GAUGE_BLOCK_OFF = "------"      # Dashes for inactive segments (clearly different)
 
+# Text colors for left panel
+PANEL_LABEL_COLOR = "\033[38;5;245m"  # Gray for labels
+PANEL_VALUE_COLOR = "\033[38;5;255m"  # White for values
 
-def _fb_render_speed_gauge(fb, panel_start_y, panel_end_y):
+
+def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
     """
-    Render speed gauge in the left panel.
-    10 speed levels, 2 rows per level = 20 rows needed.
-    Colors: green (1-3), yellow (4-6), red (7-10)
-    Format: "NN - ██████ - NN" centered in panel
+    Render left panel content:
+    - Speed: (label)
+      XXX MPH (value)
+    - Travelled: (label)
+      XXX mls (value)
+    - Separator
+    - Speed gauge (vertical, extra spacing for red levels 8-10)
+    - Separator
+    - Momentum: [horizontal bar]
     """
     current_speed = state.game.speed
     max_speed = 10
-    rows_per_level = 2
+    mph = get_mph_for_speed(current_speed)
+    miles = state.game.miles
 
-    # Calculate available height for gauge
-    panel_height = panel_end_y - panel_start_y
-    total_gauge_rows = max_speed * rows_per_level  # 20 rows
+    y = panel_start_y + 1  # Start after a small margin
 
-    # Center the gauge vertically if there's extra space
-    gauge_start_y = panel_start_y + max(0, (panel_height - total_gauge_rows) // 2)
+    # === Speed: XXX MPH (two lines) ===
+    fb.put_string(2, y, "Speed:", PANEL_LABEL_COLOR)
+    y += 1
+    fb.put_string(2, y, f"{mph} MPH", PANEL_VALUE_COLOR)
+    y += 2
 
-    # Calculate centered X position
-    # Format: "NN - ██████ - NN" = 2 + 3 + 6 + 3 + 2 = 16 chars
-    # Panel inner width = SIDE_PANEL_WIDTH - 2 (borders) = 18
-    # So we start at x = 1 + (18 - 16) / 2 = 2
-    gauge_x = 2
+    # === Travelled: XXX.XXX mls (two lines) ===
+    fb.put_string(2, y, "Travelled:", PANEL_LABEL_COLOR)
+    y += 1
+    fb.put_string(2, y, f"{miles:.3f} mls", PANEL_VALUE_COLOR)
+    y += 2
 
-    # Draw gauge from bottom to top (level 1 at bottom, level 10 at top)
-    for level in range(1, max_speed + 1):
-        # Determine color based on level
-        if level <= 3:
-            active_color = GAUGE_GREEN
-        elif level <= 6:
-            active_color = GAUGE_YELLOW
+    # === Calculate Momentum first (needed for spacer rows) ===
+    # Momentum = progress from current speed threshold to next speed threshold
+    # For speed 1, we go from 0 to threshold(2)
+    # For speed N (N>1), we go from threshold(N) to threshold(N+1)
+    score = state.game.score
+
+    if current_speed >= max_speed:
+        momentum_pct = 100.0
+    else:
+        if current_speed == 1:
+            # At speed 1, progress goes from 0 to threshold for speed 2
+            prev_threshold = 0
         else:
-            active_color = GAUGE_RED
+            # At speed N, progress goes from threshold(N) to threshold(N+1)
+            prev_threshold = calculate_level_threshold(current_speed)
 
-        # Is this level active?
-        is_active = level <= current_speed
-        color = active_color if is_active else GAUGE_OFF
-        block = GAUGE_BLOCK_ON if is_active else GAUGE_BLOCK_OFF
+        next_threshold = calculate_level_threshold(current_speed + 1)
+        score_range = next_threshold - prev_threshold
+        score_progress = score - prev_threshold
 
-        # Calculate Y positions for this level (bottom-up, so level 1 is at bottom)
-        # Level 10 is at top (lowest Y), level 1 is at bottom (highest Y)
-        level_top_y = gauge_start_y + (max_speed - level) * rows_per_level
+        if score_range > 0:
+            momentum_pct = min(100.0, max(0.0, (score_progress / score_range) * 100))
+        else:
+            momentum_pct = 0.0
 
-        # Draw the 2 rows for this level
-        for row in range(rows_per_level):
-            y = level_top_y + row
-            if y >= panel_start_y and y < panel_end_y:
-                # First row: show numbers on both sides
-                if row == 0:
-                    # Format: "NN - ██████ - NN"
-                    level_str = f"{level:2d}"
-                    line = f"{level_str} - {block} - {level_str}"
-                    fb.put_string(gauge_x, y, line, color)
+    # === Gear title ===
+    separator = "─" * 16
+    fb.put_string(2, y, "Gear:", PANEL_LABEL_COLOR)
+    y += 1
+
+    # === Separator ===
+    fb.put_string(2, y, separator, GAUGE_OFF)
+    y += 1
+
+    # === Speed Gauge (vertical, with spacer rows between some levels) ===
+    # Spacer rows (block without numbers) between: 10-9, 9-8, 8-7, 7-6, 6-5
+    gauge_x = 2
+    gauge_start_y = y
+
+    # Levels that have a spacer row AFTER them (going top to bottom)
+    levels_with_spacer_after = [10, 9, 8, 7]
+
+    # Build list of rows to draw (level number or None for spacer)
+    gauge_rows = []
+    for level in range(max_speed, 0, -1):  # 10 down to 1
+        gauge_rows.append(level)
+        if level in levels_with_spacer_after:
+            gauge_rows.append(None)  # Spacer row
+
+    total_gauge_rows = len(gauge_rows)
+
+    # Draw gauge
+    for row_idx, level in enumerate(gauge_rows):
+        row_y = gauge_start_y + row_idx
+
+        if row_y < panel_start_y or row_y >= panel_end_y:
+            continue
+
+        if level is None:
+            # Spacer row - find which level it belongs to (the one above)
+            level_above = None
+            for i in range(row_idx - 1, -1, -1):
+                if gauge_rows[i] is not None:
+                    level_above = gauge_rows[i]
+                    break
+
+            if level_above is not None:
+                # Use gradient color based on level
+                active_color = GAUGE_GRADIENT[level_above - 1]
+
+                # Spacer AFTER level N is between level N and level N-1
+                # It should light up when:
+                # - level_above is already active (current_speed >= level_above), OR
+                # - We're one level below (current_speed == level_above - 1) AND momentum >= 50%
+                level_below = level_above - 1
+
+                if current_speed >= level_above:
+                    # Level above is already reached, spacer is active
+                    is_active = True
+                elif current_speed == level_below and momentum_pct >= 50:
+                    # We're at the level below and momentum >= 50%, light up spacer
+                    is_active = True
                 else:
-                    # Second row: just the block centered
-                    line = f"     {block}     "
-                    fb.put_string(gauge_x, y, line, color)
+                    is_active = False
+
+                color = active_color if is_active else GAUGE_OFF
+                block = GAUGE_BLOCK_ON if is_active else GAUGE_BLOCK_OFF
+
+                # Spacer row: just the block, no numbers
+                line = f"     {block}     "
+                fb.put_string(gauge_x, row_y, line, color)
+        else:
+            # Normal level row with numbers - use gradient color
+            active_color = GAUGE_GRADIENT[level - 1]
+
+            is_active = level <= current_speed
+            color = active_color if is_active else GAUGE_OFF
+            block = GAUGE_BLOCK_ON if is_active else GAUGE_BLOCK_OFF
+
+            level_str = f"{level:2d}"
+            line = f"{level_str} - {block} - {level_str}"
+            fb.put_string(gauge_x, row_y, line, color)
+
+    y = gauge_start_y + total_gauge_rows
+
+    # === Separator ===
+    fb.put_string(2, y, separator, GAUGE_OFF)
+    y += 2  # Skip a line after separator
+
+    # === Momentum: [horizontal bar] ===
+    momentum_label = "Momentum:"
+    fb.put_string(2, y, momentum_label, PANEL_LABEL_COLOR)
+    y += 2  # Skip a line between label and bar
+
+    # Draw horizontal bar (16 chars wide) with gradient colors (red -> yellow -> green)
+    bar_width = 16
+    filled = int((momentum_pct / 100.0) * bar_width)
+
+    for i in range(bar_width):
+        if i < filled:
+            # Use gradient color based on position (0-15)
+            char_color = MOMENTUM_GRADIENT[i]
+            fb.put(2 + i, y, '█', char_color)
+        else:
+            fb.put(2 + i, y, '─', GAUGE_OFF)
+
+    # Show percentage on the right of the bar
+    y += 1
+    pct_str = f"{momentum_pct:.0f}%"
+    pct_x = 2 + (bar_width - len(pct_str)) // 2
+    fb.put_string(pct_x, y, pct_str, PANEL_VALUE_COLOR)
 
 
 def _fb_render_side_panels(fb):
@@ -811,26 +950,24 @@ def _fb_render_side_panels(fb):
         # Inner border (separates panel from game)
         fb.put(SIDE_PANEL_WIDTH - 1, y, '│', PANEL_BORDER_COLOR)
 
-    # Render speed gauge in left panel
-    _fb_render_speed_gauge(fb, panel_start_y, panel_end_y)
+    # Render left panel content (speed info, gauge, momentum)
+    _fb_render_left_panel_content(fb, panel_start_y, panel_end_y)
 
-    # Right panel - vertical border and placeholder content
+    # Right panel - vertical border only (background rendered separately)
     for y in range(panel_start_y, panel_end_y):
         # Inner border (separates game from panel)
         fb.put(right_start, y, '│', PANEL_BORDER_COLOR)
-        # Inner content (placeholder dots)
-        for x in range(1, SIDE_PANEL_WIDTH - 1):
-            px = right_start + x
-            char = '·' if (x + y) % 4 == 0 else ' '
-            if char != ' ':
-                fb.put(px, y, char, PANEL_BG_COLOR)
         # Outer border
         fb.put(right_start + SIDE_PANEL_WIDTH - 1, y, '│', PANEL_BORDER_COLOR)
 
 
 def _fb_render_background(fb):
-    """Render scrolling tree canopy background."""
+    """Render scrolling tree canopy background for game area and right panel."""
     offset = state.ui.bg_offset
+
+    # Right panel start position
+    right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
+    right_panel_inner_width = SIDE_PANEL_WIDTH - 2  # Exclude borders
 
     # L'area di gioco va dalla riga 2 (dopo header) alla riga height+1 (prima del floor)
     for screen_y in range(constants.layout.height):
@@ -839,7 +976,7 @@ def _fb_render_background(fb):
         pattern_y = (screen_y - offset) % TREE_PATTERN_HEIGHT
         pattern_line = TREE_PATTERN[pattern_y]
 
-        # Riempi l'intera larghezza ripetendo il pattern orizzontalmente
+        # Riempi l'area di gioco ripetendo il pattern orizzontalmente
         for screen_x in range(constants.layout.width):
             pattern_x = screen_x % TREE_PATTERN_WIDTH
             char = pattern_line[pattern_x]
@@ -847,15 +984,22 @@ def _fb_render_background(fb):
             if char != ' ':
                 fb.put(GAME_X_OFFSET + screen_x, screen_y + 2, char, TREE_BG_COLOR)
 
+        # Also render in right panel (continuing the pattern)
+        for panel_x in range(right_panel_inner_width):
+            # Continue pattern from where game area ends
+            pattern_x = (constants.layout.width + panel_x) % TREE_PATTERN_WIDTH
+            char = pattern_line[pattern_x]
+            if char != ' ':
+                fb.put(right_panel_start + panel_x, screen_y + 2, char, TREE_BG_COLOR)
+
 
 def _fb_render_header(fb):
     """Render header to framebuffer - spans FULL screen width.
 
-    Shows: Miles traveled, Level (G-S format), Lives, Prestige, Score
-    Speed is shown in the left panel gauge instead.
+    Shows: Level (G-S format), Lives, Prestige, Score
+    Speed and Miles are shown in the left panel.
     """
     # Get values from new speed/miles/level system
-    miles = state.game.miles
     level_group = state.game.level_group
     level_sub = state.game.level_sub
     level_display = f"{level_group}-{level_sub}"
@@ -867,8 +1011,8 @@ def _fb_render_header(fb):
         prestige_val = 1.0
     prestige_display = f"{prestige_val:.2f}x"
 
-    # Format: Miles: XX.X | Level: G-S | Lives: ●●●◌◌ | Prestige: X.XXx | Score: XXX
-    score_line = f"Miles: {miles:.1f} | Level: {level_display} | Lives: {lives_display} | Prestige: {prestige_display} | Score: {int(state.game.score):,}"
+    # Format: Level: G-S | Lives: ●●●◌◌ | Prestige: X.XXx | Score: XXX
+    score_line = f"Level: {level_display} | Lives: {lives_display} | Prestige: {prestige_display} | Score: {int(state.game.score):,}"
 
     # Header spans FULL width - center the text
     padding = max(0, (TOTAL_WIDTH - len(score_line)) // 2)
@@ -927,6 +1071,35 @@ def _fb_render_obstacles(fb):
                         x_pos = center_x - x_offset + i
                         if 0 <= x_pos < constants.layout.width:
                             fb.put(GAME_X_OFFSET + x_pos, y_pos + 2, char, obs_color)
+
+
+def _fb_render_right_panel_barriers(fb):
+    """Render decorative barriers in right panel."""
+    # Right panel position
+    right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
+    right_panel_inner_width = SIDE_PANEL_WIDTH - 2
+
+    # Decorative color (darker green - same lore as obstacles, just dimmed for background)
+    DECO_COLOR = "\033[38;5;22m"  # Dark green
+
+    for barrier in state.enemies.right_panel_barriers:
+        tier = barrier.get('tier', 1)
+        sprite = OBSTACLE_SPRITES.get(tier, OBSTACLE_SPRITE_T1)
+        sprite_width = max(len(line) for line in sprite)
+
+        # Use stored x_offset for horizontal position variation
+        x_offset = barrier.get('x_offset', 0)
+        base_x = right_panel_start + x_offset
+
+        for line_idx, line in enumerate(sprite):
+            y_pos = barrier['y_pos'] + line_idx
+            if 0 <= y_pos < constants.layout.height:
+                for i, char in enumerate(line):
+                    if char != ' ':
+                        x_pos = base_x + i
+                        # Make sure it stays within panel bounds
+                        if right_panel_start <= x_pos < right_panel_start + right_panel_inner_width:
+                            fb.put(x_pos, y_pos + 2, char, DECO_COLOR)
 
 
 def _fb_render_bats(fb):

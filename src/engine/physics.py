@@ -121,6 +121,42 @@ def update_obstacle_positions():
             state.enemies.obstacles.remove(obs)
 
 
+def update_right_panel_barriers():
+    """Update decorative barriers in right panel (spawn and move)."""
+    # Panel inner width is SIDE_PANEL_WIDTH - 2 = 18 chars
+    # Sprite widths: tier 1 = 5 chars, tier 2 = 7 chars
+    PANEL_INNER_WIDTH = 18
+
+    # Spawn new barriers periodically
+    state.enemies.right_panel_barrier_timer -= 1
+    if state.enemies.right_panel_barrier_timer <= 0:
+        # Reset timer (random interval)
+        state.enemies.right_panel_barrier_timer = random.randint(30, 80)
+
+        # Spawn a new decorative barrier
+        tier = random.choice([1, 2])  # Only small barriers for right panel
+        sprite_height = 3 if tier == 1 else 5
+        sprite_width = 5 if tier == 1 else 7
+
+        # Random x position that keeps sprite within panel bounds
+        max_x_offset = max(0, PANEL_INNER_WIDTH - sprite_width)
+        x_offset = random.randint(0, max_x_offset)
+
+        state.enemies.right_panel_barriers.append({
+            'y_pos': -sprite_height,
+            'tier': tier,
+            'x_offset': x_offset
+        })
+
+    # Move barriers down
+    if state.game.frame_count % 5 == 0:
+        for barrier in state.enemies.right_panel_barriers[:]:
+            barrier['y_pos'] += 1
+            # Remove if past screen
+            if barrier['y_pos'] >= constants.layout.height:
+                state.enemies.right_panel_barriers.remove(barrier)
+
+
 def update_bat_positions():
     """Update positions of all bats (horizontal wave + vertical descent)."""
     for bat in state.enemies.bats[:]:
@@ -269,3 +305,4 @@ def update_all():
     update_obstacle_positions()
     update_bat_positions()
     update_loot_positions()
+    update_right_panel_barriers()
