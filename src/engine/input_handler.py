@@ -584,6 +584,47 @@ def handle_audio_toggle():
         _add_notification('Audio: OFF')
 
 
+def _execute_pause_menu_action():
+    """Execute the currently selected pause menu action."""
+    from src.core import state as game_state
+
+    selected = state.ui.pause_menu_index
+
+    if selected == 0:
+        # RICOMINCIA - restart game
+        _handle_restart()
+    elif selected == 1:
+        # SALVA & ESCI - save and exit
+        _handle_save_and_exit()
+    elif selected == 2:
+        # BIRDPEDIA - placeholder for now
+        _add_notification("Birdpedia", title="Coming Soon:")
+    elif selected == 3:
+        # IMPOSTAZIONI - placeholder for now
+        _add_notification("Impostazioni", title="Coming Soon:")
+
+
+def _handle_restart():
+    """Restart the game from the beginning."""
+    from src.core import state as game_state
+
+    # Re-initialize game state
+    game_state.init()
+
+    # Unpause
+    state.game.paused = False
+    state.ui.pause_menu_index = 0
+
+    _add_notification("Nuova partita!", title="Restart:")
+
+
+def _handle_save_and_exit():
+    """Save game and exit."""
+    # For now, just exit (save functionality can be added later)
+    state.game.quit_requested = True
+    state.game.game_over = True
+
+
 def process_input(key):
     """Process a single key input and update game state."""
     if key is None:
@@ -594,13 +635,22 @@ def process_input(key):
     space_just_pressed = space_pressed and not state.player.last_space_state
     state.player.last_space_state = space_pressed
 
-    # When paused, only handle pause toggle and quit
+    # When paused, handle pause menu navigation
     if state.game.paused:
-        if key in ('P', 'p'):
-            handle_pause()
+        if key in ('P', 'p', 'ESC'):
+            handle_pause()  # Unpause
         elif key == 'QUIT':
             state.game.quit_requested = True
             state.game.game_over = True
+        elif key == 'UP':
+            # Navigate menu up
+            state.ui.pause_menu_index = (state.ui.pause_menu_index - 1) % 4
+        elif key == 'DOWN':
+            # Navigate menu down
+            state.ui.pause_menu_index = (state.ui.pause_menu_index + 1) % 4
+        elif key == 'ENTER':
+            # Execute selected menu action
+            _execute_pause_menu_action()
         return
 
     # Handle keys

@@ -153,7 +153,9 @@ ui = SimpleNamespace(
     notifications=[],
     # Level sign animation in right panel (legacy, not used)
     level_sign_scroll_y=0,
-    level_sign_scrolling=False
+    level_sign_scrolling=False,
+    # Pause menu state
+    pause_menu_index=0  # 0=RICOMINCIA, 1=SALVA & ESCI, 2=BIRDPEDIA, 3=IMPOSTAZIONI
 )
 
 
@@ -219,6 +221,7 @@ def init():
     ui.notifications = []
     ui.level_sign_scroll_y = 0
     ui.level_sign_scrolling = False
+    ui.pause_menu_index = 0
     
     # Enemies
     enemies.obstacles = []

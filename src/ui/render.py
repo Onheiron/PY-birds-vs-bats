@@ -1639,8 +1639,92 @@ def _fb_render_notifications(fb):
 
 
 def _fb_render_pause_overlay(fb):
-    """Render pause overlay to framebuffer."""
-    if state.game.paused:
-        pause_y = constants.layout.height // 2 + 2
-        pause_x = max(0, (constants.layout.width // 2) - 3)
-        fb.put_string(GAME_X_OFFSET + pause_x, pause_y, "PAUSED", YELLOW)
+    """Render pause overlay and menu to framebuffer."""
+    if not state.game.paused:
+        return
+
+    # "PAUSED" text in game area (centered)
+    pause_y = constants.layout.height // 2 + 2
+    pause_x = max(0, (constants.layout.width // 2) - 3)
+    fb.put_string(GAME_X_OFFSET + pause_x, pause_y, "PAUSED", YELLOW)
+
+    # Pause menu in right panel
+    right_start = GAME_X_OFFSET + constants.layout.width
+    inner_start_x = right_start + 1
+    inner_width = SIDE_PANEL_WIDTH - 2  # 18 chars
+
+    # Menu options
+    PAUSE_MENU_OPTIONS = [
+        "RICOMINCIA",
+        "SALVA & ESCI",
+        "BIRDPEDIA",
+        "IMPOSTAZIONI"
+    ]
+
+    # Menu styling
+    MENU_BORDER_COLOR = "\033[38;5;245m"   # Gray border
+    MENU_SELECTED_COLOR = "\033[38;5;220m"  # Yellow for selected
+    MENU_NORMAL_COLOR = "\033[38;5;250m"    # Light gray for unselected
+    MENU_ARROW_COLOR = "\033[38;5;214m"     # Orange arrow
+
+    # Menu dimensions
+    menu_width = 16
+    menu_x = inner_start_x + (inner_width - menu_width) // 2
+
+    # Position menu below notifications area (roughly middle of panel)
+    panel_start_y = 2
+    panel_end_y = constants.layout.height + 2
+    menu_start_y = panel_start_y + 8  # Below top level sign
+
+    # Draw menu box
+    # ╔══════════════╗
+    # ║   PAUSA      ║
+    # ╠══════════════╣
+    # ║> RICOMINCIA  ║
+    # ║  SALVA & ESCI║
+    # ║  BIRDPEDIA   ║
+    # ║  IMPOSTAZIONI║
+    # ╚══════════════╝
+
+    y = menu_start_y
+
+    # Top border
+    fb.put_string(menu_x, y, "╔══════════════╗", MENU_BORDER_COLOR)
+    y += 1
+
+    # Title
+    fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
+    fb.put_string(menu_x + 1, y, "     PAUSA    ", YELLOW)
+    fb.put(menu_x + 15, y, '║', MENU_BORDER_COLOR)
+    y += 1
+
+    # Separator
+    fb.put_string(menu_x, y, "╠══════════════╣", MENU_BORDER_COLOR)
+    y += 1
+
+    # Menu options
+    selected_idx = state.ui.pause_menu_index
+
+    for i, option in enumerate(PAUSE_MENU_OPTIONS):
+        fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
+
+        if i == selected_idx:
+            # Selected option: show arrow and highlight
+            fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
+            fb.put_string(menu_x + 2, y, f" {option:<12}", MENU_SELECTED_COLOR)
+        else:
+            # Unselected option
+            fb.put_string(menu_x + 1, y, f"  {option:<12}", MENU_NORMAL_COLOR)
+
+        fb.put(menu_x + 15, y, '║', MENU_BORDER_COLOR)
+        y += 1
+
+    # Bottom border
+    fb.put_string(menu_x, y, "╚══════════════╝", MENU_BORDER_COLOR)
+    y += 1
+
+    # Hint at bottom
+    hint = "↑↓: Naviga  ⏎: Seleziona"
+    hint_x = menu_x + (menu_width - len(hint)) // 2
+    if hint_x >= menu_x:
+        fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)
