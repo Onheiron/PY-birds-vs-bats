@@ -119,31 +119,29 @@ BG_PATTERN = "/\\/\\/\\"
 # Obstacle sprites - tree tops, tiered by size
 # Tier 1: piccolo, 1 lane (3 chars wide)
 OBSTACLE_SPRITE_T1 = [
-    " * ",
-    "/v\\",
+    " ∧ ",
+    "/_\\",
 ]
 
 # Tier 2: medio, 1 lane (5 chars wide, centered)
 OBSTACLE_SPRITE_T2 = [
-    "  *  ",
-    " /v\\ ",
-    "/vvv\\",
+    " ∧/\\ ",
+    "/___\\",
 ]
 
 # Tier 3: grande, 2 lanes (9 chars wide)
 OBSTACLE_SPRITE_T3 = [
-    "    /\\  ",
-    " /\\/vv\\ ",
-    "/vv\\vvv\\",
+    "   /\\  ",
+    " ∧/vv\\/\\ ",
+    "/_\\___\\_\\",
 ]
 
 # Tier 4: enorme, 3 lanes (13 chars wide)
 OBSTACLE_SPRITE_T4 = [
-    "    /\\       ",
-    "   /vv\\  *   ",
-    "  /v/\\v\\/v\\  ",
-    " /v/vv\\/vvv\\ ",
-    "/v/vvvv\\vvvv\\",
+    "         ∧   ",
+    "  ∧ /\\  /v\\  ",
+    " /v\\vv\\/vvv\\ ",
+    "/___\\__\\____\\",
 ]
 
 # Mappa tier -> sprite
