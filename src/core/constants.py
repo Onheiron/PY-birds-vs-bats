@@ -16,6 +16,7 @@ from src.entities.bird_types import BirdType, get_color_for_bird_type
 layout = init.dict_to_namespace(config.get('layout', {}))
 birds = init.dict_to_namespace(config.get('birds', {}))
 timing = init.dict_to_namespace(config.get('timing', {}))
+notifications = init.dict_to_namespace(config.get('notifications', {}))
 limits = init.dict_to_namespace(config.get('limits', {}))
 physics = init.dict_to_namespace(config.get('physics', {}))
 eggs = init.dict_to_namespace(config.get('eggs', {}))

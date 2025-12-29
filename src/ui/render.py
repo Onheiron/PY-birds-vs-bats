@@ -695,14 +695,14 @@ def render_game():
     _fb_render_level_line(fb)  # Level line in game area (before obstacles)
     _fb_render_right_panel_barriers(fb)  # Decorative barriers UNDER level signs
     _fb_render_right_panel_level_signs(fb)  # Level signs on TOP of barriers
+    _fb_render_notifications(fb)  # Notification cards in right panel (between level signs)
     _fb_render_starting_line(fb)
     _fb_render_obstacles(fb)
     _fb_render_bats(fb)
     _fb_render_loot(fb)
     _fb_render_projectiles(fb)
     _fb_render_birds(fb)
-    _fb_render_notifications(fb)  # PRIMA del cursore, così il cursore sovrascrive
-    _fb_render_floor_and_cursor(fb)  # DOPO le notifiche
+    _fb_render_floor_and_cursor(fb)
     _fb_render_footer(fb)
     _fb_render_pause_overlay(fb)
 
@@ -1547,15 +1547,95 @@ def _fb_render_footer(fb):
 
 
 def _fb_render_notifications(fb):
-    """Render notifications to framebuffer."""
-    active_notifications = [n for n in state.ui.notifications if n[1] > state.game.frame_count]
-    if active_notifications:
-        text, _ = active_notifications[0]
-        # Stessa riga del cursore (height+3), ma renderizzata PRIMA
-        # così il cursore la sovrascrive dove serve
-        notif_y = constants.layout.height + 3
-        fb.put_string(GAME_X_OFFSET, notif_y, text[:constants.layout.width], YELLOW)
+    """Render notification cards in right panel between level signs."""
+    # Filter expired notifications (support both old tuple and new dict format)
+    active_notifications = []
+    for n in state.ui.notifications:
+        if isinstance(n, dict):
+            if n.get('expire_frame', 0) > state.game.frame_count:
+                active_notifications.append(n)
+        else:
+            # Old tuple format (text, expire_frame) - convert on the fly
+            if len(n) >= 2 and n[1] > state.game.frame_count:
+                active_notifications.append({'title': '', 'text': n[0], 'expire_frame': n[1]})
+
     state.ui.notifications[:] = active_notifications
+
+    if not active_notifications:
+        return
+
+    # Right panel positioning
+    panel_start_y = 2
+    panel_end_y = constants.layout.height + 2
+    right_start = GAME_X_OFFSET + constants.layout.width
+    inner_start_x = right_start + 1
+    inner_width = SIDE_PANEL_WIDTH - 2  # 18 chars
+
+    # Card dimensions: 16 chars wide, 4 rows high
+    # ╔══════════════╗
+    # ║ Title:       ║
+    # ║ Text here    ║
+    # ╚══════════════╝
+    card_width = 16
+    card_height = 4
+    card_x = inner_start_x + (inner_width - card_width) // 2
+
+    # Card colors
+    CARD_BORDER_COLOR = "\033[38;5;178m"  # Yellow-orange border
+    CARD_TITLE_COLOR = "\033[38;5;220m"   # Bright yellow for title
+    CARD_TEXT_COLOR = "\033[38;5;255m"    # White for text
+
+    # Top sign ends at row: panel_start_y + 1 + 4 = panel_start_y + 5
+    # Bottom sign starts at: panel_end_y - 5
+    # Available space: from panel_start_y + 6 to panel_end_y - 6
+    top_sign_bottom = panel_start_y + 5
+    bottom_sign_top = panel_end_y - 5
+
+    # Space between signs for notification cards
+    available_start = top_sign_bottom + 1
+    available_end = bottom_sign_top - 1
+
+    # Calculate how many cards fit (each is 4 rows + 1 spacing)
+    available_rows = available_end - available_start
+    cards_per_screen = max(1, available_rows // (card_height + 1))
+
+    # Limit to max_stack from config
+    try:
+        max_cards = min(cards_per_screen, constants.notifications.max_stack)
+    except AttributeError:
+        max_cards = min(cards_per_screen, 3)
+
+    # Draw notification cards (newest at top)
+    for i, notif in enumerate(active_notifications[:max_cards]):
+        card_y = available_start + i * (card_height + 1)
+
+        if card_y + card_height > available_end:
+            break
+
+        title = notif.get('title', '')[:12]  # Max 12 chars for title
+        text = notif.get('text', '')[:12]    # Max 12 chars for text
+
+        # Row 1: top border
+        fb.put_string(card_x, card_y, "╔══════════════╗", CARD_BORDER_COLOR)
+
+        # Row 2: title (or first line of text if no title)
+        fb.put(card_x, card_y + 1, '║', CARD_BORDER_COLOR)
+        if title:
+            fb.put_string(card_x + 1, card_y + 1, f" {title:<13}", CARD_TITLE_COLOR)
+        else:
+            fb.put_string(card_x + 1, card_y + 1, f" {text:<13}", CARD_TEXT_COLOR)
+        fb.put(card_x + 15, card_y + 1, '║', CARD_BORDER_COLOR)
+
+        # Row 3: text (or empty if no title)
+        fb.put(card_x, card_y + 2, '║', CARD_BORDER_COLOR)
+        if title:
+            fb.put_string(card_x + 1, card_y + 2, f" {text:<13}", CARD_TEXT_COLOR)
+        else:
+            fb.put_string(card_x + 1, card_y + 2, " " * 14, '')  # Empty
+        fb.put(card_x + 15, card_y + 2, '║', CARD_BORDER_COLOR)
+
+        # Row 4: bottom border
+        fb.put_string(card_x, card_y + 3, "╚══════════════╝", CARD_BORDER_COLOR)
 
 
 def _fb_render_pause_overlay(fb):

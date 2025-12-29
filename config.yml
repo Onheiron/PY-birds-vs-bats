@@ -23,7 +23,9 @@ timing:
   base_sleep: 0.2
   frame_sleep_level_multiplier: 0.88
   min_sleep: 0.02
-  notification_duration_seconds: 3.0
+notifications:
+  duration_seconds: 3.0
+  max_stack: 3
 limits:
   max_entities: 50
 physics:

@@ -90,12 +90,41 @@ def handle_pause():
     _add_notification(msg)
 
 
-def _add_notification(text, duration_frames=None):
-    """Add a notification to display."""
+def _add_notification(text, duration_frames=None, title=None):
+    """Add a notification to display in right panel.
+
+    Args:
+        text: Main notification text
+        duration_frames: How long to display (defaults to config value)
+        title: Optional title for the card (e.g., "Achievement:", "Power-Up:")
+    """
     if duration_frames is None:
-        duration_frames = int(3.0 / constants.timing.base_sleep)
+        try:
+            duration_seconds = constants.notifications.duration_seconds
+        except AttributeError:
+            duration_seconds = 3.0
+        duration_frames = int(duration_seconds / constants.timing.base_sleep)
+
     expire_frame = state.game.frame_count + duration_frames
-    state.ui.notifications.append((text, expire_frame))
+
+    # New notification format: dict with title, text, expire_frame
+    notification = {
+        'title': title or '',
+        'text': text,
+        'expire_frame': expire_frame
+    }
+
+    # Insert at beginning (top of stack)
+    state.ui.notifications.insert(0, notification)
+
+    # Limit stack size (remove from bottom)
+    try:
+        max_stack = constants.notifications.max_stack
+    except AttributeError:
+        max_stack = 3
+
+    while len(state.ui.notifications) > max_stack:
+        state.ui.notifications.pop()  # Remove oldest (bottom)
 
 
 def handle_movement(direction):

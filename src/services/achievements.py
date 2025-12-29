@@ -111,17 +111,41 @@ def init_achievements():
     }
 
 
-def add_notification(text, frame_count, notifications_list):
-    """Add a short on-screen notification for a few frames."""
+def add_notification(text, frame_count, notifications_list, title=None):
+    """Add a short on-screen notification for a few frames.
+
+    Args:
+        text: Main notification text
+        frame_count: Current frame number
+        notifications_list: List to append notification to
+        title: Optional title for the card
+    """
     try:
-        duration = getattr(v.rendering, 'notification_duration_seconds', 3.0)
+        duration = getattr(v.notifications, 'duration_seconds', 3.0)
         base_sleep = getattr(v.timing, 'base_sleep', 0.1)
         frames = int(duration / base_sleep)
         if frames <= 0:
             frames = 1
     except Exception:
         frames = 40
-    notifications_list.append((text, frame_count + frames))
+
+    notification = {
+        'title': title or '',
+        'text': text,
+        'expire_frame': frame_count + frames
+    }
+
+    # Insert at beginning (top of stack)
+    notifications_list.insert(0, notification)
+
+    # Limit stack size
+    try:
+        max_stack = getattr(v.notifications, 'max_stack', 3)
+    except Exception:
+        max_stack = 3
+
+    while len(notifications_list) > max_stack:
+        notifications_list.pop()
 
 
 def unlock_achievement(aid, frame_count, notifications_list, firebase_client=None, background_call=None):
@@ -131,7 +155,7 @@ def unlock_achievement(aid, frame_count, notifications_list, firebase_client=Non
     if not a or a.get('unlocked'):
         return False
     a['unlocked'] = True
-    add_notification(f"Achievement unlocked: {a['name']}", frame_count, notifications_list)
+    add_notification(a['name'], frame_count, notifications_list, title="Achievement:")
     
     # Try to sync/unlock achievement for remote user
     if firebase_client and background_call:

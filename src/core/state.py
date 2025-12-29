@@ -148,10 +148,12 @@ player = SimpleNamespace(
 ui = SimpleNamespace(
     show_xp_overlay=False,
     bg_offset=0,
+    # Notifications: list of dicts with {title, text, expire_frame}
+    # New notifications insert at index 0 (top), old ones at end (bottom)
     notifications=[],
-    # Level sign animation in right panel
-    level_sign_scroll_y=0,      # Y offset for scrolling level sign (0 = at top)
-    level_sign_scrolling=False  # True when sign is scrolling down
+    # Level sign animation in right panel (legacy, not used)
+    level_sign_scroll_y=0,
+    level_sign_scrolling=False
 )
 
 
