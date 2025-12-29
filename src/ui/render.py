@@ -720,6 +720,65 @@ def render_game():
 PANEL_BORDER_COLOR = "\033[38;5;238m"  # Dark gray border
 PANEL_BG_COLOR = "\033[38;5;233m"      # Very dark background
 
+# Speed gauge colors (bottom to top: green -> yellow -> red)
+GAUGE_GREEN = "\033[38;5;46m"   # Bright green
+GAUGE_YELLOW = "\033[38;5;226m" # Bright yellow
+GAUGE_RED = "\033[38;5;196m"    # Bright red
+GAUGE_OFF = "\033[38;5;236m"    # Dark gray (inactive blocks)
+GAUGE_BLOCK = "▓▓▓▓"            # Block character for gauge segments
+
+
+def _fb_render_speed_gauge(fb, panel_start_y, panel_end_y):
+    """
+    Render speed gauge in the left panel.
+    10 speed levels, 3 rows per level = 30 rows needed.
+    Colors: green (1-3), yellow (4-6), red (7-10)
+    """
+    current_speed = state.game.speed
+    max_speed = 10
+    rows_per_level = 3
+
+    # Calculate available height for gauge
+    panel_height = panel_end_y - panel_start_y
+    total_gauge_rows = max_speed * rows_per_level  # 30 rows
+
+    # Center the gauge vertically if there's extra space
+    gauge_start_y = panel_start_y + max(0, (panel_height - total_gauge_rows) // 2)
+
+    # X position for gauge (centered in left panel, leaving space for borders)
+    gauge_x = 2  # After the left border
+
+    # Draw gauge from bottom to top (level 1 at bottom, level 10 at top)
+    for level in range(1, max_speed + 1):
+        # Determine color based on level
+        if level <= 3:
+            active_color = GAUGE_GREEN
+        elif level <= 6:
+            active_color = GAUGE_YELLOW
+        else:
+            active_color = GAUGE_RED
+
+        # Is this level active?
+        is_active = level <= current_speed
+        color = active_color if is_active else GAUGE_OFF
+
+        # Calculate Y positions for this level (bottom-up, so level 1 is at bottom)
+        # Level 10 is at top (lowest Y), level 1 is at bottom (highest Y)
+        level_top_y = gauge_start_y + (max_speed - level) * rows_per_level
+
+        # Draw the 3 rows for this level
+        for row in range(rows_per_level):
+            y = level_top_y + row
+            if y >= panel_start_y and y < panel_end_y:
+                # Draw the block
+                fb.put_string(gauge_x, y, GAUGE_BLOCK, color)
+
+                # Add level number on middle row of each level
+                if row == 1:
+                    label = f" - {level}"
+                    fb.put_string(gauge_x + len(GAUGE_BLOCK), y, label, color)
+
+
 def _fb_render_side_panels(fb):
     """
     Render left and right side panels (placeholder for Steam Deck 16:9 layout).
@@ -733,17 +792,18 @@ def _fb_render_side_panels(fb):
 
     right_start = GAME_X_OFFSET + constants.layout.width
 
-    # Left panel - vertical border and placeholder content
+    # Left panel - clear and draw borders
     for y in range(panel_start_y, panel_end_y):
         # Outer border
         fb.put(0, y, '│', PANEL_BORDER_COLOR)
-        # Inner content (placeholder dots)
+        # Clear inner content
         for x in range(1, SIDE_PANEL_WIDTH - 1):
-            char = '·' if (x + y) % 4 == 0 else ' '
-            if char != ' ':
-                fb.put(x, y, char, PANEL_BG_COLOR)
+            fb.put(x, y, ' ', '')
         # Inner border (separates panel from game)
         fb.put(SIDE_PANEL_WIDTH - 1, y, '│', PANEL_BORDER_COLOR)
+
+    # Render speed gauge in left panel
+    _fb_render_speed_gauge(fb, panel_start_y, panel_end_y)
 
     # Right panel - vertical border and placeholder content
     for y in range(panel_start_y, panel_end_y):
@@ -782,10 +842,10 @@ def _fb_render_background(fb):
 def _fb_render_header(fb):
     """Render header to framebuffer - spans FULL screen width.
 
-    Shows: Speed (1-10), Miles traveled, Level (G-S format), Lives, Prestige
+    Shows: Miles traveled, Level (G-S format), Lives, Prestige, Score
+    Speed is shown in the left panel gauge instead.
     """
     # Get values from new speed/miles/level system
-    speed = state.game.speed
     miles = state.game.miles
     level_group = state.game.level_group
     level_sub = state.game.level_sub
@@ -798,8 +858,8 @@ def _fb_render_header(fb):
         prestige_val = 1.0
     prestige_display = f"{prestige_val:.2f}x"
 
-    # Format: Speed: X | Miles: XX.X | Level: G-S | Lives: ●●●◌◌ | Prestige: X.XXx | Score: XXX
-    score_line = f"Speed: {speed} | Miles: {miles:.1f} | Level: {level_display} | Lives: {lives_display} | Prestige: {prestige_display} | Score: {int(state.game.score):,}"
+    # Format: Miles: XX.X | Level: G-S | Lives: ●●●◌◌ | Prestige: X.XXx | Score: XXX
+    score_line = f"Miles: {miles:.1f} | Level: {level_display} | Lives: {lives_display} | Prestige: {prestige_display} | Score: {int(state.game.score):,}"
 
     # Header spans FULL width - center the text
     padding = max(0, (TOTAL_WIDTH - len(score_line)) // 2)
