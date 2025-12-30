@@ -591,20 +591,20 @@ def _execute_pause_menu_action():
     selected = state.ui.pause_menu_index
 
     if selected == 0:
-        # RICOMINCIA - restart game
+        # RESTART - restart game
         _handle_restart()
     elif selected == 1:
-        # SALVA & ESCI - save and exit
+        # SAVE & EXIT - save and exit
         _handle_save_and_exit()
     elif selected == 2:
         # BIRDPEDIA - placeholder for now
         _add_notification("Birdpedia", title="Coming Soon:")
     elif selected == 3:
-        # GUIDA - placeholder for now
-        _add_notification("Guida", title="Coming Soon:")
+        # GUIDE - placeholder for now
+        _add_notification("Guide", title="Coming Soon:")
     elif selected == 4:
-        # IMPOSTAZIONI - placeholder for now
-        _add_notification("Impostazioni", title="Coming Soon:")
+        # SETTINGS - placeholder for now
+        _add_notification("Settings", title="Coming Soon:")
 
 
 def _handle_restart():
@@ -618,7 +618,7 @@ def _handle_restart():
     state.game.paused = False
     state.ui.pause_menu_index = 0
 
-    _add_notification("Nuova partita!", title="Restart:")
+    _add_notification("New game!", title="Restart:")
 
 
 def _handle_save_and_exit():

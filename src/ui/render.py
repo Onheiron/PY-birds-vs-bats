@@ -18,6 +18,7 @@ from src.core import state
 SIDE_PANEL_WIDTH = 20  # Width of each side panel
 TOTAL_WIDTH = constants.layout.width + (SIDE_PANEL_WIDTH * 2)  # Total screen width
 GAME_X_OFFSET = SIDE_PANEL_WIDTH  # X offset where game area starts
+HEADER_HEIGHT = 4  # Header uses 4 rows (0-3), game area starts at row 4
 
 # Pre-build static parts (now with offset consideration)
 ceiling = "=" * constants.layout.width
@@ -39,7 +40,7 @@ TREE_PATTERN_HEIGHT = len(TREE_PATTERN)
 TREE_PATTERN_WIDTH = 24  # Lunghezza fissa
 
 # Colore verde scurissimo per lo sfondo
-TREE_BG_COLOR = "\033[38;5;236m"  # Verde scuro (non grigio!)
+TREE_BG_COLOR = "\033[38;5;234m"  # Verde scuro (non grigio!)
 
 # =============================================================================
 # FRAMEBUFFER - Double buffering per rendering differenziale
@@ -988,11 +989,11 @@ def _fb_render_level_line(fb):
     if not is_on_screen:
         return
 
-    # Screen Y position (add 2 for header offset)
-    screen_y = line_y + 2
+    # Screen Y position (add header offset)
+    screen_y = line_y + HEADER_HEIGHT
 
     # Make sure it's in visible game area
-    if screen_y < 2 or screen_y >= constants.layout.height + 2:
+    if screen_y < HEADER_HEIGHT or screen_y >= constants.layout.height + HEADER_HEIGHT:
         return
 
     # Draw dashed line across game width - darker than START line
@@ -1012,8 +1013,8 @@ def _fb_render_right_panel_level_signs(fb):
               When scrolling, shows < on the left side pointing to the line.
     Bottom sign: Current level - shows distance traveled since reaching it
     """
-    panel_start_y = 2
-    panel_end_y = constants.layout.height + 2
+    panel_start_y = HEADER_HEIGHT
+    panel_end_y = constants.layout.height + HEADER_HEIGHT
     panel_height = panel_end_y - panel_start_y
     right_start = GAME_X_OFFSET + constants.layout.width
 
@@ -1160,12 +1161,11 @@ def _fb_render_side_panels(fb):
     """
     Render left and right side panels (placeholder for Steam Deck 16:9 layout).
     Panels are ONLY in the middle section (between header and footer).
-    Header (rows 0-1) and footer (row floor+) span full width.
+    Header (rows 0-3) and footer span full width.
     """
-    # Panel area: from row 2 (after header) to row height+1 (before floor)
-    # That's the game area height
-    panel_start_y = 2
-    panel_end_y = constants.layout.height + 2  # exclusive (floor row)
+    # Panel area: from row HEADER_HEIGHT (after header) to row height+HEADER_HEIGHT (before floor)
+    panel_start_y = HEADER_HEIGHT
+    panel_end_y = constants.layout.height + HEADER_HEIGHT  # exclusive (floor row)
 
     right_start = GAME_X_OFFSET + constants.layout.width
 
@@ -1198,59 +1198,101 @@ def _fb_render_background(fb):
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
     right_panel_inner_width = SIDE_PANEL_WIDTH - 2  # Exclude borders
 
-    # L'area di gioco va dalla riga 2 (dopo header) alla riga height+1 (prima del floor)
+    # Game area goes from row HEADER_HEIGHT to row height+HEADER_HEIGHT-1
     for screen_y in range(constants.layout.height):
-        # Calcola quale riga del pattern usare (scroll verso l'ALTO - direzione opposta agli ostacoli)
-        # Sottraiamo l'offset invece di sommarlo
+        # Calculate which pattern row to use (scroll UP - opposite to obstacles)
         pattern_y = (screen_y - offset) % TREE_PATTERN_HEIGHT
         pattern_line = TREE_PATTERN[pattern_y]
 
-        # Riempi l'area di gioco ripetendo il pattern orizzontalmente
+        # Fill game area by repeating pattern horizontally
         for screen_x in range(constants.layout.width):
             pattern_x = screen_x % TREE_PATTERN_WIDTH
             char = pattern_line[pattern_x]
-            # Solo i caratteri non-spazio (le linee degli alberi)
             if char != ' ':
-                fb.put(GAME_X_OFFSET + screen_x, screen_y + 2, char, TREE_BG_COLOR)
+                fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, TREE_BG_COLOR)
 
         # Also render in right panel (continuing the pattern)
         for panel_x in range(right_panel_inner_width):
-            # Continue pattern from where game area ends
             pattern_x = (constants.layout.width + panel_x) % TREE_PATTERN_WIDTH
             char = pattern_line[pattern_x]
             if char != ' ':
-                fb.put(right_panel_start + panel_x, screen_y + 2, char, TREE_BG_COLOR)
+                fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, TREE_BG_COLOR)
 
 
 def _fb_render_header(fb):
-    """Render header to framebuffer - spans FULL screen width.
+    """Render header to framebuffer - 3 rows with graphical boxes.
 
-    Shows: Level (G-S format), Lives, Prestige, Score
-    Speed and Miles are shown in the left panel.
+    Shows: Lives, Prestige, Score in styled boxes.
     """
-    # Get values from new speed/miles/level system
-    level_group = state.game.level_group
-    level_sub = state.game.level_sub
-    level_display = f"{level_group}-{level_sub}"
+    # Colors for header
+    HEADER_BORDER = "\033[38;5;240m"   # Dark gray borders
+    HEADER_LABEL = "\033[38;5;245m"    # Gray labels
+    HEADER_VALUE = "\033[38;5;255m"    # White values
+    HEADER_ACCENT = "\033[38;5;220m"   # Yellow accent
 
-    lives_display = "●" * state.game.lives + "◌" * (5 - state.game.lives)
-
+    # Get values
     prestige_val = compute_prestige()
     if prestige_val is None:
         prestige_val = 1.0
     prestige_display = f"{prestige_val:.2f}x"
 
-    # Format: Level: G-S | Lives: ●●●◌◌ | Prestige: X.XXx | Score: XXX
-    score_line = f"Level: {level_display} | Lives: {lives_display} | Prestige: {prestige_display} | Score: {int(state.game.score):,}"
+    score_display = f"{int(state.game.score):,}"
 
-    # Header spans FULL width - center the text
-    padding = max(0, (TOTAL_WIDTH - len(score_line)) // 2)
-    padded_score = " " * padding + score_line
-    fb.put_string(0, 0, padded_score[:TOTAL_WIDTH])
+    # Lives display (hearts)
+    lives_full = "♥" * state.game.lives
+    lives_empty = "♡" * (5 - state.game.lives)
+    lives_display = lives_full + lives_empty
 
-    # Full-width separator line
-    full_ceiling = "=" * TOTAL_WIDTH
-    fb.put_string(0, 1, full_ceiling)
+    # Calculate box positions - 3 boxes evenly spaced
+    box_width = 18
+    total_boxes_width = box_width * 3 + 4  # 3 boxes + spacing
+    start_x = (TOTAL_WIDTH - total_boxes_width) // 2
+
+    box1_x = start_x
+    box2_x = start_x + box_width + 2
+    box3_x = start_x + (box_width + 2) * 2
+
+    # Row 0: Top borders
+    fb.put_string(box1_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
+    fb.put_string(box2_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
+    fb.put_string(box3_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
+
+    # Row 1: Labels with values
+    # Box 1: LIVES (hearts centered)
+    fb.put(box1_x, 1, '║', HEADER_BORDER)
+    fb.put_string(box1_x + 1, 1, " LIVES ", HEADER_LABEL)
+    # Draw hearts with colors
+    hearts_start = box1_x + 8
+    for i, char in enumerate(lives_display):
+        if char == '♥':
+            fb.put(hearts_start + i, 1, char, RED)
+        else:
+            fb.put(hearts_start + i, 1, char, HEADER_BORDER)
+    # Fill remaining space
+    fb.put_string(hearts_start + len(lives_display), 1, " " * (box_width - 9 - len(lives_display)), '')
+    fb.put(box1_x + box_width - 1, 1, '║', HEADER_BORDER)
+
+    # Box 2: PRESTIGE
+    fb.put(box2_x, 1, '║', HEADER_BORDER)
+    fb.put_string(box2_x + 1, 1, " PRESTIGE ", HEADER_LABEL)
+    prestige_val_str = f"{prestige_display:>5}"
+    fb.put_string(box2_x + 11, 1, prestige_val_str, HEADER_VALUE)
+    fb.put(box2_x + box_width - 1, 1, '║', HEADER_BORDER)
+
+    # Box 3: SCORE
+    fb.put(box3_x, 1, '║', HEADER_BORDER)
+    fb.put_string(box3_x + 1, 1, " SCORE ", HEADER_LABEL)
+    score_val = f"{score_display:>9}"
+    fb.put_string(box3_x + 8, 1, score_val, HEADER_ACCENT)
+    fb.put(box3_x + box_width - 1, 1, '║', HEADER_BORDER)
+
+    # Row 2: Bottom borders
+    fb.put_string(box1_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
+    fb.put_string(box2_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
+    fb.put_string(box3_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
+
+    # Row 3: Separator line (this is where game area starts at row 4)
+    fb.put_string(0, 3, "═" * TOTAL_WIDTH, HEADER_BORDER)
 
 
 def _fb_render_starting_line(fb):
@@ -1267,7 +1309,7 @@ def _fb_render_starting_line(fb):
         color = ''
 
     for i, char in enumerate(line[:constants.layout.width]):
-        fb.put(GAME_X_OFFSET + i, starting_line_y + 2, char, color)
+        fb.put(GAME_X_OFFSET + i, starting_line_y + HEADER_HEIGHT, char, color)
 
 
 def _fb_render_obstacles(fb):
@@ -1299,7 +1341,7 @@ def _fb_render_obstacles(fb):
                     if char != ' ':  # Solo caratteri non-spazio
                         x_pos = center_x - x_offset + i
                         if 0 <= x_pos < constants.layout.width:
-                            fb.put(GAME_X_OFFSET + x_pos, y_pos + 2, char, obs_color)
+                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, obs_color)
 
 
 def _fb_render_right_panel_barriers(fb):
@@ -1328,7 +1370,7 @@ def _fb_render_right_panel_barriers(fb):
                         x_pos = base_x + i
                         # Make sure it stays within panel bounds
                         if right_panel_start <= x_pos < right_panel_start + right_panel_inner_width:
-                            fb.put(x_pos, y_pos + 2, char, DECO_COLOR)
+                            fb.put(x_pos, y_pos + HEADER_HEIGHT, char, DECO_COLOR)
 
 
 def _fb_render_bats(fb):
@@ -1345,7 +1387,7 @@ def _fb_render_bats(fb):
             if 0 <= y_pos < constants.layout.height:
                 for i, char in enumerate(line):
                     if char != ' ':  # Solo caratteri non-spazio
-                        fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + 2, char, bat_color)
+                        fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, bat_color)
 
 
 def _fb_render_loot(fb):
@@ -1395,7 +1437,7 @@ def _fb_render_loot(fb):
                 char = '?'
                 color = WHITE
 
-            fb.put(GAME_X_OFFSET + loot['x_pos'], y_pos + 2, char, color)
+            fb.put(GAME_X_OFFSET + loot['x_pos'], y_pos + HEADER_HEIGHT, char, color)
 
 
 def _fb_render_projectiles(fb):
@@ -1405,7 +1447,7 @@ def _fb_render_projectiles(fb):
         if 0 <= y_pos < constants.layout.height:
             symbol = '•' if proj.get('powered', False) else '⋅'  # • piccolo, non ● grande
             proj_color = proj.get('color', RED)
-            fb.put(GAME_X_OFFSET + proj['x_pos'], y_pos + 2, symbol, proj_color)
+            fb.put(GAME_X_OFFSET + proj['x_pos'], y_pos + HEADER_HEIGHT, symbol, proj_color)
 
 
 def _fb_render_birds(fb):
@@ -1442,7 +1484,7 @@ def _fb_render_birds(fb):
                 x_off = len(line) // 2
                 for ci, char in enumerate(line):
                     if char != ' ':
-                        fb.put(GAME_X_OFFSET + x_pos - x_off + ci, by + 2, char, bird_color)
+                        fb.put(GAME_X_OFFSET + x_pos - x_off + ci, by + HEADER_HEIGHT, char, bird_color)
 
         # Purple bird charging orb
         if state.birds.colors[i] == PURPLE and state.special.purple_state[i] == 2:
@@ -1453,12 +1495,12 @@ def _fb_render_birds(fb):
                 sym = '⋅' if s <= 0 else ('•' if s == 1 else '●')
                 orb_y = y_pos + 1
                 if 0 <= orb_y < constants.layout.height:
-                    fb.put(GAME_X_OFFSET + x_pos, orb_y + 2, sym, PURPLE)
+                    fb.put(GAME_X_OFFSET + x_pos, orb_y + HEADER_HEIGHT, sym, PURPLE)
 
 
 def _fb_render_floor_and_cursor(fb):
     """Render floor and cursor to framebuffer."""
-    floor_y = constants.layout.height + 2
+    floor_y = constants.layout.height + HEADER_HEIGHT
 
     # Floor - FULL width separator
     full_floor = "=" * TOTAL_WIDTH
@@ -1524,17 +1566,11 @@ def _grade_letter_color(letter, fallback):
 
 
 def _fb_render_footer(fb):
-    """Render footer to framebuffer - spans FULL screen width."""
-    # height+2=floor, +3=cursore/notifica, +4=footer
-    footer_y = constants.layout.height + 4
-    active_balls = sum(1 for lost in state.birds.lost if not lost)
-    swap_hint = " | SPACE to swap" if state.player.selected_lane is not None else ""
-    footer_text = f"← → move | ↑ bounce | M mute | Ctrl+C quit | Birds: {active_balls}/{constants.layout.num_balls}{swap_hint}"
-    # Footer spans FULL width - center the text
-    padding = max(0, (TOTAL_WIDTH - len(footer_text)) // 2)
-    padded_footer = " " * padding + footer_text
-    fb.put_string(0, footer_y, padded_footer[:TOTAL_WIDTH])
+    """Render footer to framebuffer - only XP overlay when enabled."""
+    # Footer position: after floor and cursor
+    footer_y = constants.layout.height + HEADER_HEIGHT + 2
 
+    # Only show XP overlay if enabled (toggled with X key)
     if state.ui.show_xp_overlay:
         parts = []
         for i in range(constants.layout.num_balls):
@@ -1543,7 +1579,7 @@ def _fb_render_footer(fb):
         xp_summary = ' '.join(parts)
         xp_line = f"XP: {xp_summary}"
         xp_padding = max(0, (TOTAL_WIDTH - len(xp_line)) // 2)
-        fb.put_string(0, footer_y + 1, " " * xp_padding + xp_line[:TOTAL_WIDTH])
+        fb.put_string(0, footer_y, " " * xp_padding + xp_line[:TOTAL_WIDTH])
 
 
 def _fb_render_notifications(fb):
@@ -1565,8 +1601,8 @@ def _fb_render_notifications(fb):
         return
 
     # Right panel positioning
-    panel_start_y = 2
-    panel_end_y = constants.layout.height + 2
+    panel_start_y = HEADER_HEIGHT
+    panel_end_y = constants.layout.height + HEADER_HEIGHT
     right_start = GAME_X_OFFSET + constants.layout.width
     inner_start_x = right_start + 1
     inner_width = SIDE_PANEL_WIDTH - 2  # 18 chars
@@ -1644,7 +1680,7 @@ def _fb_render_pause_overlay(fb):
         return
 
     # "PAUSED" text in game area (centered)
-    pause_y = constants.layout.height // 2 + 2
+    pause_y = constants.layout.height // 2 + HEADER_HEIGHT
     pause_x = max(0, (constants.layout.width // 2) - 3)
     fb.put_string(GAME_X_OFFSET + pause_x, pause_y, "PAUSED", YELLOW)
 
@@ -1653,13 +1689,13 @@ def _fb_render_pause_overlay(fb):
     inner_start_x = right_start + 1
     inner_width = SIDE_PANEL_WIDTH - 2  # 18 chars
 
-    # Menu options
+    # Menu options (in English)
     PAUSE_MENU_OPTIONS = [
-        "RICOMINCIA",
-        "SALVA & ESCI",
+        "RESTART",
+        "SAVE & EXIT",
         "BIRDPEDIA",
-        "GUIDA",
-        "IMPOSTAZIONI"
+        "GUIDE",
+        "SETTINGS"
     ]
 
     # Menu styling
@@ -1673,18 +1709,19 @@ def _fb_render_pause_overlay(fb):
     menu_x = inner_start_x + (inner_width - menu_width) // 2
 
     # Position menu below notifications area (roughly middle of panel)
-    panel_start_y = 2
-    panel_end_y = constants.layout.height + 2
+    panel_start_y = HEADER_HEIGHT
+    panel_end_y = constants.layout.height + HEADER_HEIGHT
     menu_start_y = panel_start_y + 8  # Below top level sign
 
     # Draw menu box
     # ╔══════════════╗
-    # ║   PAUSA      ║
+    # ║    PAUSED    ║
     # ╠══════════════╣
-    # ║> RICOMINCIA  ║
-    # ║  SALVA & ESCI║
+    # ║> RESTART     ║
+    # ║  SAVE & EXIT ║
     # ║  BIRDPEDIA   ║
-    # ║  IMPOSTAZIONI║
+    # ║  GUIDE       ║
+    # ║  SETTINGS    ║
     # ╚══════════════╝
 
     y = menu_start_y
@@ -1695,7 +1732,7 @@ def _fb_render_pause_overlay(fb):
 
     # Title
     fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
-    fb.put_string(menu_x + 1, y, "     PAUSA    ", YELLOW)
+    fb.put_string(menu_x + 1, y, "    PAUSED    ", YELLOW)
     fb.put(menu_x + 15, y, '║', MENU_BORDER_COLOR)
     y += 1
 
@@ -1724,8 +1761,6 @@ def _fb_render_pause_overlay(fb):
     fb.put_string(menu_x, y, "╚══════════════╝", MENU_BORDER_COLOR)
     y += 1
 
-    # Hint at bottom
-    hint = "↑↓: Naviga  ⏎: Seleziona"
-    hint_x = menu_x + (menu_width - len(hint)) // 2
-    if hint_x >= menu_x:
-        fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)
+    # Hint at bottom (in English)
+    hint = "↑↓ Navigate  ⏎ Select"
+    fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)
