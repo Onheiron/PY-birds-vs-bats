@@ -16,6 +16,12 @@ layout:
   num_lanes: 9
   starting_line: 26
   width: 45
+  # Aspect ratio for the entire screen (width:height)
+  # Common values: "16:9" (widescreen), "4:3" (standard), "21:9" (ultrawide)
+  # Terminal chars are ~2:1 (height is double width), this is accounted for
+  aspect_ratio: "16:10"
+  # Minimum panel width (content needs at least this much space)
+  min_panel_width: 20
 birds:
   default_formation: [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]
   randomize_lanes: true

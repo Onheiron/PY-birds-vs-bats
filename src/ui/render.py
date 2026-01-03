@@ -12,13 +12,52 @@ from src.functions import compute_level_from_score, calculate_level_threshold, c
 from src.core import state
 
 # =============================================================================
-# WIDESCREEN LAYOUT - 16:9 ratio for Steam Deck
+# WIDESCREEN LAYOUT - Dynamic aspect ratio calculation
 # =============================================================================
-# Game area stays the same, we add side panels to fill the screen
-SIDE_PANEL_WIDTH = 20  # Width of each side panel
-TOTAL_WIDTH = constants.layout.width + (SIDE_PANEL_WIDTH * 2)  # Total screen width
-GAME_X_OFFSET = SIDE_PANEL_WIDTH  # X offset where game area starts
+# Terminal characters have approximately 2:1 aspect ratio (height ~= 2x width)
+CHAR_ASPECT_RATIO = 2.0
+
+# Header and footer heights
 HEADER_HEIGHT = 4  # Header uses 4 rows (0-3), game area starts at row 4
+FOOTER_HEIGHT = 2  # Floor (1) + cursor row (1)
+
+# Calculate total height in rows
+TOTAL_HEIGHT = HEADER_HEIGHT + constants.layout.height + FOOTER_HEIGHT
+
+# Parse aspect ratio from config (e.g., "16:9" -> 16/9)
+def _parse_aspect_ratio():
+    """Parse aspect ratio string from config and return as float."""
+    try:
+        ratio_str = getattr(constants.layout, 'aspect_ratio', '16:9')
+        if ':' in ratio_str:
+            w, h = ratio_str.split(':')
+            return float(w) / float(h)
+        return float(ratio_str)
+    except (ValueError, AttributeError):
+        return 16.0 / 9.0  # Default to 16:9
+
+TARGET_ASPECT_RATIO = _parse_aspect_ratio()
+
+# Calculate required total width for the target aspect ratio
+# Height in "pixel units" = rows * char_aspect_ratio (since chars are taller than wide)
+# Width in "pixel units" = columns * 1
+# For aspect ratio W:H, we need: width / (height * char_aspect) = W/H
+# Therefore: width = (height * char_aspect) * (W/H)
+_height_in_units = TOTAL_HEIGHT * CHAR_ASPECT_RATIO
+_target_width = int(_height_in_units * TARGET_ASPECT_RATIO)
+
+# Calculate panel widths
+_min_panel_width = getattr(constants.layout, 'min_panel_width', 20)
+_total_panel_space = _target_width - constants.layout.width
+_panel_width_each = max(_min_panel_width, _total_panel_space // 2)
+
+# Final dimensions
+SIDE_PANEL_WIDTH = _panel_width_each
+TOTAL_WIDTH = constants.layout.width + (SIDE_PANEL_WIDTH * 2)
+GAME_X_OFFSET = SIDE_PANEL_WIDTH  # X offset where game area starts
+
+# Content width inside panels (excluding borders)
+PANEL_CONTENT_WIDTH = 18  # Fixed content width for gauges, signs, etc.
 
 # Pre-build static parts (now with offset consideration)
 ceiling = "=" * constants.layout.width
@@ -768,7 +807,7 @@ PANEL_VALUE_COLOR = "\033[38;5;255m"  # White for values
 
 def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
     """
-    Render left panel content:
+    Render left panel content (centered within panel):
     - Speed: (label)
       XXX MPH (value)
     - Travelled: (label)
@@ -783,18 +822,25 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
     mph = get_mph_for_speed(current_speed)
     miles = state.game.miles
 
+    # Calculate left padding to center content (PANEL_CONTENT_WIDTH = 18)
+    # Content is 16 chars wide, panel has borders at 0 and SIDE_PANEL_WIDTH-1
+    # Available space: SIDE_PANEL_WIDTH - 2 (excluding borders)
+    # Padding: (available - content_width) / 2
+    available_width = SIDE_PANEL_WIDTH - 2
+    left_padding = max(1, (available_width - 16) // 2 + 1)  # +1 for border
+
     y = panel_start_y + 1  # Start after a small margin
 
     # === Speed: XXX MPH (two lines) ===
-    fb.put_string(2, y, "Speed:", PANEL_LABEL_COLOR)
+    fb.put_string(left_padding, y, "Speed:", PANEL_LABEL_COLOR)
     y += 1
-    fb.put_string(2, y, f"{mph} MPH", PANEL_VALUE_COLOR)
+    fb.put_string(left_padding, y, f"{mph} MPH", PANEL_VALUE_COLOR)
     y += 2
 
     # === Travelled: XXX.XXX mls (two lines) ===
-    fb.put_string(2, y, "Travelled:", PANEL_LABEL_COLOR)
+    fb.put_string(left_padding, y, "Travelled:", PANEL_LABEL_COLOR)
     y += 1
-    fb.put_string(2, y, f"{miles:.3f} mls", PANEL_VALUE_COLOR)
+    fb.put_string(left_padding, y, f"{miles:.3f} mls", PANEL_VALUE_COLOR)
     y += 2
 
     # === Calculate Momentum first (needed for spacer rows) ===
@@ -824,16 +870,16 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
 
     # === Gear title ===
     separator = "─" * 16
-    fb.put_string(2, y, "Gear:", PANEL_LABEL_COLOR)
+    fb.put_string(left_padding, y, "Gear:", PANEL_LABEL_COLOR)
     y += 1
 
     # === Separator ===
-    fb.put_string(2, y, separator, GAUGE_OFF)
+    fb.put_string(left_padding, y, separator, GAUGE_OFF)
     y += 1
 
     # === Speed Gauge (vertical, with spacer rows between some levels) ===
     # Spacer rows (block without numbers) between: 10-9, 9-8, 8-7, 7-6, 6-5
-    gauge_x = 2
+    gauge_x = left_padding
     gauge_start_y = y
 
     # Levels that have a spacer row AFTER them (going top to bottom)
@@ -903,12 +949,12 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
     y = gauge_start_y + total_gauge_rows
 
     # === Separator ===
-    fb.put_string(2, y, separator, GAUGE_OFF)
+    fb.put_string(left_padding, y, separator, GAUGE_OFF)
     y += 2  # Skip a line after separator
 
     # === Momentum: [horizontal bar] ===
     momentum_label = "Momentum:"
-    fb.put_string(2, y, momentum_label, PANEL_LABEL_COLOR)
+    fb.put_string(left_padding, y, momentum_label, PANEL_LABEL_COLOR)
     y += 2  # Skip a line between label and bar
 
     # Draw horizontal bar (16 chars wide) with gradient colors (red -> yellow -> green)
@@ -919,14 +965,14 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
         if i < filled:
             # Use gradient color based on position (0-15)
             char_color = MOMENTUM_GRADIENT[i]
-            fb.put(2 + i, y, '█', char_color)
+            fb.put(left_padding + i, y, '█', char_color)
         else:
-            fb.put(2 + i, y, '─', GAUGE_OFF)
+            fb.put(left_padding + i, y, '─', GAUGE_OFF)
 
     # Show percentage on the right of the bar
     y += 1
     pct_str = f"{momentum_pct:.0f}%"
-    pct_x = 2 + (bar_width - len(pct_str)) // 2
+    pct_x = left_padding + (bar_width - len(pct_str)) // 2
     fb.put_string(pct_x, y, pct_str, PANEL_VALUE_COLOR)
 
 
@@ -1032,11 +1078,11 @@ def _fb_render_right_panel_level_signs(fb):
 
     # Panel inner area (excluding borders)
     inner_start_x = right_start + 1
-    inner_width = SIDE_PANEL_WIDTH - 2  # 18 chars
 
     # Sign dimensions: 16 chars wide
+    # Signs stay at LEFT of panel (close to game area), padding goes to the right
     sign_width = 16
-    sign_x = inner_start_x + (inner_width - sign_width) // 2
+    sign_x = inner_start_x  # No centering - stick to left edge
 
     # === Calculate thresholds ===
     if current_level > 1:
@@ -1605,16 +1651,17 @@ def _fb_render_notifications(fb):
     panel_end_y = constants.layout.height + HEADER_HEIGHT
     right_start = GAME_X_OFFSET + constants.layout.width
     inner_start_x = right_start + 1
-    inner_width = SIDE_PANEL_WIDTH - 2  # 18 chars
 
-    # Card dimensions: 16 chars wide, 4 rows high
-    # ╔══════════════╗
-    # ║ Title:       ║
-    # ║ Text here    ║
-    # ╚══════════════╝
-    card_width = 16
+    # Card dimensions: dynamic width based on panel, 4 rows high
+    # Cards stay at LEFT of panel (close to game area), padding goes to the right
+    # ╔══════════════════════════════════════╗
+    # ║ Title:                               ║
+    # ║ Text here                            ║
+    # ╚══════════════════════════════════════╝
+    card_width = SIDE_PANEL_WIDTH - 2  # Full panel width minus side borders
     card_height = 4
-    card_x = inner_start_x + (inner_width - card_width) // 2
+    card_x = inner_start_x  # No centering - stick to left edge
+    inner_width = card_width - 2  # Space inside the card (between ║ and ║)
 
     # Card colors
     CARD_BORDER_COLOR = "\033[38;5;178m"  # Yellow-orange border
@@ -1648,30 +1695,35 @@ def _fb_render_notifications(fb):
         if card_y + card_height > available_end:
             break
 
-        title = notif.get('title', '')[:12]  # Max 12 chars for title
-        text = notif.get('text', '')[:12]    # Max 12 chars for text
+        text_max_len = inner_width - 2  # Leave 1 space padding on each side
+        title = notif.get('title', '')[:text_max_len]
+        text = notif.get('text', '')[:text_max_len]
+
+        # Build border strings dynamically
+        top_border = "╔" + "═" * (card_width - 2) + "╗"
+        bottom_border = "╚" + "═" * (card_width - 2) + "╝"
 
         # Row 1: top border
-        fb.put_string(card_x, card_y, "╔══════════════╗", CARD_BORDER_COLOR)
+        fb.put_string(card_x, card_y, top_border, CARD_BORDER_COLOR)
 
         # Row 2: title (or first line of text if no title)
         fb.put(card_x, card_y + 1, '║', CARD_BORDER_COLOR)
         if title:
-            fb.put_string(card_x + 1, card_y + 1, f" {title:<13}", CARD_TITLE_COLOR)
+            fb.put_string(card_x + 1, card_y + 1, f" {title:<{text_max_len}}", CARD_TITLE_COLOR)
         else:
-            fb.put_string(card_x + 1, card_y + 1, f" {text:<13}", CARD_TEXT_COLOR)
-        fb.put(card_x + 15, card_y + 1, '║', CARD_BORDER_COLOR)
+            fb.put_string(card_x + 1, card_y + 1, f" {text:<{text_max_len}}", CARD_TEXT_COLOR)
+        fb.put(card_x + card_width - 1, card_y + 1, '║', CARD_BORDER_COLOR)
 
         # Row 3: text (or empty if no title)
         fb.put(card_x, card_y + 2, '║', CARD_BORDER_COLOR)
         if title:
-            fb.put_string(card_x + 1, card_y + 2, f" {text:<13}", CARD_TEXT_COLOR)
+            fb.put_string(card_x + 1, card_y + 2, f" {text:<{text_max_len}}", CARD_TEXT_COLOR)
         else:
-            fb.put_string(card_x + 1, card_y + 2, " " * 14, '')  # Empty
-        fb.put(card_x + 15, card_y + 2, '║', CARD_BORDER_COLOR)
+            fb.put_string(card_x + 1, card_y + 2, " " * inner_width, '')  # Empty
+        fb.put(card_x + card_width - 1, card_y + 2, '║', CARD_BORDER_COLOR)
 
         # Row 4: bottom border
-        fb.put_string(card_x, card_y + 3, "╚══════════════╝", CARD_BORDER_COLOR)
+        fb.put_string(card_x, card_y + 3, bottom_border, CARD_BORDER_COLOR)
 
 
 def _fb_render_pause_overlay(fb):
@@ -1687,7 +1739,6 @@ def _fb_render_pause_overlay(fb):
     # Pause menu in right panel
     right_start = GAME_X_OFFSET + constants.layout.width
     inner_start_x = right_start + 1
-    inner_width = SIDE_PANEL_WIDTH - 2  # 18 chars
 
     # Menu options (in English)
     PAUSE_MENU_OPTIONS = [
@@ -1704,9 +1755,9 @@ def _fb_render_pause_overlay(fb):
     MENU_NORMAL_COLOR = "\033[38;5;250m"    # Light gray for unselected
     MENU_ARROW_COLOR = "\033[38;5;214m"     # Orange arrow
 
-    # Menu dimensions
+    # Menu dimensions - stick to LEFT of panel (close to game area)
     menu_width = 16
-    menu_x = inner_start_x + (inner_width - menu_width) // 2
+    menu_x = inner_start_x  # No centering - stick to left edge
 
     # Position menu below notifications area (roughly middle of panel)
     panel_start_y = HEADER_HEIGHT
