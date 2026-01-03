@@ -807,7 +807,7 @@ PANEL_VALUE_COLOR = "\033[38;5;255m"  # White for values
 
 def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
     """
-    Render left panel content (centered within panel):
+    Render left panel content (dynamic width):
     - Speed: (label)
       XXX MPH (value)
     - Travelled: (label)
@@ -816,18 +816,38 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
     - Speed gauge (vertical, extra spacing for red levels 8-10)
     - Separator
     - Momentum: [horizontal bar]
+
+    Components expand with panel width. Min width = 16 chars.
+    Labels stay left-aligned with 2-column padding.
     """
     current_speed = state.game.speed
     max_speed = 10
     mph = get_mph_for_speed(current_speed)
     miles = state.game.miles
 
-    # Calculate left padding to center content (PANEL_CONTENT_WIDTH = 18)
-    # Content is 16 chars wide, panel has borders at 0 and SIDE_PANEL_WIDTH-1
+    # Calculate dynamic widths
     # Available space: SIDE_PANEL_WIDTH - 2 (excluding borders)
-    # Padding: (available - content_width) / 2
+    # Min content width: 16 chars (original design)
+    # Max padding: 2 columns per side
     available_width = SIDE_PANEL_WIDTH - 2
-    left_padding = max(1, (available_width - 16) // 2 + 1)  # +1 for border
+    min_content_width = 16
+    max_padding = 2
+
+    # Calculate content width and padding
+    # If panel is small, reduce padding first before shrinking content
+    if available_width >= min_content_width + (max_padding * 2):
+        # Plenty of space: use max padding and expand content
+        left_padding = max_padding + 1  # +1 for border
+        content_width = available_width - (max_padding * 2)
+    elif available_width >= min_content_width:
+        # Tight fit: reduce padding, keep min content width
+        remaining = available_width - min_content_width
+        left_padding = max(1, remaining // 2 + 1)  # +1 for border
+        content_width = min_content_width
+    else:
+        # Very tight: no padding, use all available
+        left_padding = 1
+        content_width = max(available_width, min_content_width)
 
     y = panel_start_y + 1  # Start after a small margin
 
@@ -869,7 +889,7 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
             momentum_pct = 0.0
 
     # === Gear title ===
-    separator = "─" * 16
+    separator = "─" * content_width
     fb.put_string(left_padding, y, "Gear:", PANEL_LABEL_COLOR)
     y += 1
 
@@ -881,6 +901,16 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
     # Spacer rows (block without numbers) between: 10-9, 9-8, 8-7, 7-6, 6-5
     gauge_x = left_padding
     gauge_start_y = y
+
+    # Calculate dynamic block width
+    # Format: "XX - ██████ - XX" = 2 + 3 + block + 3 + 2 = 10 + block
+    block_width = content_width - 10
+    gauge_block_on = "█" * block_width
+    gauge_block_off = "-" * block_width
+    # Spacer format: "     ██████     " - centered block with 5 spaces each side (total = content_width)
+    spacer_padding = (content_width - block_width) // 2
+    spacer_padding_left = " " * spacer_padding
+    spacer_padding_right = " " * (content_width - block_width - spacer_padding)
 
     # Levels that have a spacer row AFTER them (going top to bottom)
     levels_with_spacer_after = [10, 9, 8, 7]
@@ -929,10 +959,10 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
                     is_active = False
 
                 color = active_color if is_active else GAUGE_OFF
-                block = GAUGE_BLOCK_ON if is_active else GAUGE_BLOCK_OFF
+                block = gauge_block_on if is_active else gauge_block_off
 
-                # Spacer row: just the block, no numbers
-                line = f"     {block}     "
+                # Spacer row: just the block, no numbers (centered)
+                line = f"{spacer_padding_left}{block}{spacer_padding_right}"
                 fb.put_string(gauge_x, row_y, line, color)
         else:
             # Normal level row with numbers - use gradient color
@@ -940,7 +970,7 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
 
             is_active = level <= current_speed
             color = active_color if is_active else GAUGE_OFF
-            block = GAUGE_BLOCK_ON if is_active else GAUGE_BLOCK_OFF
+            block = gauge_block_on if is_active else gauge_block_off
 
             level_str = f"{level:2d}"
             line = f"{level_str} - {block} - {level_str}"
@@ -957,19 +987,21 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
     fb.put_string(left_padding, y, momentum_label, PANEL_LABEL_COLOR)
     y += 2  # Skip a line between label and bar
 
-    # Draw horizontal bar (16 chars wide) with gradient colors (red -> yellow -> green)
-    bar_width = 16
+    # Draw horizontal bar (dynamic width) with gradient colors (red -> yellow -> green)
+    bar_width = content_width
     filled = int((momentum_pct / 100.0) * bar_width)
+    gradient_len = len(MOMENTUM_GRADIENT)
 
     for i in range(bar_width):
         if i < filled:
-            # Use gradient color based on position (0-15)
-            char_color = MOMENTUM_GRADIENT[i]
+            # Map position in bar to position in gradient (interpolate)
+            gradient_idx = int((i / max(1, bar_width - 1)) * (gradient_len - 1))
+            char_color = MOMENTUM_GRADIENT[gradient_idx]
             fb.put(left_padding + i, y, '█', char_color)
         else:
             fb.put(left_padding + i, y, '─', GAUGE_OFF)
 
-    # Show percentage on the right of the bar
+    # Show percentage centered below the bar
     y += 1
     pct_str = f"{momentum_pct:.0f}%"
     pct_x = left_padding + (bar_width - len(pct_str)) // 2
@@ -1755,44 +1787,42 @@ def _fb_render_pause_overlay(fb):
     MENU_NORMAL_COLOR = "\033[38;5;250m"    # Light gray for unselected
     MENU_ARROW_COLOR = "\033[38;5;214m"     # Orange arrow
 
-    # Menu dimensions - stick to LEFT of panel (close to game area)
-    menu_width = 16
-    menu_x = inner_start_x  # No centering - stick to left edge
+    # Menu dimensions - full panel width
+    menu_width = SIDE_PANEL_WIDTH - 2  # Full panel width minus side borders
+    inner_width = menu_width - 2  # Space inside the menu box (between ║ and ║)
+    menu_x = inner_start_x  # Stick to left edge
 
     # Position menu below notifications area (roughly middle of panel)
     panel_start_y = HEADER_HEIGHT
     panel_end_y = constants.layout.height + HEADER_HEIGHT
     menu_start_y = panel_start_y + 8  # Below top level sign
 
-    # Draw menu box
-    # ╔══════════════╗
-    # ║    PAUSED    ║
-    # ╠══════════════╣
-    # ║> RESTART     ║
-    # ║  SAVE & EXIT ║
-    # ║  BIRDPEDIA   ║
-    # ║  GUIDE       ║
-    # ║  SETTINGS    ║
-    # ╚══════════════╝
+    # Build dynamic border strings
+    top_border = "╔" + "═" * (menu_width - 2) + "╗"
+    separator_border = "╠" + "═" * (menu_width - 2) + "╣"
+    bottom_border = "╚" + "═" * (menu_width - 2) + "╝"
 
     y = menu_start_y
 
     # Top border
-    fb.put_string(menu_x, y, "╔══════════════╗", MENU_BORDER_COLOR)
+    fb.put_string(menu_x, y, top_border, MENU_BORDER_COLOR)
     y += 1
 
-    # Title
+    # Title - centered
     fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
-    fb.put_string(menu_x + 1, y, "    PAUSED    ", YELLOW)
-    fb.put(menu_x + 15, y, '║', MENU_BORDER_COLOR)
+    title = "PAUSED"
+    title_padded = title.center(inner_width)
+    fb.put_string(menu_x + 1, y, title_padded, YELLOW)
+    fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
     y += 1
 
     # Separator
-    fb.put_string(menu_x, y, "╠══════════════╣", MENU_BORDER_COLOR)
+    fb.put_string(menu_x, y, separator_border, MENU_BORDER_COLOR)
     y += 1
 
     # Menu options
     selected_idx = state.ui.pause_menu_index
+    option_text_width = inner_width - 2  # Space for option text (minus "> ")
 
     for i, option in enumerate(PAUSE_MENU_OPTIONS):
         fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
@@ -1800,16 +1830,16 @@ def _fb_render_pause_overlay(fb):
         if i == selected_idx:
             # Selected option: show arrow and highlight
             fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
-            fb.put_string(menu_x + 2, y, f" {option:<12}", MENU_SELECTED_COLOR)
+            fb.put_string(menu_x + 2, y, f" {option:<{option_text_width}}", MENU_SELECTED_COLOR)
         else:
             # Unselected option
-            fb.put_string(menu_x + 1, y, f"  {option:<12}", MENU_NORMAL_COLOR)
+            fb.put_string(menu_x + 1, y, f"  {option:<{option_text_width}}", MENU_NORMAL_COLOR)
 
-        fb.put(menu_x + 15, y, '║', MENU_BORDER_COLOR)
+        fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
         y += 1
 
     # Bottom border
-    fb.put_string(menu_x, y, "╚══════════════╝", MENU_BORDER_COLOR)
+    fb.put_string(menu_x, y, bottom_border, MENU_BORDER_COLOR)
     y += 1
 
     # Hint at bottom (in English)
