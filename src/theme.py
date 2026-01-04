@@ -2,6 +2,9 @@
 """
 Theme configuration loader for BVB game.
 Loads color definitions from theme.yml and provides ANSI escape codes.
+
+Usage:
+    python game.py --theme custom_theme.yml
 """
 import os
 import sys
@@ -16,17 +19,33 @@ _theme_cache = None
 
 
 def _load_theme_file():
-    """Load theme.yml file and return as dict."""
+    """Load theme file and return as dict.
+
+    Theme path is determined by (in order of priority):
+    1. BVB_THEME_PATH environment variable (set by --theme CLI arg)
+    2. theme.yml in current working directory
+    3. theme.yml in project root (relative to this file)
+    """
     if yaml is None:
         print("Warning: PyYAML not installed; using default theme", file=sys.stderr)
         return {}
 
-    # Look for theme.yml in project root
-    # Try multiple locations
-    possible_paths = [
+    # Check for theme path from CLI argument (via environment variable)
+    env_theme_path = os.environ.get('BVB_THEME_PATH')
+
+    # Build list of paths to try
+    possible_paths = []
+    if env_theme_path:
+        possible_paths.append(env_theme_path)
+        # Also try relative to cwd if not absolute
+        if not os.path.isabs(env_theme_path):
+            possible_paths.append(os.path.join(os.getcwd(), env_theme_path))
+
+    # Default locations
+    possible_paths.extend([
         os.path.join(os.getcwd(), 'theme.yml'),
-        os.path.join(os.path.dirname(__file__), '..', '..', 'theme.yml'),
-    ]
+        os.path.join(os.path.dirname(__file__), '..', 'theme.yml'),
+    ])
 
     for theme_path in possible_paths:
         if os.path.exists(theme_path):

@@ -25,11 +25,14 @@ base:
 # BIRD COLORS - Colors for different bird types
 # -----------------------------------------------------------------------------
 birds:
-  default: 220     # Yellow (default bird)
+  yellow: 226      # Yellow bird
+  red: 196          # Red bird (basic ANSI red)
+  blue: 27         # Blue bird (basic ANSI blue)
+  white: -5        # White/Templar bird
   patchwork: 202   # Red-orange
   purple: 201      # Magenta-purple
   clockwork: 244   # Medium gray
-  orange: 208      # Orange
+  orange: 208      # Orange/Phoenix
   gold: 228        # Bright gold
   cookie: 180      # Light brown
   dinosaur: 46     # Bright lime green (legendary)
@@ -57,8 +60,8 @@ bats:
 # PARALLAX BACKGROUND - Layered scrolling background
 # -----------------------------------------------------------------------------
 background:
-  layer1: 234      # Furthest/slowest - darkest
-  layer2: 235      # Middle layer - slightly lighter
+  layer1: 235      # Furthest/slowest - darkest
+  layer2: 236      # Middle layer - slightly lighter
 
 # -----------------------------------------------------------------------------
 # PANELS - Side panel styling

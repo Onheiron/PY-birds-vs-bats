@@ -35,7 +35,7 @@ BIRD_TYPES = {
     BirdType.YELLOW: {
         'name': 'Yellow',
         'display_name': 'Yellow',
-        'color': theme.get_color('birds', 'default', 220),
+        'color': theme.get_color('birds', 'yellow', 220),
         'speed': 2,
         'damage': 2,
         'ability': 'chain_bounce',
@@ -48,7 +48,7 @@ BIRD_TYPES = {
     BirdType.RED: {
         'name': 'Red',
         'display_name': 'Red',
-        'color': theme.get_base_color('red', -1),
+        'color': theme.get_color('birds', 'red', -1),
         'speed': 3,
         'damage': 3,
         'ability': 'projectile',
@@ -61,7 +61,7 @@ BIRD_TYPES = {
     BirdType.BLUE: {
         'name': 'Blue',
         'display_name': 'Blue',
-        'color': theme.get_base_color('blue', -3),
+        'color': theme.get_color('birds', 'blue', -3),
         'speed': 4,
         'damage': 4,
         'ability': 'speed_boost',
@@ -113,7 +113,7 @@ BIRD_TYPES = {
     BirdType.WHITE: {
         'name': 'White',
         'display_name': 'Templar',
-        'color': theme.get_base_color('white', -5),
+        'color': theme.get_color('birds', 'white', -5),
         'speed': 4,
         'damage': 4,
         'ability': 'battle_cry',

@@ -75,18 +75,20 @@ def init_config():
     Initialize game configuration from YAML file.
     Parses command-line arguments and loads configuration.
     Default config file is 'config.yml' if --config is not specified.
-    
+    Default theme file is 'theme.yml' if --theme is not specified.
+
     Returns:
         tuple: (config_dict, args_namespace) - The loaded config and parsed CLI args
     """
-    # Parse CLI args (only config path here; allow other args to pass through)
+    # Parse CLI args (only config/theme paths here; allow other args to pass through)
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--config', default='config.yml', help='Path to YAML config file (default: config.yml)')
+    parser.add_argument('--theme', default='theme.yml', help='Path to theme YAML file (default: theme.yml)')
     args, _rest = parser.parse_known_args()
-    
+
     config_path = args.config if args and args.config else 'config.yml'
     _config = load_config_file(config_path)
-    
+
     # Config is now required
     if not _config:
         try:
@@ -95,7 +97,11 @@ def init_config():
         except Exception:
             pass
         sys.exit(1)
-    
+
+    # Set theme path for theme module to use
+    theme_path = args.theme if args and args.theme else 'theme.yml'
+    os.environ['BVB_THEME_PATH'] = theme_path
+
     return _config, args
 
 

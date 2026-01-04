@@ -10,18 +10,18 @@ import src.theme as theme
 # ANSI COLOR CODES - Loaded from theme.yml
 # ============================================================================
 
-# Base colors
-RED = theme.get_base_color('red', -1)
+# Base colors (non-bird colors used for UI, effects, etc.)
 GREEN = theme.get_base_color('green', -2)
-BLUE = theme.get_base_color('blue', -3)
 CYAN = theme.get_base_color('cyan', -4)
-WHITE = theme.get_base_color('white', -5)
-YELLOW = theme.get_base_color('yellow', 220)
 BLACK = theme.get_base_color('black', 16)
 DARK_GRAY = theme.get_base_color('dark_gray', 240)
 RESET = "\033[0m"
 
-# Bird-specific colors
+# Bird colors - MUST match bird_types.py (use 'birds' category)
+YELLOW = theme.get_color('birds', 'yellow', 220)
+RED = theme.get_color('birds', 'red', -1)
+BLUE = theme.get_color('birds', 'blue', -3)
+WHITE = theme.get_color('birds', 'white', -5)
 CLOCKWORK = theme.get_color('birds', 'clockwork', 244)
 GOLD = theme.get_color('birds', 'gold', 228)
 PURPLE = theme.get_color('birds', 'purple', 201)
