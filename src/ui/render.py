@@ -1774,6 +1774,7 @@ def _fb_render_pause_overlay(fb):
 
     # Menu options (in English)
     PAUSE_MENU_OPTIONS = [
+        "RESUME",
         "RESTART",
         "SAVE & EXIT",
         "BIRDPEDIA",

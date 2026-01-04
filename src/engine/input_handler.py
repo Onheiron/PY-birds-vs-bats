@@ -591,18 +591,21 @@ def _execute_pause_menu_action():
     selected = state.ui.pause_menu_index
 
     if selected == 0:
+        # RESUME - unpause the game
+        handle_pause()
+    elif selected == 1:
         # RESTART - restart game
         _handle_restart()
-    elif selected == 1:
+    elif selected == 2:
         # SAVE & EXIT - save and exit
         _handle_save_and_exit()
-    elif selected == 2:
+    elif selected == 3:
         # BIRDPEDIA - placeholder for now
         _add_notification("Birdpedia", title="Coming Soon:")
-    elif selected == 3:
+    elif selected == 4:
         # GUIDE - placeholder for now
         _add_notification("Guide", title="Coming Soon:")
-    elif selected == 4:
+    elif selected == 5:
         # SETTINGS - placeholder for now
         _add_notification("Settings", title="Coming Soon:")
 
@@ -647,10 +650,10 @@ def process_input(key):
             state.game.game_over = True
         elif key == 'UP':
             # Navigate menu up
-            state.ui.pause_menu_index = (state.ui.pause_menu_index - 1) % 5
+            state.ui.pause_menu_index = (state.ui.pause_menu_index - 1) % 6
         elif key == 'DOWN':
             # Navigate menu down
-            state.ui.pause_menu_index = (state.ui.pause_menu_index + 1) % 5
+            state.ui.pause_menu_index = (state.ui.pause_menu_index + 1) % 6
         elif key == 'ENTER':
             # Execute selected menu action
             _execute_pause_menu_action()
