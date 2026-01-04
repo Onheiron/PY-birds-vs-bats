@@ -98,7 +98,7 @@ MID_TREE_PATTERN_WIDTH = 32
 
 # Colors for parallax layers (darker = further back)
 TREE_BG_COLOR = "\033[38;5;234m"      # Darkest - furthest layer
-MID_TREE_COLOR = "\033[38;5;236m"     # Slightly lighter - middle layer
+MID_TREE_COLOR = "\033[38;5;235m"     # Slightly lighter - middle layer
 
 # =============================================================================
 # FRAMEBUFFER - Double buffering per rendering differenziale
