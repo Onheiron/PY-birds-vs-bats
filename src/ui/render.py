@@ -64,8 +64,9 @@ ceiling = "=" * constants.layout.width
 floor = ceiling
 
 # =============================================================================
-# TREE BACKGROUND PATTERN - Seamless scrolling forest canopy
+# PARALLAX BACKGROUND PATTERNS - 3-layer scrolling effect
 # =============================================================================
+# Layer 1 (slowest): Dense tree pattern - small ^ symbols
 # Pattern 6 righe x 24 caratteri - solo cime, piccole e irregolari
 TREE_PATTERN = [
     "^  ^    ^  ^   ^    ^   ",
@@ -76,10 +77,28 @@ TREE_PATTERN = [
     "^    ^ ^^  ^^ ^   ^  ^^ ",
 ]
 TREE_PATTERN_HEIGHT = len(TREE_PATTERN)
-TREE_PATTERN_WIDTH = 24  # Lunghezza fissa
+TREE_PATTERN_WIDTH = 24
 
-# Colore verde scurissimo per lo sfondo
-TREE_BG_COLOR = "\033[38;5;234m"  # Verde scuro (non grigio!)
+# Layer 2 (medium speed): Sparse taller trees - ∧ symbols
+# Pattern 8 righe x 32 caratteri - più sparso e alto
+MID_TREE_PATTERN = [
+    "∧       ∧           ∧       ∧   ",
+    "                                ",
+    "    ∧           ∧           ∧   ",
+    "                                ",
+    "∧           ∧       ∧           ",
+    "                                ",
+    "        ∧       ∧           ∧   ",
+    "                                ",
+]
+MID_TREE_PATTERN_HEIGHT = len(MID_TREE_PATTERN)
+MID_TREE_PATTERN_WIDTH = 32
+
+# Layer 3 (fastest): Obstacles - handled separately in game logic
+
+# Colors for parallax layers (darker = further back)
+TREE_BG_COLOR = "\033[38;5;234m"      # Darkest - furthest layer
+MID_TREE_COLOR = "\033[38;5;236m"     # Slightly lighter - middle layer
 
 # =============================================================================
 # FRAMEBUFFER - Double buffering per rendering differenziale
@@ -1269,8 +1288,15 @@ def _fb_render_side_panels(fb):
 
 
 def _fb_render_background(fb):
-    """Render scrolling tree canopy background for game area and right panel."""
-    offset = state.ui.bg_offset
+    """Render parallax scrolling background for game area and right panel.
+
+    3 layers with different scroll speeds (slowest to fastest):
+    - Layer 1: Dense tree pattern (^) - slowest, darkest
+    - Layer 2: Sparse tall trees (∧) - medium speed, slightly lighter
+    - Layer 3: Obstacles - fastest (rendered separately)
+    """
+    bg_offset = state.ui.bg_offset
+    mid_offset = state.ui.bg_mid_offset
 
     # Right panel start position
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
@@ -1278,8 +1304,8 @@ def _fb_render_background(fb):
 
     # Game area goes from row HEADER_HEIGHT to row height+HEADER_HEIGHT-1
     for screen_y in range(constants.layout.height):
-        # Calculate which pattern row to use (scroll UP - opposite to obstacles)
-        pattern_y = (screen_y - offset) % TREE_PATTERN_HEIGHT
+        # === Layer 1: Slowest background (dense small trees) ===
+        pattern_y = (screen_y - bg_offset) % TREE_PATTERN_HEIGHT
         pattern_line = TREE_PATTERN[pattern_y]
 
         # Fill game area by repeating pattern horizontally
@@ -1295,6 +1321,24 @@ def _fb_render_background(fb):
             char = pattern_line[pattern_x]
             if char != ' ':
                 fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, TREE_BG_COLOR)
+
+        # === Layer 2: Medium speed (sparse tall trees) ===
+        mid_pattern_y = (screen_y - mid_offset) % MID_TREE_PATTERN_HEIGHT
+        mid_pattern_line = MID_TREE_PATTERN[mid_pattern_y]
+
+        # Fill game area
+        for screen_x in range(constants.layout.width):
+            pattern_x = screen_x % MID_TREE_PATTERN_WIDTH
+            char = mid_pattern_line[pattern_x]
+            if char != ' ':
+                fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
+
+        # Also render in right panel
+        for panel_x in range(right_panel_inner_width):
+            pattern_x = (constants.layout.width + panel_x) % MID_TREE_PATTERN_WIDTH
+            char = mid_pattern_line[pattern_x]
+            if char != ' ':
+                fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
 
 
 def _fb_render_header(fb):

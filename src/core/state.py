@@ -147,7 +147,9 @@ player = SimpleNamespace(
 # ============================================================================
 ui = SimpleNamespace(
     show_xp_overlay=False,
-    bg_offset=0,
+    # Parallax background layers (3 layers with different speeds)
+    bg_offset=0,         # Slowest layer (original tree pattern)
+    bg_mid_offset=0,     # Middle layer (∧ symbols, intermediate speed)
     # Notifications: list of dicts with {title, text, expire_frame}
     # New notifications insert at index 0 (top), old ones at end (bottom)
     notifications=[],
@@ -155,7 +157,7 @@ ui = SimpleNamespace(
     level_sign_scroll_y=0,
     level_sign_scrolling=False,
     # Pause menu state
-    pause_menu_index=0  # 0=RICOMINCIA, 1=SALVA & ESCI, 2=BIRDPEDIA, 3=GUIDA, 4=IMPOSTAZIONI
+    pause_menu_index=0  # 0=RESUME, 1=RESTART, 2=SAVE & EXIT, etc.
 )
 
 
@@ -218,6 +220,7 @@ def init():
     # UI state
     ui.show_xp_overlay = False
     ui.bg_offset = 0
+    ui.bg_mid_offset = 0
     ui.notifications = []
     ui.level_sign_scroll_y = 0
     ui.level_sign_scrolling = False

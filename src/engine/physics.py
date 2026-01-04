@@ -105,9 +105,14 @@ def update_projectile_positions():
 
 def update_obstacle_positions():
     """Update positions of all obstacles."""
-    # Update background scroll offset (same speed as obstacles)
-    if state.game.frame_count % 5 == 0:
+    # Parallax background layers - different scroll speeds
+    # Layer 1 (bg_offset): Slowest - every 15 frames (3x slower than obstacles)
+    # Layer 2 (bg_mid_offset): Medium - every 8 frames (~1.6x slower than obstacles)
+    # Layer 3 (obstacles): Fastest - every 5 frames (current speed)
+    if state.game.frame_count % 15 == 0:
         state.ui.bg_offset += 1
+    if state.game.frame_count % 8 == 0:
+        state.ui.bg_mid_offset += 1
 
     for obs in state.enemies.obstacles[:]:
         # Obstacles move at speed 1 (every 5 frames)
