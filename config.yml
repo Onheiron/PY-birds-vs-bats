@@ -22,6 +22,15 @@ layout:
   aspect_ratio: "16:10"
   # Minimum panel width (content needs at least this much space)
   min_panel_width: 20
+
+# Background rendering options
+background:
+  # Enable/disable background completely (the ^ tree pattern)
+  enabled: true
+  # Enable/disable parallax effect (the ∧ middle layer)
+  # Only works if background.enabled is true
+  parallax: false
+
 birds:
   default_formation: [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]
   randomize_lanes: true

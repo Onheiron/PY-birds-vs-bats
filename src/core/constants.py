@@ -49,6 +49,7 @@ bat = init.dict_to_namespace(config.get('bat', {}))
 colors = init.dict_to_namespace(config.get('colors', {}))
 speed = init.dict_to_namespace(config.get('speed', {}))
 levels = init.dict_to_namespace(config.get('levels', {}))
+background = init.dict_to_namespace(config.get('background', {'enabled': True, 'parallax': True}))
 
 # Special handling for transform limits (uses color codes as keys)
 # This is built from config if 'transform' section exists, otherwise use reasonable defaults

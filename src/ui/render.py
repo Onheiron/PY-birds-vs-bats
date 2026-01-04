@@ -1287,9 +1287,21 @@ def _fb_render_background(fb):
     - Layer 1: Dense tree pattern (^) - slowest, darkest
     - Layer 2: Sparse tall trees (∧) - medium speed, slightly lighter
     - Layer 3: Obstacles - fastest (rendered separately)
+
+    Can be disabled via config:
+    - background.enabled: false  -> disables all background layers
+    - background.parallax: false -> disables only the middle layer (∧)
     """
+    # Check if background is enabled
+    bg_enabled = getattr(constants.background, 'enabled', True)
+    if not bg_enabled:
+        return
+
     bg_offset = state.ui.bg_offset
     mid_offset = state.ui.bg_mid_offset
+
+    # Check if parallax is enabled
+    parallax_enabled = getattr(constants.background, 'parallax', True)
 
     # Right panel start position
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
@@ -1315,23 +1327,24 @@ def _fb_render_background(fb):
             if char != ' ':
                 fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, TREE_BG_COLOR)
 
-        # === Layer 2: Medium speed (sparse tall trees) ===
-        mid_pattern_y = (screen_y - mid_offset) % MID_TREE_PATTERN_HEIGHT
-        mid_pattern_line = MID_TREE_PATTERN[mid_pattern_y]
+        # === Layer 2: Medium speed (sparse tall trees) - only if parallax enabled ===
+        if parallax_enabled:
+            mid_pattern_y = (screen_y - mid_offset) % MID_TREE_PATTERN_HEIGHT
+            mid_pattern_line = MID_TREE_PATTERN[mid_pattern_y]
 
-        # Fill game area
-        for screen_x in range(constants.layout.width):
-            pattern_x = screen_x % MID_TREE_PATTERN_WIDTH
-            char = mid_pattern_line[pattern_x]
-            if char != ' ':
-                fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
+            # Fill game area
+            for screen_x in range(constants.layout.width):
+                pattern_x = screen_x % MID_TREE_PATTERN_WIDTH
+                char = mid_pattern_line[pattern_x]
+                if char != ' ':
+                    fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
 
-        # Also render in right panel
-        for panel_x in range(right_panel_inner_width):
-            pattern_x = (constants.layout.width + panel_x) % MID_TREE_PATTERN_WIDTH
-            char = mid_pattern_line[pattern_x]
-            if char != ' ':
-                fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
+            # Also render in right panel
+            for panel_x in range(right_panel_inner_width):
+                pattern_x = (constants.layout.width + panel_x) % MID_TREE_PATTERN_WIDTH
+                char = mid_pattern_line[pattern_x]
+                if char != ' ':
+                    fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
 
 
 def _fb_render_header(fb):
