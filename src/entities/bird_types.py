@@ -3,6 +3,8 @@
 Bird type definitions for BVB.
 Centralizes all bird-related data: colors, stats, limits, eggs, etc.
 """
+# Import theme from src (not src.core to avoid circular imports)
+import src.theme as theme
 
 # ============================================================================
 # BIRD TYPE ENUM
@@ -33,7 +35,7 @@ BIRD_TYPES = {
     BirdType.YELLOW: {
         'name': 'Yellow',
         'display_name': 'Yellow',
-        'color': "\033[38;5;220m",  # ANSI color code
+        'color': theme.get_color('birds', 'default', 220),
         'speed': 2,
         'damage': 2,
         'ability': 'chain_bounce',
@@ -42,11 +44,11 @@ BIRD_TYPES = {
         'spawn_limit': None,  # Unlimited
         'egg_type': 'yellow_egg',
     },
-    
+
     BirdType.RED: {
         'name': 'Red',
         'display_name': 'Red',
-        'color': "\033[31m",
+        'color': theme.get_base_color('red', -1),
         'speed': 3,
         'damage': 3,
         'ability': 'projectile',
@@ -55,11 +57,11 @@ BIRD_TYPES = {
         'spawn_limit': None,
         'egg_type': 'red_egg',
     },
-    
+
     BirdType.BLUE: {
         'name': 'Blue',
         'display_name': 'Blue',
-        'color': "\033[34m",
+        'color': theme.get_base_color('blue', -3),
         'speed': 4,
         'damage': 4,
         'ability': 'speed_boost',
@@ -68,11 +70,11 @@ BIRD_TYPES = {
         'spawn_limit': None,
         'egg_type': 'blue_egg',
     },
-    
+
     BirdType.PATCHWORK: {
         'name': 'Patchwork',
         'display_name': 'Patchwork',
-        'color': "\033[38;5;202m",
+        'color': theme.get_color('birds', 'patchwork', 202),
         'speed': 3,
         'damage': 3,
         'ability': 'multicolor',
@@ -81,11 +83,11 @@ BIRD_TYPES = {
         'spawn_limit': 2,
         'egg_type': 'patchwork_egg',
     },
-    
+
     BirdType.PURPLE: {
         'name': 'Purple',
         'display_name': 'Purple',
-        'color': "\033[38;5;201m",
+        'color': theme.get_color('birds', 'purple', 201),
         'speed': 3,
         'damage': 3,
         'ability': 'charged_shot',
@@ -94,11 +96,11 @@ BIRD_TYPES = {
         'spawn_limit': 2,
         'egg_type': 'purple_egg',
     },
-    
+
     BirdType.CLOCKWORK: {
         'name': 'Clockwork',
         'display_name': 'Clockwork',
-        'color': "\033[38;5;244m",
+        'color': theme.get_color('birds', 'clockwork', 244),
         'speed': 2,
         'damage': 2,
         'ability': 'auto_bounce',
@@ -107,11 +109,11 @@ BIRD_TYPES = {
         'spawn_limit': 2,
         'egg_type': 'clockwork_egg',
     },
-    
+
     BirdType.WHITE: {
         'name': 'White',
         'display_name': 'Templar',
-        'color': "\033[97m",
+        'color': theme.get_base_color('white', -5),
         'speed': 4,
         'damage': 4,
         'ability': 'battle_cry',
@@ -120,11 +122,11 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'white_egg',
     },
-    
+
     BirdType.ORANGE: {
         'name': 'Orange',
         'display_name': 'Phoenix',
-        'color': "\033[38;5;208m",
+        'color': theme.get_color('birds', 'orange', 208),
         'speed': 5,
         'damage': 5,
         'ability': 'one_hit_kill',
@@ -133,11 +135,11 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'orange_egg',
     },
-    
+
     BirdType.GOLD: {
         'name': 'Gold',
         'display_name': 'Gold',
-        'color': "\033[38;5;228m",
+        'color': theme.get_color('birds', 'gold', 228),
         'speed': 6,
         'damage': 1,
         'ability': 'score_multiplier',
@@ -146,11 +148,11 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'gold_egg',
     },
-    
+
     BirdType.COOKIE: {
         'name': 'Cookie',
         'display_name': 'Cookie',
-        'color': "\033[38;5;180m",
+        'color': theme.get_color('birds', 'cookie', 180),
         'speed': 3,
         'damage': 3,
         'ability': 'xp_crumb',
@@ -159,7 +161,7 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'cookie_egg',
     },
-    
+
     BirdType.STEALTH: {
         'name': 'Stealth',
         'display_name': 'Stealth',
@@ -172,11 +174,11 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'stealth_egg',
     },
-    
+
     BirdType.DINOSAUR: {
         'name': 'Dinosaur',
         'display_name': 'Dinosaur',
-        'color': "\033[38;5;46m",
+        'color': theme.get_color('birds', 'dinosaur', 46),
         'speed': 4,
         'damage': 16,
         'ability': 'charge_bounce',
@@ -185,11 +187,11 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'dinosaur_egg',
     },
-    
+
     BirdType.GLITCH: {
         'name': 'Glitch',
         'display_name': 'Glitch',
-        'color': "\033[38;5;205m",
+        'color': theme.get_color('birds', 'glitch', 205),
         'speed': 3,  # Varies randomly
         'damage': 16,  # Varies randomly
         'ability': 'chaos',

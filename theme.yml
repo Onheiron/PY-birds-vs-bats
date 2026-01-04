@@ -1,0 +1,157 @@
+# =============================================================================
+# BVB THEME CONFIGURATION
+# =============================================================================
+# All colors use ANSI 256-color codes (0-255)
+# Reference: https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
+#
+# Basic ANSI colors (use negative numbers for compatibility):
+#   -1: red (31), -2: green (32), -3: blue (34), -4: cyan (96), -5: white (97)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASE COLORS - Common colors used throughout the game
+# -----------------------------------------------------------------------------
+base:
+  red: -1          # Basic ANSI red (\033[31m)
+  green: -2        # Basic ANSI green (\033[32m)
+  blue: -3         # Basic ANSI blue (\033[34m)
+  cyan: -4         # Light cyan (\033[96m)
+  white: -5        # Bright white (\033[97m)
+  yellow: 220      # Main yellow
+  black: 16        # True black
+  dark_gray: 240   # Dark gray
+
+# -----------------------------------------------------------------------------
+# BIRD COLORS - Colors for different bird types
+# -----------------------------------------------------------------------------
+birds:
+  default: 220     # Yellow (default bird)
+  patchwork: 202   # Red-orange
+  purple: 201      # Magenta-purple
+  clockwork: 244   # Medium gray
+  orange: 208      # Orange
+  gold: 228        # Bright gold
+  cookie: 180      # Light brown
+  dinosaur: 46     # Bright lime green (legendary)
+  glitch: 205      # Pink-ish
+
+# -----------------------------------------------------------------------------
+# OBSTACLE COLORS - Tiered colors for obstacles (darker = easier)
+# -----------------------------------------------------------------------------
+obstacles:
+  tier1: 94        # Dark brown
+  tier2: 100       # Brown-olive
+  tier3: 106       # Olive-green
+  tier4: 46        # Bright lime green
+
+# -----------------------------------------------------------------------------
+# BAT COLORS - Tiered colors for bats
+# -----------------------------------------------------------------------------
+bats:
+  tier1: 54        # Dark blue-purple
+  tier2: 92        # Medium purple
+  tier3: 129       # Bright purple
+  tier4: 201       # Shocking magenta-purple
+
+# -----------------------------------------------------------------------------
+# PARALLAX BACKGROUND - Layered scrolling background
+# -----------------------------------------------------------------------------
+background:
+  layer1: 234      # Furthest/slowest - darkest
+  layer2: 235      # Middle layer - slightly lighter
+
+# -----------------------------------------------------------------------------
+# PANELS - Side panel styling
+# -----------------------------------------------------------------------------
+panels:
+  border: 238      # Panel border color
+  background: 233  # Panel background
+
+# -----------------------------------------------------------------------------
+# SPEED GAUGE - Vertical speed indicator (green at bottom to red at top)
+# -----------------------------------------------------------------------------
+gauge:
+  off: 238         # Inactive segments (dark gray)
+  # Gradient from level 1 (bottom/green) to level 10 (top/red)
+  gradient:
+    - 34           # Level 1:  green
+    - 70           # Level 2:  green-yellow
+    - 106          # Level 3:  yellow-green
+    - 142          # Level 4:  yellow
+    - 178          # Level 5:  yellow-orange
+    - 214          # Level 6:  orange
+    - 208          # Level 7:  orange-red
+    - 202          # Level 8:  red-orange
+    - 196          # Level 9:  bright red
+    - 160          # Level 10: dark red
+
+# -----------------------------------------------------------------------------
+# MOMENTUM BAR - Horizontal progress bar (red at 0% to green at 100%)
+# -----------------------------------------------------------------------------
+momentum:
+  # 16-step gradient from red (0%) to green (100%)
+  gradient:
+    - 160          # 0%:   dark red
+    - 196          # 6%:   bright red
+    - 202          # 12%:  red-orange
+    - 208          # 19%:  orange-red
+    - 214          # 25%:  orange
+    - 220          # 31%:  orange-yellow
+    - 178          # 37%:  yellow-orange
+    - 142          # 44%:  yellow
+    - 148          # 50%:  yellow-lime
+    - 106          # 56%:  yellow-green
+    - 112          # 62%:  lime-yellow
+    - 70           # 69%:  lime
+    - 76           # 75%:  lime-green
+    - 40           # 81%:  green-lime
+    - 34           # 87%:  green
+    - 28           # 94%:  dark green
+
+# -----------------------------------------------------------------------------
+# LEFT PANEL - Speed info and gauges
+# -----------------------------------------------------------------------------
+left_panel:
+  label: 245       # Gray for labels (Speed:, Travelled:, etc.)
+  value: 255       # White for values
+
+# -----------------------------------------------------------------------------
+# HEADER - Top status bar
+# -----------------------------------------------------------------------------
+header:
+  border: 240      # Dark gray borders
+  label: 245       # Gray labels
+  value: 255       # White values
+  accent: 220      # Yellow accent
+
+# -----------------------------------------------------------------------------
+# LEVEL SIGNS - Right panel level indicators
+# -----------------------------------------------------------------------------
+level_signs:
+  border: 94       # Brown wood color
+  text: 230        # Cream/beige text
+  arrow: 220       # Yellow arrow
+  line: 240        # Level line (dark gray)
+
+# -----------------------------------------------------------------------------
+# NOTIFICATIONS - Right panel notification cards
+# -----------------------------------------------------------------------------
+notifications:
+  border: 178      # Yellow-orange border
+  title: 220       # Bright yellow for title
+  text: 255        # White for text
+
+# -----------------------------------------------------------------------------
+# PAUSE MENU - In-game pause menu
+# -----------------------------------------------------------------------------
+pause_menu:
+  border: 245      # Gray border
+  selected: 220    # Yellow for selected option
+  normal: 250      # Light gray for unselected
+  arrow: 214       # Orange arrow
+
+# -----------------------------------------------------------------------------
+# DECORATIVE - Right panel decorations
+# -----------------------------------------------------------------------------
+decorative:
+  barriers: 22     # Dark green

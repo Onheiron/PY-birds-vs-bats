@@ -8,8 +8,10 @@ Access as: state.birds.colors, state.game.score, etc.
 
 from src.core import constants
 from src.entities.bird_types import BirdType, get_default_speed, get_color_for_bird_type
-from src.entities.sprites import YELLOW
 from types import SimpleNamespace
+
+# Default yellow color (avoid circular import from sprites)
+_YELLOW_DEFAULT = get_color_for_bird_type(BirdType.YELLOW)
 
 # ============================================================================
 # BIRDS STATE (organized as namespace)
@@ -173,7 +175,7 @@ def init():
     
     # Pad with YELLOW if formation is shorter than NUM_BALLS
     while len(birds.colors) < constants.layout.num_balls:
-        birds.colors.append(YELLOW)
+        birds.colors.append(_YELLOW_DEFAULT)
     
     # Randomize which bird goes to which lane
     random.seed()

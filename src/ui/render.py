@@ -8,6 +8,8 @@ if os.name == 'nt':
 
 from src.entities.sprites import *
 from src.core import constants
+# Import theme from src (not src.core to avoid circular imports)
+import src.theme as theme
 from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane, get_mph_for_speed, get_level_milestones, compute_level_from_miles
 from src.core import state
 
@@ -96,9 +98,9 @@ MID_TREE_PATTERN_WIDTH = 32
 
 # Layer 3 (fastest): Obstacles - handled separately in game logic
 
-# Colors for parallax layers (darker = further back)
-TREE_BG_COLOR = "\033[38;5;234m"      # Darkest - furthest layer
-MID_TREE_COLOR = "\033[38;5;235m"     # Slightly lighter - middle layer
+# Colors for parallax layers (loaded from theme)
+TREE_BG_COLOR = theme.get_color('background', 'layer1', 234)
+MID_TREE_COLOR = theme.get_color('background', 'layer2', 235)
 
 # =============================================================================
 # FRAMEBUFFER - Double buffering per rendering differenziale
@@ -778,50 +780,47 @@ def render_game():
 # FRAMEBUFFER RENDER FUNCTIONS
 # =============================================================================
 
-# Side panel placeholder colors
-PANEL_BORDER_COLOR = "\033[38;5;238m"  # Dark gray border
-PANEL_BG_COLOR = "\033[38;5;233m"      # Very dark background
+# Side panel colors (loaded from theme)
+PANEL_BORDER_COLOR = theme.get_color('panels', 'border', 238)
+PANEL_BG_COLOR = theme.get_color('panels', 'background', 233)
 
-# Speed gauge gradient colors (level 1-10: green -> yellow -> red) - muted tones
-# Using 256-color palette for smooth gradient
-GAUGE_GRADIENT = [
-    "\033[38;5;34m",   # Level 1:  green
-    "\033[38;5;70m",   # Level 2:  green-yellow
-    "\033[38;5;106m",  # Level 3:  yellow-green
-    "\033[38;5;142m",  # Level 4:  yellow
-    "\033[38;5;178m",  # Level 5:  yellow-orange
-    "\033[38;5;214m",  # Level 6:  orange
-    "\033[38;5;208m",  # Level 7:  orange-red
-    "\033[38;5;202m",  # Level 8:  red-orange
-    "\033[38;5;196m",  # Level 9:  bright red
-    "\033[38;5;160m",  # Level 10: dark red
-]
+# Speed gauge gradient colors (level 1-10: green -> yellow -> red)
+GAUGE_GRADIENT = theme.get_gradient('gauge', 'gradient')
 # Momentum bar gradient (0% -> 100%: red -> yellow -> green)
-MOMENTUM_GRADIENT = [
-    "\033[38;5;160m",  # 0%:   dark red
-    "\033[38;5;196m",  # 6%:   bright red
-    "\033[38;5;202m",  # 12%:  red-orange
-    "\033[38;5;208m",  # 19%:  orange-red
-    "\033[38;5;214m",  # 25%:  orange
-    "\033[38;5;220m",  # 31%:  orange-yellow
-    "\033[38;5;178m",  # 37%:  yellow-orange
-    "\033[38;5;142m",  # 44%:  yellow
-    "\033[38;5;148m",  # 50%:  yellow-lime
-    "\033[38;5;106m",  # 56%:  yellow-green
-    "\033[38;5;112m",  # 62%:  lime-yellow
-    "\033[38;5;70m",   # 69%:  lime
-    "\033[38;5;76m",   # 75%:  lime-green
-    "\033[38;5;40m",   # 81%:  green-lime
-    "\033[38;5;34m",   # 87%:  green
-    "\033[38;5;28m",   # 94%:  dark green
-]
-GAUGE_OFF = "\033[38;5;238m"    # Dark gray (inactive blocks)
+MOMENTUM_GRADIENT = theme.get_gradient('momentum', 'gradient')
+GAUGE_OFF = theme.get_color('gauge', 'off', 238)
 GAUGE_BLOCK_ON = "██████"       # Solid block for active segments
 GAUGE_BLOCK_OFF = "------"      # Dashes for inactive segments (clearly different)
 
-# Text colors for left panel
-PANEL_LABEL_COLOR = "\033[38;5;245m"  # Gray for labels
-PANEL_VALUE_COLOR = "\033[38;5;255m"  # White for values
+# Text colors for left panel (loaded from theme)
+PANEL_LABEL_COLOR = theme.get_color('left_panel', 'label', 245)
+PANEL_VALUE_COLOR = theme.get_color('left_panel', 'value', 255)
+
+# Header colors (loaded from theme)
+HEADER_BORDER = theme.get_color('header', 'border', 240)
+HEADER_LABEL = theme.get_color('header', 'label', 245)
+HEADER_VALUE = theme.get_color('header', 'value', 255)
+HEADER_ACCENT = theme.get_color('header', 'accent', 220)
+
+# Level signs colors (loaded from theme)
+LEVEL_LINE_COLOR = theme.get_color('level_signs', 'line', 240)
+SIGN_BORDER_COLOR = theme.get_color('level_signs', 'border', 94)
+SIGN_TEXT_COLOR = theme.get_color('level_signs', 'text', 230)
+SIGN_ARROW_COLOR = theme.get_color('level_signs', 'arrow', 220)
+
+# Notification card colors (loaded from theme)
+CARD_BORDER_COLOR = theme.get_color('notifications', 'border', 178)
+CARD_TITLE_COLOR = theme.get_color('notifications', 'title', 220)
+CARD_TEXT_COLOR = theme.get_color('notifications', 'text', 255)
+
+# Pause menu colors (loaded from theme)
+MENU_BORDER_COLOR = theme.get_color('pause_menu', 'border', 245)
+MENU_SELECTED_COLOR = theme.get_color('pause_menu', 'selected', 220)
+MENU_NORMAL_COLOR = theme.get_color('pause_menu', 'normal', 250)
+MENU_ARROW_COLOR = theme.get_color('pause_menu', 'arrow', 214)
+
+# Decorative barriers color (loaded from theme)
+DECO_COLOR = theme.get_color('decorative', 'barriers', 22)
 
 
 def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
@@ -1094,7 +1093,6 @@ def _fb_render_level_line(fb):
         return
 
     # Draw dashed line across game width - darker than START line
-    LEVEL_LINE_COLOR = "\033[38;5;240m"  # Dark gray
     line_pattern = "· · · · · · · · · · · · · · · · · · · · · · · "
 
     for i, char in enumerate(line_pattern[:constants.layout.width]):
@@ -1114,11 +1112,6 @@ def _fb_render_right_panel_level_signs(fb):
     panel_end_y = constants.layout.height + HEADER_HEIGHT
     panel_height = panel_end_y - panel_start_y
     right_start = GAME_X_OFFSET + constants.layout.width
-
-    # Sign colors
-    SIGN_BORDER_COLOR = "\033[38;5;94m"   # Brown wood color
-    SIGN_TEXT_COLOR = "\033[38;5;230m"    # Cream/beige text
-    SIGN_ARROW_COLOR = "\033[38;5;220m"   # Yellow arrow
 
     # Get level info
     miles = state.game.miles
@@ -1346,12 +1339,6 @@ def _fb_render_header(fb):
 
     Shows: Lives, Prestige, Score in styled boxes.
     """
-    # Colors for header
-    HEADER_BORDER = "\033[38;5;240m"   # Dark gray borders
-    HEADER_LABEL = "\033[38;5;245m"    # Gray labels
-    HEADER_VALUE = "\033[38;5;255m"    # White values
-    HEADER_ACCENT = "\033[38;5;220m"   # Yellow accent
-
     # Get values
     prestige_val = compute_prestige()
     if prestige_val is None:
@@ -1471,9 +1458,6 @@ def _fb_render_right_panel_barriers(fb):
     # Right panel position
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
     right_panel_inner_width = SIDE_PANEL_WIDTH - 2
-
-    # Decorative color (darker green - same lore as obstacles, just dimmed for background)
-    DECO_COLOR = "\033[38;5;22m"  # Dark green
 
     for barrier in state.enemies.right_panel_barriers:
         tier = barrier.get('tier', 1)
@@ -1739,11 +1723,6 @@ def _fb_render_notifications(fb):
     card_x = inner_start_x  # No centering - stick to left edge
     inner_width = card_width - 2  # Space inside the card (between ║ and ║)
 
-    # Card colors
-    CARD_BORDER_COLOR = "\033[38;5;178m"  # Yellow-orange border
-    CARD_TITLE_COLOR = "\033[38;5;220m"   # Bright yellow for title
-    CARD_TEXT_COLOR = "\033[38;5;255m"    # White for text
-
     # Top sign ends at row: panel_start_y + 1 + 4 = panel_start_y + 5
     # Bottom sign starts at: panel_end_y - 5
     # Available space: from panel_start_y + 6 to panel_end_y - 6
@@ -1825,12 +1804,6 @@ def _fb_render_pause_overlay(fb):
         "GUIDE",
         "SETTINGS"
     ]
-
-    # Menu styling
-    MENU_BORDER_COLOR = "\033[38;5;245m"   # Gray border
-    MENU_SELECTED_COLOR = "\033[38;5;220m"  # Yellow for selected
-    MENU_NORMAL_COLOR = "\033[38;5;250m"    # Light gray for unselected
-    MENU_ARROW_COLOR = "\033[38;5;214m"     # Orange arrow
 
     # Menu dimensions - full panel width
     menu_width = SIDE_PANEL_WIDTH - 2  # Full panel width minus side borders
