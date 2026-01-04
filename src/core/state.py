@@ -159,7 +159,27 @@ ui = SimpleNamespace(
     level_sign_scroll_y=0,
     level_sign_scrolling=False,
     # Pause menu state
-    pause_menu_index=0  # 0=RESUME, 1=RESTART, 2=SAVE & EXIT, etc.
+    pause_menu_index=0,  # 0=RESUME, 1=RESTART, 2=SAVE & EXIT, etc.
+    # Settings menu state
+    settings_menu=None,  # None=not in settings, 'main'/'sound'/'graphics'/'controls'
+    settings_index=0,    # Current selection index in settings submenu
+)
+
+# ============================================================================
+# SETTINGS STATE (runtime settings that can be toggled)
+# ============================================================================
+settings = SimpleNamespace(
+    # Sound settings
+    sfx_enabled=True,
+    music_enabled=True,
+    # Graphics settings
+    background_enabled=True,
+    parallax_enabled=True,
+    accessibility_enabled=False,
+    # Difficulty: 0=EASY, 1=NORMAL, 2=HARD, 3=HELL
+    difficulty=1,
+    # Flag to track if settings have been initialized from config
+    _initialized=False,
 )
 
 
@@ -227,6 +247,10 @@ def init():
     ui.level_sign_scroll_y = 0
     ui.level_sign_scrolling = False
     ui.pause_menu_index = 0
+    ui.settings_menu = None
+    ui.settings_index = 0
+
+    # Note: settings state is NOT reset on init() - persists across restarts
     
     # Enemies
     enemies.obstacles = []
@@ -288,3 +312,9 @@ def init():
             birds.speeds.append(int(spd))
         except Exception:
             birds.speeds.append(2)
+
+    # Initialize runtime settings from config (only once, on first init)
+    if not settings._initialized:
+        settings.background_enabled = getattr(constants.background, 'enabled', True)
+        settings.parallax_enabled = getattr(constants.background, 'parallax', True)
+        settings._initialized = True

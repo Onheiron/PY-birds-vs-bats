@@ -23,8 +23,8 @@ except ImportError:
 
 
 def play_sfx(name):
-    """Play sound effect if audio is available."""
-    if AUDIO_AVAILABLE and audio:
+    """Play sound effect if audio is available and SFX is enabled."""
+    if AUDIO_AVAILABLE and audio and state.settings.sfx_enabled:
         audio.play_sfx(name)
 
 
@@ -606,8 +606,9 @@ def _execute_pause_menu_action():
         # GUIDE - placeholder for now
         _add_notification("Guide", title="Coming Soon:")
     elif selected == 5:
-        # SETTINGS - placeholder for now
-        _add_notification("Settings", title="Coming Soon:")
+        # SETTINGS - enter settings menu
+        state.ui.settings_menu = 'main'
+        state.ui.settings_index = 0
 
 
 def _handle_restart():
@@ -631,6 +632,124 @@ def _handle_save_and_exit():
     state.game.game_over = True
 
 
+def _get_settings_options_count():
+    """Return the number of options in the current settings submenu."""
+    menu = state.ui.settings_menu
+    if menu == 'main':
+        return 5  # SOUND, GRAPHICS, CONTROLS, DIFFICULTY, < BACK
+    elif menu == 'sound':
+        return 3  # SFX, MUSIC, < BACK
+    elif menu == 'graphics':
+        return 4  # BACKGROUND, PARALLAX, ACCESSIBILITY, < BACK
+    elif menu == 'controls':
+        return 6  # 5 control display items + < BACK
+    return 1
+
+
+def _handle_settings_enter():
+    """Handle ENTER key in settings menu."""
+    menu = state.ui.settings_menu
+    idx = state.ui.settings_index
+
+    if menu == 'main':
+        if idx == 0:  # SOUND
+            state.ui.settings_menu = 'sound'
+            state.ui.settings_index = 0
+        elif idx == 1:  # GRAPHICS
+            state.ui.settings_menu = 'graphics'
+            state.ui.settings_index = 0
+        elif idx == 2:  # CONTROLS
+            state.ui.settings_menu = 'controls'
+            state.ui.settings_index = 0
+        elif idx == 3:  # DIFFICULTY - cycle on enter too
+            _cycle_difficulty(1)
+        elif idx == 4:  # < BACK
+            state.ui.settings_menu = None
+            state.ui.settings_index = 0
+    elif menu == 'sound':
+        if idx == 0:  # SFX toggle
+            state.settings.sfx_enabled = not state.settings.sfx_enabled
+        elif idx == 1:  # MUSIC toggle
+            state.settings.music_enabled = not state.settings.music_enabled
+            _apply_music_setting()
+        elif idx == 2:  # < BACK
+            state.ui.settings_menu = 'main'
+            state.ui.settings_index = 0
+    elif menu == 'graphics':
+        if idx == 0:  # BACKGROUND toggle
+            state.settings.background_enabled = not state.settings.background_enabled
+        elif idx == 1:  # PARALLAX toggle
+            state.settings.parallax_enabled = not state.settings.parallax_enabled
+        elif idx == 2:  # ACCESSIBILITY toggle
+            state.settings.accessibility_enabled = not state.settings.accessibility_enabled
+        elif idx == 3:  # < BACK
+            state.ui.settings_menu = 'main'
+            state.ui.settings_index = 1
+    elif menu == 'controls':
+        # All items except last are display-only
+        count = _get_settings_options_count()
+        if idx == count - 1:  # < BACK
+            state.ui.settings_menu = 'main'
+            state.ui.settings_index = 2
+
+
+def _handle_settings_back():
+    """Handle ESC or < BACK in settings menu."""
+    menu = state.ui.settings_menu
+
+    if menu == 'main':
+        state.ui.settings_menu = None
+        state.ui.settings_index = 0
+    elif menu in ('sound', 'graphics', 'controls'):
+        state.ui.settings_menu = 'main'
+        # Return to appropriate index in main menu
+        if menu == 'sound':
+            state.ui.settings_index = 0
+        elif menu == 'graphics':
+            state.ui.settings_index = 1
+        else:  # controls
+            state.ui.settings_index = 2
+
+
+def _handle_settings_left_right(direction):
+    """Handle LEFT/RIGHT for cycling values in settings."""
+    menu = state.ui.settings_menu
+    idx = state.ui.settings_index
+    delta = -1 if direction == 'LEFT' else 1
+
+    if menu == 'main' and idx == 3:  # DIFFICULTY
+        _cycle_difficulty(delta)
+    elif menu == 'sound':
+        if idx == 0:  # SFX
+            state.settings.sfx_enabled = not state.settings.sfx_enabled
+        elif idx == 1:  # MUSIC
+            state.settings.music_enabled = not state.settings.music_enabled
+            _apply_music_setting()
+    elif menu == 'graphics':
+        if idx == 0:  # BACKGROUND
+            state.settings.background_enabled = not state.settings.background_enabled
+        elif idx == 1:  # PARALLAX
+            state.settings.parallax_enabled = not state.settings.parallax_enabled
+        elif idx == 2:  # ACCESSIBILITY
+            state.settings.accessibility_enabled = not state.settings.accessibility_enabled
+
+
+def _cycle_difficulty(delta):
+    """Cycle difficulty setting."""
+    state.settings.difficulty = (state.settings.difficulty + delta) % 4
+
+
+def _apply_music_setting():
+    """Apply music enabled/disabled setting."""
+    if not AUDIO_AVAILABLE or not audio:
+        return
+
+    if state.settings.music_enabled:
+        audio.start_music()
+    else:
+        audio.stop_music()
+
+
 def process_input(key):
     """Process a single key input and update game state."""
     if key is None:
@@ -643,6 +762,26 @@ def process_input(key):
 
     # When paused, handle pause menu navigation
     if state.game.paused:
+        # Check if we're in settings submenu
+        if state.ui.settings_menu is not None:
+            if key == 'QUIT':
+                state.game.quit_requested = True
+                state.game.game_over = True
+            elif key == 'ESC':
+                _handle_settings_back()
+            elif key == 'UP':
+                count = _get_settings_options_count()
+                state.ui.settings_index = (state.ui.settings_index - 1) % count
+            elif key == 'DOWN':
+                count = _get_settings_options_count()
+                state.ui.settings_index = (state.ui.settings_index + 1) % count
+            elif key in ('LEFT', 'RIGHT'):
+                _handle_settings_left_right(key)
+            elif key == 'ENTER':
+                _handle_settings_enter()
+            return
+
+        # Regular pause menu navigation
         if key in ('P', 'p', 'ESC'):
             handle_pause()  # Unpause
         elif key == 'QUIT':

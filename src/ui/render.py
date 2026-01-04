@@ -1292,16 +1292,16 @@ def _fb_render_background(fb):
     - background.enabled: false  -> disables all background layers
     - background.parallax: false -> disables only the middle layer (∧)
     """
-    # Check if background is enabled
-    bg_enabled = getattr(constants.background, 'enabled', True)
+    # Check if background is enabled (runtime settings override config)
+    bg_enabled = state.settings.background_enabled
     if not bg_enabled:
         return
 
     bg_offset = state.ui.bg_offset
     mid_offset = state.ui.bg_mid_offset
 
-    # Check if parallax is enabled
-    parallax_enabled = getattr(constants.background, 'parallax', True)
+    # Check if parallax is enabled (runtime settings override config)
+    parallax_enabled = state.settings.parallax_enabled
 
     # Right panel start position
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
@@ -1808,7 +1808,24 @@ def _fb_render_pause_overlay(fb):
     right_start = GAME_X_OFFSET + constants.layout.width
     inner_start_x = right_start + 1
 
-    # Menu options (in English)
+    # Menu dimensions - full panel width
+    menu_width = SIDE_PANEL_WIDTH - 2
+    inner_width = menu_width - 2
+    menu_x = inner_start_x
+
+    # Position menu
+    panel_start_y = HEADER_HEIGHT
+    menu_start_y = panel_start_y + 8
+
+    # Check if we're in a settings submenu
+    if state.ui.settings_menu is not None:
+        _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width)
+    else:
+        _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width)
+
+
+def _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
+    """Render the main pause menu."""
     PAUSE_MENU_OPTIONS = [
         "RESUME",
         "RESTART",
@@ -1818,61 +1835,130 @@ def _fb_render_pause_overlay(fb):
         "SETTINGS"
     ]
 
-    # Menu dimensions - full panel width
-    menu_width = SIDE_PANEL_WIDTH - 2  # Full panel width minus side borders
-    inner_width = menu_width - 2  # Space inside the menu box (between ║ and ║)
-    menu_x = inner_start_x  # Stick to left edge
-
-    # Position menu below notifications area (roughly middle of panel)
-    panel_start_y = HEADER_HEIGHT
-    panel_end_y = constants.layout.height + HEADER_HEIGHT
-    menu_start_y = panel_start_y + 8  # Below top level sign
-
-    # Build dynamic border strings
     top_border = "╔" + "═" * (menu_width - 2) + "╗"
     separator_border = "╠" + "═" * (menu_width - 2) + "╣"
     bottom_border = "╚" + "═" * (menu_width - 2) + "╝"
 
     y = menu_start_y
 
-    # Top border
     fb.put_string(menu_x, y, top_border, MENU_BORDER_COLOR)
     y += 1
 
-    # Title - centered
     fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
-    title = "PAUSED"
+    title_padded = "PAUSED".center(inner_width)
+    fb.put_string(menu_x + 1, y, title_padded, YELLOW)
+    fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
+    y += 1
+
+    fb.put_string(menu_x, y, separator_border, MENU_BORDER_COLOR)
+    y += 1
+
+    selected_idx = state.ui.pause_menu_index
+    option_text_width = inner_width - 2
+
+    for i, option in enumerate(PAUSE_MENU_OPTIONS):
+        fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
+        if i == selected_idx:
+            fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
+            fb.put_string(menu_x + 2, y, f" {option:<{option_text_width}}", MENU_SELECTED_COLOR)
+        else:
+            fb.put_string(menu_x + 1, y, f"  {option:<{option_text_width}}", MENU_NORMAL_COLOR)
+        fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
+        y += 1
+
+    fb.put_string(menu_x, y, bottom_border, MENU_BORDER_COLOR)
+    y += 1
+
+    hint = "↑↓ Navigate  ⏎ Select"
+    fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)
+
+
+def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
+    """Render the settings submenu based on current settings_menu state."""
+    # Define all settings menus
+    DIFFICULTY_NAMES = ["EASY", "NORMAL", "HARD", "HELL"]
+
+    def get_toggle(value):
+        return "ON" if value else "OFF"
+
+    def get_difficulty():
+        return DIFFICULTY_NAMES[state.settings.difficulty]
+
+    # Build menu options based on current submenu
+    if state.ui.settings_menu == 'main':
+        title = "SETTINGS"
+        options = [
+            ("SOUND", "submenu"),
+            ("GRAPHICS", "submenu"),
+            ("CONTROLS", "submenu"),
+            (f"DIFFICULTY      < {get_difficulty()} >", "cycle"),
+            ("< BACK", "back"),
+        ]
+    elif state.ui.settings_menu == 'sound':
+        title = "SOUND"
+        options = [
+            (f"SFX             < {get_toggle(state.settings.sfx_enabled)} >", "toggle"),
+            (f"MUSIC           < {get_toggle(state.settings.music_enabled)} >", "toggle"),
+            ("< BACK", "back"),
+        ]
+    elif state.ui.settings_menu == 'graphics':
+        title = "GRAPHICS"
+        options = [
+            (f"BACKGROUND      < {get_toggle(state.settings.background_enabled)} >", "toggle"),
+            (f"PARALLAX        < {get_toggle(state.settings.parallax_enabled)} >", "toggle"),
+            (f"ACCESSIBILITY   < {get_toggle(state.settings.accessibility_enabled)} >", "toggle"),
+            ("< BACK", "back"),
+        ]
+    elif state.ui.settings_menu == 'controls':
+        title = "CONTROLS"
+        options = [
+            ("MOVE LEFT       ←", "display"),
+            ("MOVE RIGHT      →", "display"),
+            ("BOUNCE          ↑", "display"),
+            ("POWER           ↑", "display"),
+            ("SWAP            SPACE", "display"),
+            ("< BACK", "back"),
+        ]
+    else:
+        return
+
+    top_border = "╔" + "═" * (menu_width - 2) + "╗"
+    separator_border = "╠" + "═" * (menu_width - 2) + "╣"
+    bottom_border = "╚" + "═" * (menu_width - 2) + "╝"
+
+    y = menu_start_y
+
+    fb.put_string(menu_x, y, top_border, MENU_BORDER_COLOR)
+    y += 1
+
+    fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
     title_padded = title.center(inner_width)
     fb.put_string(menu_x + 1, y, title_padded, YELLOW)
     fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
     y += 1
 
-    # Separator
     fb.put_string(menu_x, y, separator_border, MENU_BORDER_COLOR)
     y += 1
 
-    # Menu options
-    selected_idx = state.ui.pause_menu_index
-    option_text_width = inner_width - 2  # Space for option text (minus "> ")
+    selected_idx = state.ui.settings_index
+    option_text_width = inner_width - 2
 
-    for i, option in enumerate(PAUSE_MENU_OPTIONS):
+    for i, (option_text, option_type) in enumerate(options):
         fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
-
         if i == selected_idx:
-            # Selected option: show arrow and highlight
             fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
-            fb.put_string(menu_x + 2, y, f" {option:<{option_text_width}}", MENU_SELECTED_COLOR)
+            fb.put_string(menu_x + 2, y, f" {option_text:<{option_text_width}}"[:option_text_width+1], MENU_SELECTED_COLOR)
         else:
-            # Unselected option
-            fb.put_string(menu_x + 1, y, f"  {option:<{option_text_width}}", MENU_NORMAL_COLOR)
-
+            fb.put_string(menu_x + 1, y, f"  {option_text:<{option_text_width}}"[:option_text_width+2], MENU_NORMAL_COLOR)
         fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
         y += 1
 
-    # Bottom border
     fb.put_string(menu_x, y, bottom_border, MENU_BORDER_COLOR)
     y += 1
 
-    # Hint at bottom (in English)
-    hint = "↑↓ Navigate  ⏎ Select"
+    # Hint based on menu type
+    if state.ui.settings_menu == 'controls':
+        hint = "↑↓ Navigate  ESC Back"
+    else:
+        hint = "↑↓ Navigate  ←→ Change  ⏎ Select"
     fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)
