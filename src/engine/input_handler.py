@@ -605,10 +605,14 @@ def _execute_pause_menu_action():
         state.ui.settings_menu = 'load'
         state.ui.settings_index = 0
     elif selected == 4:
+        # BIRDPEDIA - open birdpedia menu
+        state.ui.settings_menu = 'birdpedia'
+        state.ui.settings_index = 0
+    elif selected == 5:
         # SETTINGS - enter settings menu
         state.ui.settings_menu = 'main'
         state.ui.settings_index = 0
-    elif selected == 5:
+    elif selected == 6:
         # EXIT - quit without saving
         state.game.quit_requested = True
         state.game.game_over = True
@@ -643,6 +647,13 @@ def _get_settings_options_count():
         return 4  # SLOT 1, SLOT 2, SLOT 3, < BACK
     elif menu == 'load':
         return 5  # AUTO, SLOT 1, SLOT 2, SLOT 3, < BACK
+    elif menu == 'birdpedia':
+        return 5  # GUIDE, BIRDPEDIA, BATPEDIA, BIOMES, < BACK
+    elif menu == 'guide':
+        return 5  # HOW TO PLAY, COMMANDS, OBSTACLES, ENEMIES, < BACK
+    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies',
+                  'birdpedia_list', 'batpedia_list', 'biomes_list'):
+        return 1  # Just < BACK (content view)
     return 1
 
 
@@ -727,6 +738,42 @@ def _handle_settings_enter():
                     _add_notification("Load failed!", title="Error:")
             else:
                 _add_notification("Slot is empty!", title="Error:")
+    elif menu == 'birdpedia':
+        if idx == 0:  # GUIDE
+            state.ui.settings_menu = 'guide'
+            state.ui.settings_index = 0
+        elif idx == 1:  # BIRDPEDIA
+            state.ui.settings_menu = 'birdpedia_list'
+            state.ui.settings_index = 0
+        elif idx == 2:  # BATPEDIA
+            state.ui.settings_menu = 'batpedia_list'
+            state.ui.settings_index = 0
+        elif idx == 3:  # BIOMES
+            state.ui.settings_menu = 'biomes_list'
+            state.ui.settings_index = 0
+        elif idx == 4:  # < BACK
+            state.ui.settings_menu = None
+            state.ui.settings_index = 0
+    elif menu == 'guide':
+        if idx == 0:  # HOW TO PLAY
+            state.ui.settings_menu = 'guide_howto'
+            state.ui.settings_index = 0
+        elif idx == 1:  # COMMANDS
+            state.ui.settings_menu = 'guide_commands'
+            state.ui.settings_index = 0
+        elif idx == 2:  # OBSTACLES
+            state.ui.settings_menu = 'guide_obstacles'
+            state.ui.settings_index = 0
+        elif idx == 3:  # ENEMIES
+            state.ui.settings_menu = 'guide_enemies'
+            state.ui.settings_index = 0
+        elif idx == 4:  # < BACK
+            state.ui.settings_menu = 'birdpedia'
+            state.ui.settings_index = 0
+    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies',
+                  'birdpedia_list', 'batpedia_list', 'biomes_list'):
+        # Content views - any key goes back
+        _handle_settings_back()
 
 
 def _handle_settings_back():
@@ -749,6 +796,27 @@ def _handle_settings_back():
         # Return directly to pause menu
         state.ui.settings_menu = None
         state.ui.settings_index = 0
+    elif menu == 'birdpedia':
+        # Return directly to pause menu
+        state.ui.settings_menu = None
+        state.ui.settings_index = 0
+    elif menu == 'guide':
+        # Return to birdpedia menu
+        state.ui.settings_menu = 'birdpedia'
+        state.ui.settings_index = 0
+    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies'):
+        # Return to guide menu
+        state.ui.settings_menu = 'guide'
+        state.ui.settings_index = 0
+    elif menu == 'birdpedia_list':
+        state.ui.settings_menu = 'birdpedia'
+        state.ui.settings_index = 1
+    elif menu == 'batpedia_list':
+        state.ui.settings_menu = 'birdpedia'
+        state.ui.settings_index = 2
+    elif menu == 'biomes_list':
+        state.ui.settings_menu = 'birdpedia'
+        state.ui.settings_index = 3
 
 
 def _handle_settings_left_right(direction):
@@ -839,11 +907,11 @@ def _handle_title_input(key):
         return _handle_title_settings_input(key)
 
     if key == 'UP':
-        state.ui.title_menu_index = (state.ui.title_menu_index - 1) % 5  # 5 options now
+        state.ui.title_menu_index = (state.ui.title_menu_index - 1) % 6  # 6 options now
         return True
 
     if key == 'DOWN':
-        state.ui.title_menu_index = (state.ui.title_menu_index + 1) % 5
+        state.ui.title_menu_index = (state.ui.title_menu_index + 1) % 6
         return True
 
     if key == 'ENTER':
@@ -868,10 +936,13 @@ def _handle_title_input(key):
         elif idx == 2:  # LOAD
             state.ui.settings_menu = 'load'
             state.ui.settings_index = 0
-        elif idx == 3:  # SETTINGS
+        elif idx == 3:  # BIRDPEDIA
+            state.ui.settings_menu = 'birdpedia'
+            state.ui.settings_index = 0
+        elif idx == 4:  # SETTINGS
             state.ui.settings_menu = 'main'
             state.ui.settings_index = 0
-        elif idx == 4:  # QUIT
+        elif idx == 5:  # QUIT
             state.game.quit_requested = True
             state.game.game_over = True
         return True
@@ -946,6 +1017,24 @@ def _handle_title_settings_back():
             state.ui.settings_index = 1
         else:
             state.ui.settings_index = 2
+    elif menu == 'birdpedia':
+        state.ui.settings_menu = None
+        state.ui.settings_index = 0
+    elif menu == 'guide':
+        state.ui.settings_menu = 'birdpedia'
+        state.ui.settings_index = 0
+    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies'):
+        state.ui.settings_menu = 'guide'
+        state.ui.settings_index = 0
+    elif menu == 'birdpedia_list':
+        state.ui.settings_menu = 'birdpedia'
+        state.ui.settings_index = 1
+    elif menu == 'batpedia_list':
+        state.ui.settings_menu = 'birdpedia'
+        state.ui.settings_index = 2
+    elif menu == 'biomes_list':
+        state.ui.settings_menu = 'birdpedia'
+        state.ui.settings_index = 3
 
 
 def _handle_title_settings_left_right(key):
@@ -1031,6 +1120,40 @@ def _handle_title_settings_enter():
             state.ui.rebinding_control = control_names[idx]
         elif idx == 5:  # < BACK
             _handle_title_settings_back()
+    elif menu == 'birdpedia':
+        if idx == 0:  # GUIDE
+            state.ui.settings_menu = 'guide'
+            state.ui.settings_index = 0
+        elif idx == 1:  # BIRDPEDIA
+            state.ui.settings_menu = 'birdpedia_list'
+            state.ui.settings_index = 0
+        elif idx == 2:  # BATPEDIA
+            state.ui.settings_menu = 'batpedia_list'
+            state.ui.settings_index = 0
+        elif idx == 3:  # BIOMES
+            state.ui.settings_menu = 'biomes_list'
+            state.ui.settings_index = 0
+        elif idx == 4:  # < BACK
+            _handle_title_settings_back()
+    elif menu == 'guide':
+        if idx == 0:  # HOW TO PLAY
+            state.ui.settings_menu = 'guide_howto'
+            state.ui.settings_index = 0
+        elif idx == 1:  # COMMANDS
+            state.ui.settings_menu = 'guide_commands'
+            state.ui.settings_index = 0
+        elif idx == 2:  # OBSTACLES
+            state.ui.settings_menu = 'guide_obstacles'
+            state.ui.settings_index = 0
+        elif idx == 3:  # ENEMIES
+            state.ui.settings_menu = 'guide_enemies'
+            state.ui.settings_index = 0
+        elif idx == 4:  # < BACK
+            _handle_title_settings_back()
+    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies',
+                  'birdpedia_list', 'batpedia_list', 'biomes_list'):
+        # Content views - any key goes back
+        _handle_title_settings_back()
 
 
 def process_input(key):
@@ -1104,10 +1227,10 @@ def process_input(key):
             state.game.game_over = True
         elif key == 'UP':
             # Navigate menu up
-            state.ui.pause_menu_index = (state.ui.pause_menu_index - 1) % 6
+            state.ui.pause_menu_index = (state.ui.pause_menu_index - 1) % 7
         elif key == 'DOWN':
             # Navigate menu down
-            state.ui.pause_menu_index = (state.ui.pause_menu_index + 1) % 6
+            state.ui.pause_menu_index = (state.ui.pause_menu_index + 1) % 7
         elif key == 'ENTER':
             # Execute selected menu action
             _execute_pause_menu_action()

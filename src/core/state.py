@@ -199,6 +199,20 @@ settings = SimpleNamespace(
     _initialized=False,
 )
 
+# ============================================================================
+# DISCOVERY STATE (tracks what the player has discovered)
+# ============================================================================
+discovery = SimpleNamespace(
+    # Bird types discovered (set of bird type names)
+    birds=set(),
+    # Bat types discovered (set of bat type names)
+    bats=set(),
+    # Obstacle types discovered (set of obstacle type names)
+    obstacles=set(),
+    # Biomes visited (set of biome names)
+    biomes=set(),
+)
+
 
 def init(seed=None):
     """Initialize all game state using namespaces.

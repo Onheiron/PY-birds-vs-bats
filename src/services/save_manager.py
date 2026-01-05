@@ -54,6 +54,105 @@ def get_default_settings_path():
     return settings_dir / "settings.json"
 
 
+def get_discovery_path():
+    """Get the path for discovery data file."""
+    home = Path.home()
+    discovery_dir = home / SAVE_DIR_NAME
+    try:
+        discovery_dir.mkdir(parents=True, exist_ok=True)
+    except (OSError, PermissionError):
+        discovery_dir = Path.cwd()
+    return discovery_dir / "discovery.json"
+
+
+def save_discovery():
+    """Save discovery data (persists across all saves)."""
+    from src.core import state
+
+    discovery_data = {
+        'version': SAVE_VERSION,
+        'birds': list(state.discovery.birds),
+        'bats': list(state.discovery.bats),
+        'obstacles': list(state.discovery.obstacles),
+        'biomes': list(state.discovery.biomes),
+    }
+
+    path = get_discovery_path()
+    try:
+        with open(path, 'w') as f:
+            json.dump(discovery_data, f, indent=2)
+        return True
+    except (OSError, IOError):
+        return False
+
+
+def load_discovery():
+    """Load discovery data and apply to state.discovery."""
+    from src.core import state
+
+    path = get_discovery_path()
+    if not path.exists():
+        return False
+
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+
+        # Apply discovery data
+        if 'birds' in data:
+            state.discovery.birds = set(data['birds'])
+        if 'bats' in data:
+            state.discovery.bats = set(data['bats'])
+        if 'obstacles' in data:
+            state.discovery.obstacles = set(data['obstacles'])
+        if 'biomes' in data:
+            state.discovery.biomes = set(data['biomes'])
+
+        return True
+    except (json.JSONDecodeError, OSError, IOError):
+        return False
+
+
+def discover_bird(bird_type_name):
+    """Mark a bird type as discovered."""
+    from src.core import state
+    if bird_type_name not in state.discovery.birds:
+        state.discovery.birds.add(bird_type_name)
+        save_discovery()
+        return True
+    return False
+
+
+def discover_bat(bat_type_name):
+    """Mark a bat type as discovered."""
+    from src.core import state
+    if bat_type_name not in state.discovery.bats:
+        state.discovery.bats.add(bat_type_name)
+        save_discovery()
+        return True
+    return False
+
+
+def discover_obstacle(obstacle_type_name):
+    """Mark an obstacle type as discovered."""
+    from src.core import state
+    if obstacle_type_name not in state.discovery.obstacles:
+        state.discovery.obstacles.add(obstacle_type_name)
+        save_discovery()
+        return True
+    return False
+
+
+def discover_biome(biome_name):
+    """Mark a biome as discovered."""
+    from src.core import state
+    if biome_name not in state.discovery.biomes:
+        state.discovery.biomes.add(biome_name)
+        save_discovery()
+        return True
+    return False
+
+
 def save_default_settings():
     """Save current settings as defaults for new games."""
     from src.core import state

@@ -1902,6 +1902,7 @@ def _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
         "RESTART",
         "SAVE",
         "LOAD",
+        "BIRDPEDIA",
         "SETTINGS",
         "EXIT"
     ]
@@ -2048,6 +2049,45 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
             (get_slot_info(3), "slot"),
             ("< BACK", "back"),
         ]
+    elif state.ui.settings_menu == 'birdpedia':
+        title = "BIRDPEDIA"
+        options = [
+            ("GUIDE", "submenu"),
+            ("BIRD-DEX", "submenu"),
+            ("BAT-DEX", "submenu"),
+            ("BIOMES", "submenu"),
+            ("< BACK", "back"),
+        ]
+    elif state.ui.settings_menu == 'guide':
+        title = "GUIDE"
+        options = [
+            ("HOW TO PLAY", "submenu"),
+            ("COMMANDS", "submenu"),
+            ("OBSTACLES", "submenu"),
+            ("ENEMIES", "submenu"),
+            ("< BACK", "back"),
+        ]
+    elif state.ui.settings_menu == 'guide_howto':
+        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'howto')
+        return
+    elif state.ui.settings_menu == 'guide_commands':
+        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'commands')
+        return
+    elif state.ui.settings_menu == 'guide_obstacles':
+        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'obstacles')
+        return
+    elif state.ui.settings_menu == 'guide_enemies':
+        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'enemies')
+        return
+    elif state.ui.settings_menu == 'birdpedia_list':
+        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'birds')
+        return
+    elif state.ui.settings_menu == 'batpedia_list':
+        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'bats')
+        return
+    elif state.ui.settings_menu == 'biomes_list':
+        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'biomes')
+        return
     else:
         return
 
@@ -2093,9 +2133,260 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
             hint = "↑↓ Navigate  ⏎ Rebind  ESC Back"
     elif state.ui.settings_menu in ('save', 'load'):
         hint = "↑↓ Navigate  ⏎ Select  ESC Back"
+    elif state.ui.settings_menu in ('birdpedia', 'guide'):
+        hint = "↑↓ Navigate  ⏎ Select  ESC Back"
     else:
         hint = "↑↓ Navigate  ←→ Change  ⏎ Select"
     fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)
+
+
+def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, content_type):
+    """Render birdpedia content pages."""
+    from src.entities.sprites import (YELLOW, RED, BLUE, WHITE, PURPLE, ORANGE,
+                                      STEALTH, CLOCKWORK, GOLD, PATCHWORK,
+                                      COOKIE, DINOSAUR, GLITCH)
+
+    # Get discovery state
+    discovered_birds = state.discovery.birds
+    discovered_bats = state.discovery.bats
+    discovered_obstacles = state.discovery.obstacles
+
+    # Bird entries with discovery check
+    BIRD_ENTRIES = [
+        ('YELLOW', "\x1b[93mYELLOW\x1b[0m - Bounces adjacent birds"),
+        ('RED', "\x1b[91mRED\x1b[0m - Fires projectiles"),
+        ('BLUE', "\x1b[94mBLUE\x1b[0m - Speed boost"),
+        ('WHITE', "\x1b[97mWHITE\x1b[0m - Affects 4 lanes"),
+        ('PURPLE', "\x1b[95mPURPLE\x1b[0m - Charge & launch"),
+        ('ORANGE', "\x1b[38;5;208mORANGE\x1b[0m - Lays eggs, respawns"),
+        ('STEALTH', "\x1b[90mSTEALTH\x1b[0m - Goes invisible"),
+        ('CLOCKWORK', "\x1b[38;5;130mCLOCKWORK\x1b[0m - Wind-up speed"),
+        ('GOLD', "\x1b[33mGOLD\x1b[0m - Extra points"),
+        ('PATCHWORK', "\x1b[38;5;213mPATCHWORK\x1b[0m - Random powers"),
+        ('COOKIE', "\x1b[38;5;215mCOOKIE\x1b[0m - Drops XP crumbs"),
+        ('DINOSAUR', "\x1b[32mDINOSAUR\x1b[0m - Multi-press bounce"),
+        ('GLITCH', "\x1b[38;5;51mGLITCH\x1b[0m - Unpredictable"),
+    ]
+
+    # Bat entries with discovery check
+    BAT_ENTRIES = [
+        ('BASIC', ["BASIC BAT", "  Standard flying enemy.", "  Scares birds on contact.", ""]),
+        ('FAST', ["FAST BAT", "  Moves quickly across lanes.", "  Harder to avoid.", ""]),
+        ('DIVE', ["DIVE BAT", "  Dives down at birds.", "  Very dangerous!", ""]),
+        ('BOSS', ["BOSS BAT", "  Huge and powerful!", "  Requires many hits.", ""]),
+    ]
+
+    # Build dynamic bird list
+    def get_bird_lines():
+        lines = []
+        discovered_count = 0
+        for name, text in BIRD_ENTRIES:
+            if name in discovered_birds:
+                lines.append(text)
+                discovered_count += 1
+            else:
+                lines.append("\x1b[90m??? - ???\x1b[0m")
+        lines.append("")
+        lines.append(f"Discovered: {discovered_count}/{len(BIRD_ENTRIES)}")
+        return lines
+
+    # Build dynamic bat list
+    def get_bat_lines():
+        lines = []
+        discovered_count = 0
+        for name, entry_lines in BAT_ENTRIES:
+            if name in discovered_bats:
+                lines.extend(entry_lines)
+                discovered_count += 1
+            else:
+                lines.extend(["\x1b[90m??? BAT\x1b[0m", "  ???", "  ???", ""])
+        lines.append(f"Discovered: {discovered_count}/{len(BAT_ENTRIES)}")
+        return lines
+
+    # Content definitions
+    CONTENT = {
+        'howto': {
+            'title': 'HOW TO PLAY',
+            'lines': [
+                "Guide your birds to the finish",
+                "line at the top of the screen!",
+                "",
+                "Birds bounce between the start",
+                "and finish lines automatically.",
+                "",
+                "Press UP when a bird is falling",
+                "to bounce it back up.",
+                "",
+                "Press UP when a bird is rising",
+                "to activate its special power!",
+                "",
+                "Collect loot for score & XP.",
+                "Avoid obstacles and enemies.",
+                "",
+                "Don't let birds fall off the",
+                "bottom - you'll lose a life!",
+            ]
+        },
+        'commands': {
+            'title': 'COMMANDS',
+            'lines': [
+                "MOVEMENT:",
+                "  LEFT/RIGHT - Move cursor",
+                "  UP - Bounce / Power",
+                "  DOWN - Suction (if active)",
+                "",
+                "SELECTION:",
+                "  SPACE - Start/Execute swap",
+                "",
+                "GAME:",
+                "  P - Pause game",
+                "  X - Toggle XP overlay",
+                "  M - Mute/Unmute audio",
+                "  Q - Quit game",
+                "",
+                "Controls can be rebound in",
+                "the SETTINGS > CONTROLS menu.",
+            ]
+        },
+        'obstacles': {
+            'title': 'OBSTACLES',
+            'lines': [
+                "TREE - Blocks bird movement." if 'TREE' in discovered_obstacles else "\x1b[90m??? - ???\x1b[0m",
+                "  Birds bounce off trees." if 'TREE' in discovered_obstacles else "",
+                "",
+                "ROCK - Stuns birds on contact." if 'ROCK' in discovered_obstacles else "\x1b[90m??? - ???\x1b[0m",
+                "  Stunned birds can't bounce." if 'ROCK' in discovered_obstacles else "",
+                "",
+                "CLOUD - Slows bird speed." if 'CLOUD' in discovered_obstacles else "\x1b[90m??? - ???\x1b[0m",
+                "  Temporary speed reduction." if 'CLOUD' in discovered_obstacles else "",
+                "",
+                "BARRIER - Right panel hazard." if 'BARRIER' in discovered_obstacles else "\x1b[90m??? - ???\x1b[0m",
+                "  Destroys loot on contact." if 'BARRIER' in discovered_obstacles else "",
+                "",
+                f"Discovered: {len(discovered_obstacles)}/4",
+            ]
+        },
+        'enemies': {
+            'title': 'ENEMIES',
+            'lines': [
+                "BAT - Flying enemy.",
+                "  Scares birds on contact!",
+                "  Scared birds fall faster",
+                "  and cannot be bounced.",
+                "",
+                "RED projectiles can destroy",
+                "bats for bonus points.",
+                "",
+                "BLUE birds near YELLOW birds",
+                "can be cured of fear when",
+                "the yellow bird bounces.",
+                "",
+                "More enemies appear at higher",
+                "speed levels.",
+            ]
+        },
+        'birds': {
+            'title': 'BIRD-DEX',
+            'lines': get_bird_lines()
+        },
+        'bats': {
+            'title': 'BAT-DEX',
+            'lines': get_bat_lines()
+        },
+        'biomes': {
+            'title': 'BIOMES',
+            'lines': [
+                "FOREST (Gear 1-2)",
+                "  Green trees, gentle start.",
+                "  Basic obstacles only.",
+                "",
+                "DESERT (Gear 3-4)",
+                "  Sandy terrain, rocks appear.",
+                "  Watch for dust clouds!",
+                "",
+                "MOUNTAIN (Gear 5-6)",
+                "  Rocky terrain, more hazards.",
+                "  Bats become more common.",
+                "",
+                "VOID (Gear 7+)",
+                "  Maximum difficulty!",
+                "  All hazards, fast enemies.",
+            ]
+        }
+    }
+
+    content = CONTENT.get(content_type, {'title': 'UNKNOWN', 'lines': []})
+    title = content['title']
+    lines = content['lines']
+
+    # Calculate height needed (title + separator + content + separator + back + bottom + hint)
+    content_height = len(lines) + 7
+
+    # Expand menu width for content
+    expanded_width = min(40, menu_width + 10)
+    expanded_x = menu_x - 5
+
+    # Clear the entire area first to avoid showing previous menu underneath
+    for clear_y in range(menu_start_y, menu_start_y + content_height + 2):
+        for clear_x in range(expanded_x - 2, expanded_x + expanded_width + 2):
+            if 0 <= clear_x < fb.width and 0 <= clear_y < fb.height:
+                fb.put(clear_x, clear_y, ' ', '')
+
+    top_border = "╔" + "═" * (expanded_width - 2) + "╗"
+    separator_border = "╠" + "═" * (expanded_width - 2) + "╣"
+    bottom_border = "╚" + "═" * (expanded_width - 2) + "╝"
+
+    y = menu_start_y
+
+    # Top border
+    fb.put_string(expanded_x, y, top_border, MENU_BORDER_COLOR)
+    y += 1
+
+    # Title
+    fb.put(expanded_x, y, '║', MENU_BORDER_COLOR)
+    title_padded = title.center(expanded_width - 2)
+    fb.put_string(expanded_x + 1, y, title_padded, YELLOW)
+    fb.put(expanded_x + expanded_width - 1, y, '║', MENU_BORDER_COLOR)
+    y += 1
+
+    # Separator
+    fb.put_string(expanded_x, y, separator_border, MENU_BORDER_COLOR)
+    y += 1
+
+    # Content lines
+    content_width = expanded_width - 4
+    for line in lines:
+        fb.put(expanded_x, y, '║', MENU_BORDER_COLOR)
+        # Handle ANSI color codes - they don't take display width
+        display_line = f" {line}"
+        if '\x1b[' in line:
+            # Line has color codes, write directly
+            fb.put_string(expanded_x + 1, y, display_line, MENU_NORMAL_COLOR)
+        else:
+            # Pad plain lines
+            fb.put_string(expanded_x + 1, y, f" {line:<{content_width}}"[:content_width+1], MENU_NORMAL_COLOR)
+        fb.put(expanded_x + expanded_width - 1, y, '║', MENU_BORDER_COLOR)
+        y += 1
+
+    # Separator before back
+    fb.put_string(expanded_x, y, separator_border, MENU_BORDER_COLOR)
+    y += 1
+
+    # Back option (always selected)
+    fb.put(expanded_x, y, '║', MENU_BORDER_COLOR)
+    back_text = "< BACK"
+    fb.put(expanded_x + 1, y, '>', MENU_ARROW_COLOR)
+    fb.put_string(expanded_x + 2, y, f" {back_text:<{content_width}}"[:content_width+1], MENU_SELECTED_COLOR)
+    fb.put(expanded_x + expanded_width - 1, y, '║', MENU_BORDER_COLOR)
+    y += 1
+
+    # Bottom border
+    fb.put_string(expanded_x, y, bottom_border, MENU_BORDER_COLOR)
+    y += 1
+
+    # Hint
+    hint = "⏎ or ESC to go back"
+    fb.put_string(expanded_x, y, hint[:expanded_width], MENU_BORDER_COLOR)
 
 
 # =============================================================================
@@ -2112,7 +2403,7 @@ TITLE_LOGO = [
     " ▀██████▀▄██▄█▀  ▄█▀████▄▄██▀    ▀█▀ █▄▄██▀   ▀██████▀▄▀█▄██▄███▄▄██▀",
 ]
 
-TITLE_MENU_OPTIONS = ["CONTINUE", "NEW GAME", "LOAD", "SETTINGS", "QUIT"]
+TITLE_MENU_OPTIONS = ["CONTINUE", "NEW GAME", "LOAD", "BIRDPEDIA", "SETTINGS", "QUIT"]
 
 
 def render_title_screen():
@@ -2319,6 +2610,39 @@ def _fb_render_title_settings_menu(fb, start_y):
             (f"SWAP            {get_key_display('SWAP'):>5}", "rebind"),
             ("< BACK", "back"),
         ]
+    elif state.ui.settings_menu == 'birdpedia':
+        title = "BIRDPEDIA"
+        options = [
+            ("GUIDE", "submenu"),
+            ("BIRD-DEX", "submenu"),
+            ("BAT-DEX", "submenu"),
+            ("BIOMES", "submenu"),
+            ("< BACK", "back"),
+        ]
+    elif state.ui.settings_menu == 'guide':
+        title = "GUIDE"
+        options = [
+            ("HOW TO PLAY", "submenu"),
+            ("COMMANDS", "submenu"),
+            ("OBSTACLES", "submenu"),
+            ("ENEMIES", "submenu"),
+            ("< BACK", "back"),
+        ]
+    elif state.ui.settings_menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies',
+                                     'birdpedia_list', 'batpedia_list', 'biomes_list'):
+        # Render content view using the shared function
+        content_map = {
+            'guide_howto': 'howto',
+            'guide_commands': 'commands',
+            'guide_obstacles': 'obstacles',
+            'guide_enemies': 'enemies',
+            'birdpedia_list': 'birds',
+            'batpedia_list': 'bats',
+            'biomes_list': 'biomes',
+        }
+        _fb_render_birdpedia_content(fb, menu_x, start_y, menu_width, menu_width - 2,
+                                     content_map[state.ui.settings_menu])
+        return
     else:
         return
 
@@ -2357,6 +2681,8 @@ def _fb_render_title_settings_menu(fb, start_y):
             hint = "Press new key...  ESC Cancel"
         else:
             hint = "↑↓ Navigate  ⏎ Rebind  ESC Back"
+    elif state.ui.settings_menu in ('birdpedia', 'guide'):
+        hint = "↑↓ Navigate  ⏎ Select  ESC Back"
     else:
         hint = "↑↓ Navigate  ←→ Change  ⏎ Select"
     hint_x = (TOTAL_WIDTH - len(hint)) // 2

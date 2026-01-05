@@ -300,6 +300,24 @@ def show_game_over_screen():
     return 'retry' if selected == 0 else 'exit'
 
 
+def _discover_current_birds():
+    """Discover all bird types currently in the game."""
+    from src.entities.sprites import (YELLOW, RED, BLUE, WHITE, PURPLE, ORANGE,
+                                      STEALTH, CLOCKWORK, GOLD, PATCHWORK,
+                                      COOKIE, DINOSAUR, GLITCH)
+
+    color_to_name = {
+        YELLOW: 'YELLOW', RED: 'RED', BLUE: 'BLUE', WHITE: 'WHITE',
+        PURPLE: 'PURPLE', ORANGE: 'ORANGE', STEALTH: 'STEALTH',
+        CLOCKWORK: 'CLOCKWORK', GOLD: 'GOLD', PATCHWORK: 'PATCHWORK',
+        COOKIE: 'COOKIE', DINOSAUR: 'DINOSAUR', GLITCH: 'GLITCH'
+    }
+
+    for color in state.birds.colors:
+        if color in color_to_name:
+            save_manager.discover_bird(color_to_name[color])
+
+
 def run_game():
     """
     Run a single game session.
@@ -339,6 +357,10 @@ def run_game():
     achievements.init_achievements()
     state.game.start_time = time.time()
     state.game.last_mile_update = time.time()
+
+    # Load discovery data and discover all current birds
+    save_manager.load_discovery()
+    _discover_current_birds()
 
     # Start background music with correct level and bird composition
     if AUDIO_AVAILABLE and audio:

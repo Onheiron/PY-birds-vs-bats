@@ -889,12 +889,22 @@ def spawn_bat():
 
 def process_spawn_queue():
     """Process the spawn queue to actually spawn entities."""
+    from src.services import save_manager
+
     while state.enemies.spawn_queue:
         item = state.enemies.spawn_queue.pop(0)
         if item['type'] == 'obstacle':
             state.enemies.obstacles.append(item['data'])
+            # Track obstacle discovery by tier
+            tier = item['data'].get('tier', 1)
+            tier_names = {1: 'TREE', 2: 'ROCK', 3: 'CLOUD', 4: 'BARRIER'}
+            save_manager.discover_obstacle(tier_names.get(tier, 'TREE'))
         elif item['type'] == 'bat':
             state.enemies.bats.append(item['data'])
+            # Track bat discovery by tier
+            tier = item['data'].get('tier', 1)
+            tier_names = {1: 'BASIC', 2: 'FAST', 3: 'DIVE', 4: 'BOSS'}
+            save_manager.discover_bat(tier_names.get(tier, 'BASIC'))
 
 
 # =============================================================================
