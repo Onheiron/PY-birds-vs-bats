@@ -215,8 +215,39 @@ def get_bird_type_by_color(ansi_color: str):
     return None
 
 
-def get_color_for_bird_type(bird_type: str) -> str:
-    """Get ANSI color code for a bird type."""
+def get_color_for_bird_type(bird_type: str, dynamic: bool = True) -> str:
+    """Get ANSI color code for a bird type.
+
+    Args:
+        bird_type: The bird type string (e.g., 'YELLOW', 'RED')
+        dynamic: If True, reads from current theme (respects accessibility mode).
+                 If False, returns the cached color from import time.
+
+    Returns:
+        ANSI escape sequence string for the color
+    """
+    if dynamic:
+        # Map bird type to theme color name
+        color_names = {
+            BirdType.YELLOW: 'yellow',
+            BirdType.RED: 'red',
+            BirdType.BLUE: 'blue',
+            BirdType.WHITE: 'white',
+            BirdType.PATCHWORK: 'patchwork',
+            BirdType.PURPLE: 'purple',
+            BirdType.CLOCKWORK: 'clockwork',
+            BirdType.ORANGE: 'orange',
+            BirdType.GOLD: 'gold',
+            BirdType.COOKIE: 'cookie',
+            BirdType.STEALTH: 'white',  # Stealth uses white when visible
+            BirdType.DINOSAUR: 'dinosaur',
+            BirdType.GLITCH: 'glitch',
+        }
+        color_name = color_names.get(bird_type)
+        if color_name:
+            return theme.get_color('birds', color_name, -5)
+
+    # Fallback to cached color
     return BIRD_TYPES.get(bird_type, {}).get('color', "\033[0m")
 
 

@@ -9,13 +9,17 @@ import src.theme as theme
 # ============================================================================
 # ANSI COLOR CODES - Loaded from theme.yml
 # ============================================================================
+# NOTE: These are loaded once at import time for backwards compatibility.
+# For dynamic theme switching (accessibility mode), use get_dynamic_color()
+
+RESET = "\033[0m"
+STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
 # Base colors (non-bird colors used for UI, effects, etc.)
 GREEN = theme.get_base_color('green', -2)
 CYAN = theme.get_base_color('cyan', -4)
 BLACK = theme.get_base_color('black', 16)
 DARK_GRAY = theme.get_base_color('dark_gray', 240)
-RESET = "\033[0m"
 
 # Bird colors - MUST match bird_types.py (use 'birds' category)
 YELLOW = theme.get_color('birds', 'yellow', 220)
@@ -30,19 +34,83 @@ PATCHWORK = theme.get_color('birds', 'patchwork', 202)
 COOKIE = theme.get_color('birds', 'cookie', 180)
 GLITCH = theme.get_color('birds', 'glitch', 205)
 DINOSAUR = theme.get_color('birds', 'dinosaur', 46)
-STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 
-# Obstacle tiers: brown to bright green (4 tiers)
+# Obstacle tiers
 OBSTACLE_TIER1 = theme.get_color('obstacles', 'tier1', 94)
 OBSTACLE_TIER2 = theme.get_color('obstacles', 'tier2', 100)
 OBSTACLE_TIER3 = theme.get_color('obstacles', 'tier3', 106)
 OBSTACLE_TIER4 = theme.get_color('obstacles', 'tier4', 46)
 
-# Bat tiers: dark blue-purple to shocking bright purple (4 tiers)
+# Bat tiers
 BAT_TIER1 = theme.get_color('bats', 'tier1', 54)
 BAT_TIER2 = theme.get_color('bats', 'tier2', 92)
 BAT_TIER3 = theme.get_color('bats', 'tier3', 129)
 BAT_TIER4 = theme.get_color('bats', 'tier4', 201)
+
+
+# ============================================================================
+# DYNAMIC COLOR ACCESS - For runtime theme switching
+# ============================================================================
+# Color name to theme lookup mapping
+_COLOR_MAP = {
+    # Base colors
+    'GREEN': ('base', 'green', -2),
+    'CYAN': ('base', 'cyan', -4),
+    'BLACK': ('base', 'black', 16),
+    'DARK_GRAY': ('base', 'dark_gray', 240),
+    # Bird colors
+    'YELLOW': ('birds', 'yellow', 220),
+    'RED': ('birds', 'red', -1),
+    'BLUE': ('birds', 'blue', -3),
+    'WHITE': ('birds', 'white', -5),
+    'CLOCKWORK': ('birds', 'clockwork', 244),
+    'GOLD': ('birds', 'gold', 228),
+    'PURPLE': ('birds', 'purple', 201),
+    'ORANGE': ('birds', 'orange', 208),
+    'PATCHWORK': ('birds', 'patchwork', 202),
+    'COOKIE': ('birds', 'cookie', 180),
+    'GLITCH': ('birds', 'glitch', 205),
+    'DINOSAUR': ('birds', 'dinosaur', 46),
+    # Obstacle tiers
+    'OBSTACLE_TIER1': ('obstacles', 'tier1', 94),
+    'OBSTACLE_TIER2': ('obstacles', 'tier2', 100),
+    'OBSTACLE_TIER3': ('obstacles', 'tier3', 106),
+    'OBSTACLE_TIER4': ('obstacles', 'tier4', 46),
+    # Bat tiers
+    'BAT_TIER1': ('bats', 'tier1', 54),
+    'BAT_TIER2': ('bats', 'tier2', 92),
+    'BAT_TIER3': ('bats', 'tier3', 129),
+    'BAT_TIER4': ('bats', 'tier4', 201),
+}
+
+
+def get_dynamic_color(color_name):
+    """Get a color dynamically from the current theme.
+
+    This respects accessibility mode and theme changes at runtime.
+    Use this in rendering code instead of the module-level constants
+    when dynamic theme switching is needed.
+
+    Args:
+        color_name: Name of the color constant (e.g., 'YELLOW', 'RED', 'OBSTACLE_TIER1')
+
+    Returns:
+        ANSI escape sequence string for the color
+    """
+    if color_name == 'STEALTH':
+        return STEALTH
+    if color_name == 'RESET':
+        return RESET
+
+    mapping = _COLOR_MAP.get(color_name)
+    if mapping:
+        category, name, default = mapping
+        if category == 'base':
+            return theme.get_base_color(name, default)
+        return theme.get_color(category, name, default)
+
+    # Fallback to module constant if exists
+    return globals().get(color_name, RESET)
 
 # Bird sprites - two frames for animation (compact version)
 BIRD_UP_1 = [

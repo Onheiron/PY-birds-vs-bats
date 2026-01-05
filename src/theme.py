@@ -14,8 +14,48 @@ try:
 except ImportError:
     yaml = None
 
-# Cache for loaded theme
+# Cache for loaded themes
 _theme_cache = None
+_accessible_theme_cache = None
+
+
+def _load_accessible_theme():
+    """Load the accessible theme file."""
+    if yaml is None:
+        return {}
+
+    # Look for theme_accessible.yml
+    possible_paths = [
+        os.path.join(os.getcwd(), 'theme_accessible.yml'),
+        os.path.join(os.path.dirname(__file__), '..', 'theme_accessible.yml'),
+    ]
+
+    for theme_path in possible_paths:
+        if os.path.exists(theme_path):
+            try:
+                with open(theme_path, 'r') as f:
+                    return yaml.safe_load(f) or {}
+            except Exception:
+                pass
+
+    return {}
+
+
+def _get_accessible_theme():
+    """Get cached accessible theme or load it."""
+    global _accessible_theme_cache
+    if _accessible_theme_cache is None:
+        _accessible_theme_cache = _load_accessible_theme()
+    return _accessible_theme_cache
+
+
+def is_accessibility_enabled():
+    """Check if accessibility mode is enabled in runtime settings."""
+    try:
+        from src.core import state
+        return getattr(state.settings, 'accessibility_enabled', False)
+    except (ImportError, AttributeError):
+        return False
 
 
 def _load_theme_file():
@@ -59,8 +99,19 @@ def _load_theme_file():
 
 
 def _get_theme():
-    """Get cached theme or load it."""
+    """Get cached theme or load it.
+
+    Returns accessible theme if accessibility mode is enabled.
+    """
     global _theme_cache
+
+    # Check if accessibility mode is enabled
+    if is_accessibility_enabled():
+        accessible = _get_accessible_theme()
+        if accessible:
+            return accessible
+
+    # Return normal theme
     if _theme_cache is None:
         _theme_cache = _load_theme_file()
     return _theme_cache

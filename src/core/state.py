@@ -163,6 +163,8 @@ ui = SimpleNamespace(
     # Settings menu state
     settings_menu=None,  # None=not in settings, 'main'/'sound'/'graphics'/'controls'
     settings_index=0,    # Current selection index in settings submenu
+    # Key rebinding state
+    rebinding_control=None,  # None or control name being rebound (e.g., 'MOVE_LEFT')
 )
 
 # ============================================================================
@@ -178,6 +180,14 @@ settings = SimpleNamespace(
     accessibility_enabled=False,
     # Difficulty: 0=EASY, 1=NORMAL, 2=HARD, 3=HELL
     difficulty=1,
+    # Key bindings (can be remapped)
+    key_bindings={
+        'MOVE_LEFT': 'LEFT',
+        'MOVE_RIGHT': 'RIGHT',
+        'BOUNCE': 'UP',
+        'SUCTION': 'DOWN',
+        'SWAP': 'SPACE',
+    },
     # Flag to track if settings have been initialized from config
     _initialized=False,
 )

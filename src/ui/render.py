@@ -7,11 +7,79 @@ if os.name == 'nt':
     import msvcrt
 
 from src.entities.sprites import *
+from src.entities.sprites import get_dynamic_color
 from src.core import constants
 # Import theme from src (not src.core to avoid circular imports)
 import src.theme as theme
 from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane, get_mph_for_speed, get_level_milestones, compute_level_from_miles
 from src.core import state
+
+
+# ============================================================================
+# DYNAMIC COLOR MAPPING - For accessibility mode theme switching
+# ============================================================================
+# Maps static color values to their dynamic color names
+_STATIC_TO_DYNAMIC_NAME = {}
+
+
+def _build_color_map():
+    """Build the static-to-dynamic color name mapping."""
+    global _STATIC_TO_DYNAMIC_NAME
+    _STATIC_TO_DYNAMIC_NAME = {
+        YELLOW: 'YELLOW',
+        RED: 'RED',
+        BLUE: 'BLUE',
+        WHITE: 'WHITE',
+        CLOCKWORK: 'CLOCKWORK',
+        GOLD: 'GOLD',
+        PURPLE: 'PURPLE',
+        ORANGE: 'ORANGE',
+        PATCHWORK: 'PATCHWORK',
+        COOKIE: 'COOKIE',
+        GLITCH: 'GLITCH',
+        DINOSAUR: 'DINOSAUR',
+        GREEN: 'GREEN',
+        CYAN: 'CYAN',
+        DARK_GRAY: 'DARK_GRAY',
+        OBSTACLE_TIER1: 'OBSTACLE_TIER1',
+        OBSTACLE_TIER2: 'OBSTACLE_TIER2',
+        OBSTACLE_TIER3: 'OBSTACLE_TIER3',
+        OBSTACLE_TIER4: 'OBSTACLE_TIER4',
+        BAT_TIER1: 'BAT_TIER1',
+        BAT_TIER2: 'BAT_TIER2',
+        BAT_TIER3: 'BAT_TIER3',
+        BAT_TIER4: 'BAT_TIER4',
+    }
+
+# Build the map at import time
+_build_color_map()
+
+
+def get_render_color(static_color):
+    """Convert a static color to its dynamic equivalent.
+
+    This respects accessibility mode - when enabled, returns the
+    accessible theme color instead of the original.
+
+    Args:
+        static_color: A color value from state.birds.colors or similar
+
+    Returns:
+        The dynamic color from current theme, or the original if not mapped
+    """
+    # Handle special cases
+    if static_color == STEALTH:
+        return STEALTH
+    if static_color == RESET:
+        return RESET
+
+    # Look up the color name
+    color_name = _STATIC_TO_DYNAMIC_NAME.get(static_color)
+    if color_name:
+        return get_dynamic_color(color_name)
+
+    # Not in map - return as-is
+    return static_color
 
 # =============================================================================
 # WIDESCREEN LAYOUT - Dynamic aspect ratio calculation
@@ -1511,12 +1579,13 @@ def _fb_render_bats(fb):
 
 def _fb_render_loot(fb):
     """Render loot items to framebuffer."""
+    # Use dynamic colors for accessibility support
     loot_symbols = {
-        'yellow_egg': ('⬯', YELLOW), 'red_egg': ('⬯', RED), 'blue_egg': ('⬯', BLUE),
-        'white_egg': ('⬯', WHITE), 'clockwork_egg': ('⬯', CLOCKWORK), 'gold_egg': ('⬯', GOLD),
-        'stealth_egg': ('⬯', DARK_GRAY), 'patchwork_egg': ('⬯', PATCHWORK),
-        'orange_egg': ('⬯', ORANGE), 'cookie_egg': ('⬯', COOKIE), 'cookie_crumb': ('•', COOKIE),
-        'dinosaur_egg': ('⬯', DINOSAUR), 'glitch_egg': ('⬯', GLITCH), 'purple_egg': ('⬯', PURPLE),
+        'yellow_egg': ('⬯', 'YELLOW'), 'red_egg': ('⬯', 'RED'), 'blue_egg': ('⬯', 'BLUE'),
+        'white_egg': ('⬯', 'WHITE'), 'clockwork_egg': ('⬯', 'CLOCKWORK'), 'gold_egg': ('⬯', 'GOLD'),
+        'stealth_egg': ('⬯', 'DARK_GRAY'), 'patchwork_egg': ('⬯', 'PATCHWORK'),
+        'orange_egg': ('⬯', 'ORANGE'), 'cookie_egg': ('⬯', 'COOKIE'), 'cookie_crumb': ('•', 'COOKIE'),
+        'dinosaur_egg': ('⬯', 'DINOSAUR'), 'glitch_egg': ('⬯', 'GLITCH'), 'purple_egg': ('⬯', 'PURPLE'),
     }
 
     for loot in state.items.loot_items:
@@ -1525,18 +1594,19 @@ def _fb_render_loot(fb):
             loot_type = loot['type']
             rarity = loot.get('rarity', 'common')
 
-            # Colore basato su rarity
+            # Colore basato su rarity (use dynamic colors)
             if rarity == 'common':
-                power_color = YELLOW
+                power_color = get_dynamic_color('YELLOW')
             elif rarity == 'uncommon':
-                power_color = RED
+                power_color = get_dynamic_color('RED')
             elif rarity == 'rare':
-                power_color = BLUE
+                power_color = get_dynamic_color('BLUE')
             else:
-                power_color = WHITE
+                power_color = get_dynamic_color('WHITE')
 
             if loot_type in loot_symbols:
-                char, color = loot_symbols[loot_type]
+                char, color_name = loot_symbols[loot_type]
+                color = get_dynamic_color(color_name)
             elif 'wide_cursor' in loot_type:
                 char = '↔'
                 color = power_color
@@ -1580,7 +1650,8 @@ def _fb_render_birds(fb):
         if y_pos < 0 or y_pos >= constants.layout.height:
             continue
 
-        bird_color = state.birds.colors[i]
+        # Get dynamic color for accessibility mode support
+        bird_color = get_render_color(state.birds.colors[i])
         x_pos = state.birds.cols[i]
 
         # Choose sprite based on direction and animation frame
@@ -1590,11 +1661,11 @@ def _fb_render_birds(fb):
             sprite = BIRD_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
 
         # Special handling for different bird types
-        if bird_color == STEALTH:
+        if state.birds.colors[i] == STEALTH:
             tangible = i in state.special.stealth_timers and state.special.stealth_timers.get(i, 0) > 0
-            bird_color = WHITE if tangible else DARK_GRAY
-        elif bird_color == BLUE and state.birds.power_used[i]:
-            bird_color = CYAN
+            bird_color = get_render_color(WHITE) if tangible else get_render_color(DARK_GRAY)
+        elif state.birds.colors[i] == BLUE and state.birds.power_used[i]:
+            bird_color = get_render_color(CYAN)
 
         # Render bird sprite
         for line_idx, line in enumerate(sprite):
@@ -1614,7 +1685,7 @@ def _fb_render_birds(fb):
                 sym = '⋅' if s <= 0 else ('•' if s == 1 else '●')
                 orb_y = y_pos + 1
                 if 0 <= orb_y < constants.layout.height:
-                    fb.put(GAME_X_OFFSET + x_pos, orb_y + HEADER_HEIGHT, sym, PURPLE)
+                    fb.put(GAME_X_OFFSET + x_pos, orb_y + HEADER_HEIGHT, sym, get_render_color(PURPLE))
 
 
 def _fb_render_floor_and_cursor(fb):
@@ -1911,12 +1982,26 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
         ]
     elif state.ui.settings_menu == 'controls':
         title = "CONTROLS"
+        # Build options dynamically from key bindings
+        bindings = state.settings.key_bindings
+        rebinding = state.ui.rebinding_control
+        blink_on = (state.game.frame_count // 5) % 2 == 0  # Blink every 5 frames
+
+        def get_key_display(control_name):
+            key = bindings.get(control_name, '?')
+            # If currently rebinding this control, show blinking or prompt
+            if rebinding == control_name:
+                return "___" if blink_on else "   "
+            # Convert key names to symbols
+            symbols = {'LEFT': '←', 'RIGHT': '→', 'UP': '↑', 'DOWN': '↓', 'SPACE': 'SPC'}
+            return symbols.get(key, key)
+
         options = [
-            ("MOVE LEFT       ←", "display"),
-            ("MOVE RIGHT      →", "display"),
-            ("BOUNCE          ↑", "display"),
-            ("POWER           ↑", "display"),
-            ("SWAP            SPACE", "display"),
+            (f"MOVE LEFT       {get_key_display('MOVE_LEFT'):>5}", "rebind"),
+            (f"MOVE RIGHT      {get_key_display('MOVE_RIGHT'):>5}", "rebind"),
+            (f"BOUNCE          {get_key_display('BOUNCE'):>5}", "rebind"),
+            (f"SUCTION         {get_key_display('SUCTION'):>5}", "rebind"),
+            (f"SWAP            {get_key_display('SWAP'):>5}", "rebind"),
             ("< BACK", "back"),
         ]
     else:
@@ -1956,9 +2041,12 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     fb.put_string(menu_x, y, bottom_border, MENU_BORDER_COLOR)
     y += 1
 
-    # Hint based on menu type
+    # Hint based on menu type and state
     if state.ui.settings_menu == 'controls':
-        hint = "↑↓ Navigate  ESC Back"
+        if state.ui.rebinding_control is not None:
+            hint = "Press new key...  ESC Cancel"
+        else:
+            hint = "↑↓ Navigate  ⏎ Rebind  ESC Back"
     else:
         hint = "↑↓ Navigate  ←→ Change  ⏎ Select"
     fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)

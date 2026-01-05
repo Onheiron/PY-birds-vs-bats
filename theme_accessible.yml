@@ -1,0 +1,161 @@
+# =============================================================================
+# BVB ACCESSIBLE THEME - High Contrast for Color Blindness
+# =============================================================================
+# Designed for deuteranopia, protanopia, and tritanopia accessibility.
+# Uses shapes, patterns, and high-contrast colors distinguishable to all.
+#
+# Color palette based on:
+# - Blue/Orange contrast (safe for red-green colorblind)
+# - High luminance differences
+# - Avoiding problematic red/green combinations
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASE COLORS - High contrast basics
+# -----------------------------------------------------------------------------
+base:
+  red: 208         # Orange instead of red (colorblind safe)
+  green: 39        # Cyan instead of green (colorblind safe)
+  blue: 21         # Deep blue
+  cyan: 51         # Bright cyan
+  white: 231       # Pure white
+  yellow: 226      # Bright yellow (high visibility)
+  black: 16        # True black
+  dark_gray: 240   # Dark gray
+
+# -----------------------------------------------------------------------------
+# BIRD COLORS - Distinct, high-contrast, colorblind-safe palette
+# -----------------------------------------------------------------------------
+# Uses Blue-Orange-Yellow-Purple-White spectrum (avoids red-green confusion)
+birds:
+  yellow: 226      # Bright yellow - high visibility
+  red: 208         # Orange instead of red (colorblind safe)
+  blue: 21         # Deep blue - distinct from orange
+  white: 231       # Pure white - maximum contrast
+  patchwork: 214   # Gold/amber
+  purple: 129      # Medium purple - distinct hue
+  clockwork: 250   # Light gray - high contrast
+  orange: 202      # Red-orange
+  gold: 228        # Light gold
+  cookie: 223      # Peach/tan
+  dinosaur: 51     # Cyan instead of green (colorblind safe)
+  glitch: 201      # Magenta
+
+# -----------------------------------------------------------------------------
+# OBSTACLE COLORS - High contrast tiers using blue spectrum
+# -----------------------------------------------------------------------------
+obstacles:
+  tier1: 17        # Dark blue
+  tier2: 19        # Medium blue
+  tier3: 27        # Bright blue
+  tier4: 51        # Cyan (instead of lime)
+
+# -----------------------------------------------------------------------------
+# BAT COLORS - Purple/magenta spectrum (distinct from obstacles)
+# -----------------------------------------------------------------------------
+bats:
+  tier1: 53        # Dark purple
+  tier2: 90        # Medium purple
+  tier3: 127       # Bright purple
+  tier4: 201       # Magenta
+
+# -----------------------------------------------------------------------------
+# PARALLAX BACKGROUND - Disabled in accessibility mode
+# -----------------------------------------------------------------------------
+background:
+  layer1: 232      # Near black (minimal distraction)
+  layer2: 233      # Near black
+
+# -----------------------------------------------------------------------------
+# PANELS - Maximum contrast
+# -----------------------------------------------------------------------------
+panels:
+  border: 255      # White border for visibility
+  background: 16   # Black background
+
+# -----------------------------------------------------------------------------
+# SPEED GAUGE - Blue to cyan gradient (avoids red-green)
+# -----------------------------------------------------------------------------
+gauge:
+  off: 238         # Dark gray
+  gradient:
+    - 17           # Level 1:  dark blue
+    - 19           # Level 2:  blue
+    - 21           # Level 3:  medium blue
+    - 27           # Level 4:  bright blue
+    - 33           # Level 5:  light blue
+    - 39           # Level 6:  cyan-blue
+    - 45           # Level 7:  cyan
+    - 51           # Level 8:  bright cyan
+    - 214          # Level 9:  orange (warning)
+    - 208          # Level 10: bright orange (danger)
+
+# -----------------------------------------------------------------------------
+# MOMENTUM BAR - Orange to cyan gradient (colorblind safe)
+# -----------------------------------------------------------------------------
+momentum:
+  gradient:
+    - 208          # 0%:   orange (bad)
+    - 214          # 6%:   light orange
+    - 220          # 12%:  yellow-orange
+    - 226          # 19%:  yellow
+    - 228          # 25%:  light yellow
+    - 230          # 31%:  pale yellow
+    - 194          # 37%:  yellow-white
+    - 159          # 44%:  pale cyan
+    - 123          # 50%:  light cyan
+    - 87           # 56%:  cyan
+    - 51           # 62%:  bright cyan
+    - 45           # 69%:  cyan-blue
+    - 39           # 75%:  medium cyan
+    - 33           # 81%:  blue-cyan
+    - 27           # 87%:  blue
+    - 21           # 94%:  deep blue (good)
+
+# -----------------------------------------------------------------------------
+# LEFT PANEL - High contrast
+# -----------------------------------------------------------------------------
+left_panel:
+  label: 250       # Light gray for labels
+  value: 231       # Pure white for values
+
+# -----------------------------------------------------------------------------
+# HEADER - High contrast
+# -----------------------------------------------------------------------------
+header:
+  border: 255      # White borders
+  label: 250       # Light gray labels
+  value: 231       # Pure white values
+  accent: 226      # Bright yellow accent
+
+# -----------------------------------------------------------------------------
+# LEVEL SIGNS - High visibility
+# -----------------------------------------------------------------------------
+level_signs:
+  border: 214      # Orange (instead of brown)
+  text: 231        # Pure white text
+  arrow: 226       # Bright yellow arrow
+  line: 250        # Light gray line
+
+# -----------------------------------------------------------------------------
+# NOTIFICATIONS - Maximum visibility
+# -----------------------------------------------------------------------------
+notifications:
+  border: 226      # Bright yellow border
+  title: 214       # Orange title
+  text: 231        # Pure white text
+
+# -----------------------------------------------------------------------------
+# PAUSE MENU - High contrast
+# -----------------------------------------------------------------------------
+pause_menu:
+  border: 255      # White border
+  selected: 226    # Bright yellow selected
+  normal: 250      # Light gray unselected
+  arrow: 214       # Orange arrow
+
+# -----------------------------------------------------------------------------
+# DECORATIVE - Simplified for clarity
+# -----------------------------------------------------------------------------
+decorative:
+  barriers: 21     # Blue (instead of green)

@@ -681,16 +681,20 @@ def _handle_settings_enter():
         elif idx == 1:  # PARALLAX toggle
             state.settings.parallax_enabled = not state.settings.parallax_enabled
         elif idx == 2:  # ACCESSIBILITY toggle
-            state.settings.accessibility_enabled = not state.settings.accessibility_enabled
+            _toggle_accessibility()
         elif idx == 3:  # < BACK
             state.ui.settings_menu = 'main'
             state.ui.settings_index = 1
     elif menu == 'controls':
-        # All items except last are display-only
         count = _get_settings_options_count()
         if idx == count - 1:  # < BACK
             state.ui.settings_menu = 'main'
             state.ui.settings_index = 2
+        elif idx < count - 1:  # Rebindable control
+            # Start rebinding mode
+            control_names = ['MOVE_LEFT', 'MOVE_RIGHT', 'BOUNCE', 'SUCTION', 'SWAP']
+            if idx < len(control_names):
+                state.ui.rebinding_control = control_names[idx]
 
 
 def _handle_settings_back():
@@ -731,7 +735,17 @@ def _handle_settings_left_right(direction):
         elif idx == 1:  # PARALLAX
             state.settings.parallax_enabled = not state.settings.parallax_enabled
         elif idx == 2:  # ACCESSIBILITY
-            state.settings.accessibility_enabled = not state.settings.accessibility_enabled
+            _toggle_accessibility()
+
+
+def _toggle_accessibility():
+    """Toggle accessibility mode and apply related settings."""
+    state.settings.accessibility_enabled = not state.settings.accessibility_enabled
+
+    if state.settings.accessibility_enabled:
+        # Disable background and parallax for clarity
+        state.settings.background_enabled = False
+        state.settings.parallax_enabled = False
 
 
 def _cycle_difficulty(delta):
@@ -764,6 +778,30 @@ def process_input(key):
     if state.game.paused:
         # Check if we're in settings submenu
         if state.ui.settings_menu is not None:
+            # Check if we're in rebinding mode
+            if state.ui.rebinding_control is not None:
+                if key == 'QUIT':
+                    state.game.quit_requested = True
+                    state.game.game_over = True
+                elif key == 'ESC':
+                    # Cancel rebinding
+                    state.ui.rebinding_control = None
+                else:
+                    # Accept any valid key for rebinding
+                    valid_keys = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE', 'ENTER',
+                                  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+                                  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+                                  'U', 'V', 'W', 'X', 'Y', 'Z',
+                                  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+                                  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+                                  'u', 'v', 'w', 'x', 'y', 'z',
+                                  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+                    if key in valid_keys:
+                        # Assign the new key
+                        state.settings.key_bindings[state.ui.rebinding_control] = key.upper() if len(key) == 1 else key
+                        state.ui.rebinding_control = None
+                return
+
             if key == 'QUIT':
                 state.game.quit_requested = True
                 state.game.game_over = True
@@ -798,22 +836,26 @@ def process_input(key):
             _execute_pause_menu_action()
         return
 
-    # Handle keys
-    if key == 'SPACE' and space_just_pressed:
+    # Get key bindings
+    bindings = state.settings.key_bindings
+    key_upper = key.upper() if isinstance(key, str) and len(key) == 1 else key
+
+    # Handle keys using configurable bindings
+    if key_upper == bindings.get('SWAP') and space_just_pressed:
         handle_swap()
     elif key in ('P', 'p'):
         handle_pause()
-    elif key == 'LEFT':
+    elif key_upper == bindings.get('MOVE_LEFT'):
         handle_movement('LEFT')
-    elif key == 'RIGHT':
+    elif key_upper == bindings.get('MOVE_RIGHT'):
         handle_movement('RIGHT')
     elif key in ('X', 'x'):
         handle_xp_toggle()
     elif key in ('M', 'm'):
         handle_audio_toggle()
-    elif key == 'UP':
+    elif key_upper == bindings.get('BOUNCE'):
         handle_bounce()
-    elif key == 'DOWN':
+    elif key_upper == bindings.get('SUCTION'):
         handle_suction()
     elif key == 'QUIT':
         state.game.quit_requested = True
