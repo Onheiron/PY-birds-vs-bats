@@ -471,8 +471,9 @@ def main():
     # Initialize terminal once
     functions.setup()
 
-    # Load default settings at startup
+    # Load default settings and discovery data at startup
     save_manager.load_default_settings()
+    save_manager.load_discovery()
 
     try:
         while True:

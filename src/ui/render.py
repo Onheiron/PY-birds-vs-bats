@@ -2410,6 +2410,9 @@ def render_title_screen():
     """Render the title screen with logo and menu."""
     fb = get_framebuffer()
 
+    # Difficulty names for display
+    DIFFICULTY_NAMES = ["EASY", "NORMAL", "HARD", "HELL"]
+
     # Clear the screen with dark background
     for y in range(fb.height):
         for x in range(fb.width):
@@ -2426,7 +2429,7 @@ def render_title_screen():
 
     # Menu area (below logo)
     menu_y = logo_y + len(TITLE_LOGO) + 3
-    menu_width = 20
+    menu_width = 28  # Wider to fit difficulty selector
     menu_x = (TOTAL_WIDTH - menu_width) // 2
 
     # Menu box
@@ -2440,7 +2443,15 @@ def render_title_screen():
 
     for i, option in enumerate(TITLE_MENU_OPTIONS):
         fb.put(menu_x, menu_y, '║', MENU_BORDER_COLOR)
-        option_padded = option.center(menu_width - 2)
+
+        # Special handling for NEW GAME - show difficulty selector
+        if option == "NEW GAME":
+            diff_name = DIFFICULTY_NAMES[state.settings.difficulty]
+            option_text = f"NEW GAME  < {diff_name:^6} >"
+            option_padded = option_text.center(menu_width - 2)
+        else:
+            option_padded = option.center(menu_width - 2)
+
         if i == selected_idx:
             fb.put_string(menu_x + 1, menu_y, option_padded, MENU_SELECTED_COLOR)
         else:
@@ -2451,8 +2462,11 @@ def render_title_screen():
     fb.put_string(menu_x, menu_y, bottom_border, MENU_BORDER_COLOR)
     menu_y += 1
 
-    # Hint
-    hint = "↑↓ Navigate  ⏎ Select"
+    # Hint - different when on NEW GAME
+    if selected_idx == 1:  # NEW GAME
+        hint = "↑↓ Navigate  ←→ Difficulty  ⏎ Start"
+    else:
+        hint = "↑↓ Navigate  ⏎ Select"
     hint_x = (TOTAL_WIDTH - len(hint)) // 2
     fb.put_string(hint_x, menu_y + 1, hint, MENU_BORDER_COLOR)
 

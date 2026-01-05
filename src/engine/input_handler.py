@@ -914,6 +914,12 @@ def _handle_title_input(key):
         state.ui.title_menu_index = (state.ui.title_menu_index + 1) % 6
         return True
 
+    # LEFT/RIGHT on NEW GAME changes difficulty
+    if key in ('LEFT', 'RIGHT') and state.ui.title_menu_index == 1:
+        delta = 1 if key == 'RIGHT' else -1
+        state.settings.difficulty = (state.settings.difficulty + delta) % 4
+        return True
+
     if key == 'ENTER':
         idx = state.ui.title_menu_index
         if idx == 0:  # CONTINUE
@@ -930,8 +936,12 @@ def _handle_title_input(key):
                 state.ui.show_title = False
         elif idx == 1:  # NEW GAME
             from src.services import save_manager
+            # Save the difficulty selection before init (which doesn't reset settings)
+            selected_difficulty = state.settings.difficulty
             state.init()
             save_manager.load_default_settings()
+            # Restore the difficulty we selected on title screen
+            state.settings.difficulty = selected_difficulty
             state.ui.show_title = False
         elif idx == 2:  # LOAD
             state.ui.settings_menu = 'load'
