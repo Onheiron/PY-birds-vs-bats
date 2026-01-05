@@ -1904,7 +1904,7 @@ def _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
         "LOAD",
         "BIRDPEDIA",
         "SETTINGS",
-        "EXIT"
+        "MAIN MENU"
     ]
 
     top_border = "╔" + "═" * (menu_width - 2) + "╗"

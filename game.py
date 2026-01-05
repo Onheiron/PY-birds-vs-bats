@@ -447,14 +447,18 @@ def run_game():
     # Stop music but keep mixer running for game over sound
     if AUDIO_AVAILABLE and audio:
         audio.stop_music()
-        # Play game over sound if it's a real game over
-        if state.game.game_over and not state.game.quit_requested:
+        # Play game over sound if it's a real game over (not returning to main menu)
+        if state.game.game_over and not state.game.quit_requested and not state.ui.show_title:
             audio.play_sfx('game_over')
             time.sleep(1.5)  # Wait for game over sound to finish
 
     # Return action based on game state
     if state.game.quit_requested:
         return 'quit'
+
+    # If returning to main menu, go back to title screen
+    if state.ui.show_title:
+        return 'retry'
 
     # Show game over screen and get user choice
     return show_game_over_screen()

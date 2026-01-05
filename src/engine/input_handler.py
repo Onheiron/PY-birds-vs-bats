@@ -613,9 +613,13 @@ def _execute_pause_menu_action():
         state.ui.settings_menu = 'main'
         state.ui.settings_index = 0
     elif selected == 6:
-        # EXIT - quit without saving
-        state.game.quit_requested = True
-        state.game.game_over = True
+        # MAIN MENU - return to title screen
+        state.game.paused = False
+        state.ui.pause_menu_index = 0
+        state.ui.settings_menu = None
+        state.ui.show_title = True
+        state.ui.title_menu_index = 0
+        state.game.game_over = True  # End current game loop to return to title
 
 
 def _handle_restart():
