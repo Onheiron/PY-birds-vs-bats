@@ -769,10 +769,14 @@ def process_input(key):
     if key is None:
         return
 
-    # Detect space key press (edge detection)
-    space_pressed = (key == 'SPACE')
-    space_just_pressed = space_pressed and not state.player.last_space_state
-    state.player.last_space_state = space_pressed
+    # Get the swap key binding
+    swap_key = state.settings.key_bindings.get('SWAP', 'SPACE')
+    key_upper = key.upper() if isinstance(key, str) and len(key) == 1 else key
+
+    # Detect swap key press (edge detection for any bound key)
+    swap_pressed = (key_upper == swap_key)
+    swap_just_pressed = swap_pressed and not state.player.last_space_state
+    state.player.last_space_state = swap_pressed
 
     # When paused, handle pause menu navigation
     if state.game.paused:
@@ -838,10 +842,9 @@ def process_input(key):
 
     # Get key bindings
     bindings = state.settings.key_bindings
-    key_upper = key.upper() if isinstance(key, str) and len(key) == 1 else key
 
     # Handle keys using configurable bindings
-    if key_upper == bindings.get('SWAP') and space_just_pressed:
+    if swap_just_pressed:
         handle_swap()
     elif key in ('P', 'p'):
         handle_pause()
