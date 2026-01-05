@@ -799,9 +799,81 @@ def _apply_music_setting():
         audio.stop_music()
 
 
+def _handle_title_input(key):
+    """Handle input on title screen. Returns True if handled."""
+    if not state.ui.show_title:
+        return False
+
+    if key == 'QUIT':
+        state.game.quit_requested = True
+        state.game.game_over = True
+        return True
+
+    # If in load submenu on title screen
+    if state.ui.settings_menu == 'load':
+        if key == 'UP':
+            state.ui.settings_index = (state.ui.settings_index - 1) % 5  # 4 slots + back
+            return True
+        if key == 'DOWN':
+            state.ui.settings_index = (state.ui.settings_index + 1) % 5
+            return True
+        if key == 'ESC':
+            state.ui.settings_menu = None
+            return True
+        if key == 'ENTER':
+            idx = state.ui.settings_index
+            if idx == 4:  # BACK
+                state.ui.settings_menu = None
+            else:
+                # Load slot idx (0=autosave, 1-3=manual)
+                from src.services import save_manager
+                if save_manager.load_game(idx):
+                    state.ui.show_title = False
+                    state.ui.settings_menu = None
+            return True
+        return True
+
+    if key == 'UP':
+        state.ui.title_menu_index = (state.ui.title_menu_index - 1) % 4
+        return True
+
+    if key == 'DOWN':
+        state.ui.title_menu_index = (state.ui.title_menu_index + 1) % 4
+        return True
+
+    if key == 'ENTER':
+        idx = state.ui.title_menu_index
+        if idx == 0:  # CONTINUE
+            # Try to load autosave
+            from src.services import save_manager
+            if save_manager.load_game(0):
+                state.ui.show_title = False
+            else:
+                # No autosave, start new game
+                state.init()
+                state.ui.show_title = False
+        elif idx == 1:  # NEW GAME
+            state.init()
+            state.ui.show_title = False
+        elif idx == 2:  # LOAD
+            # Show load menu (enter settings_menu load mode from title)
+            state.ui.settings_menu = 'load'
+            state.ui.settings_index = 0
+        elif idx == 3:  # QUIT
+            state.game.quit_requested = True
+            state.game.game_over = True
+        return True
+
+    return False
+
+
 def process_input(key):
     """Process a single key input and update game state."""
     if key is None:
+        return
+
+    # Handle title screen input first
+    if _handle_title_input(key):
         return
 
     # Get the swap key binding

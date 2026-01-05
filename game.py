@@ -303,8 +303,35 @@ def run_game():
     Returns:
         'retry' if player wants to play again, 'exit' to quit, 'quit' if user pressed Ctrl+C
     """
-    # Initialize game state
-    state.init()
+    # Show title screen first
+    state.ui.show_title = True
+    state.ui.title_menu_index = 0
+    state.ui.settings_menu = None
+
+    # Title screen loop
+    try:
+        while state.ui.show_title and not state.game.quit_requested:
+            frame_start = time.time()
+
+            key = render.get_key()
+            input_handler.process_input(key)
+
+            render.render_title_screen()
+
+            elapsed = time.time() - frame_start
+            sleep_time = FIXED_FRAME_TIME - elapsed
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+
+        # If user quit from title screen
+        if state.game.quit_requested:
+            return 'exit'
+
+    except KeyboardInterrupt:
+        return 'exit'
+
+    # Game state should already be initialized by title menu handler
+    # (either from NEW GAME, CONTINUE, or LOAD)
     achievements.init_achievements()
     state.game.start_time = time.time()
     state.game.last_mile_update = time.time()

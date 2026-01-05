@@ -2092,3 +2092,155 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     else:
         hint = "↑↓ Navigate  ←→ Change  ⏎ Select"
     fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)
+
+
+# =============================================================================
+# TITLE SCREEN RENDERING
+# =============================================================================
+
+# ASCII art logo for title screen
+TITLE_LOGO = [
+    "    ▄▄▄                                          ▄▄▄                 ",
+    "   ██▀▀█▄            █▄                         ██▀▀█▄       █▄      ",
+    "   ██ ▄█▀ ▀▀ ▄       ██                         ██ ▄█▀      ▄██▄     ",
+    "   ██▀▀█▄ ██ ████▄▄████ ▄██▀█  ▀█▄ ██▀▄██▀█     ██▀▀█▄ ▄▀▀█▄ ██ ▄██▀█",
+    " ▄ ██  ▄█ ██ ██   ██ ██ ▀███▄   ██▄██ ▀███▄   ▄ ██  ▄█ ▄█▀██ ██ ▀███▄",
+    " ▀██████▀▄██▄█▀  ▄█▀████▄▄██▀    ▀█▀ █▄▄██▀   ▀██████▀▄▀█▄██▄███▄▄██▀",
+]
+
+TITLE_MENU_OPTIONS = ["CONTINUE", "NEW GAME", "LOAD", "QUIT"]
+
+
+def render_title_screen():
+    """Render the title screen with logo and menu."""
+    fb = get_framebuffer()
+
+    # Clear the screen with dark background
+    for y in range(fb.height):
+        for x in range(fb.width):
+            fb.put(x, y, ' ', '')
+
+    # Calculate centering
+    logo_width = max(len(line) for line in TITLE_LOGO)
+    logo_x = max(0, (TOTAL_WIDTH - logo_width) // 2)
+    logo_y = 3  # Start a few lines from top
+
+    # Render logo
+    for i, line in enumerate(TITLE_LOGO):
+        fb.put_string(logo_x, logo_y + i, line, YELLOW)
+
+    # Menu area (below logo)
+    menu_y = logo_y + len(TITLE_LOGO) + 3
+    menu_width = 20
+    menu_x = (TOTAL_WIDTH - menu_width) // 2
+
+    # Menu box
+    top_border = "╔" + "═" * (menu_width - 2) + "╗"
+    bottom_border = "╚" + "═" * (menu_width - 2) + "╝"
+
+    fb.put_string(menu_x, menu_y, top_border, MENU_BORDER_COLOR)
+    menu_y += 1
+
+    selected_idx = state.ui.title_menu_index
+
+    for i, option in enumerate(TITLE_MENU_OPTIONS):
+        fb.put(menu_x, menu_y, '║', MENU_BORDER_COLOR)
+        option_padded = option.center(menu_width - 2)
+        if i == selected_idx:
+            fb.put_string(menu_x + 1, menu_y, option_padded, MENU_SELECTED_COLOR)
+        else:
+            fb.put_string(menu_x + 1, menu_y, option_padded, MENU_NORMAL_COLOR)
+        fb.put(menu_x + menu_width - 1, menu_y, '║', MENU_BORDER_COLOR)
+        menu_y += 1
+
+    fb.put_string(menu_x, menu_y, bottom_border, MENU_BORDER_COLOR)
+    menu_y += 1
+
+    # Hint
+    hint = "↑↓ Navigate  ⏎ Select"
+    hint_x = (TOTAL_WIDTH - len(hint)) // 2
+    fb.put_string(hint_x, menu_y + 1, hint, MENU_BORDER_COLOR)
+
+    # If in load submenu, render load menu overlay
+    if state.ui.settings_menu == 'load':
+        _fb_render_title_load_menu(fb, logo_y + len(TITLE_LOGO) + 2)
+
+    # Generate output and display
+    output = fb.render()
+    try:
+        sys.stdout.write(output)
+        sys.stdout.flush()
+    except BlockingIOError:
+        pass
+
+
+def _fb_render_title_load_menu(fb, start_y):
+    """Render load menu overlay on title screen."""
+    from src.services import save_manager
+    slots = save_manager.list_save_slots()
+
+    menu_width = 30
+    menu_x = (TOTAL_WIDTH - menu_width) // 2
+
+    top_border = "╔" + "═" * (menu_width - 2) + "╗"
+    separator_border = "╠" + "═" * (menu_width - 2) + "╣"
+    bottom_border = "╚" + "═" * (menu_width - 2) + "╝"
+
+    y = start_y
+
+    fb.put_string(menu_x, y, top_border, MENU_BORDER_COLOR)
+    y += 1
+
+    # Title
+    fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
+    title_padded = "LOAD GAME".center(menu_width - 2)
+    fb.put_string(menu_x + 1, y, title_padded, YELLOW)
+    fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
+    y += 1
+
+    fb.put_string(menu_x, y, separator_border, MENU_BORDER_COLOR)
+    y += 1
+
+    selected_idx = state.ui.settings_index
+    option_text_width = menu_width - 4
+
+    # Slot options: autosave + 3 manual slots + back
+    for slot in range(0, 4):  # 0=autosave, 1-3=manual
+        slot_info = slots.get(slot, {})
+        if slot == 0:
+            label = "AUTOSAVE"
+        else:
+            label = f"SLOT {slot}"
+
+        if slot_info.get('exists'):
+            score = slot_info.get('score', 0)
+            level = slot_info.get('level_display', '?')
+            option_text = f"{label}: Lv{level} {score}pts"
+        else:
+            option_text = f"{label}: (empty)"
+
+        fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
+        if slot == selected_idx:
+            fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
+            fb.put_string(menu_x + 2, y, f" {option_text:<{option_text_width}}"[:option_text_width+1], MENU_SELECTED_COLOR)
+        else:
+            fb.put_string(menu_x + 1, y, f"  {option_text:<{option_text_width}}"[:option_text_width+2], MENU_NORMAL_COLOR)
+        fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
+        y += 1
+
+    # BACK option
+    fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
+    if 4 == selected_idx:
+        fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
+        fb.put_string(menu_x + 2, y, f" {'< BACK':<{option_text_width}}"[:option_text_width+1], MENU_SELECTED_COLOR)
+    else:
+        fb.put_string(menu_x + 1, y, f"  {'< BACK':<{option_text_width}}"[:option_text_width+2], MENU_NORMAL_COLOR)
+    fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
+    y += 1
+
+    fb.put_string(menu_x, y, bottom_border, MENU_BORDER_COLOR)
+    y += 1
+
+    hint = "↑↓ Navigate  ⏎ Select  ESC Back"
+    hint_x = (TOTAL_WIDTH - len(hint)) // 2
+    fb.put_string(hint_x, y, hint, MENU_BORDER_COLOR)

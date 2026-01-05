@@ -165,10 +165,13 @@ ui = SimpleNamespace(
     # Pause menu state
     pause_menu_index=0,  # 0=RESUME, 1=RESTART, 2=SAVE & EXIT, etc.
     # Settings menu state
-    settings_menu=None,  # None=not in settings, 'main'/'sound'/'graphics'/'controls'
+    settings_menu=None,  # None=not in settings, 'main'/'sound'/'graphics'/'controls'/'save'/'load'
     settings_index=0,    # Current selection index in settings submenu
     # Key rebinding state
     rebinding_control=None,  # None or control name being rebound (e.g., 'MOVE_LEFT')
+    # Title screen state
+    title_menu_index=0,  # 0=CONTINUE, 1=NEW GAME, 2=LOAD, 3=QUIT
+    show_title=True,     # True when on title screen
 )
 
 # ============================================================================
