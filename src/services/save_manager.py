@@ -68,6 +68,45 @@ def list_save_slots():
     return slots
 
 
+def get_most_recent_save():
+    """Find the most recent save slot by timestamp.
+
+    Returns:
+        int or None: Slot number of most recent save, or None if no saves exist
+    """
+    slots = list_save_slots()
+    most_recent_slot = None
+    most_recent_time = None
+
+    for slot, info in slots.items():
+        if info.get('exists') and 'timestamp' in info:
+            try:
+                ts = datetime.fromisoformat(info['timestamp'])
+                if most_recent_time is None or ts > most_recent_time:
+                    most_recent_time = ts
+                    most_recent_slot = slot
+            except (ValueError, TypeError):
+                continue
+
+    return most_recent_slot
+
+
+def format_timestamp_display(iso_timestamp):
+    """Format an ISO timestamp for display in menus.
+
+    Args:
+        iso_timestamp: ISO format timestamp string
+
+    Returns:
+        str: Formatted like "Jan 5, 14:30"
+    """
+    try:
+        dt = datetime.fromisoformat(iso_timestamp)
+        return dt.strftime("%b %d, %H:%M")
+    except (ValueError, TypeError):
+        return "???"
+
+
 def save_game(slot=0):
     """Save the current game state to a slot.
 

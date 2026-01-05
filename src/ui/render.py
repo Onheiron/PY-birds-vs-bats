@@ -2013,9 +2013,10 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
         def get_slot_info(slot_num):
             slot = slots.get(slot_num, {})
             if slot.get('exists'):
-                score = slot.get('score', 0)
                 level = slot.get('level_display', '?')
-                return f"SLOT {slot_num}  Lv{level}  {score:,}pts"
+                ts = slot.get('timestamp', '')
+                ts_display = save_manager.format_timestamp_display(ts) if ts else '???'
+                return f"SLOT {slot_num} Lv{level} {ts_display}"
             return f"SLOT {slot_num}  (empty)"
 
         options = [
@@ -2033,9 +2034,10 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
         def get_slot_info(slot_num):
             slot = slots.get(slot_num, {})
             if slot.get('exists'):
-                score = slot.get('score', 0)
                 level = slot.get('level_display', '?')
-                return f"SLOT {slot_num}  Lv{level}  {score:,}pts"
+                ts = slot.get('timestamp', '')
+                ts_display = save_manager.format_timestamp_display(ts) if ts else '???'
+                return f"SLOT {slot_num} Lv{level} {ts_display}"
             return f"SLOT {slot_num}  (empty)"
 
         options = [
@@ -2208,14 +2210,15 @@ def _fb_render_title_load_menu(fb, start_y):
     for slot in range(0, 4):  # 0=autosave, 1-3=manual
         slot_info = slots.get(slot, {})
         if slot == 0:
-            label = "AUTOSAVE"
+            label = "AUTO"
         else:
             label = f"SLOT {slot}"
 
         if slot_info.get('exists'):
-            score = slot_info.get('score', 0)
             level = slot_info.get('level_display', '?')
-            option_text = f"{label}: Lv{level} {score}pts"
+            ts = slot_info.get('timestamp', '')
+            ts_display = save_manager.format_timestamp_display(ts) if ts else '???'
+            option_text = f"{label}: Lv{level} {ts_display}"
         else:
             option_text = f"{label}: (empty)"
 

@@ -844,12 +844,13 @@ def _handle_title_input(key):
     if key == 'ENTER':
         idx = state.ui.title_menu_index
         if idx == 0:  # CONTINUE
-            # Try to load autosave
+            # Try to load the most recent save (by timestamp)
             from src.services import save_manager
-            if save_manager.load_game(0):
+            most_recent = save_manager.get_most_recent_save()
+            if most_recent is not None and save_manager.load_game(most_recent):
                 state.ui.show_title = False
             else:
-                # No autosave, start new game
+                # No saves, start new game
                 state.init()
                 state.ui.show_title = False
         elif idx == 1:  # NEW GAME

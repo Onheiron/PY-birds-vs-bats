@@ -336,8 +336,10 @@ def run_game():
     state.game.start_time = time.time()
     state.game.last_mile_update = time.time()
 
-    # Start background music with correct bird composition
+    # Start background music with correct level and bird composition
     if AUDIO_AVAILABLE and audio:
+        # Sync level for correct music theme
+        audio.update_music_for_level(state.game.level)
         # Sync active birds BEFORE starting music (force=True to bypass rate limiter)
         game_logic.sync_active_birds_audio(force=True)
         audio.start_music()
