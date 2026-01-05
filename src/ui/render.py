@@ -2033,14 +2033,16 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
 
         def get_slot_info(slot_num):
             slot = slots.get(slot_num, {})
+            label = "AUTO" if slot_num == 0 else f"SLOT {slot_num}"
             if slot.get('exists'):
                 level = slot.get('level_display', '?')
                 ts = slot.get('timestamp', '')
                 ts_display = save_manager.format_timestamp_display(ts) if ts else '???'
-                return f"SLOT {slot_num} Lv{level} {ts_display}"
-            return f"SLOT {slot_num}  (empty)"
+                return f"{label} Lv{level} {ts_display}"
+            return f"{label}  (empty)"
 
         options = [
+            (get_slot_info(0), "slot"),
             (get_slot_info(1), "slot"),
             (get_slot_info(2), "slot"),
             (get_slot_info(3), "slot"),

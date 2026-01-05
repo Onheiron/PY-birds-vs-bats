@@ -24,7 +24,7 @@ MUSIC_VOLUME = 0.5   # Music volume relative to master
 
 # Audio state
 _audio_enabled = True
-_music_playing = True
+_music_playing = False  # Must be False initially - only True after start_music()
 _current_level = 1
 _current_theme = None
 _theme_cache = {}

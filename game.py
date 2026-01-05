@@ -16,7 +16,11 @@ from src.engine import input_handler
 from src.engine import physics
 from src.engine import game_logic
 from src.services import achievements
+from src.services import save_manager
 from src.entities.sprites import RED, RESET
+
+# Autosave interval in seconds
+AUTOSAVE_INTERVAL = 60
 
 try:
     from src.services import firebase_client
@@ -338,14 +342,20 @@ def run_game():
 
     # Start background music with correct level and bird composition
     if AUDIO_AVAILABLE and audio:
-        # Sync level for correct music theme
-        audio.update_music_for_level(state.game.level)
+        # Stop any existing music first
+        audio.stop_music()
+        # Sync speed/gear for correct music theme (theme changes with speed, not level milestone)
+        audio.update_music_for_level(state.game.speed)
+        # Sync game speed for correct tempo
+        audio.update_game_speed(state.game.speed)
         # Sync active birds BEFORE starting music (force=True to bypass rate limiter)
         game_logic.sync_active_birds_audio(force=True)
+        # Now start fresh music with correct state
         audio.start_music()
 
     # Contatore frame per decidere quando aggiornare la fisica
     render_frame = 0
+    last_autosave = time.time()
 
     try:
         while not state.game.game_over:
@@ -388,6 +398,11 @@ def run_game():
 
                 # Increment game frame counter (usato per spawn timing, etc.)
                 state.game.frame_count += 1
+
+            # === AUTOSAVE (ogni 60 secondi) ===
+            if time.time() - last_autosave >= AUTOSAVE_INTERVAL:
+                save_manager.save_game(0)  # Slot 0 = autosave
+                last_autosave = time.time()
 
             # === RENDER (sempre, ogni frame per fluidità) ===
             render.render_game()

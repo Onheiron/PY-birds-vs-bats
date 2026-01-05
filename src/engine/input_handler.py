@@ -642,7 +642,7 @@ def _get_settings_options_count():
     elif menu == 'save':
         return 4  # SLOT 1, SLOT 2, SLOT 3, < BACK
     elif menu == 'load':
-        return 4  # SLOT 1, SLOT 2, SLOT 3, < BACK
+        return 5  # AUTO, SLOT 1, SLOT 2, SLOT 3, < BACK
     return 1
 
 
@@ -709,16 +709,17 @@ def _handle_settings_enter():
             else:
                 _add_notification("Save failed!", title="Error:")
     elif menu == 'load':
-        if idx == 3:  # < BACK
+        if idx == 4:  # < BACK
             state.ui.settings_menu = None
             state.ui.settings_index = 0
-        elif idx < 3:  # Slot 1-3
-            slot = idx + 1
+        elif idx <= 3:  # Slot 0 (auto), 1, 2, 3
+            slot = idx  # idx 0 = autosave, idx 1-3 = slots 1-3
             from src.services import save_manager
             slots = save_manager.list_save_slots()
             if slots.get(slot, {}).get('exists'):
                 if save_manager.load_game(slot):
-                    _add_notification(f"Loaded Slot {slot}", title="Load:")
+                    slot_name = "Autosave" if slot == 0 else f"Slot {slot}"
+                    _add_notification(f"Loaded {slot_name}", title="Load:")
                     state.ui.settings_menu = None
                     state.ui.settings_index = 0
                     state.game.paused = False
