@@ -597,18 +597,21 @@ def _execute_pause_menu_action():
         # RESTART - restart game
         _handle_restart()
     elif selected == 2:
-        # SAVE & EXIT - save and exit
-        _handle_save_and_exit()
+        # SAVE - open save menu
+        state.ui.settings_menu = 'save'
+        state.ui.settings_index = 0
     elif selected == 3:
-        # BIRDPEDIA - placeholder for now
-        _add_notification("Birdpedia", title="Coming Soon:")
+        # LOAD - open load menu
+        state.ui.settings_menu = 'load'
+        state.ui.settings_index = 0
     elif selected == 4:
-        # GUIDE - placeholder for now
-        _add_notification("Guide", title="Coming Soon:")
-    elif selected == 5:
         # SETTINGS - enter settings menu
         state.ui.settings_menu = 'main'
         state.ui.settings_index = 0
+    elif selected == 5:
+        # EXIT - quit without saving
+        state.game.quit_requested = True
+        state.game.game_over = True
 
 
 def _handle_restart():
@@ -625,13 +628,6 @@ def _handle_restart():
     _add_notification("New game!", title="Restart:")
 
 
-def _handle_save_and_exit():
-    """Save game and exit."""
-    # For now, just exit (save functionality can be added later)
-    state.game.quit_requested = True
-    state.game.game_over = True
-
-
 def _get_settings_options_count():
     """Return the number of options in the current settings submenu."""
     menu = state.ui.settings_menu
@@ -643,6 +639,10 @@ def _get_settings_options_count():
         return 4  # BACKGROUND, PARALLAX, ACCESSIBILITY, < BACK
     elif menu == 'controls':
         return 6  # 5 control display items + < BACK
+    elif menu == 'save':
+        return 4  # SLOT 1, SLOT 2, SLOT 3, < BACK
+    elif menu == 'load':
+        return 4  # SLOT 1, SLOT 2, SLOT 3, < BACK
     return 1
 
 
@@ -695,6 +695,37 @@ def _handle_settings_enter():
             control_names = ['MOVE_LEFT', 'MOVE_RIGHT', 'BOUNCE', 'SUCTION', 'SWAP']
             if idx < len(control_names):
                 state.ui.rebinding_control = control_names[idx]
+    elif menu == 'save':
+        if idx == 3:  # < BACK
+            state.ui.settings_menu = None
+            state.ui.settings_index = 0
+        elif idx < 3:  # Slot 1-3
+            slot = idx + 1
+            from src.services import save_manager
+            if save_manager.save_game(slot):
+                _add_notification(f"Saved to Slot {slot}", title="Save:")
+                state.ui.settings_menu = None
+                state.ui.settings_index = 0
+            else:
+                _add_notification("Save failed!", title="Error:")
+    elif menu == 'load':
+        if idx == 3:  # < BACK
+            state.ui.settings_menu = None
+            state.ui.settings_index = 0
+        elif idx < 3:  # Slot 1-3
+            slot = idx + 1
+            from src.services import save_manager
+            slots = save_manager.list_save_slots()
+            if slots.get(slot, {}).get('exists'):
+                if save_manager.load_game(slot):
+                    _add_notification(f"Loaded Slot {slot}", title="Load:")
+                    state.ui.settings_menu = None
+                    state.ui.settings_index = 0
+                    state.game.paused = False
+                else:
+                    _add_notification("Load failed!", title="Error:")
+            else:
+                _add_notification("Slot is empty!", title="Error:")
 
 
 def _handle_settings_back():
@@ -713,6 +744,10 @@ def _handle_settings_back():
             state.ui.settings_index = 1
         else:  # controls
             state.ui.settings_index = 2
+    elif menu in ('save', 'load'):
+        # Return directly to pause menu
+        state.ui.settings_menu = None
+        state.ui.settings_index = 0
 
 
 def _handle_settings_left_right(direction):

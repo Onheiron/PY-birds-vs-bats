@@ -1900,10 +1900,10 @@ def _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     PAUSE_MENU_OPTIONS = [
         "RESUME",
         "RESTART",
-        "SAVE & EXIT",
-        "BIRDPEDIA",
-        "GUIDE",
-        "SETTINGS"
+        "SAVE",
+        "LOAD",
+        "SETTINGS",
+        "EXIT"
     ]
 
     top_border = "╔" + "═" * (menu_width - 2) + "╗"
@@ -2004,6 +2004,46 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
             (f"SWAP            {get_key_display('SWAP'):>5}", "rebind"),
             ("< BACK", "back"),
         ]
+    elif state.ui.settings_menu == 'save':
+        title = "SAVE GAME"
+        # Get save slot info
+        from src.services import save_manager
+        slots = save_manager.list_save_slots()
+
+        def get_slot_info(slot_num):
+            slot = slots.get(slot_num, {})
+            if slot.get('exists'):
+                score = slot.get('score', 0)
+                level = slot.get('level_display', '?')
+                return f"SLOT {slot_num}  Lv{level}  {score:,}pts"
+            return f"SLOT {slot_num}  (empty)"
+
+        options = [
+            (get_slot_info(1), "slot"),
+            (get_slot_info(2), "slot"),
+            (get_slot_info(3), "slot"),
+            ("< BACK", "back"),
+        ]
+    elif state.ui.settings_menu == 'load':
+        title = "LOAD GAME"
+        # Get save slot info
+        from src.services import save_manager
+        slots = save_manager.list_save_slots()
+
+        def get_slot_info(slot_num):
+            slot = slots.get(slot_num, {})
+            if slot.get('exists'):
+                score = slot.get('score', 0)
+                level = slot.get('level_display', '?')
+                return f"SLOT {slot_num}  Lv{level}  {score:,}pts"
+            return f"SLOT {slot_num}  (empty)"
+
+        options = [
+            (get_slot_info(1), "slot"),
+            (get_slot_info(2), "slot"),
+            (get_slot_info(3), "slot"),
+            ("< BACK", "back"),
+        ]
     else:
         return
 
@@ -2047,6 +2087,8 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
             hint = "Press new key...  ESC Cancel"
         else:
             hint = "↑↓ Navigate  ⏎ Rebind  ESC Back"
+    elif state.ui.settings_menu in ('save', 'load'):
+        hint = "↑↓ Navigate  ⏎ Select  ESC Back"
     else:
         hint = "↑↓ Navigate  ←→ Change  ⏎ Select"
     fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)

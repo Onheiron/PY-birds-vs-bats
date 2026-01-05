@@ -6,12 +6,16 @@ Import as: from src.core import state
 Access as: state.birds.colors, state.game.score, etc.
 """
 
+import time
 from src.core import constants
 from src.entities.bird_types import BirdType, get_default_speed, get_color_for_bird_type
 from types import SimpleNamespace
 
 # Default yellow color (avoid circular import from sprites)
 _YELLOW_DEFAULT = get_color_for_bird_type(BirdType.YELLOW)
+
+# Game seed for deterministic RNG (set on new game, saved/restored on load)
+game_seed = None
 
 # ============================================================================
 # BIRDS STATE (organized as namespace)
@@ -193,22 +197,33 @@ settings = SimpleNamespace(
 )
 
 
-def init():
-    """Initialize all game state using namespaces."""
+def init(seed=None):
+    """Initialize all game state using namespaces.
+
+    Args:
+        seed: Optional seed for RNG. If None, generates a new one based on current time.
+    """
+    global game_seed
     import random
-    
+
+    # Generate or use provided seed for deterministic gameplay
+    if seed is None:
+        game_seed = int(time.time() * 1000) % (2**32)
+    else:
+        game_seed = seed
+    random.seed(game_seed)
+
     # Initialize bird colors from default formation (configurable via constants.birds.default_formation)
     birds.colors = []
     for bird_type in constants.birds.default_formation[:constants.layout.num_balls]:
         color = get_color_for_bird_type(bird_type)
         birds.colors.append(color)
-    
+
     # Pad with YELLOW if formation is shorter than NUM_BALLS
     while len(birds.colors) < constants.layout.num_balls:
         birds.colors.append(_YELLOW_DEFAULT)
-    
+
     # Randomize which bird goes to which lane
-    random.seed()
     birds.random_lanes = list(range(constants.layout.num_lanes))
     if constants.birds.randomize_lanes:
         random.shuffle(birds.random_lanes)
