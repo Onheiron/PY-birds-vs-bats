@@ -344,14 +344,16 @@ def run_game():
     if AUDIO_AVAILABLE and audio:
         # Stop any existing music first
         audio.stop_music()
-        # Sync speed/gear for correct music theme (theme changes with speed, not level milestone)
-        audio.update_music_for_level(state.game.speed)
-        # Sync game speed for correct tempo
-        audio.update_game_speed(state.game.speed)
-        # Sync active birds BEFORE starting music (force=True to bypass rate limiter)
-        game_logic.sync_active_birds_audio(force=True)
-        # Now start fresh music with correct state
-        audio.start_music()
+        # Only start music if enabled in settings
+        if state.settings.music_enabled:
+            # Sync speed/gear for correct music theme (theme changes with speed, not level milestone)
+            audio.update_music_for_level(state.game.speed)
+            # Sync game speed for correct tempo
+            audio.update_game_speed(state.game.speed)
+            # Sync active birds BEFORE starting music (force=True to bypass rate limiter)
+            game_logic.sync_active_birds_audio(force=True)
+            # Now start fresh music with correct state
+            audio.start_music()
 
     # Contatore frame per decidere quando aggiornare la fisica
     render_frame = 0
@@ -446,6 +448,9 @@ def main():
     """
     # Initialize terminal once
     functions.setup()
+
+    # Load default settings at startup
+    save_manager.load_default_settings()
 
     try:
         while True:

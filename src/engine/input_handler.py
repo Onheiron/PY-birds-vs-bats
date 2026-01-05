@@ -834,12 +834,16 @@ def _handle_title_input(key):
             return True
         return True
 
+    # If in settings submenu on title screen
+    if state.ui.settings_menu is not None:
+        return _handle_title_settings_input(key)
+
     if key == 'UP':
-        state.ui.title_menu_index = (state.ui.title_menu_index - 1) % 4
+        state.ui.title_menu_index = (state.ui.title_menu_index - 1) % 5  # 5 options now
         return True
 
     if key == 'DOWN':
-        state.ui.title_menu_index = (state.ui.title_menu_index + 1) % 4
+        state.ui.title_menu_index = (state.ui.title_menu_index + 1) % 5
         return True
 
     if key == 'ENTER':
@@ -851,22 +855,182 @@ def _handle_title_input(key):
             if most_recent is not None and save_manager.load_game(most_recent):
                 state.ui.show_title = False
             else:
-                # No saves, start new game
+                # No saves, start new game with default settings
+                from src.services import save_manager
                 state.init()
+                save_manager.load_default_settings()
                 state.ui.show_title = False
         elif idx == 1:  # NEW GAME
+            from src.services import save_manager
             state.init()
+            save_manager.load_default_settings()
             state.ui.show_title = False
         elif idx == 2:  # LOAD
-            # Show load menu (enter settings_menu load mode from title)
             state.ui.settings_menu = 'load'
             state.ui.settings_index = 0
-        elif idx == 3:  # QUIT
+        elif idx == 3:  # SETTINGS
+            state.ui.settings_menu = 'main'
+            state.ui.settings_index = 0
+        elif idx == 4:  # QUIT
             state.game.quit_requested = True
             state.game.game_over = True
         return True
 
     return False
+
+
+def _handle_title_settings_input(key):
+    """Handle settings menu input on title screen. Returns True if handled."""
+    from src.services import save_manager
+
+    # Rebinding mode
+    if state.ui.rebinding_control is not None:
+        if key == 'ESC':
+            state.ui.rebinding_control = None
+        else:
+            valid_keys = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE', 'ENTER',
+                          'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+                          'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+                          'U', 'V', 'W', 'X', 'Y', 'Z',
+                          'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+                          'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+                          'u', 'v', 'w', 'x', 'y', 'z',
+                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+            if key in valid_keys:
+                state.settings.key_bindings[state.ui.rebinding_control] = key.upper() if len(key) == 1 else key
+                state.ui.rebinding_control = None
+                # Save default settings
+                save_manager.save_default_settings()
+        return True
+
+    if key == 'ESC':
+        _handle_title_settings_back()
+        return True
+
+    if key == 'UP':
+        count = _get_settings_options_count()
+        state.ui.settings_index = (state.ui.settings_index - 1) % count
+        return True
+
+    if key == 'DOWN':
+        count = _get_settings_options_count()
+        state.ui.settings_index = (state.ui.settings_index + 1) % count
+        return True
+
+    if key in ('LEFT', 'RIGHT'):
+        _handle_title_settings_left_right(key)
+        return True
+
+    if key == 'ENTER':
+        _handle_title_settings_enter()
+        return True
+
+    return True
+
+
+def _handle_title_settings_back():
+    """Handle ESC or < BACK in title settings menu."""
+    from src.services import save_manager
+    menu = state.ui.settings_menu
+
+    if menu == 'main':
+        state.ui.settings_menu = None
+        state.ui.settings_index = 0
+        # Save defaults when exiting settings
+        save_manager.save_default_settings()
+    elif menu in ('sound', 'graphics', 'controls'):
+        state.ui.settings_menu = 'main'
+        if menu == 'sound':
+            state.ui.settings_index = 0
+        elif menu == 'graphics':
+            state.ui.settings_index = 1
+        else:
+            state.ui.settings_index = 2
+
+
+def _handle_title_settings_left_right(key):
+    """Handle LEFT/RIGHT in title settings menu."""
+    from src.services import save_manager
+    menu = state.ui.settings_menu
+    idx = state.ui.settings_index
+    delta = 1 if key == 'RIGHT' else -1
+
+    if menu == 'main' and idx == 3:  # DIFFICULTY
+        state.settings.difficulty = (state.settings.difficulty + delta) % 4
+        save_manager.save_default_settings()
+    elif menu == 'sound':
+        if idx == 0:  # SFX
+            state.settings.sfx_enabled = not state.settings.sfx_enabled
+            save_manager.save_default_settings()
+        elif idx == 1:  # MUSIC
+            state.settings.music_enabled = not state.settings.music_enabled
+            save_manager.save_default_settings()
+    elif menu == 'graphics':
+        if idx == 0:  # BACKGROUND
+            state.settings.background_enabled = not state.settings.background_enabled
+            save_manager.save_default_settings()
+        elif idx == 1:  # PARALLAX
+            state.settings.parallax_enabled = not state.settings.parallax_enabled
+            save_manager.save_default_settings()
+        elif idx == 2:  # ACCESSIBILITY
+            state.settings.accessibility_enabled = not state.settings.accessibility_enabled
+            if state.settings.accessibility_enabled:
+                state.settings.background_enabled = False
+                state.settings.parallax_enabled = False
+            save_manager.save_default_settings()
+
+
+def _handle_title_settings_enter():
+    """Handle ENTER in title settings menu."""
+    from src.services import save_manager
+    menu = state.ui.settings_menu
+    idx = state.ui.settings_index
+
+    if menu == 'main':
+        if idx == 0:  # SOUND
+            state.ui.settings_menu = 'sound'
+            state.ui.settings_index = 0
+        elif idx == 1:  # GRAPHICS
+            state.ui.settings_menu = 'graphics'
+            state.ui.settings_index = 0
+        elif idx == 2:  # CONTROLS
+            state.ui.settings_menu = 'controls'
+            state.ui.settings_index = 0
+        elif idx == 3:  # DIFFICULTY (cycle)
+            state.settings.difficulty = (state.settings.difficulty + 1) % 4
+            save_manager.save_default_settings()
+        elif idx == 4:  # < BACK
+            _handle_title_settings_back()
+    elif menu == 'sound':
+        if idx == 0:  # SFX
+            state.settings.sfx_enabled = not state.settings.sfx_enabled
+            save_manager.save_default_settings()
+        elif idx == 1:  # MUSIC
+            state.settings.music_enabled = not state.settings.music_enabled
+            save_manager.save_default_settings()
+        elif idx == 2:  # < BACK
+            _handle_title_settings_back()
+    elif menu == 'graphics':
+        if idx == 0:  # BACKGROUND
+            state.settings.background_enabled = not state.settings.background_enabled
+            save_manager.save_default_settings()
+        elif idx == 1:  # PARALLAX
+            state.settings.parallax_enabled = not state.settings.parallax_enabled
+            save_manager.save_default_settings()
+        elif idx == 2:  # ACCESSIBILITY
+            state.settings.accessibility_enabled = not state.settings.accessibility_enabled
+            if state.settings.accessibility_enabled:
+                state.settings.background_enabled = False
+                state.settings.parallax_enabled = False
+            save_manager.save_default_settings()
+        elif idx == 3:  # < BACK
+            _handle_title_settings_back()
+    elif menu == 'controls':
+        if idx < 5:  # Rebind controls
+            control_names = ['MOVE_LEFT', 'MOVE_RIGHT', 'BOUNCE', 'SUCTION', 'SWAP']
+            state.ui.rebinding_control = control_names[idx]
+        elif idx == 5:  # < BACK
+            _handle_title_settings_back()
 
 
 def process_input(key):

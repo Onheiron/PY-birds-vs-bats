@@ -43,6 +43,74 @@ def get_save_path(slot):
     return get_save_directory() / filename
 
 
+def get_default_settings_path():
+    """Get the path for default settings file."""
+    home = Path.home()
+    settings_dir = home / SAVE_DIR_NAME
+    try:
+        settings_dir.mkdir(parents=True, exist_ok=True)
+    except (OSError, PermissionError):
+        settings_dir = Path.cwd()
+    return settings_dir / "settings.json"
+
+
+def save_default_settings():
+    """Save current settings as defaults for new games."""
+    from src.core import state
+
+    settings_data = {
+        'version': SAVE_VERSION,
+        'sfx_enabled': state.settings.sfx_enabled,
+        'music_enabled': state.settings.music_enabled,
+        'background_enabled': state.settings.background_enabled,
+        'parallax_enabled': state.settings.parallax_enabled,
+        'accessibility_enabled': state.settings.accessibility_enabled,
+        'difficulty': state.settings.difficulty,
+        'key_bindings': state.settings.key_bindings,
+    }
+
+    path = get_default_settings_path()
+    try:
+        with open(path, 'w') as f:
+            json.dump(settings_data, f, indent=2)
+        return True
+    except (OSError, IOError):
+        return False
+
+
+def load_default_settings():
+    """Load default settings and apply to state.settings."""
+    from src.core import state
+
+    path = get_default_settings_path()
+    if not path.exists():
+        return False
+
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+
+        # Apply settings
+        if 'sfx_enabled' in data:
+            state.settings.sfx_enabled = data['sfx_enabled']
+        if 'music_enabled' in data:
+            state.settings.music_enabled = data['music_enabled']
+        if 'background_enabled' in data:
+            state.settings.background_enabled = data['background_enabled']
+        if 'parallax_enabled' in data:
+            state.settings.parallax_enabled = data['parallax_enabled']
+        if 'accessibility_enabled' in data:
+            state.settings.accessibility_enabled = data['accessibility_enabled']
+        if 'difficulty' in data:
+            state.settings.difficulty = data['difficulty']
+        if 'key_bindings' in data:
+            state.settings.key_bindings = data['key_bindings']
+
+        return True
+    except (json.JSONDecodeError, OSError, IOError):
+        return False
+
+
 def list_save_slots():
     """List all available save slots with metadata.
 
