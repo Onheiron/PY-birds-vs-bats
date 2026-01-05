@@ -183,35 +183,353 @@ BAT_FRAME_2 = [
 # Background pattern
 BG_PATTERN = "/\\/\\/\\"
 
-# Obstacle sprites - tree tops, tiered by size
-# Tier 1: piccolo, 1 lane (3 chars wide)
-OBSTACLE_SPRITE_T1 = [
+# =============================================================================
+# BIOME SYSTEM - 6 biomes, one per level group
+# =============================================================================
+# Biome 1: Windy Woods (Group 1: levels 1-1 to 1-3) - Conifer forest
+# Biome 2: The Borders (Group 2: levels 2-1 to 2-3) - Plains with deciduous trees
+# Biome 3: Rotten Marshes (Group 3: levels 3-1 to 3-3) - Swampy wetlands
+# Biome 4: The Dark Swamp (Group 4: levels 4-1 to 4-3) - Deep dark swamp
+# Biome 5: The Void Cave (Group 5: levels 5-1 to 5-3) - Underground cavern
+# Biome 6: Mountain Range (Group 6: levels 6-1 to 6-3) - High mountain peaks
+
+BIOME_NAMES = {
+    1: "Windy Woods",
+    2: "The Borders",
+    3: "Rotten Marshes",
+    4: "The Dark Swamp",
+    5: "The Void Cave",
+    6: "Mountain Range",
+}
+
+# =============================================================================
+# BIOME 1: WINDY WOODS - Conifer forest (original)
+# =============================================================================
+WOODS_BG_LAYER1 = [
+    "^  ^    ^  ^   ^    ^   ",
+    " ^^  ^    ^^  ^  ^^   ^ ",
+    "^   ^  ^^   ^   ^  ^  ^^",
+    "  ^^  ^   ^^  ^^   ^^ ^ ",
+    " ^  ^^  ^   ^   ^^  ^   ",
+    "^    ^ ^^  ^^ ^   ^  ^^ ",
+]
+WOODS_BG_LAYER2 = [
+    "∧       ∧           ∧       ∧   ",
+    "                                ",
+    "    ∧           ∧           ∧   ",
+    "                                ",
+    "∧           ∧       ∧           ",
+    "                                ",
+    "        ∧       ∧           ∧   ",
+    "                                ",
+]
+
+# Windy Woods obstacles - conifer tree tops
+WOODS_OBSTACLE_T1 = [
     " ∧ ",
     "/_\\",
 ]
-
-# Tier 2: medio, 1 lane (5 chars wide, centered)
-OBSTACLE_SPRITE_T2 = [
+WOODS_OBSTACLE_T2 = [
     " ∧/\\ ",
     "/___\\",
 ]
-
-# Tier 3: grande, 2 lanes (9 chars wide)
-OBSTACLE_SPRITE_T3 = [
-    "   /\\  ",
+WOODS_OBSTACLE_T3 = [
+    "   /\\   ",
     " ∧/vv\\/\\ ",
     "/_\\___\\_\\",
 ]
-
-# Tier 4: enorme, 3 lanes (13 chars wide)
-OBSTACLE_SPRITE_T4 = [
+WOODS_OBSTACLE_T4 = [
     "         ∧   ",
     "  ∧ /\\  /v\\  ",
     " /v\\vv\\/vvv\\ ",
     "/___\\__\\____\\",
 ]
 
-# Mappa tier -> sprite
+# =============================================================================
+# BIOME 2: THE BORDERS - Plains with deciduous trees
+# =============================================================================
+BORDERS_BG_LAYER1 = [
+    "'  '    '  '   '    '   ",
+    " ''  '    ''  '  ''   ' ",
+    "'   '  ''   '   '  '  ''",
+    "  ''  '   ''  ''   '' ' ",
+    " '  ''  '   '   ''  '   ",
+    "'    ' ''  '' '   '  '' ",
+]
+BORDERS_BG_LAYER2 = [
+    "⌒       ⌒           ⌒       ⌒   ",
+    "                                ",
+    "    ⌢           ⌢           ⌢   ",
+    "                                ",
+    "⌒           ⌒       ⌒           ",
+    "                                ",
+    "        ⌢       ⌢           ⌢   ",
+    "                                ",
+]
+
+# The Borders obstacles - deciduous tree tops with branches
+BORDERS_OBSTACLE_T1 = [
+    " ⌢ ",
+    "(_)",
+]
+BORDERS_OBSTACLE_T2 = [
+    "  ⌢/_ ",
+    " (  )⌢",
+    "⏜  ⏜ ",
+]
+BORDERS_OBSTACLE_T3 = [
+    "  ⌢/_     ",
+    " \\(  )⌢⌋  ",
+    "⌒⏜(   )⏜⌒ ",
+    "   ⏜⏜     ",
+]
+BORDERS_OBSTACLE_T4 = [
+    "    ⌢/_        ",
+    "   \\(  )⌢⌋     ",
+    " ⌒⏜(    |/ )⏜⌒ ",
+    "    ⏜  ⏜⌒      ",
+]
+
+# =============================================================================
+# BIOME 3: ROTTEN MARSHES - Swampy wetlands
+# =============================================================================
+MARSHES_BG_LAYER1 = [
+    "'  ~    '  ~   '    ~   ",
+    " '~  '    '~  ~  '~   ' ",
+    "~   '  '~   ~   '  ~  '~",
+    "  '~  ~   '~  '~   '~ ~ ",
+    " ~  '~  '   ~   '~  ~   ",
+    "'    ~ '~  '~ ~   ~  '~ ",
+]
+MARSHES_BG_LAYER2 = [
+    "~       ~           ~       ~   ",
+    "                                ",
+    "    ≈           ≈           ≈   ",
+    "                                ",
+    "~           ~       ~           ",
+    "                                ",
+    "        ≈       ≈           ≈   ",
+    "                                ",
+]
+
+# Rotten Marshes obstacles - gnarled twisted trees
+MARSHES_OBSTACLE_T1 = [
+    " |_ ",
+    "//¯ ",
+]
+MARSHES_OBSTACLE_T2 = [
+    " __  ",
+    " ¯\\\\ ",
+    " / ()",
+]
+MARSHES_OBSTACLE_T3 = [
+    "  __   |\\_  ",
+    "  ¯\\\\  //__/",
+    "   ¯\\\\||/   ",
+    "   / () \\   ",
+]
+MARSHES_OBSTACLE_T4 = [
+    "  __   |\\_       ",
+    "  ¯\\\\  //___//   ",
+    "   ¯\\\\||//¯¯\\\\_/ ",
+    "   / () \\   ¯¯¯  ",
+]
+
+# =============================================================================
+# BIOME 4: THE DARK SWAMP - Deep dark swamp
+# =============================================================================
+SWAMP_BG_LAYER1 = [
+    "~  ≈    ~  ≈   ~    ≈   ",
+    " ~≈  ~    ~≈  ≈  ~≈   ~ ",
+    "≈   ~  ~≈   ≈   ~  ≈  ~≈",
+    "  ~≈  ≈   ~≈  ~≈   ~≈ ≈ ",
+    " ≈  ~≈  ~   ≈   ~≈  ≈   ",
+    "~    ≈ ~≈  ~≈ ≈   ≈  ~≈ ",
+]
+SWAMP_BG_LAYER2 = [
+    "≀       ≀           ≀       ≀   ",
+    "                                ",
+    "    ≀≀          ≀≀          ≀≀  ",
+    "                                ",
+    "≀           ≀       ≀           ",
+    "                                ",
+    "        ≀≀      ≀≀          ≀≀  ",
+    "                                ",
+]
+
+# Dark Swamp obstacles - longer twisted branches spanning more lanes
+SWAMP_OBSTACLE_T1 = [
+    " |\\ ",
+    "//¯ ",
+]
+SWAMP_OBSTACLE_T2 = [
+    " _|\\_ ",
+    " ¯\\\\/ ",
+    " /()  ",
+]
+SWAMP_OBSTACLE_T3 = [
+    "  _|\\__/|_   ",
+    "  ¯\\\\__//¯   ",
+    "   \\\\||//    ",
+    "   /(  )\\    ",
+]
+SWAMP_OBSTACLE_T4 = [
+    " __|\\_____/|\\__  ",
+    " ¯\\\\__===__//¯¯  ",
+    "  ¯\\\\\\|||///¯    ",
+    "   / (===) \\     ",
+]
+
+# =============================================================================
+# BIOME 5: THE VOID CAVE - Underground cavern
+# =============================================================================
+CAVE_BG_LAYER1 = [
+    "*  °    *  °   *    °   ",
+    " *°  *    *°  °  *°   * ",
+    "°   *  *°   °   *  °  *°",
+    "  *°  °   *°  *°   *° ° ",
+    " °  *°  *   °   *°  °   ",
+    "*    ° *°  *° °   °  *° ",
+]
+CAVE_BG_LAYER2 = [
+    "•       •           •       •   ",
+    "                                ",
+    "    ·           ·           ·   ",
+    "                                ",
+    "•           •       •           ",
+    "                                ",
+    "        ·       ·           ·   ",
+    "                                ",
+]
+
+# Void Cave obstacles - rocky formations / stalagmites
+CAVE_OBSTACLE_T1 = [
+    " /\\ ",
+    "⋀/⋀\\",
+]
+CAVE_OBSTACLE_T2 = [
+    " ⋀/\\  ",
+    "⋀/⋀^\\ ",
+]
+CAVE_OBSTACLE_T3 = [
+    "  ⋀/\\◠/\\  ",
+    " ⋀/⋀^\\⋀⋀\\ ",
+    "/⋀/___\\⋀\\ ",
+]
+CAVE_OBSTACLE_T4 = [
+    "   ⋀/\\◠/\\ ⋀/\\   ",
+    "  ⋀/⋀^\\⋀⋀\\/⋀^\\  ",
+    " /⋀/___\\⋀\\_/⋀\\ ",
+    "⋀/_______\\__⋀\\ ",
+]
+
+# =============================================================================
+# BIOME 6: MOUNTAIN RANGE - High mountain peaks with clouds
+# =============================================================================
+MOUNTAIN_BG_LAYER1 = [
+    "⌒  ⌢    ⌒  ⌢   ⌒    ⌢   ",
+    " ⌒⌢  ⌒    ⌒⌢  ⌢  ⌒⌢   ⌒ ",
+    "⌢   ⌒  ⌒⌢   ⌢   ⌒  ⌢  ⌒⌢",
+    "  ⌒⌢  ⌢   ⌒⌢  ⌒⌢   ⌒⌢ ⌢ ",
+    " ⌢  ⌒⌢  ⌒   ⌢   ⌒⌢  ⌢   ",
+    "⌒    ⌢ ⌒⌢  ⌒⌢ ⌢   ⌢  ⌒⌢ ",
+]
+MOUNTAIN_BG_LAYER2 = [
+    "☁       ☁           ☁       ☁   ",
+    "                                ",
+    "    ☁           ☁           ☁   ",
+    "                                ",
+    "☁           ☁       ☁           ",
+    "                                ",
+    "        ☁       ☁           ☁   ",
+    "                                ",
+]
+
+# Mountain Range obstacles - mountain peaks
+MOUNTAIN_OBSTACLE_T1 = [
+    " /\\ ",
+    "/⋀\\",
+]
+MOUNTAIN_OBSTACLE_T2 = [
+    " /\\⋀  ",
+    "/⋀\\/\\ ",
+]
+MOUNTAIN_OBSTACLE_T3 = [
+    "   /\\⋀/\\  ",
+    "  /⋀\\/⋀\\ ",
+    " /___\\/\\ ",
+]
+MOUNTAIN_OBSTACLE_T4 = [
+    "    /\\⋀/\\  ⋀   ",
+    "   /⋀\\/⋀\\/⋀\\  ",
+    "  /__\\/⋀\\/⋀\\  ",
+    " /____\\/____\\ ",
+]
+
+# Cloud/fog overlay for Mountain Range (rendered in foreground)
+MOUNTAIN_CLOUD_SPRITES = [
+    ["  ⌒⌢⌒  ", " ⌢⌒⌢⌒⌢ ", "⌒⌢⌒⌢⌒⌢⌒"],
+    [" ☁☁☁ ", "☁☁☁☁☁"],
+    ["  ~~~  ", " ~~~~~ ", "~~~~~~~"],
+]
+
+# =============================================================================
+# BIOME MAPPINGS
+# =============================================================================
+
+# Map biome (level_group 1-6) to background patterns
+BIOME_BG_LAYER1 = {
+    1: WOODS_BG_LAYER1,
+    2: BORDERS_BG_LAYER1,
+    3: MARSHES_BG_LAYER1,
+    4: SWAMP_BG_LAYER1,
+    5: CAVE_BG_LAYER1,
+    6: MOUNTAIN_BG_LAYER1,
+}
+
+BIOME_BG_LAYER2 = {
+    1: WOODS_BG_LAYER2,
+    2: BORDERS_BG_LAYER2,
+    3: MARSHES_BG_LAYER2,
+    4: SWAMP_BG_LAYER2,
+    5: CAVE_BG_LAYER2,
+    6: MOUNTAIN_BG_LAYER2,
+}
+
+# Map biome to obstacle sprites by tier
+BIOME_OBSTACLES = {
+    1: {1: WOODS_OBSTACLE_T1, 2: WOODS_OBSTACLE_T2, 3: WOODS_OBSTACLE_T3, 4: WOODS_OBSTACLE_T4},
+    2: {1: BORDERS_OBSTACLE_T1, 2: BORDERS_OBSTACLE_T2, 3: BORDERS_OBSTACLE_T3, 4: BORDERS_OBSTACLE_T4},
+    3: {1: MARSHES_OBSTACLE_T1, 2: MARSHES_OBSTACLE_T2, 3: MARSHES_OBSTACLE_T3, 4: MARSHES_OBSTACLE_T4},
+    4: {1: SWAMP_OBSTACLE_T1, 2: SWAMP_OBSTACLE_T2, 3: SWAMP_OBSTACLE_T3, 4: SWAMP_OBSTACLE_T4},
+    5: {1: CAVE_OBSTACLE_T1, 2: CAVE_OBSTACLE_T2, 3: CAVE_OBSTACLE_T3, 4: CAVE_OBSTACLE_T4},
+    6: {1: MOUNTAIN_OBSTACLE_T1, 2: MOUNTAIN_OBSTACLE_T2, 3: MOUNTAIN_OBSTACLE_T3, 4: MOUNTAIN_OBSTACLE_T4},
+}
+
+def get_biome_obstacles(level_group):
+    """Get obstacle sprites for the current biome."""
+    return BIOME_OBSTACLES.get(level_group, BIOME_OBSTACLES[1])
+
+def get_biome_bg(level_group):
+    """Get background patterns for the current biome."""
+    layer1 = BIOME_BG_LAYER1.get(level_group, BIOME_BG_LAYER1[1])
+    layer2 = BIOME_BG_LAYER2.get(level_group, BIOME_BG_LAYER2[1])
+    return layer1, layer2
+
+def get_biome_name(level_group):
+    """Get the name of the current biome."""
+    return BIOME_NAMES.get(level_group, "Unknown")
+
+# =============================================================================
+# LEGACY OBSTACLE SPRITES (for backward compatibility)
+# =============================================================================
+# Default to Windy Woods (biome 1)
+OBSTACLE_SPRITE_T1 = WOODS_OBSTACLE_T1
+OBSTACLE_SPRITE_T2 = WOODS_OBSTACLE_T2
+OBSTACLE_SPRITE_T3 = WOODS_OBSTACLE_T3
+OBSTACLE_SPRITE_T4 = WOODS_OBSTACLE_T4
+
+# Mappa tier -> sprite (legacy, use get_biome_obstacles instead)
 OBSTACLE_SPRITES = {
     1: OBSTACLE_SPRITE_T1,
     2: OBSTACLE_SPRITE_T2,

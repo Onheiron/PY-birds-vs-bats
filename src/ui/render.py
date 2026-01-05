@@ -136,31 +136,18 @@ floor = ceiling
 # =============================================================================
 # PARALLAX BACKGROUND PATTERNS - 3-layer scrolling effect
 # =============================================================================
-# Layer 1 (slowest): Dense tree pattern - small ^ symbols
-# Pattern 6 righe x 24 caratteri - solo cime, piccole e irregolari
-TREE_PATTERN = [
-    "^  ^    ^  ^   ^    ^   ",
-    " ^^  ^    ^^  ^  ^^   ^ ",
-    "^   ^  ^^   ^   ^  ^  ^^",
-    "  ^^  ^   ^^  ^^   ^^ ^ ",
-    " ^  ^^  ^   ^   ^^  ^   ",
-    "^    ^ ^^  ^^ ^   ^  ^^ ",
-]
+# Backgrounds are now biome-specific, loaded from sprites.py
+# Use get_current_biome_bg() to get the current patterns
+
+from src.entities.sprites import (get_biome_bg, get_biome_name, BIOME_NAMES,
+                                  WOODS_BG_LAYER1, WOODS_BG_LAYER2)
+
+# Default patterns (Windy Woods) - used as fallback
+TREE_PATTERN = WOODS_BG_LAYER1
 TREE_PATTERN_HEIGHT = len(TREE_PATTERN)
 TREE_PATTERN_WIDTH = 24
 
-# Layer 2 (medium speed): Sparse taller trees - ∧ symbols
-# Pattern 8 righe x 32 caratteri - più sparso e alto
-MID_TREE_PATTERN = [
-    "∧       ∧           ∧       ∧   ",
-    "                                ",
-    "    ∧           ∧           ∧   ",
-    "                                ",
-    "∧           ∧       ∧           ",
-    "                                ",
-    "        ∧       ∧           ∧   ",
-    "                                ",
-]
+MID_TREE_PATTERN = WOODS_BG_LAYER2
 MID_TREE_PATTERN_HEIGHT = len(MID_TREE_PATTERN)
 MID_TREE_PATTERN_WIDTH = 32
 
@@ -169,6 +156,12 @@ MID_TREE_PATTERN_WIDTH = 32
 # Colors for parallax layers (loaded from theme)
 TREE_BG_COLOR = theme.get_color('background', 'layer1', 234)
 MID_TREE_COLOR = theme.get_color('background', 'layer2', 235)
+
+def get_current_biome_bg():
+    """Get background patterns for the current biome based on level_group."""
+    level_group = state.game.level_group
+    layer1, layer2 = get_biome_bg(level_group)
+    return layer1, layer2
 
 # =============================================================================
 # FRAMEBUFFER - Double buffering per rendering differenziale
@@ -831,6 +824,7 @@ def render_game():
     _fb_render_loot(fb)
     _fb_render_projectiles(fb)
     _fb_render_birds(fb)
+    _fb_render_cloud_banks(fb)  # Mountain Range foreground clouds (on top of birds)
     _fb_render_floor_and_cursor(fb)
     _fb_render_footer(fb)
     _fb_render_pause_overlay(fb)
@@ -1352,13 +1346,13 @@ def _fb_render_background(fb):
     """Render parallax scrolling background for game area and right panel.
 
     3 layers with different scroll speeds (slowest to fastest):
-    - Layer 1: Dense tree pattern (^) - slowest, darkest
-    - Layer 2: Sparse tall trees (∧) - medium speed, slightly lighter
+    - Layer 1: Dense pattern - slowest, darkest (biome-specific)
+    - Layer 2: Sparse pattern - medium speed, slightly lighter (biome-specific)
     - Layer 3: Obstacles - fastest (rendered separately)
 
     Can be disabled via config:
     - background.enabled: false  -> disables all background layers
-    - background.parallax: false -> disables only the middle layer (∧)
+    - background.parallax: false -> disables only the middle layer
     """
     # Check if background is enabled (runtime settings override config)
     bg_enabled = state.settings.background_enabled
@@ -1371,46 +1365,53 @@ def _fb_render_background(fb):
     # Check if parallax is enabled (runtime settings override config)
     parallax_enabled = state.settings.parallax_enabled
 
+    # Get biome-specific background patterns
+    layer1_pattern, layer2_pattern = get_current_biome_bg()
+    layer1_height = len(layer1_pattern)
+    layer1_width = len(layer1_pattern[0]) if layer1_pattern else 24
+    layer2_height = len(layer2_pattern)
+    layer2_width = len(layer2_pattern[0]) if layer2_pattern else 32
+
     # Right panel start position
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
     right_panel_inner_width = SIDE_PANEL_WIDTH - 2  # Exclude borders
 
     # Game area goes from row HEADER_HEIGHT to row height+HEADER_HEIGHT-1
     for screen_y in range(constants.layout.height):
-        # === Layer 1: Slowest background (dense small trees) ===
-        pattern_y = (screen_y - bg_offset) % TREE_PATTERN_HEIGHT
-        pattern_line = TREE_PATTERN[pattern_y]
+        # === Layer 1: Slowest background (biome-specific pattern) ===
+        pattern_y = (screen_y - bg_offset) % layer1_height
+        pattern_line = layer1_pattern[pattern_y]
 
         # Fill game area by repeating pattern horizontally
         for screen_x in range(constants.layout.width):
-            pattern_x = screen_x % TREE_PATTERN_WIDTH
-            char = pattern_line[pattern_x]
+            pattern_x = screen_x % layer1_width
+            char = pattern_line[pattern_x] if pattern_x < len(pattern_line) else ' '
             if char != ' ':
                 fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, TREE_BG_COLOR)
 
         # Also render in right panel (continuing the pattern)
         for panel_x in range(right_panel_inner_width):
-            pattern_x = (constants.layout.width + panel_x) % TREE_PATTERN_WIDTH
-            char = pattern_line[pattern_x]
+            pattern_x = (constants.layout.width + panel_x) % layer1_width
+            char = pattern_line[pattern_x] if pattern_x < len(pattern_line) else ' '
             if char != ' ':
                 fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, TREE_BG_COLOR)
 
-        # === Layer 2: Medium speed (sparse tall trees) - only if parallax enabled ===
+        # === Layer 2: Medium speed (biome-specific pattern) - only if parallax enabled ===
         if parallax_enabled:
-            mid_pattern_y = (screen_y - mid_offset) % MID_TREE_PATTERN_HEIGHT
-            mid_pattern_line = MID_TREE_PATTERN[mid_pattern_y]
+            mid_pattern_y = (screen_y - mid_offset) % layer2_height
+            mid_pattern_line = layer2_pattern[mid_pattern_y]
 
             # Fill game area
             for screen_x in range(constants.layout.width):
-                pattern_x = screen_x % MID_TREE_PATTERN_WIDTH
-                char = mid_pattern_line[pattern_x]
+                pattern_x = screen_x % layer2_width
+                char = mid_pattern_line[pattern_x] if pattern_x < len(mid_pattern_line) else ' '
                 if char != ' ':
                     fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
 
             # Also render in right panel
             for panel_x in range(right_panel_inner_width):
-                pattern_x = (constants.layout.width + panel_x) % MID_TREE_PATTERN_WIDTH
-                char = mid_pattern_line[pattern_x]
+                pattern_x = (constants.layout.width + panel_x) % layer2_width
+                char = mid_pattern_line[pattern_x] if pattern_x < len(mid_pattern_line) else ' '
                 if char != ' ':
                     fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
 
@@ -1503,14 +1504,19 @@ def _fb_render_starting_line(fb):
 
 
 def _fb_render_obstacles(fb):
-    """Render obstacles to framebuffer."""
+    """Render obstacles to framebuffer using biome-specific sprites."""
+    from src.entities.sprites import get_biome_obstacles
+
+    # Get obstacle sprites for current biome
+    biome_obstacles = get_biome_obstacles(state.game.level_group)
+
     for obs in state.enemies.obstacles:
         tier = obs.get('tier', 1)
         max_hp = constants.obstacle.max_hp_by_tier.get(tier, obs.get('hp', 1))
         obs_color = color_from_hp(constants.colors.obstacles_base_rgb, obs.get('hp', 0), max_hp)
 
-        # Usa lo sprite del tier corretto
-        sprite = OBSTACLE_SPRITES.get(tier, OBSTACLE_SPRITE_T1)
+        # Usa lo sprite del tier corretto dal bioma corrente
+        sprite = biome_obstacles.get(tier, biome_obstacles.get(1, OBSTACLE_SPRITE_T1))
         sprite_width = max(len(line) for line in sprite)
         lane_width = OBSTACLE_LANE_WIDTH.get(tier, 1)
 
@@ -1535,14 +1541,19 @@ def _fb_render_obstacles(fb):
 
 
 def _fb_render_right_panel_barriers(fb):
-    """Render decorative barriers in right panel."""
+    """Render decorative barriers in right panel using biome-specific sprites."""
+    from src.entities.sprites import get_biome_obstacles
+
     # Right panel position
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
     right_panel_inner_width = SIDE_PANEL_WIDTH - 2
 
+    # Get obstacle sprites for current biome
+    biome_obstacles = get_biome_obstacles(state.game.level_group)
+
     for barrier in state.enemies.right_panel_barriers:
         tier = barrier.get('tier', 1)
-        sprite = OBSTACLE_SPRITES.get(tier, OBSTACLE_SPRITE_T1)
+        sprite = biome_obstacles.get(tier, biome_obstacles.get(1, OBSTACLE_SPRITE_T1))
         sprite_width = max(len(line) for line in sprite)
 
         # Use stored x_offset for horizontal position variation
@@ -1575,6 +1586,49 @@ def _fb_render_bats(fb):
                 for i, char in enumerate(line):
                     if char != ' ':  # Solo caratteri non-spazio
                         fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, bat_color)
+
+
+def _fb_render_cloud_banks(fb):
+    """Render Mountain Range cloud banks (foreground fog that obscures game area)."""
+    # Only render in Mountain Range biome
+    if state.game.level_group != 6:
+        return
+
+    # Cloud color - semi-transparent white/gray
+    CLOUD_COLOR = "\033[38;5;251m"  # Light gray
+
+    # Cloud characters for different densities
+    cloud_chars = ['░', '▒', '▓', '~', '⌒', '⌢']
+
+    for cloud in state.enemies.cloud_banks:
+        x_pos = cloud['x_pos']
+        y_pos = cloud['y_pos']
+        width = cloud['width']
+        height = cloud['height']
+
+        for dy in range(height):
+            screen_y = y_pos + dy
+            if 0 <= screen_y < constants.layout.height:
+                for dx in range(width):
+                    screen_x = x_pos + dx
+                    if 0 <= screen_x < constants.layout.width:
+                        # Create cloud pattern - denser in middle
+                        dist_from_center_x = abs(dx - width // 2) / (width // 2 + 1)
+                        dist_from_center_y = abs(dy - height // 2) / (height // 2 + 1)
+                        density = 1 - (dist_from_center_x + dist_from_center_y) / 2
+
+                        # Random character based on density
+                        if density > 0.6:
+                            char = '▓'
+                        elif density > 0.4:
+                            char = '▒'
+                        elif density > 0.2:
+                            char = '░'
+                        else:
+                            char = '~' if (dx + dy) % 3 == 0 else ' '
+
+                        if char != ' ':
+                            fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, CLOUD_COLOR)
 
 
 def _fb_render_loot(fb):
@@ -2296,21 +2350,29 @@ def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_wid
         'biomes': {
             'title': 'BIOMES',
             'lines': [
-                "FOREST (Gear 1-2)",
-                "  Green trees, gentle start.",
-                "  Basic obstacles only.",
+                "WINDY WOODS (1-1 to 1-3)",
+                "  Dense conifer forest.",
+                "  Gentle start, basic obstacles.",
                 "",
-                "DESERT (Gear 3-4)",
-                "  Sandy terrain, rocks appear.",
-                "  Watch for dust clouds!",
+                "THE BORDERS (2-1 to 2-3)",
+                "  Open plains, deciduous trees.",
+                "  More space, faster foes.",
                 "",
-                "MOUNTAIN (Gear 5-6)",
-                "  Rocky terrain, more hazards.",
-                "  Bats become more common.",
+                "ROTTEN MARSHES (3-1 to 3-3)",
+                "  Swampy wetlands, reeds.",
+                "  Watch for murky waters!",
                 "",
-                "VOID (Gear 7+)",
-                "  Maximum difficulty!",
-                "  All hazards, fast enemies.",
+                "THE DARK SWAMP (4-1 to 4-3)",
+                "  Deep dark swamp, twisted trees.",
+                "  Visibility reduced, danger rises.",
+                "",
+                "THE VOID CAVE (5-1 to 5-3)",
+                "  Underground cavern, stalactites.",
+                "  No light, maximum peril!",
+                "",
+                "MOUNTAIN RANGE (6-1 to 6-3)",
+                "  High peaks, thin air.",
+                "  Cloud banks obscure vision!",
             ]
         }
     }

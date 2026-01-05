@@ -89,7 +89,10 @@ enemies = SimpleNamespace(
     spawn_queue=[],
     # Decorative barriers in right panel (no collision)
     right_panel_barriers=[],
-    right_panel_barrier_timer=0
+    right_panel_barrier_timer=0,
+    # Mountain Range cloud banks (foreground fog)
+    cloud_banks=[],
+    cloud_spawn_timer=0
 )
 
 # ============================================================================
