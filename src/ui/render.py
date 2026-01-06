@@ -190,7 +190,7 @@ MID_TREE_COLOR = theme.get_color('background', 'layer2', 235)
 # Biome-specific colors for backgrounds (layer1 = tree tops, layer2 = branches/details)
 BIOME_COLORS = {
     # level_group: (layer1_color, layer2_color)
-    1: ("\033[38;5;022m", "\033[38;5;023m"),      # Windy Woods - teal/cyan conifers
+    1: ("\033[38;5;022m", "\033[38;5;028m"),      # Windy Woods - teal/cyan conifers
     2: ("\033[38;5;82m", "\033[38;5;214m"),     # The Borders - green tops, orange branches
     3: ("\033[38;5;131m", "\033[38;5;131m"),    # Rotten Marshes - murky brown
     4: ("\033[38;5;96m", "\033[38;5;96m"),      # The Dark Swamp - dark purple
