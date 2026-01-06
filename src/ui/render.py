@@ -134,6 +134,36 @@ ceiling = "=" * constants.layout.width
 floor = ceiling
 
 # =============================================================================
+# ANSI TEXT MODIFIERS - For layer depth effects
+# =============================================================================
+MOD_FAINT = "\033[2m"   # Dim/faint text for background layers
+MOD_BOLD = "\033[1m"    # Bold text for foreground (obstacles, birds, bats)
+MOD_NORMAL = "\033[0m"  # Normal text for everything else
+
+
+def apply_faint(color):
+    """Apply faint modifier to a color code for background layers."""
+    if not color:
+        return MOD_FAINT
+    # Insert faint modifier after the escape sequence start
+    # Color format: \033[...m -> \033[2;...m
+    if color.startswith('\033['):
+        return f"\033[2;{color[2:]}"
+    return MOD_FAINT + color
+
+
+def apply_bold(color):
+    """Apply bold modifier to a color code for foreground game elements."""
+    if not color:
+        return MOD_BOLD
+    # Insert bold modifier after the escape sequence start
+    # Color format: \033[...m -> \033[1;...m
+    if color.startswith('\033['):
+        return f"\033[1;{color[2:]}"
+    return MOD_BOLD + color
+
+
+# =============================================================================
 # PARALLAX BACKGROUND PATTERNS - 3-layer scrolling effect
 # =============================================================================
 # Backgrounds are now biome-specific, loaded from sprites.py
@@ -156,6 +186,35 @@ MID_TREE_PATTERN_WIDTH = 32
 # Colors for parallax layers (loaded from theme)
 TREE_BG_COLOR = theme.get_color('background', 'layer1', 234)
 MID_TREE_COLOR = theme.get_color('background', 'layer2', 235)
+
+# Biome-specific colors for backgrounds (layer1 = tree tops, layer2 = branches/details)
+BIOME_COLORS = {
+    # level_group: (layer1_color, layer2_color)
+    1: ("\033[38;5;022m", "\033[38;5;023m"),      # Windy Woods - teal/cyan conifers
+    2: ("\033[38;5;82m", "\033[38;5;214m"),     # The Borders - green tops, orange branches
+    3: ("\033[38;5;131m", "\033[38;5;131m"),    # Rotten Marshes - murky brown
+    4: ("\033[38;5;96m", "\033[38;5;96m"),      # The Dark Swamp - dark purple
+    5: ("\033[38;5;105m", "\033[38;5;105m"),    # The Void Cave - violet rocks
+    6: ("\033[38;5;252m", "\033[38;5;252m"),    # Mountain Range - light gray peaks
+}
+
+# Biome-specific base colors for obstacles (used instead of HP-based coloring)
+BIOME_OBSTACLE_COLORS = {
+    1: "\033[38;5;36m",     # Windy Woods - teal/cyan
+    2: "\033[38;5;82m",     # The Borders - green
+    3: "\033[38;5;131m",    # Rotten Marshes - murky brown
+    4: "\033[38;5;96m",     # The Dark Swamp - dark purple
+    5: "\033[38;5;105m",    # The Void Cave - violet
+    6: "\033[38;5;252m",    # Mountain Range - light gray
+}
+
+def get_biome_colors(level_group):
+    """Get colors for the current biome's background layers."""
+    return BIOME_COLORS.get(level_group, (TREE_BG_COLOR, MID_TREE_COLOR))
+
+def get_biome_obstacle_color(level_group):
+    """Get base color for obstacles in the current biome."""
+    return BIOME_OBSTACLE_COLORS.get(level_group, "\033[38;5;94m")
 
 def get_current_biome_bg():
     """Get background patterns for the current biome based on level_group."""
@@ -242,8 +301,10 @@ class FrameBuffer:
                 for x in range(self.width):
                     char, color = self.current[y][x]
                     if color != last_color:
+                        # Always reset first to clear any modifiers (bold/faint)
+                        # then apply new color
                         if color:
-                            line_chars.append(color)
+                            line_chars.append(RESET + color)
                         else:
                             line_chars.append(RESET)
                         last_color = color
@@ -265,8 +326,10 @@ class FrameBuffer:
                         for rx in range(run_start, x):
                             char, color = self.current[y][rx]
                             if color != last_color:
+                                # Always reset first to clear any modifiers (bold/faint)
+                                # then apply new color
                                 if color:
-                                    output.append(color)
+                                    output.append(RESET + color)
                                 else:
                                     output.append(RESET)
                                 last_color = color
@@ -1365,12 +1428,15 @@ def _fb_render_background(fb):
     # Check if parallax is enabled (runtime settings override config)
     parallax_enabled = state.settings.parallax_enabled
 
-    # Get biome-specific background patterns
+    # Get biome-specific background patterns and colors
     layer1_pattern, layer2_pattern = get_current_biome_bg()
     layer1_height = len(layer1_pattern)
     layer1_width = len(layer1_pattern[0]) if layer1_pattern else 24
     layer2_height = len(layer2_pattern)
     layer2_width = len(layer2_pattern[0]) if layer2_pattern else 32
+
+    # Get biome-specific colors
+    layer1_color, layer2_color = get_biome_colors(state.game.level_group)
 
     # Right panel start position
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
@@ -1381,39 +1447,43 @@ def _fb_render_background(fb):
         # === Layer 1: Slowest background (biome-specific pattern) ===
         pattern_y = (screen_y - bg_offset) % layer1_height
         pattern_line = layer1_pattern[pattern_y]
+        # Apply faint modifier for background depth effect
+        layer1_faint = apply_faint(layer1_color)
 
         # Fill game area by repeating pattern horizontally
         for screen_x in range(constants.layout.width):
             pattern_x = screen_x % layer1_width
             char = pattern_line[pattern_x] if pattern_x < len(pattern_line) else ' '
             if char != ' ':
-                fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, TREE_BG_COLOR)
+                fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, layer1_faint)
 
         # Also render in right panel (continuing the pattern)
         for panel_x in range(right_panel_inner_width):
             pattern_x = (constants.layout.width + panel_x) % layer1_width
             char = pattern_line[pattern_x] if pattern_x < len(pattern_line) else ' '
             if char != ' ':
-                fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, TREE_BG_COLOR)
+                fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, layer1_faint)
 
         # === Layer 2: Medium speed (biome-specific pattern) - only if parallax enabled ===
         if parallax_enabled:
             mid_pattern_y = (screen_y - mid_offset) % layer2_height
             mid_pattern_line = layer2_pattern[mid_pattern_y]
+            # Apply faint modifier for background depth effect
+            layer2_faint = apply_faint(layer2_color)
 
             # Fill game area
             for screen_x in range(constants.layout.width):
                 pattern_x = screen_x % layer2_width
                 char = mid_pattern_line[pattern_x] if pattern_x < len(mid_pattern_line) else ' '
                 if char != ' ':
-                    fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
+                    fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, layer2_faint)
 
             # Also render in right panel
             for panel_x in range(right_panel_inner_width):
                 pattern_x = (constants.layout.width + panel_x) % layer2_width
                 char = mid_pattern_line[pattern_x] if pattern_x < len(mid_pattern_line) else ' '
                 if char != ' ':
-                    fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, MID_TREE_COLOR)
+                    fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, layer2_faint)
 
 
 def _fb_render_header(fb):
@@ -1504,16 +1574,16 @@ def _fb_render_starting_line(fb):
 
 
 def _fb_render_obstacles(fb):
-    """Render obstacles to framebuffer using biome-specific sprites."""
+    """Render obstacles to framebuffer using biome-specific sprites and colors."""
     from src.entities.sprites import get_biome_obstacles
 
     # Get obstacle sprites for current biome
     biome_obstacles = get_biome_obstacles(state.game.level_group)
+    # Get biome-specific obstacle color with bold modifier for foreground
+    biome_obs_color = apply_bold(get_biome_obstacle_color(state.game.level_group))
 
     for obs in state.enemies.obstacles:
         tier = obs.get('tier', 1)
-        max_hp = constants.obstacle.max_hp_by_tier.get(tier, obs.get('hp', 1))
-        obs_color = color_from_hp(constants.colors.obstacles_base_rgb, obs.get('hp', 0), max_hp)
 
         # Usa lo sprite del tier corretto dal bioma corrente
         sprite = biome_obstacles.get(tier, biome_obstacles.get(1, OBSTACLE_SPRITE_T1))
@@ -1537,19 +1607,20 @@ def _fb_render_obstacles(fb):
                     if char != ' ':  # Solo caratteri non-spazio
                         x_pos = center_x - x_offset + i
                         if 0 <= x_pos < constants.layout.width:
-                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, obs_color)
+                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, biome_obs_color)
 
 
 def _fb_render_right_panel_barriers(fb):
-    """Render decorative barriers in right panel using biome-specific sprites."""
+    """Render decorative barriers in right panel using biome-specific sprites and colors."""
     from src.entities.sprites import get_biome_obstacles
 
     # Right panel position
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
     right_panel_inner_width = SIDE_PANEL_WIDTH - 2
 
-    # Get obstacle sprites for current biome
+    # Get obstacle sprites and color for current biome
     biome_obstacles = get_biome_obstacles(state.game.level_group)
+    biome_obs_color = get_biome_obstacle_color(state.game.level_group)
 
     for barrier in state.enemies.right_panel_barriers:
         tier = barrier.get('tier', 1)
@@ -1568,7 +1639,7 @@ def _fb_render_right_panel_barriers(fb):
                         x_pos = base_x + i
                         # Make sure it stays within panel bounds
                         if right_panel_start <= x_pos < right_panel_start + right_panel_inner_width:
-                            fb.put(x_pos, y_pos + HEADER_HEIGHT, char, DECO_COLOR)
+                            fb.put(x_pos, y_pos + HEADER_HEIGHT, char, biome_obs_color)
 
 
 def _fb_render_bats(fb):
@@ -1576,7 +1647,8 @@ def _fb_render_bats(fb):
     for bat in state.enemies.bats:
         bat_hp = bat.get('hp', 0)
         bat_max = bat.get('max_hp', bat_hp if bat_hp > 0 else 1)
-        bat_color = color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max)
+        # Apply bold modifier for foreground game elements
+        bat_color = apply_bold(color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max))
 
         bat_sprite = BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else BAT_FRAME_2
 
@@ -1720,6 +1792,9 @@ def _fb_render_birds(fb):
             bird_color = get_render_color(WHITE) if tangible else get_render_color(DARK_GRAY)
         elif state.birds.colors[i] == BLUE and state.birds.power_used[i]:
             bird_color = get_render_color(CYAN)
+
+        # Apply bold modifier for foreground game elements
+        bird_color = apply_bold(bird_color)
 
         # Render bird sprite
         for line_idx, line in enumerate(sprite):
