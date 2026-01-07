@@ -27,7 +27,7 @@ base:
 birds:
   yellow: 226      # Yellow bird
   red: 196          # Red bird (basic ANSI red)
-  blue: 27         # Blue bird (basic ANSI blue)
+  blue: 33         # Blue bird (basic ANSI blue)
   white: -5        # White/Templar bird
   patchwork: 202   # Red-orange
   purple: 201      # Magenta-purple

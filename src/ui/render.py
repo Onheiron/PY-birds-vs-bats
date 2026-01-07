@@ -145,10 +145,7 @@ def apply_faint(color):
     """Apply faint modifier to a color code for background layers."""
     if not color:
         return MOD_FAINT
-    # Insert faint modifier after the escape sequence start
-    # Color format: \033[...m -> \033[2;...m
-    if color.startswith('\033['):
-        return f"\033[2;{color[2:]}"
+    # Prepend faint modifier as separate sequence before color
     return MOD_FAINT + color
 
 
@@ -156,10 +153,7 @@ def apply_bold(color):
     """Apply bold modifier to a color code for foreground game elements."""
     if not color:
         return MOD_BOLD
-    # Insert bold modifier after the escape sequence start
-    # Color format: \033[...m -> \033[1;...m
-    if color.startswith('\033['):
-        return f"\033[1;{color[2:]}"
+    # Prepend bold modifier as separate sequence before color
     return MOD_BOLD + color
 
 
@@ -191,19 +185,19 @@ MID_TREE_COLOR = theme.get_color('background', 'layer2', 235)
 BIOME_COLORS = {
     # level_group: (layer1_color, layer2_color)
     1: ("\033[38;5;022m", "\033[38;5;028m"),      # Windy Woods - teal/cyan conifers
-    2: ("\033[38;5;82m", "\033[38;5;214m"),     # The Borders - green tops, orange branches
-    3: ("\033[38;5;131m", "\033[38;5;131m"),    # Rotten Marshes - murky brown
-    4: ("\033[38;5;96m", "\033[38;5;96m"),      # The Dark Swamp - dark purple
-    5: ("\033[38;5;105m", "\033[38;5;105m"),    # The Void Cave - violet rocks
+    2: ("\033[38;5;028m", "\033[38;5;034m"),     # The Borders - green tops, orange branches
+    3: ("\033[38;5;030m", "\033[38;5;033m"),    # Rotten Marshes - murky brown
+    4: ("\033[38;5;105m", "\033[38;5;029m"),      # The Dark Swamp - dark purple
+    5: ("\033[38;5;232m", "\033[38;5;230m"),    # The Void Cave - violet rocks
     6: ("\033[38;5;252m", "\033[38;5;252m"),    # Mountain Range - light gray peaks
 }
 
 # Biome-specific base colors for obstacles (used instead of HP-based coloring)
 BIOME_OBSTACLE_COLORS = {
-    1: "\033[38;5;36m",     # Windy Woods - teal/cyan
+    1: "\033[38;5;43m",     # Windy Woods - teal/cyan
     2: "\033[38;5;82m",     # The Borders - green
-    3: "\033[38;5;131m",    # Rotten Marshes - murky brown
-    4: "\033[38;5;96m",     # The Dark Swamp - dark purple
+    3: "\033[38;5;137m",    # Rotten Marshes - murky brown
+    4: "\033[38;5;246m",     # The Dark Swamp - dark purple
     5: "\033[38;5;105m",    # The Void Cave - violet
     6: "\033[38;5;252m",    # Mountain Range - light gray
 }
@@ -400,6 +394,60 @@ def color_from_hp(base_rgb: tuple, hp: int, max_hp: int) -> str:
         b = int(base_rgb[2] * hp_percentage)
     except Exception:
         r = g = b = 0
+    return _rgb_escape(r, g, b)
+
+
+# 256-color to RGB conversion table for the 6x6x6 color cube (indices 16-231)
+def _256_to_rgb(code):
+    """Convert 256-color code to RGB tuple."""
+    if code < 16:
+        # Standard colors - approximate values
+        standard = [
+            (0, 0, 0), (128, 0, 0), (0, 128, 0), (128, 128, 0),
+            (0, 0, 128), (128, 0, 128), (0, 128, 128), (192, 192, 192),
+            (128, 128, 128), (255, 0, 0), (0, 255, 0), (255, 255, 0),
+            (0, 0, 255), (255, 0, 255), (0, 255, 255), (255, 255, 255)
+        ]
+        return standard[code]
+    elif code < 232:
+        # 6x6x6 color cube
+        code -= 16
+        r = (code // 36) * 51
+        g = ((code // 6) % 6) * 51
+        b = (code % 6) * 51
+        return (r, g, b)
+    else:
+        # Grayscale (232-255)
+        gray = (code - 232) * 10 + 8
+        return (gray, gray, gray)
+
+
+def dim_ansi_color(ansi_color: str, hp: int, max_hp: int) -> str:
+    """Dim an ANSI 256-color code based on HP percentage.
+    
+    Takes a color like '\033[38;5;36m' and dims it based on hp/max_hp ratio.
+    Returns an RGB escape code with the dimmed color.
+    """
+    hp_percentage = hp / max_hp if max_hp > 0 else 0
+    
+    # Extract the color code from the ANSI sequence
+    # Format: \033[38;5;XXXm
+    import re
+    match = re.search(r'\033\[38;5;(\d+)m', ansi_color)
+    if not match:
+        # Fallback: return original if can't parse
+        return ansi_color
+    
+    color_code = int(match.group(1))
+    
+    # Convert to RGB
+    r, g, b = _256_to_rgb(color_code)
+    
+    # Apply HP-based dimming
+    r = int(r * hp_percentage)
+    g = int(g * hp_percentage)
+    b = int(b * hp_percentage)
+    
     return _rgb_escape(r, g, b)
 
 def get_key():
@@ -1579,11 +1627,15 @@ def _fb_render_obstacles(fb):
 
     # Get obstacle sprites for current biome
     biome_obstacles = get_biome_obstacles(state.game.level_group)
-    # Get biome-specific obstacle color with bold modifier for foreground
-    biome_obs_color = apply_bold(get_biome_obstacle_color(state.game.level_group))
+    # Get biome base color for obstacles
+    biome_base_color = get_biome_obstacle_color(state.game.level_group)
 
     for obs in state.enemies.obstacles:
         tier = obs.get('tier', 1)
+
+        # Calculate color based on HP - dims biome color as obstacle takes damage
+        max_hp = constants.obstacle.max_hp_by_tier.get(tier, obs.get('hp', 1))
+        obs_color = apply_bold(dim_ansi_color(biome_base_color, obs.get('hp', 0), max_hp))
 
         # Usa lo sprite del tier corretto dal bioma corrente
         sprite = biome_obstacles.get(tier, biome_obstacles.get(1, OBSTACLE_SPRITE_T1))
@@ -1607,7 +1659,7 @@ def _fb_render_obstacles(fb):
                     if char != ' ':  # Solo caratteri non-spazio
                         x_pos = center_x - x_offset + i
                         if 0 <= x_pos < constants.layout.width:
-                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, biome_obs_color)
+                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, obs_color)
 
 
 def _fb_render_right_panel_barriers(fb):
