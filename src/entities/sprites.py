@@ -224,25 +224,58 @@ WOODS_BG_LAYER2 = [
     "           '                    ",
 ]
 
-# Windy Woods obstacles - conifer tree tops
-WOODS_OBSTACLE_T1 = [
+# Windy Woods obstacles - conifer tree tops (multiple variants per tier)
+WOODS_OBSTACLE_T1_V1 = [
     "⋀∧⋀",
     "∧^∧^",
 ]
-WOODS_OBSTACLE_T2 = [
+WOODS_OBSTACLE_T1_V2 = [
+    " ∧⋀ ",
+    "^∧^∧",
+]
+WOODS_OBSTACLE_T2_V1 = [
     " ∧⋀^  ",
     "⋀/^\\^⋀",
 ]
-WOODS_OBSTACLE_T3 = [
+WOODS_OBSTACLE_T2_V2 = [
+    "  ^∧  ",
+    " ⋀/\\⋀ ",
+    "∧/^^\\∧",
+]
+WOODS_OBSTACLE_T3_V1 = [
     "   ⋀Λ⋀   ",
     " Λ^/⋀\\/\\ ",
     "Λ⋀/∧Λ^\\^\\",
 ]
-WOODS_OBSTACLE_T4 = [
+WOODS_OBSTACLE_T3_V2 = [
+    "  ⋀ Λ ⋀  ",
+    " Λ/⋀Λ⋀\\ ",
+    "∧/^^Λ^^\\∧",
+]
+WOODS_OBSTACLE_T4_V1 = [
     "   ⋀Λ⋀   Λ   ",
     " Λ^/⋀\\/\\/^\\  ",
     "Λ⋀/∧Λ^\\^\\^^\\⋀",
 ]
+WOODS_OBSTACLE_T4_V2 = [
+    "    ⋀Λ⋀  Λ⋀   ",
+    "  Λ/⋀Λ\\/\\/Λ\\  ",
+    " Λ⋀/∧Λ^\\^\\^^\\⋀ ",
+]
+
+# Default variants (first variant)
+WOODS_OBSTACLE_T1 = WOODS_OBSTACLE_T1_V1
+WOODS_OBSTACLE_T2 = WOODS_OBSTACLE_T2_V1
+WOODS_OBSTACLE_T3 = WOODS_OBSTACLE_T3_V1
+WOODS_OBSTACLE_T4 = WOODS_OBSTACLE_T4_V1
+
+# All variants per tier (for random selection)
+WOODS_OBSTACLE_VARIANTS = {
+    1: [WOODS_OBSTACLE_T1_V1, WOODS_OBSTACLE_T1_V2],
+    2: [WOODS_OBSTACLE_T2_V1, WOODS_OBSTACLE_T2_V2],
+    3: [WOODS_OBSTACLE_T3_V1, WOODS_OBSTACLE_T3_V2],
+    4: [WOODS_OBSTACLE_T4_V1, WOODS_OBSTACLE_T4_V2],
+}
 
 # =============================================================================
 # BIOME 2: THE BORDERS - Plains with deciduous trees
@@ -507,9 +540,49 @@ BIOME_OBSTACLES = {
     6: {1: MOUNTAIN_OBSTACLE_T1, 2: MOUNTAIN_OBSTACLE_T2, 3: MOUNTAIN_OBSTACLE_T3, 4: MOUNTAIN_OBSTACLE_T4},
 }
 
+# Varianti sprite per bioma (se non definite, usa sprite singola)
+BIOME_OBSTACLE_VARIANTS = {
+    1: WOODS_OBSTACLE_VARIANTS,  # Windy Woods ha varianti
+    # Altri biomi possono usare varianti in futuro
+}
+
+
 def get_biome_obstacles(level_group):
     """Get obstacle sprites for the current biome."""
     return BIOME_OBSTACLES.get(level_group, BIOME_OBSTACLES[1])
+
+
+def get_random_obstacle_sprite(level_group, tier, allow_flip=True):
+    """Seleziona una sprite casuale per un ostacolo, eventualmente flippata.
+
+    Args:
+        level_group: bioma corrente (1-6)
+        tier: tier dell'ostacolo (1-4)
+        allow_flip: se True, può flippare orizzontalmente la sprite
+
+    Returns:
+        tuple: (sprite, flipped) dove sprite è la lista di stringhe e flipped è bool
+    """
+    import random
+
+    # Controlla se ci sono varianti per questo bioma
+    variants = BIOME_OBSTACLE_VARIANTS.get(level_group, {})
+
+    if tier in variants and variants[tier]:
+        # Seleziona variante casuale
+        sprite = random.choice(variants[tier])
+    else:
+        # Usa sprite default del bioma
+        biome_sprites = BIOME_OBSTACLES.get(level_group, BIOME_OBSTACLES[1])
+        sprite = biome_sprites.get(tier, OBSTACLE_SPRITE_T1)
+
+    # Eventualmente flippa
+    flipped = False
+    if allow_flip and random.random() < 0.5:
+        sprite = flip_sprite_horizontal(sprite)
+        flipped = True
+
+    return sprite, flipped
 
 def get_biome_bg(level_group):
     """Get background patterns for the current biome."""
@@ -538,13 +611,101 @@ OBSTACLE_SPRITES = {
     4: OBSTACLE_SPRITE_T4,
 }
 
-# Larghezza in lane per ogni tier
+# Larghezza in lane per ogni tier (DEPRECATED - usa get_obstacle_sprite_width)
 OBSTACLE_LANE_WIDTH = {
     1: 1,  # 1 lane
     2: 1,  # 1 lane
     3: 2,  # 2 lanes
     4: 3,  # 3 lanes
 }
+
+
+def flip_sprite_horizontal(sprite):
+    """Flippa una sprite orizzontalmente.
+
+    Args:
+        sprite: lista di stringhe rappresentanti le righe della sprite
+
+    Returns:
+        lista di stringhe con la sprite flippata
+    """
+    if not sprite:
+        return sprite
+
+    # Mappa caratteri che devono essere invertiti
+    flip_map = {
+        '/': '\\', '\\': '/',
+        '(': ')', ')': '(',
+        '[': ']', ']': '[',
+        '{': '}', '}': '{',
+        '<': '>', '>': '<',
+        '⌋': '⌊', '⌊': '⌋',
+        '⌉': '⌈', '⌈': '⌉',
+    }
+
+    flipped = []
+    for line in sprite:
+        # Inverti la linea carattere per carattere
+        flipped_line = ''
+        for ch in reversed(line):
+            flipped_line += flip_map.get(ch, ch)
+        flipped.append(flipped_line)
+
+    return flipped
+
+
+def get_obstacle_sprite_width(sprite):
+    """Calcola la larghezza effettiva di una sprite (max lunghezza linee non-spazio)."""
+    if not sprite:
+        return 0
+    max_width = 0
+    for line in sprite:
+        # Trova primo e ultimo carattere non-spazio
+        first_char = -1
+        last_char = -1
+        for i, ch in enumerate(line):
+            if ch != ' ':
+                if first_char == -1:
+                    first_char = i
+                last_char = i
+        if first_char != -1:
+            line_width = last_char - first_char + 1
+            max_width = max(max_width, line_width)
+    return max_width
+
+
+def get_obstacle_hitbox_lanes(obs_lane, sprite_width, lane_positions, num_lanes):
+    """Calcola quali lane sono coperte da un ostacolo basandosi sulla larghezza sprite.
+
+    Args:
+        obs_lane: lane iniziale dell'ostacolo (0-based)
+        sprite_width: larghezza sprite in caratteri
+        lane_positions: lista posizioni X delle lane
+        num_lanes: numero totale di lane
+
+    Returns:
+        set di lane coperte dall'ostacolo
+    """
+    if obs_lane >= num_lanes:
+        return set()
+
+    # Posizione X centrale dell'ostacolo (centro della lane iniziale)
+    center_x = lane_positions[obs_lane]
+
+    # Estensione orizzontale della sprite dal centro
+    half_width = sprite_width // 2
+    left_x = center_x - half_width
+    right_x = center_x + half_width
+
+    # Trova quali lane sono coperte
+    covered_lanes = set()
+    for lane_idx, lane_x in enumerate(lane_positions):
+        # Una lane è coperta se il suo centro è dentro l'estensione della sprite
+        # oppure se la sprite tocca la lane (margine di 2 caratteri per lato)
+        if left_x - 2 <= lane_x <= right_x + 2:
+            covered_lanes.add(lane_idx)
+
+    return covered_lanes
 
 # Legacy: mantieni per compatibilità
 OBSTACLE_SPRITE = OBSTACLE_SPRITE_T1

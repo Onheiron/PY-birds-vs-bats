@@ -1625,7 +1625,7 @@ def _fb_render_obstacles(fb):
     """Render obstacles to framebuffer using biome-specific sprites and colors."""
     from src.entities.sprites import get_biome_obstacles
 
-    # Get obstacle sprites for current biome
+    # Get obstacle sprites for current biome (fallback)
     biome_obstacles = get_biome_obstacles(state.game.level_group)
     # Get biome base color for obstacles
     biome_base_color = get_biome_obstacle_color(state.game.level_group)
@@ -1637,19 +1637,16 @@ def _fb_render_obstacles(fb):
         max_hp = constants.obstacle.max_hp_by_tier.get(tier, obs.get('hp', 1))
         obs_color = apply_bold(dim_ansi_color(biome_base_color, obs.get('hp', 0), max_hp))
 
-        # Usa lo sprite del tier corretto dal bioma corrente
-        sprite = biome_obstacles.get(tier, biome_obstacles.get(1, OBSTACLE_SPRITE_T1))
+        # Usa sprite salvata nell'ostacolo (variante + flip), o fallback a default bioma
+        sprite = obs.get('sprite')
+        if sprite is None:
+            sprite = biome_obstacles.get(tier, biome_obstacles.get(1, OBSTACLE_SPRITE_T1))
+
         sprite_width = max(len(line) for line in sprite)
-        lane_width = OBSTACLE_LANE_WIDTH.get(tier, 1)
 
-        # Calcola la posizione x centrale per lo sprite
+        # Posizione x centrata sulla lane
         start_lane = obs['lane']
-        end_lane = min(start_lane + lane_width - 1, constants.layout.num_lanes - 1)
-
-        # Centro tra la prima e l'ultima lane occupata
-        start_x = constants.layout.lane_positions[start_lane]
-        end_x = constants.layout.lane_positions[end_lane]
-        center_x = (start_x + end_x) // 2
+        center_x = constants.layout.lane_positions[start_lane]
         x_offset = sprite_width // 2
 
         for line_idx, line in enumerate(sprite):

@@ -188,11 +188,22 @@ def check_bird_floor_collision():
 
 
 def _get_obstacle_lanes(obs):
-    """Ritorna il set di lane occupate da un ostacolo."""
-    obs_tier = obs.get('tier', 1)
-    obs_width = OBSTACLE_LANE_WIDTH.get(obs_tier, 1)
+    """Ritorna il set di lane occupate da un ostacolo basandosi sulla larghezza sprite."""
     obs_lane = obs['lane']
-    return set(range(obs_lane, min(obs_lane + obs_width, constants.layout.num_lanes)))
+    # Usa sprite_width salvato nell'ostacolo, o calcola dalla sprite
+    sprite_width = obs.get('sprite_width')
+    if sprite_width is None:
+        # Fallback: calcola dalla sprite del tier
+        obs_tier = obs.get('tier', 1)
+        sprite = get_biome_obstacles(state.game.level_group).get(obs_tier, OBSTACLE_SPRITE_T1)
+        sprite_width = get_obstacle_sprite_width(sprite)
+
+    return get_obstacle_hitbox_lanes(
+        obs_lane,
+        sprite_width,
+        constants.layout.lane_positions,
+        constants.layout.num_lanes
+    )
 
 
 def check_bird_obstacle_collision():
@@ -703,8 +714,18 @@ def spawn_obstacle():
 
     # Use milestone level (1-18) for spawning, not speed
     level = state.game.level
-    # Spawn più frequente: da 50 a livello 1, fino a 10 a livelli alti
-    base_spawn_rate = max(10, 50 - level * 2)
+
+    # Spawn rate "a scalino": aumenta nel sub-livello, poi si abbassa all'inizio del nuovo bioma
+    # level_group (1-6) = bioma, sub_level (1-3) = sotto-livello nel bioma
+    level_group = state.game.level_group  # 1-6
+    sub_level = ((level - 1) % 3) + 1     # 1, 2, or 3 within biome
+
+    # Base spawn rate per bioma (più frequente = numero più basso)
+    # Bioma 1: 35, Bioma 2: 30, Bioma 3: 25, Bioma 4: 20, Bioma 5: 16, Bioma 6: 12
+    biome_base = 40 * (0.85 ** level_group)
+
+    # Spawn rate finale (min 6 per non essere troppo spam)
+    base_spawn_rate = max(6, int(biome_base * (0.9 ** (sub_level - 1))))
     state.enemies.obstacle_spawn_timer = base_spawn_rate
 
     # Tier based on level (1-18) - progressive difficulty
@@ -721,27 +742,27 @@ def spawn_obstacle():
     else:  # Levels 6-1 to 6-3
         tier = random.choices([1, 2, 3, 4], weights=[5, 20, 45, 30])[0]
 
-    # Larghezza in lane per questo tier
-    lane_width = OBSTACLE_LANE_WIDTH.get(tier, 1)
+    # Ottieni sprite del bioma per calcolare larghezza
+    biome_obstacles_preview = get_biome_obstacles(level_group)
+    new_sprite = biome_obstacles_preview.get(tier, OBSTACLE_SPRITE_T1)
+    new_sprite_width = get_obstacle_sprite_width(new_sprite)
 
-    # Trova gruppi di lane consecutive libere
-    def get_lanes_occupied_by_obstacle(obs):
-        """Ritorna set di lane occupate da un ostacolo."""
-        obs_tier = obs.get('tier', 1)
-        obs_width = OBSTACLE_LANE_WIDTH.get(obs_tier, 1)
-        obs_lane = obs['lane']
-        return set(range(obs_lane, min(obs_lane + obs_width, constants.layout.num_lanes)))
-
-    # Mappa quali lane sono occupate
+    # Mappa quali lane sono occupate (usa hitbox dinamica)
     occupied_lanes = set()
     for obs in state.enemies.obstacles:
         if obs['y_pos'] < 5:  # Solo ostacoli vicini al top
-            occupied_lanes.update(get_lanes_occupied_by_obstacle(obs))
+            occupied_lanes.update(_get_obstacle_lanes(obs))
 
-    # Trova posizioni valide per il nuovo ostacolo (lane iniziale)
+    # Trova posizioni valide per il nuovo ostacolo
     valid_start_lanes = []
-    for start_lane in range(constants.layout.num_lanes - lane_width + 1):
-        lanes_needed = set(range(start_lane, start_lane + lane_width))
+    for start_lane in range(constants.layout.num_lanes):
+        # Calcola quali lane occuperebbe il nuovo ostacolo in questa posizione
+        lanes_needed = get_obstacle_hitbox_lanes(
+            start_lane,
+            new_sprite_width,
+            constants.layout.lane_positions,
+            constants.layout.num_lanes
+        )
         if not lanes_needed & occupied_lanes:
             valid_start_lanes.append(start_lane)
 
@@ -760,19 +781,34 @@ def spawn_obstacle():
 
     lane = random.choice(valid_start_lanes)
 
-    # HP bilanciati per danno uccelli (giallo 2, rosso 3, blu 4)
-    hp_map = {1: 4, 2: 6, 3: 12, 4: 27}
-    hp = hp_map.get(tier, 4)
+    # HP base per tier, poi scala linearmente col livello
+    # Base HP: tier 1=4, tier 2=6, tier 3=12, tier 4=27
+    # Level scaling: +10% HP per ogni livello (level 1-18)
+    hp_base = {1: 5, 2: 8, 3: 16, 4: 32}
+    base_hp = hp_base.get(tier, 4)
+    # Linear scaling: HP aumenta del 10% per livello (level 1 = 100%, level 18 = 270%)
+    level_multiplier = 1.0 + (level - 1) * 0.1
+    hp = int(base_hp * level_multiplier)
 
-    # Calcola altezza sprite per far entrare l'ostacolo gradualmente dall'alto
-    sprite = OBSTACLE_SPRITES.get(tier, OBSTACLE_SPRITE_T1)
+    # Seleziona sprite casuale (variante + eventuale flip)
+    sprite, flipped = get_random_obstacle_sprite(level_group, tier, allow_flip=True)
     sprite_height = len(sprite)
+    sprite_width = get_obstacle_sprite_width(sprite)
+
     # Spawn fuori schermo: y negativo così entra gradualmente
     start_y = -sprite_height + 1
 
     state.enemies.spawn_queue.append({
         'type': 'obstacle',
-        'data': {'lane': lane, 'y_pos': start_y, 'tier': tier, 'hp': hp}
+        'data': {
+            'lane': lane,
+            'y_pos': start_y,
+            'tier': tier,
+            'hp': hp,
+            'sprite_width': sprite_width,
+            'sprite': sprite,  # Sprite specifica (variante + flip)
+            'flipped': flipped
+        }
     })
 
 
