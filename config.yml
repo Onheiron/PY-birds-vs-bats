@@ -34,6 +34,36 @@ background:
 birds:
   default_formation: [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]
   randomize_lanes: true
+  # Base damage (DMG) per bird type - used in damage formula
+  damage:
+    yellow: 1
+    red: 1
+    blue: 1
+    patchwork: 1
+    purple: 1
+    clockwork: 1
+    white: 2
+    orange: 999  # One-hit kill
+    gold: 0
+    cookie: 1
+    stealth: 8
+    dinosaur: 5
+    glitch: 1  # Glitch uses random multiplier
+  # Base speed (SPD) per bird type
+  speed:
+    yellow: 2
+    red: 3
+    blue: 4
+    patchwork: 3
+    purple: 3
+    clockwork: 2
+    white: 4
+    orange: 5
+    gold: 6
+    cookie: 3
+    stealth: 3
+    dinosaur: 4
+    glitch: 3
 timing:
   base_sleep: 0.2
   frame_sleep_level_multiplier: 0.88
