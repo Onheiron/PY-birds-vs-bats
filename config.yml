@@ -68,6 +68,46 @@ timing:
   base_sleep: 0.2
   frame_sleep_level_multiplier: 0.88
   min_sleep: 0.02
+  # Audio sync interval (frames)
+  audio_sync_interval: 60
+
+# Combat and scoring parameters
+combat:
+  # Score/XP multipliers for destroying enemies
+  obstacle_destroy_xp_per_tier: 5    # XP = tier * this value
+  obstacle_destroy_score_per_tier: 50  # Score = tier * this value
+  bat_destroy_xp_per_tier: 5         # XP = tier * this value
+  # Scared effect duration (seconds)
+  scared_duration: 2.0
+  # Speed boost duration when hit by high tier bat (seconds)
+  speed_boost_duration: 2.0
+  speed_boost_min_tier: 3            # Minimum bat tier to trigger speed boost
+  # Damage formula: ((gear - gear_offset) * gear_coeff + dmg) * spd
+  damage_formula:
+    gear_offset: 3
+    gear_coefficient: 0.1
+  # Stealth bird tangible damage boost
+  stealth_tangible_dmg_boost: 4
+  # Glitch bird random damage multiplier range
+  glitch_dmg_multiplier_min: 1
+  glitch_dmg_multiplier_max: 8
+  # Legacy combat values
+  bat_center_offset: 4
+  obstacle_score_multiplier: 2
+  xp_bonus_per_tier: 10
+
+# Loot and rarity
+loot:
+  # Base rarity weights [common, uncommon, rare, epic]
+  base_rarity_weights: [60, 25, 10, 5]
+  # Glitch bird special loot interactions
+  glitch_ignore_chance: 0.05         # Chance to ignore loot
+  glitch_promote_chance: 0.10        # Chance to promote rarity (cumulative with ignore)
+  # Despawn times (seconds)
+  bat_despawn_time: 60
+  loot_despawn_time: 30
+  # Gold bird score per tick
+  gold_bird_score_per_tick: 100
 notifications:
   duration_seconds: 3.0
   max_stack: 3
@@ -141,6 +181,34 @@ bat_enemy:
     base_seconds: 2.0
     speed_boost_seconds: 2.0
   spawn_interval_range: [80, 160]  # era [120, 220] - spawn più frequente
+  # Spawn rate per level range (frames between spawns)
+  spawn_rate_by_level:
+    level_4_6: 200
+    level_7_9: 150
+    level_10_12: 100
+    level_13_15: 70
+    level_16_18: 50
+  # Max bats on screen per level range
+  max_bats_by_level:
+    level_4_6: 1
+    level_7_9: 2
+    level_10_12: 3
+    level_13_15: 4
+    level_16_18: 5
+  # Tier weights per level range [tier1, tier2, tier3, tier4]
+  tier_weights_by_level:
+    level_4_6: [70, 25, 5, 0]
+    level_7_9: [50, 35, 12, 3]
+    level_10_12: [30, 40, 22, 8]
+    level_13_15: [15, 35, 35, 15]
+    level_16_18: [5, 25, 45, 25]
+  # Target Y position ranges per level (how close bats fly to birds)
+  target_y_by_level:
+    level_4_6: {min: 3, max: 8}
+    level_7_9: {min: 5, max: 12}
+    level_10_12: {min: 8, max: 16}
+    level_13_15: {min: 10, max: 20}
+    level_16_18: {min: 12, max: 23}
   spawning:
     consecutive_retry_timer: 20
     consecutive_spawn_limit: 2
@@ -173,35 +241,37 @@ bat_enemy:
     weights_level_5_7: [25, 35, 28, 12]
     weights_level_8_plus: [10, 25, 40, 25]  # tier 3 e 4 molto più comuni
 obstacle:
+  # Base HP per tier (before level scaling)
+  hp_by_tier:
+    1: 5
+    2: 8
+    3: 16
+    4: 32
+  # HP scaling with level: hp = base_hp * (1 + (level-1) * level_hp_multiplier)
+  level_hp_multiplier: 0.1
+  # Legacy max_hp_by_tier for render color calculation
   max_hp_by_tier:
-    1: 4       # 2 colpi giallo, 2 rosso, 1 blu
-    2: 6       # 3 colpi giallo, 2 rosso, 2 blu
-    3: 12      # coop 2 lane
-    4: 27      # coop 3 lane
+    1: 4
+    2: 6
+    3: 12
+    4: 27
   spawning:
-    base_spawn_rate:
-      base: 40       # era 60 - spawn più frequente
-      min: 10        # era 15 - minimo più basso
-    consecutive_spawn_limit: 3    # era 2 - più ostacoli consecutivi
+    # Spawn rate formula: biome_base * (biome_decay ^ level_group) * (sublevel_decay ^ (sub_level-1))
+    biome_base: 40           # Base spawn rate
+    biome_decay: 0.85        # Multiplier per biome (lower = faster spawn in later biomes)
+    sublevel_decay: 0.9      # Multiplier per sub-level (lower = faster spawn in later sub-levels)
+    min_spawn_rate: 6        # Minimum frames between spawns
+    consecutive_spawn_limit: 3
     retry_timer_divisor: 2
-    retry_timer_min: 3            # era 5
-    spawn_rate_level_multiplier: 5   # era 4 - scala più veloce col livello
-    spawn_variance:
-      base: 20       # era 30 - meno varianza = più consistente
-      min: 5         # era 10
-    spawn_variance_level_multiplier: 3   # era 2
-  tiers:
-    hp_tier_1: 6       # era 4
-    hp_tier_2: 10      # era 6
-    hp_tier_3: 16      # era 10
-    hp_tier_4: 24      # era 16
-    level_threshold_1: 2
-    level_threshold_2: 4
-    level_threshold_3: 6    # era 7 - tier alti prima
-    weights_level_0_2: [60, 28, 10, 2]
-    weights_level_3_4: [45, 35, 15, 5]
-    weights_level_5_7: [30, 35, 25, 10]
-    weights_level_8_plus: [15, 30, 35, 20]  # più tier 3 e 4
+    retry_timer_min: 3
+  # Tier weights per level range [tier1, tier2, tier3, tier4]
+  tier_weights:
+    level_1_3: [60, 28, 10, 2]    # Levels 1-1 to 1-3
+    level_4_6: [45, 35, 15, 5]    # Levels 2-1 to 2-3
+    level_7_9: [30, 35, 25, 10]   # Levels 3-1 to 3-3
+    level_10_12: [20, 35, 30, 15] # Levels 4-1 to 4-3
+    level_13_15: [10, 30, 38, 22] # Levels 5-1 to 5-3
+    level_16_18: [5, 20, 45, 30]  # Levels 6-1 to 6-3
 powers:
   blue_adjacent_boost_seconds: 5.0
   default: {}
@@ -324,10 +394,6 @@ levels:
 combo:
   window_frames: 200
   yellow_blue_chain_window: 60
-combat:
-  bat_center_offset: 4
-  obstacle_score_multiplier: 2
-  xp_bonus_per_tier: 10
 collision:
   bat_sprite_width: 8
   lane_half_width: 2

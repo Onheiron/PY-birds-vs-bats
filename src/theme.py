@@ -209,6 +209,35 @@ def get_base_color(name, default=None):
     return get_color('base', name, default)
 
 
+def get_biome_color(biome_name, color_type, default=None):
+    """Get a color for a specific biome.
+
+    Args:
+        biome_name: Biome key (e.g., 'windy_woods', 'the_borders')
+        color_type: Color type ('bg_layer1', 'bg_layer2', 'obstacles')
+        default: Default color code if not found
+
+    Returns:
+        ANSI escape sequence string
+    """
+    theme = _get_theme()
+    biomes = theme.get('biomes', {})
+
+    if isinstance(biomes, dict):
+        biome = biomes.get(biome_name, {})
+        if isinstance(biome, dict):
+            code = biome.get(color_type, default)
+        else:
+            code = default
+    else:
+        code = default
+
+    if code is None:
+        return "\033[0m"
+
+    return _code_to_ansi(code)
+
+
 # Pre-load common colors for easy import
 def _init_colors():
     """Initialize commonly used color constants."""

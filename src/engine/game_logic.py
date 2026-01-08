@@ -12,11 +12,9 @@ from src.core import constants
 from src.services import achievements
 from src.entities.sprites import *
 from src.functions import (
-    compute_grade_from_xp,
     compute_prestige,
     add_score,
     award_xp,
-    deduct_score,
     adjust_rarity_weights,
     choose_loot_type,
     get_scared_frames,
@@ -70,9 +68,10 @@ def sync_active_birds_audio(force=False):
     if not AUDIO_AVAILABLE or not audio:
         return
 
-    # Only sync every 60 frames (~1 second) to avoid blocking
+    # Only sync periodically to avoid blocking
     # Unless force=True (used at game start)
-    if not force and state.game.frame_count - _last_bird_sync_frame < 60:
+    audio_sync_interval = getattr(constants.timing, 'audio_sync_interval', 60)
+    if not force and state.game.frame_count - _last_bird_sync_frame < audio_sync_interval:
         return
     _last_bird_sync_frame = state.game.frame_count
 
@@ -247,8 +246,10 @@ def check_bird_obstacle_collision():
 
             if obs['hp'] <= 0:
                 tier = obs.get('tier', 1)
-                award_xp(i, 5 * tier)
-                add_score(tier * 50)
+                xp_per_tier = getattr(constants.combat, 'obstacle_destroy_xp_per_tier', 5)
+                score_per_tier = getattr(constants.combat, 'obstacle_destroy_score_per_tier', 50)
+                award_xp(i, xp_per_tier * tier)
+                add_score(tier * score_per_tier)
                 state.enemies.obstacles.remove(obs)
                 play_sfx('destroy')
             else:
@@ -312,9 +313,12 @@ def check_bird_bat_collision():
             is_stealth_tangible = bird_color == STEALTH and i in state.special.stealth_timers
             if not is_stealth_tangible:
                 bat_tier = bat.get('tier', 1)
-                state.special.scared_birds[i] = get_scared_frames(i, 2.0)
-                if bat_tier >= 3:
-                    state.special.speed_boosts[i] = int(2.0 / constants.timing.base_sleep)
+                scared_duration = getattr(constants.combat, 'scared_duration', 2.0)
+                state.special.scared_birds[i] = get_scared_frames(i, scared_duration)
+                speed_boost_min_tier = getattr(constants.combat, 'speed_boost_min_tier', 3)
+                if bat_tier >= speed_boost_min_tier:
+                    speed_boost_duration = getattr(constants.combat, 'speed_boost_duration', 2.0)
+                    state.special.speed_boosts[i] = int(speed_boost_duration / constants.timing.base_sleep)
 
             if bat['hp'] <= 0:
                 _handle_bat_death(bat, i)
@@ -383,12 +387,15 @@ def _calculate_bird_damage(bird_idx):
 
     # Special case: Glitch has random multiplier
     if bird_color == GLITCH:
-        random_mult = random.randint(1, 8)
+        glitch_min = getattr(constants.combat, 'glitch_dmg_multiplier_min', 1)
+        glitch_max = getattr(constants.combat, 'glitch_dmg_multiplier_max', 8)
+        random_mult = random.randint(glitch_min, glitch_max)
         base_dmg *= random_mult
 
     # Special case: Stealth when tangible (in stealth_timers) gets damage boost
     if bird_color == STEALTH and bird_idx in state.special.stealth_timers:
-        dmg_boost += 4  # Extra damage when tangible
+        stealth_tangible_boost = getattr(constants.combat, 'stealth_tangible_dmg_boost', 4)
+        dmg_boost += stealth_tangible_boost
 
     # Blue power gives speed boost
     if bird_color == BLUE and state.birds.power_used[bird_idx]:
@@ -399,8 +406,11 @@ def _calculate_bird_damage(bird_idx):
         spd_nerf += 1
 
     # Calculate final damage using formula
-    # TOT = round(((GR * 0.1) + (DMG + DMGBOOST - DMGNERF)) * (SPD + SPDBOOST - SPDNERF))
-    gear_bonus = (gear - 3) * 0.1
+    # TOT = round(((GR - gear_offset) * gear_coeff + (DMG + DMGBOOST - DMGNERF)) * (SPD + SPDBOOST - SPDNERF))
+    dmg_formula = getattr(constants.combat, 'damage_formula', None)
+    gear_offset = getattr(dmg_formula, 'gear_offset', 3) if dmg_formula else 3
+    gear_coeff = getattr(dmg_formula, 'gear_coefficient', 0.1) if dmg_formula else 0.1
+    gear_bonus = (gear - gear_offset) * gear_coeff
     effective_dmg = base_dmg + dmg_boost - dmg_nerf
     effective_spd = base_spd + spd_boost - spd_nerf
 
@@ -417,7 +427,8 @@ def _calculate_bird_damage(bird_idx):
 def _handle_bat_death(bat, killer_bird_idx):
     """Handle bat death: score, loot drop, achievements."""
     tier = bat.get('tier', 1)
-    award_xp(killer_bird_idx, 5 * tier)
+    bat_xp_per_tier = getattr(constants.combat, 'bat_destroy_xp_per_tier', 5)
+    award_xp(killer_bird_idx, bat_xp_per_tier * tier)
     add_score(bat.get('max_hp', 0))
 
     # Drop loot at closest lane
@@ -426,7 +437,11 @@ def _handle_bat_death(bat, killer_bird_idx):
                        key=lambda l: abs(constants.layout.lane_positions[l] - bat_center_x))
 
     prestige = compute_prestige()
-    base_weights = [60, 25, 10, 5]
+    base_weights = getattr(constants.loot, 'base_rarity_weights', [60, 25, 10, 5])
+    if isinstance(base_weights, list):
+        pass
+    else:
+        base_weights = [60, 25, 10, 5]
     adj_weights = adjust_rarity_weights(base_weights, prestige)
     rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=adj_weights)[0]
     loot_type = choose_loot_type(rarity)
@@ -505,8 +520,10 @@ def check_projectile_collision():
             if obs['hp'] <= 0:
                 tier = obs.get('tier', 1)
                 if owner is not None:
-                    award_xp(owner, 5 * tier)
-                add_score(tier * 50)
+                    xp_per_tier = getattr(constants.combat, 'obstacle_destroy_xp_per_tier', 5)
+                    award_xp(owner, xp_per_tier * tier)
+                score_per_tier = getattr(constants.combat, 'obstacle_destroy_score_per_tier', 50)
+                add_score(tier * score_per_tier)
                 state.enemies.obstacles.remove(obs)
 
             if proj in state.special.red_projectiles:
@@ -544,9 +561,11 @@ def check_loot_collection():
             # GLITCH special loot interaction
             if bird_color == GLITCH:
                 r = random.random()
-                if r < 0.05:  # Ignore
+                glitch_ignore = getattr(constants.loot, 'glitch_ignore_chance', 0.05)
+                glitch_promote = getattr(constants.loot, 'glitch_promote_chance', 0.10)
+                if r < glitch_ignore:
                     continue
-                elif r < 0.10:  # Promote rarity
+                elif r < glitch_ignore + glitch_promote:
                     _promote_loot_rarity(loot)
 
             state.items.loot_items.remove(loot)
@@ -605,11 +624,19 @@ def _spawn_bird_from_egg(egg_type):
         'clockwork_egg': CLOCKWORK, 'stealth_egg': STEALTH,
         'dinosaur_egg': DINOSAUR, 'glitch_egg': GLITCH
     }
-    speed_map = {
-        'yellow_egg': 2, 'red_egg': 3, 'blue_egg': 4, 'white_egg': 5,
-        'purple_egg': 3, 'orange_egg': 5, 'gold_egg': 6, 'patchwork_egg': 3,
-        'cookie_egg': 3, 'clockwork_egg': 2, 'stealth_egg': 3,
-        'dinosaur_egg': 4, 'glitch_egg': 3
+    # Get speeds from config
+    spd_config = getattr(constants.birds, 'speed', {})
+    egg_to_bird = {
+        'yellow_egg': 'yellow', 'red_egg': 'red', 'blue_egg': 'blue',
+        'white_egg': 'white', 'purple_egg': 'purple', 'orange_egg': 'orange',
+        'gold_egg': 'gold', 'patchwork_egg': 'patchwork', 'cookie_egg': 'cookie',
+        'clockwork_egg': 'clockwork', 'stealth_egg': 'stealth',
+        'dinosaur_egg': 'dinosaur', 'glitch_egg': 'glitch'
+    }
+    default_speeds = {
+        'yellow': 2, 'red': 3, 'blue': 4, 'white': 4, 'purple': 3,
+        'orange': 5, 'gold': 6, 'patchwork': 3, 'cookie': 3, 'clockwork': 2,
+        'stealth': 3, 'dinosaur': 4, 'glitch': 3
     }
 
     bird_color = color_map.get(egg_type)
@@ -621,7 +648,13 @@ def _spawn_bird_from_egg(egg_type):
         if state.birds.lost[idx]:
             state.birds.lost[idx] = False
             state.birds.colors[idx] = bird_color
-            state.birds.speeds[idx] = speed_map.get(egg_type, 3)
+            # Get speed from config, fallback to default
+            bird_type = egg_to_bird.get(egg_type, 'yellow')
+            if hasattr(spd_config, '__getitem__'):
+                bird_speed = spd_config.get(bird_type, default_speeds.get(bird_type, 3))
+            else:
+                bird_speed = getattr(spd_config, bird_type, default_speeds.get(bird_type, 3))
+            state.birds.speeds[idx] = bird_speed
             state.birds.y[idx] = constants.layout.starting_line
             state.birds.vy[idx] = -1
             state.birds.transformed[idx] = False
@@ -637,18 +670,22 @@ def _apply_wide_cursor_power(loot_type):
     """Apply wide cursor powerup."""
     state.powerups.wide_cursor_active = True
 
+    wc = constants.wide_cursor
+    wc_sec = getattr(wc, 'seconds', None)
+    wc_lanes = getattr(wc, 'lanes', None)
+
     if loot_type == 'wide_cursor':
-        seconds = 10
-        lanes = 3
+        seconds = getattr(wc_sec, 'base', 10.0) if wc_sec else 10.0
+        lanes = getattr(wc_lanes, 'base', 3) if wc_lanes else 3
     elif loot_type == 'wide_cursor+':
-        seconds = 15
-        lanes = 3
+        seconds = getattr(wc_sec, 'plus', 20.0) if wc_sec else 15.0
+        lanes = getattr(wc_lanes, 'base', 3) if wc_lanes else 3
     elif loot_type == 'wide_cursor++':
-        seconds = 20
-        lanes = 5
+        seconds = getattr(wc_sec, 'plusplus', 25.0) if wc_sec else 20.0
+        lanes = getattr(wc_lanes, 'max', 5) if wc_lanes else 5
     else:  # max
-        seconds = 30
-        lanes = 5
+        seconds = getattr(wc_sec, 'max', 50.0) if wc_sec else 30.0
+        lanes = getattr(wc_lanes, 'max', 5) if wc_lanes else 5
 
     state.powerups.wide_cursor_frames = int(seconds / constants.timing.base_sleep)
     state.powerups.wide_cursor_lanes = lanes
@@ -659,18 +696,22 @@ def _apply_bounce_boost_power(loot_type):
     """Apply bounce boost powerup."""
     state.powerups.bounce_boost_active = True
 
+    bb = constants.bounce_boost
+    bb_sec = getattr(bb, 'seconds', None)
+    bb_dur = getattr(bb, 'duration', None)
+
     if loot_type == 'bounce_boost':
-        seconds = 10
-        duration = 1.0
+        seconds = getattr(bb_sec, 'base', 10.0) if bb_sec else 10.0
+        duration = getattr(bb_dur, 'base', 4) if bb_dur else 1.0
     elif loot_type == 'bounce_boost+':
-        seconds = 15
-        duration = 1.5
+        seconds = getattr(bb_sec, 'plus', 20.0) if bb_sec else 15.0
+        duration = getattr(bb_dur, 'plus', 4) if bb_dur else 1.5
     elif loot_type == 'bounce_boost++':
-        seconds = 20
-        duration = 2.0
+        seconds = getattr(bb_sec, 'plusplus', 25.0) if bb_sec else 20.0
+        duration = getattr(bb_dur, 'plusplus', 8) if bb_dur else 2.0
     else:  # max
-        seconds = 30
-        duration = 3.0
+        seconds = getattr(bb_sec, 'max', 50.0) if bb_sec else 30.0
+        duration = getattr(bb_dur, 'max', 12) if bb_dur else 3.0
 
     state.powerups.bounce_boost_frames = int(seconds / constants.timing.base_sleep)
     state.powerups.bounce_boost_duration = duration
@@ -681,18 +722,22 @@ def _apply_suction_power(loot_type):
     """Apply suction powerup."""
     state.powerups.suction_active = True
 
+    sc = constants.suction
+    sc_sec = getattr(sc, 'seconds', None)
+    sc_boost = getattr(sc, 'boost_duration', None)
+
     if loot_type == 'suction':
-        seconds = 10
-        boost = 1.0
+        seconds = getattr(sc_sec, 'base', 10.0) if sc_sec else 10.0
+        boost = getattr(sc_boost, 'base', 0) if sc_boost else 1.0
     elif loot_type == 'suction+':
-        seconds = 15
-        boost = 1.5
+        seconds = getattr(sc_sec, 'plus', 20.0) if sc_sec else 15.0
+        boost = getattr(sc_boost, 'plus', 0) if sc_boost else 1.5
     elif loot_type == 'suction++':
-        seconds = 20
-        boost = 2.0
+        seconds = getattr(sc_sec, 'plusplus', 25.0) if sc_sec else 20.0
+        boost = getattr(sc_boost, 'plusplus', 4) if sc_boost else 2.0
     else:  # max
-        seconds = 30
-        boost = 3.0
+        seconds = getattr(sc_sec, 'max', 50.0) if sc_sec else 30.0
+        boost = getattr(sc_boost, 'max', 8) if sc_boost else 3.0
 
     state.powerups.suction_frames = int(seconds / constants.timing.base_sleep)
     state.powerups.suction_boost_duration = boost
@@ -703,22 +748,27 @@ def _apply_tailwind_power(loot_type):
     """Apply tailwind powerup."""
     state.powerups.tailwind_active = True
 
+    tw = constants.tailwind
+    tw_sec = getattr(tw, 'seconds', None)
+    tw_up = getattr(tw, 'up_bonus', None)
+    tw_down = getattr(tw, 'down_penalty', None)
+
     if loot_type == 'tailwind':
-        seconds = 10
-        up_bonus = 1
-        down_pen = 1
+        seconds = getattr(tw_sec, 'base', 10.0) if tw_sec else 10.0
+        up_bonus = getattr(tw_up, 'base', 1) if tw_up else 1
+        down_pen = getattr(tw_down, 'base', 1) if tw_down else 1
     elif loot_type == 'tailwind+':
-        seconds = 15
-        up_bonus = 1
-        down_pen = 1
+        seconds = getattr(tw_sec, 'plus', 15.0) if tw_sec else 15.0
+        up_bonus = getattr(tw_up, 'plus', 2) if tw_up else 1
+        down_pen = getattr(tw_down, 'plus', 1) if tw_down else 1
     elif loot_type == 'tailwind++':
-        seconds = 20
-        up_bonus = 2
-        down_pen = 2
+        seconds = getattr(tw_sec, 'plusplus', 20.0) if tw_sec else 20.0
+        up_bonus = getattr(tw_up, 'plusplus', 3) if tw_up else 2
+        down_pen = getattr(tw_down, 'plusplus', 2) if tw_down else 2
     else:  # max
-        seconds = 30
-        up_bonus = 2
-        down_pen = 2
+        seconds = getattr(tw_sec, 'max', 30.0) if tw_sec else 30.0
+        up_bonus = getattr(tw_up, 'plusplus', 3) if tw_up else 2
+        down_pen = getattr(tw_down, 'max', 3) if tw_down else 2
 
     state.powerups.tailwind_frames = int(seconds / constants.timing.base_sleep)
     state.powerups.tailwind_up_bonus = up_bonus
@@ -728,10 +778,17 @@ def _apply_tailwind_power(loot_type):
 
 def _apply_shuffle_power(loot_type):
     """Apply shuffle powerup."""
-    level_map = {
-        'shuffle': 2, 'shuffle+': 4, 'shuffle++': 6, 'shuffle_max': 9
-    }
-    level = level_map.get(loot_type, 2)
+    sh = constants.shuffle
+    sh_lvl = getattr(sh, 'level', None)
+
+    if loot_type == 'shuffle':
+        level = getattr(sh_lvl, 'base', 10) if sh_lvl else 2
+    elif loot_type == 'shuffle+':
+        level = getattr(sh_lvl, 'plus', 15) if sh_lvl else 4
+    elif loot_type == 'shuffle++':
+        level = getattr(sh_lvl, 'plusplus', 20) if sh_lvl else 6
+    else:  # max
+        level = getattr(sh_lvl, 'max', 25) if sh_lvl else 9
     perform_shuffle(level)
     achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power='shuffle')
 
@@ -783,33 +840,36 @@ def spawn_obstacle():
 
     # Use milestone level (1-18) for spawning, not speed
     level = state.game.level
-
-    # Spawn rate "a scalino": aumenta nel sub-livello, poi si abbassa all'inizio del nuovo bioma
-    # level_group (1-6) = bioma, sub_level (1-3) = sotto-livello nel bioma
     level_group = state.game.level_group  # 1-6
     sub_level = ((level - 1) % 3) + 1     # 1, 2, or 3 within biome
 
-    # Base spawn rate per bioma (più frequente = numero più basso)
-    # Bioma 1: 35, Bioma 2: 30, Bioma 3: 25, Bioma 4: 20, Bioma 5: 16, Bioma 6: 12
-    biome_base = 40 * (0.85 ** level_group)
+    # Get spawn rate parameters from config
+    spawning = constants.obstacle.spawning
+    biome_base = getattr(spawning, 'biome_base', 40)
+    biome_decay = getattr(spawning, 'biome_decay', 0.85)
+    sublevel_decay = getattr(spawning, 'sublevel_decay', 0.9)
+    min_spawn_rate = getattr(spawning, 'min_spawn_rate', 6)
 
-    # Spawn rate finale (min 6 per non essere troppo spam)
-    base_spawn_rate = max(6, int(biome_base * (0.9 ** (sub_level - 1))))
+    # Spawn rate formula from config
+    base_spawn_rate = max(min_spawn_rate, int(biome_base * (biome_decay ** level_group) * (sublevel_decay ** (sub_level - 1))))
     state.enemies.obstacle_spawn_timer = base_spawn_rate
 
-    # Tier based on level (1-18) - progressive difficulty
-    if level <= 3:  # Levels 1-1 to 1-3
-        tier = random.choices([1, 2, 3, 4], weights=[60, 28, 10, 2])[0]
-    elif level <= 6:  # Levels 2-1 to 2-3
-        tier = random.choices([1, 2, 3, 4], weights=[45, 35, 15, 5])[0]
-    elif level <= 9:  # Levels 3-1 to 3-3
-        tier = random.choices([1, 2, 3, 4], weights=[30, 35, 25, 10])[0]
-    elif level <= 12:  # Levels 4-1 to 4-3
-        tier = random.choices([1, 2, 3, 4], weights=[20, 35, 30, 15])[0]
-    elif level <= 15:  # Levels 5-1 to 5-3
-        tier = random.choices([1, 2, 3, 4], weights=[10, 30, 38, 22])[0]
-    else:  # Levels 6-1 to 6-3
-        tier = random.choices([1, 2, 3, 4], weights=[5, 20, 45, 30])[0]
+    # Get tier weights from config
+    tier_weights = constants.obstacle.tier_weights
+    if level <= 3:
+        weights = getattr(tier_weights, 'level_1_3', [60, 28, 10, 2])
+    elif level <= 6:
+        weights = getattr(tier_weights, 'level_4_6', [45, 35, 15, 5])
+    elif level <= 9:
+        weights = getattr(tier_weights, 'level_7_9', [30, 35, 25, 10])
+    elif level <= 12:
+        weights = getattr(tier_weights, 'level_10_12', [20, 35, 30, 15])
+    elif level <= 15:
+        weights = getattr(tier_weights, 'level_13_15', [10, 30, 38, 22])
+    else:
+        weights = getattr(tier_weights, 'level_16_18', [5, 20, 45, 30])
+
+    tier = random.choices([1, 2, 3, 4], weights=weights)[0]
 
     # Ottieni sprite del bioma per calcolare larghezza
     biome_obstacles_preview = get_biome_obstacles(level_group)
@@ -850,13 +910,15 @@ def spawn_obstacle():
 
     lane = random.choice(valid_start_lanes)
 
-    # HP base per tier, poi scala linearmente col livello
-    # Base HP: tier 1=4, tier 2=6, tier 3=12, tier 4=27
-    # Level scaling: +10% HP per ogni livello (level 1-18)
-    hp_base = {1: 5, 2: 8, 3: 16, 4: 32}
-    base_hp = hp_base.get(tier, 4)
-    # Linear scaling: HP aumenta del 10% per livello (level 1 = 100%, level 18 = 270%)
-    level_multiplier = 1.0 + (level - 1) * 0.1
+    # Get HP from config with level scaling
+    hp_by_tier = constants.obstacle.hp_by_tier
+    # Handle both dict and namespace access
+    if isinstance(hp_by_tier, dict):
+        base_hp = hp_by_tier.get(tier, hp_by_tier.get(str(tier), 5))
+    else:
+        base_hp = getattr(hp_by_tier, str(tier), 5)
+    level_hp_mult = getattr(constants.obstacle, 'level_hp_multiplier', 0.1)
+    level_multiplier = 1.0 + (level - 1) * level_hp_mult
     hp = int(base_hp * level_multiplier)
 
     # Seleziona sprite casuale (variante + eventuale flip)
@@ -892,84 +954,84 @@ def spawn_bat():
     if level < 4:  # Bats start at level 2-1 (milestone 4)
         return
 
-    # Spawn rate PROGRESSIVO based on level (1-18):
-    # Lv 4-6:   ogni ~200 frame (raro)
-    # Lv 7-9:   ogni ~150 frame
-    # Lv 10-12: ogni ~100 frame
-    # Lv 13-15: ogni ~70 frame
-    # Lv 16-18: ogni ~50 frame
+    # Get spawn rate from config
+    spawn_rates = getattr(constants.bat_enemy, 'spawn_rate_by_level', None)
     if level <= 6:
-        base_spawn_rate = 200
+        base_spawn_rate = getattr(spawn_rates, 'level_4_6', 200) if spawn_rates else 200
     elif level <= 9:
-        base_spawn_rate = 150
+        base_spawn_rate = getattr(spawn_rates, 'level_7_9', 150) if spawn_rates else 150
     elif level <= 12:
-        base_spawn_rate = 100
+        base_spawn_rate = getattr(spawn_rates, 'level_10_12', 100) if spawn_rates else 100
     elif level <= 15:
-        base_spawn_rate = 70
+        base_spawn_rate = getattr(spawn_rates, 'level_13_15', 70) if spawn_rates else 70
     else:
-        base_spawn_rate = 50
+        base_spawn_rate = getattr(spawn_rates, 'level_16_18', 50) if spawn_rates else 50
 
     state.enemies.bat_spawn_timer = base_spawn_rate
 
-    # Max bats on screen PROGRESSIVO based on level (1-18):
-    # Lv 4-6:   max 1
-    # Lv 7-9:   max 2
-    # Lv 10-12: max 3
-    # Lv 13-15: max 4
-    # Lv 16-18: max 5
+    # Get max bats from config
+    max_bats_cfg = getattr(constants.bat_enemy, 'max_bats_by_level', None)
     if level <= 6:
-        max_bats = 1
+        max_bats = getattr(max_bats_cfg, 'level_4_6', 1) if max_bats_cfg else 1
     elif level <= 9:
-        max_bats = 2
+        max_bats = getattr(max_bats_cfg, 'level_7_9', 2) if max_bats_cfg else 2
     elif level <= 12:
-        max_bats = 3
+        max_bats = getattr(max_bats_cfg, 'level_10_12', 3) if max_bats_cfg else 3
     elif level <= 15:
-        max_bats = 4
+        max_bats = getattr(max_bats_cfg, 'level_13_15', 4) if max_bats_cfg else 4
     else:
-        max_bats = 5
+        max_bats = getattr(max_bats_cfg, 'level_16_18', 5) if max_bats_cfg else 5
 
     if len(state.enemies.bats) >= max_bats:
         state.enemies.bat_spawn_timer = base_spawn_rate // 2
         return
 
-    # Tier based on level (1-18) - progressivo
-    if level <= 6:  # Levels 1-1 to 2-3
-        tier = random.choices([1, 2, 3, 4], weights=[70, 25, 5, 0])[0]
-    elif level <= 9:  # Levels 3-1 to 3-3
-        tier = random.choices([1, 2, 3, 4], weights=[50, 35, 12, 3])[0]
-    elif level <= 12:  # Levels 4-1 to 4-3
-        tier = random.choices([1, 2, 3, 4], weights=[30, 40, 22, 8])[0]
-    elif level <= 15:  # Levels 5-1 to 5-3
-        tier = random.choices([1, 2, 3, 4], weights=[15, 35, 35, 15])[0]
-    else:  # Levels 6-1 to 6-3
-        tier = random.choices([1, 2, 3, 4], weights=[5, 25, 45, 25])[0]
+    # Get tier weights from config
+    tier_weights_cfg = getattr(constants.bat_enemy, 'tier_weights_by_level', None)
+    if level <= 6:
+        weights = getattr(tier_weights_cfg, 'level_4_6', [70, 25, 5, 0]) if tier_weights_cfg else [70, 25, 5, 0]
+    elif level <= 9:
+        weights = getattr(tier_weights_cfg, 'level_7_9', [50, 35, 12, 3]) if tier_weights_cfg else [50, 35, 12, 3]
+    elif level <= 12:
+        weights = getattr(tier_weights_cfg, 'level_10_12', [30, 40, 22, 8]) if tier_weights_cfg else [30, 40, 22, 8]
+    elif level <= 15:
+        weights = getattr(tier_weights_cfg, 'level_13_15', [15, 35, 35, 15]) if tier_weights_cfg else [15, 35, 35, 15]
+    else:
+        weights = getattr(tier_weights_cfg, 'level_16_18', [5, 25, 45, 25]) if tier_weights_cfg else [5, 25, 45, 25]
+    tier = random.choices([1, 2, 3, 4], weights=weights)[0]
 
-    # HP ragionevoli ma sfidanti
-    hp_map = {1: 20, 2: 40, 3: 70, 4: 120}
-    hp = hp_map.get(tier, 20)
+    # Get HP from config
+    bat_hp_by_tier = constants.bat_enemy.hp_by_tier
+    if isinstance(bat_hp_by_tier, dict):
+        hp = bat_hp_by_tier.get(tier, bat_hp_by_tier.get(str(tier), 20))
+    else:
+        hp = getattr(bat_hp_by_tier, str(tier), 20)
 
     # Spawn position X
     x_pos = random.randint(0, constants.layout.width - 8)
 
-    # Target Y PROGRESSIVO based on level (1-18) - più in alto all'inizio, più in basso ai livelli alti
-    # starting_line è dove stanno gli uccelli (es. 26)
-    # All'inizio: target_y tra 3 e 10 (molto in alto, lontano)
-    # Ai livelli alti: target_y tra 15 e starting_line-3 (più vicino agli uccelli)
-    if level <= 6:  # Levels 1-1 to 2-3
-        target_y_min = 3
-        target_y_max = 8
-    elif level <= 9:  # Levels 3-1 to 3-3
-        target_y_min = 5
-        target_y_max = 12
-    elif level <= 12:  # Levels 4-1 to 4-3
-        target_y_min = 8
-        target_y_max = 16
-    elif level <= 15:  # Levels 5-1 to 5-3
-        target_y_min = 10
-        target_y_max = 20
-    else:  # Levels 6-1 to 6-3
-        target_y_min = 12
-        target_y_max = constants.layout.starting_line - 5
+    # Get target Y from config
+    target_y_cfg = getattr(constants.bat_enemy, 'target_y_by_level', None)
+    if level <= 6:
+        y_range = getattr(target_y_cfg, 'level_4_6', None) if target_y_cfg else None
+        target_y_min = y_range.get('min', 3) if isinstance(y_range, dict) else (getattr(y_range, 'min', 3) if y_range else 3)
+        target_y_max = y_range.get('max', 8) if isinstance(y_range, dict) else (getattr(y_range, 'max', 8) if y_range else 8)
+    elif level <= 9:
+        y_range = getattr(target_y_cfg, 'level_7_9', None) if target_y_cfg else None
+        target_y_min = y_range.get('min', 5) if isinstance(y_range, dict) else (getattr(y_range, 'min', 5) if y_range else 5)
+        target_y_max = y_range.get('max', 12) if isinstance(y_range, dict) else (getattr(y_range, 'max', 12) if y_range else 12)
+    elif level <= 12:
+        y_range = getattr(target_y_cfg, 'level_10_12', None) if target_y_cfg else None
+        target_y_min = y_range.get('min', 8) if isinstance(y_range, dict) else (getattr(y_range, 'min', 8) if y_range else 8)
+        target_y_max = y_range.get('max', 16) if isinstance(y_range, dict) else (getattr(y_range, 'max', 16) if y_range else 16)
+    elif level <= 15:
+        y_range = getattr(target_y_cfg, 'level_13_15', None) if target_y_cfg else None
+        target_y_min = y_range.get('min', 10) if isinstance(y_range, dict) else (getattr(y_range, 'min', 10) if y_range else 10)
+        target_y_max = y_range.get('max', 20) if isinstance(y_range, dict) else (getattr(y_range, 'max', 20) if y_range else 20)
+    else:
+        y_range = getattr(target_y_cfg, 'level_16_18', None) if target_y_cfg else None
+        target_y_min = y_range.get('min', 12) if isinstance(y_range, dict) else (getattr(y_range, 'min', 12) if y_range else 12)
+        target_y_max = y_range.get('max', 23) if isinstance(y_range, dict) else (getattr(y_range, 'max', 23) if y_range else constants.layout.starting_line - 5)
 
     target_y = random.randint(target_y_min, min(target_y_max, constants.layout.starting_line - 3))
 
@@ -1190,14 +1252,16 @@ def despawn_old_entities():
     """Remove entities that have been around too long."""
     now = time.time()
 
-    # Bats older than 60 seconds
+    # Bats despawn after configured time
+    bat_despawn = getattr(constants.loot, 'bat_despawn_time', 60)
     for bat in state.enemies.bats[:]:
-        if now - bat.get('spawn_ts', now) > 60:
+        if now - bat.get('spawn_ts', now) > bat_despawn:
             state.enemies.bats.remove(bat)
 
-    # Loot older than 30 seconds
+    # Loot despawn after configured time
+    loot_despawn = getattr(constants.loot, 'loot_despawn_time', 30)
     for loot in state.items.loot_items[:]:
-        if now - loot.get('spawn_ts', now) > 30:
+        if now - loot.get('spawn_ts', now) > loot_despawn:
             # Orange eggs kill their bird when they despawn
             if loot.get('type') == 'orange_egg' and loot.get('y_pos') == constants.layout.starting_line:
                 lane_x = loot.get('x_pos')
@@ -1234,7 +1298,7 @@ def update_score_tick():
         position_mult = 0.5 + (constants.layout.height - state.birds.y[i]) / constants.layout.height
 
         if state.birds.colors[i] == GOLD:
-            score_val = 100
+            score_val = getattr(constants.loot, 'gold_bird_score_per_tick', 100)
         else:
             score_val = current_speed
 

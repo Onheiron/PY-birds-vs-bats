@@ -11,7 +11,7 @@ from src.entities.sprites import get_dynamic_color
 from src.core import constants
 # Import theme from src (not src.core to avoid circular imports)
 import src.theme as theme
-from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane, get_mph_for_speed, get_level_milestones, compute_level_from_miles
+from src.functions import compute_level_from_score, calculate_level_threshold, compute_prestige, compute_grade_from_xp, get_affected_lanes, find_bird_in_lane, get_mph_for_speed, get_level_milestones
 from src.core import state
 
 
@@ -163,8 +163,7 @@ def apply_bold(color):
 # Backgrounds are now biome-specific, loaded from sprites.py
 # Use get_current_biome_bg() to get the current patterns
 
-from src.entities.sprites import (get_biome_bg, get_biome_name, BIOME_NAMES,
-                                  WOODS_BG_LAYER1, WOODS_BG_LAYER2)
+from src.entities.sprites import (get_biome_bg, WOODS_BG_LAYER1, WOODS_BG_LAYER2)
 
 # Default patterns (Windy Woods) - used as fallback
 TREE_PATTERN = WOODS_BG_LAYER1
@@ -181,34 +180,29 @@ MID_TREE_PATTERN_WIDTH = 32
 TREE_BG_COLOR = theme.get_color('background', 'layer1', 234)
 MID_TREE_COLOR = theme.get_color('background', 'layer2', 235)
 
-# Biome-specific colors for backgrounds (layer1 = tree tops, layer2 = branches/details)
-BIOME_COLORS = {
-    # level_group: (layer1_color, layer2_color)
-    1: ("\033[38;5;022m", "\033[38;5;028m"),      # Windy Woods - teal/cyan conifers
-    2: ("\033[38;5;028m", "\033[38;5;034m"),     # The Borders - green tops, orange branches
-    3: ("\033[38;5;030m", "\033[38;5;033m"),    # Rotten Marshes - murky brown
-    4: ("\033[38;5;105m", "\033[38;5;029m"),      # The Dark Swamp - dark purple
-    5: ("\033[38;5;232m", "\033[38;5;230m"),    # The Void Cave - violet rocks
-    6: ("\033[38;5;252m", "\033[38;5;252m"),    # Mountain Range - light gray peaks
+# Biome names for theme lookup (level_group -> theme key)
+BIOME_THEME_KEYS = {
+    1: 'windy_woods',
+    2: 'the_borders',
+    3: 'rotten_marshes',
+    4: 'the_dark_swamp',
+    5: 'the_void_cave',
+    6: 'mountain_range',
 }
 
-# Biome-specific base colors for obstacles (used instead of HP-based coloring)
-BIOME_OBSTACLE_COLORS = {
-    1: "\033[38;5;43m",     # Windy Woods - teal/cyan
-    2: "\033[38;5;82m",     # The Borders - green
-    3: "\033[38;5;137m",    # Rotten Marshes - murky brown
-    4: "\033[38;5;246m",     # The Dark Swamp - dark purple
-    5: "\033[38;5;105m",    # The Void Cave - violet
-    6: "\033[38;5;252m",    # Mountain Range - light gray
-}
 
 def get_biome_colors(level_group):
-    """Get colors for the current biome's background layers."""
-    return BIOME_COLORS.get(level_group, (TREE_BG_COLOR, MID_TREE_COLOR))
+    """Get colors for the current biome's background layers from theme."""
+    biome_key = BIOME_THEME_KEYS.get(level_group, 'windy_woods')
+    layer1 = theme.get_biome_color(biome_key, 'bg_layer1', 235)
+    layer2 = theme.get_biome_color(biome_key, 'bg_layer2', 236)
+    return layer1, layer2
+
 
 def get_biome_obstacle_color(level_group):
-    """Get base color for obstacles in the current biome."""
-    return BIOME_OBSTACLE_COLORS.get(level_group, "\033[38;5;94m")
+    """Get base color for obstacles in the current biome from theme."""
+    biome_key = BIOME_THEME_KEYS.get(level_group, 'windy_woods')
+    return theme.get_biome_color(biome_key, 'obstacles', 94)
 
 def get_current_biome_bg():
     """Get background patterns for the current biome based on level_group."""

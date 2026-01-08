@@ -64,6 +64,36 @@ background:
   layer2: 236      # Middle layer - slightly lighter
 
 # -----------------------------------------------------------------------------
+# BIOMES - Colors per biome (level_group 1-6)
+# Each biome has: bg_layer1, bg_layer2 (background), obstacles (foreground)
+# -----------------------------------------------------------------------------
+biomes:
+  windy_woods:       # Biome 1 (levels 1-1 to 1-3)
+    bg_layer1: 22    # Dark green conifers
+    bg_layer2: 28    # Medium green
+    obstacles: 43    # Teal/cyan
+  the_borders:       # Biome 2 (levels 2-1 to 2-3)
+    bg_layer1: 28    # Green
+    bg_layer2: 34    # Light green
+    obstacles: 82    # Bright green
+  rotten_marshes:    # Biome 3 (levels 3-1 to 3-3)
+    bg_layer1: 30    # Dark cyan
+    bg_layer2: 33    # Cyan
+    obstacles: 137   # Murky brown
+  the_dark_swamp:    # Biome 4 (levels 4-1 to 4-3)
+    bg_layer1: 105   # Light purple
+    bg_layer2: 29    # Dark cyan
+    obstacles: 246   # Gray
+  the_void_cave:     # Biome 5 (levels 5-1 to 5-3)
+    bg_layer1: 232   # Near black
+    bg_layer2: 230   # Light
+    obstacles: 105   # Violet
+  mountain_range:    # Biome 6 (levels 6-1 to 6-3)
+    bg_layer1: 252   # Light gray
+    bg_layer2: 252   # Light gray
+    obstacles: 252   # Light gray
+
+# -----------------------------------------------------------------------------
 # PANELS - Side panel styling
 # -----------------------------------------------------------------------------
 panels:

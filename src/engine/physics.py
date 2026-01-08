@@ -5,11 +5,10 @@ Handles movement of all game entities: birds, projectiles, enemies, loot.
 """
 
 import random
-import math
 
 from src.core import state
 from src.core import constants
-from src.entities.sprites import CLOCKWORK, GLITCH, PURPLE, ORANGE
+from src.entities.sprites import CLOCKWORK, GLITCH
 
 
 def _set_ball_vy(idx, val):
