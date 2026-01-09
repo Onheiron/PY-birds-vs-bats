@@ -49,6 +49,7 @@ prestige = init.dict_to_namespace(config.get('prestige', {}))
 bat = init.dict_to_namespace(config.get('bat', {}))
 colors = init.dict_to_namespace(config.get('colors', {}))
 speed = init.dict_to_namespace(config.get('speed', {}))
+score = init.dict_to_namespace(config.get('score', {}))
 levels = init.dict_to_namespace(config.get('levels', {}))
 background = init.dict_to_namespace(config.get('background', {'enabled': True, 'parallax': True}))
 
@@ -104,3 +105,87 @@ for obj, attr_name in dict_attributes:
             for key, value in attr.items():
                 if isinstance(value, SimpleNamespace):
                     attr[key] = {k: v for k, v in vars(value).items() if not k.startswith('_')}
+
+
+# =============================================================================
+# DIFFICULTY CONFIG LOADING
+# =============================================================================
+
+# Map difficulty index to config file
+DIFFICULTY_CONFIG_FILES = {
+    0: 'config_easy.yml',
+    1: 'config.yml',       # NORMAL = base config
+    2: 'config_hard.yml',
+    3: 'config_hell.yml',
+}
+
+# Store base config for merging with difficulty overrides
+_base_config = config.copy()
+
+
+def _deep_merge(base, override):
+    """Deep merge override into base dict. Override values take precedence."""
+    result = base.copy()
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def _reload_namespace(namespace, config_section):
+    """Reload a namespace from config section."""
+    # Clear existing attributes
+    for attr in list(vars(namespace).keys()):
+        if not attr.startswith('_'):
+            delattr(namespace, attr)
+    # Apply new config
+    init.apply_config_to_namespace(namespace, config_section)
+
+
+def reload_for_difficulty(difficulty_index):
+    """Reload configuration based on difficulty setting.
+
+    Args:
+        difficulty_index: 0=EASY, 1=NORMAL, 2=HARD, 3=HELL
+    """
+    import os
+
+    # Get difficulty config file
+    diff_config_file = DIFFICULTY_CONFIG_FILES.get(difficulty_index, 'config.yml')
+
+    # For NORMAL, just use base config
+    if difficulty_index == 1:
+        merged_config = _base_config
+    else:
+        # Load difficulty override config
+        diff_config_path = os.path.join(os.path.dirname(__file__), '..', '..', diff_config_file)
+        if not os.path.exists(diff_config_path):
+            # Try current directory
+            diff_config_path = diff_config_file
+
+        diff_overrides = init.load_config_file(diff_config_path)
+
+        # Merge: base + difficulty overrides
+        merged_config = _deep_merge(_base_config, diff_overrides)
+
+    # Reload all affected namespaces
+    global bat_enemy, obstacle, progression, speed, score
+
+    _reload_namespace(bat_enemy, merged_config.get('bat_enemy', {}))
+    _reload_namespace(obstacle, merged_config.get('obstacle', {}))
+    _reload_namespace(progression, merged_config.get('progression', {}))
+    _reload_namespace(speed, merged_config.get('speed', {}))
+    _reload_namespace(score, merged_config.get('score', {}))
+
+    # Fix dict attributes that need to stay as dicts
+    for obj, attr_name in dict_attributes:
+        if hasattr(obj, attr_name):
+            attr = getattr(obj, attr_name)
+            if isinstance(attr, SimpleNamespace):
+                setattr(obj, attr_name, {k: v for k, v in vars(attr).items() if not k.startswith('_')})
+            elif isinstance(attr, dict):
+                for key, value in attr.items():
+                    if isinstance(value, SimpleNamespace):
+                        attr[key] = {k: v for k, v in vars(value).items() if not k.startswith('_')}

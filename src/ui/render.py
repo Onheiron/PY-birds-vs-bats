@@ -1622,23 +1622,25 @@ def _compute_momentum_factor(y_pos):
 
     Returns factor for momentum change:
     - -1.0 at starting_line (bottom) → momentum decreases
-    -  0.0 at 1/3 height from bottom → momentum stable
+    -  0.0 at zero height (configurable via momentum_zero_height)
     - +2.0 at ceiling (top) → momentum increases fast
     """
     starting_line = constants.layout.starting_line
     ceiling = 1
 
-    one_third_point = starting_line - (starting_line - ceiling) / 3
+    # Get zero height from config (0.0 = bottom, 1.0 = top)
+    zero_fraction = getattr(constants.speed, 'momentum_zero_height', 0.33)
+    zero_point = starting_line - (starting_line - ceiling) * zero_fraction
 
     if y_pos >= starting_line:
         return -1.0
-    elif y_pos >= one_third_point:
-        # Between starting_line and 1/3 point: -1.0 -> 0.0
-        t = (starting_line - y_pos) / (starting_line - one_third_point)
+    elif y_pos >= zero_point:
+        # Between starting_line and zero point: -1.0 -> 0.0
+        t = (starting_line - y_pos) / (starting_line - zero_point)
         return -1.0 + t * 1.0
     elif y_pos > ceiling:
-        # Between 1/3 point and ceiling: 0.0 -> +2.0
-        t = (one_third_point - y_pos) / (one_third_point - ceiling)
+        # Between zero point and ceiling: 0.0 -> +2.0
+        t = (zero_point - y_pos) / (zero_point - ceiling)
         return t * 2.0
     else:
         return 2.0

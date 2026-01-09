@@ -940,8 +940,11 @@ def _handle_title_input(key):
                 state.ui.show_title = False
         elif idx == 1:  # NEW GAME
             from src.services import save_manager
+            from src.core import constants
             # Save the difficulty selection before init (which doesn't reset settings)
             selected_difficulty = state.settings.difficulty
+            # Load difficulty-specific configuration
+            constants.reload_for_difficulty(selected_difficulty)
             state.init()
             save_manager.load_default_settings()
             # Restore the difficulty we selected on title screen

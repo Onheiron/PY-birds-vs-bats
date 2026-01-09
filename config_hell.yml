@@ -1,0 +1,68 @@
+# BVB (Birds vs Bats) - HELL Difficulty Configuration
+# Brutal settings for masochists only
+# Use with: python -m src.game --config config_hell.yml
+
+# Only override values that differ from config.yml (NORMAL)
+
+bat_enemy:
+  # Massive HP - bats are bullet sponges
+  hp_by_tier:
+    1: 60      # NORMAL: 24
+    2: 120     # NORMAL: 48
+    3: 240     # NORMAL: 96
+    4: 480     # NORMAL: 192
+  # Swarm mode
+  max_on_screen: 10   # NORMAL: 5
+  # Relentless spawn rate
+  spawn_interval_range: [30, 60]  # NORMAL: [80, 160]
+  spawn_rate_by_level:
+    level_4_6: 80     # NORMAL: 200
+    level_7_9: 60     # NORMAL: 150
+    level_10_12: 45   # NORMAL: 100
+    level_13_15: 30   # NORMAL: 70
+    level_16_18: 20   # NORMAL: 50
+  max_bats_by_level:
+    level_4_6: 3      # NORMAL: 1
+    level_7_9: 5      # NORMAL: 2
+    level_10_12: 7    # NORMAL: 3
+    level_13_15: 9    # NORMAL: 4
+    level_16_18: 10   # NORMAL: 5
+  # Higher tier bats appear earlier
+  tier_weights_by_level:
+    level_4_6: [40, 40, 15, 5]     # NORMAL: [70, 25, 5, 0]
+    level_7_9: [25, 40, 25, 10]    # NORMAL: [50, 35, 12, 3]
+    level_10_12: [15, 30, 35, 20]  # NORMAL: [30, 40, 22, 8]
+    level_13_15: [5, 20, 45, 30]   # NORMAL: [15, 35, 35, 15]
+    level_16_18: [0, 10, 40, 50]   # NORMAL: [5, 25, 45, 25]
+  tiers:
+    hp_tier_1: 60
+    hp_tier_2: 120
+    hp_tier_3: 240
+    hp_tier_4: 480
+
+obstacle:
+  # Massive HP - obstacles are walls
+  hp_by_tier:
+    1: 12      # NORMAL: 5
+    2: 24      # NORMAL: 8
+    3: 48      # NORMAL: 16
+    4: 96      # NORMAL: 32
+  # HP scales faster with level
+  level_hp_multiplier: 0.2   # NORMAL: 0.1
+  # Relentless spawn rate
+  spawning:
+    biome_base: 20           # NORMAL: 40 (much lower = much faster spawn)
+    biome_decay: 0.75        # NORMAL: 0.85
+    sublevel_decay: 0.80     # NORMAL: 0.9
+    min_spawn_rate: 2        # NORMAL: 6
+
+progression:
+  # Glacial grade progression - birds barely level up
+  grade_exp_factor: 1.15     # NORMAL: 1.07 (much higher = much slower leveling)
+
+speed:
+  # Sky-high momentum threshold - need to be in top third of screen
+  momentum_zero_height: 0.60  # NORMAL: 0.33 (much higher = much harder)
+  # Brutally fast at high speeds - speed 6 already feels like speed 10
+  frame_sleep_at_speed_1: 0.14    # NORMAL: 0.18
+  frame_sleep_at_speed_10: 0.008  # NORMAL: 0.02 (insanely fast)
