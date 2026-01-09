@@ -125,7 +125,8 @@ powerups = SimpleNamespace(
 # GAME STATE (organized as namespace)
 # ============================================================================
 game = SimpleNamespace(
-    score=0,
+    score=0,              # Total score (never decreases)
+    momentum=getattr(constants.speed, 'starting_momentum', 100),  # Momentum (from config)
     level=1,              # Level as milestone (1-18, displayed as 1-1 to 6-3)
     level_group=1,        # Group number (1-6)
     level_sub=1,          # Sub-level within group (1-3)

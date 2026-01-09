@@ -224,17 +224,16 @@ def compute_grade_from_xp(xp):
 # SPEED / MILES / LEVEL SYSTEM
 # =============================================================================
 
-def compute_speed_from_score(score):
-    """Compute speed level (1-10) from score.
+def compute_speed_from_momentum(momentum):
+    """Compute speed level (1-10) from momentum.
 
     Uses the SAME exponential progression as the old level system,
     but capped at max_speed (10).
     """
     max_speed = getattr(constants.speed, 'max_speed', 10)
 
-    # Use the same formula as compute_level_from_score, capped at max_speed
     speed = 1
-    while score >= calculate_level_threshold(speed + 1):
+    while momentum >= calculate_level_threshold(speed + 1):
         speed += 1
         if speed >= max_speed:
             break
@@ -339,13 +338,13 @@ def update_miles(delta_time):
 
 
 def update_speed():
-    """Update speed based on current score.
+    """Update speed based on current momentum.
 
     Returns:
         True if speed changed, False otherwise
     """
     old_speed = state.game.speed
-    new_speed = compute_speed_from_score(state.game.score)
+    new_speed = compute_speed_from_momentum(state.game.momentum)
 
     if new_speed != old_speed:
         state.game.speed = new_speed
@@ -397,36 +396,18 @@ def compute_prestige():
 
 
 def add_score(amount, by_bird=None):
-    """Add score with prestige multiplier and optionally award XP."""
-    raw_amount = amount
+    """Add score (always increases). Used for leaderboard/achievements.
+
+    This function ONLY affects score. Momentum is handled separately by update_momentum().
+    """
     amt = float(amount)
-
-    # Track speed before score change
-    old_speed = state.game.speed
-
     prestige = compute_prestige()
-    state.game.score += amt * prestige
+    score_amount = amt * prestige
 
-    # Update speed based on new score
-    speed_changed = update_speed()
-
-    if speed_changed:
-        audio = _get_audio()
-        if audio:
-            # Don't play level_up sound here - it's played in game.py when Level milestone changes
-            # Just update music tempo for the new speed
-            audio.update_music_for_level(state.game.speed)
-            # Update music tempo based on game speed
-            sleep_time = get_frame_sleep_for_speed(state.game.speed)
-            audio.update_game_speed(
-                state.game.speed,
-                base_sleep=getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18),
-                multiplier=1.0,  # Not used anymore, we use direct interpolation
-                min_sleep=getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
-            )
+    state.game.score += score_amount
 
     if by_bird is not None and 0 <= int(by_bird) < len(state.birds.per_bird_xp):
-        xp_award = int(max(0, int(raw_amount)))
+        xp_award = int(max(0, int(amount)))
         state.birds.per_bird_xp[int(by_bird)] += xp_award
         transform_bird_to_s(int(by_bird))
 
@@ -435,6 +416,35 @@ def add_score(amount, by_bird=None):
         firebase_client=firebase_client, background_call=background_call,
         score=state.game.score
     )
+
+
+def update_momentum(momentum_factor):
+    """Update momentum based on center of mass momentum factor.
+
+    momentum_factor: -1.0 (bottom) to +2.0 (top), 0 at 1/3 height
+    NO prestige, NO other factors - ONLY center of mass affects momentum.
+    """
+    gain_mult = getattr(constants.speed, 'momentum_gain_multiplier', 1.0)
+
+    # Apply momentum factor directly (already centered at 0)
+    delta = momentum_factor * gain_mult
+    state.game.momentum += delta
+
+    # Clamp to minimum
+    state.game.momentum = max(1.0, state.game.momentum)
+
+    speed_changed = update_speed()
+
+    if speed_changed:
+        audio = _get_audio()
+        if audio:
+            audio.update_music_for_level(state.game.speed)
+            audio.update_game_speed(
+                state.game.speed,
+                base_sleep=getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18),
+                multiplier=1.0,
+                min_sleep=getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
+            )
 
 
 def award_xp(bird_idx, xp_amount):
@@ -446,14 +456,29 @@ def award_xp(bird_idx, xp_amount):
     transform_bird_to_s(bi)
 
 
+def deduct_momentum(amount):
+    """Deduct momentum safely (used for swaps). Score is NOT affected."""
+    old_momentum = state.game.momentum
+    state.game.momentum = max(0, state.game.momentum - amount)
+
+    # Update speed if momentum changed significantly
+    speed_changed = update_speed()
+
+    if speed_changed:
+        audio = _get_audio()
+        if audio:
+            audio.update_music_for_level(state.game.speed)
+            audio.update_game_speed(
+                state.game.speed,
+                base_sleep=getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18),
+                multiplier=1.0,
+                min_sleep=getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
+            )
+
+
 def deduct_score(amount):
-    """Deduct score safely."""
-    state.game.score = max(0, state.game.score - amount)
-    achievements.check_achievements_event(
-        'score', state.game.frame_count, state.ui.notifications,
-        firebase_client=firebase_client, background_call=background_call,
-        score=state.game.score
-    )
+    """Legacy function - now deducts momentum, not score. Score never decreases."""
+    deduct_momentum(amount)
 
 
 def adjust_rarity_weights(base_weights, prestige):

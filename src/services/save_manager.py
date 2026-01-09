@@ -464,6 +464,7 @@ def _build_game_dict():
     from src.core import state
     return {
         'score': state.game.score,
+        'momentum': state.game.momentum,
         'level': state.game.level,
         'level_group': state.game.level_group,
         'level_sub': state.game.level_sub,
@@ -599,10 +600,13 @@ def _restore_powerups(powerups, data):
 def _restore_game_state(data):
     """Restore game namespace from dict."""
     from src.core import state
-    for key in ['score', 'level', 'level_group', 'level_sub', 'speed',
+    for key in ['score', 'momentum', 'level', 'level_group', 'level_sub', 'speed',
                 'miles', 'lives', 'swaps_used', 'frame_count']:
         if key in data:
             setattr(state.game, key, data[key])
+    # For old saves without momentum, initialize it to score value
+    if 'momentum' not in data and 'score' in data:
+        state.game.momentum = data['score']
 
 
 def _restore_player_state(data):

@@ -924,6 +924,7 @@ def render_game():
     _fb_render_right_panel_level_signs(fb)  # Level signs on TOP of barriers
     _fb_render_notifications(fb)  # Notification cards in right panel (between level signs)
     _fb_render_starting_line(fb)
+    _fb_render_center_of_mass(fb)  # Dark blue dashed line at birds' center of mass
     _fb_render_obstacles(fb)
     _fb_render_bats(fb)
     _fb_render_loot(fb)
@@ -1050,9 +1051,10 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
 
     # === Calculate Momentum first (needed for spacer rows) ===
     # Momentum = progress from current speed threshold to next speed threshold
+    # Now uses state.game.momentum (not score) for speed calculation
     # For speed 1, we go from 0 to threshold(2)
     # For speed N (N>1), we go from threshold(N) to threshold(N+1)
-    score = state.game.score
+    momentum = state.game.momentum
 
     if current_speed >= max_speed:
         momentum_pct = 100.0
@@ -1065,11 +1067,11 @@ def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
             prev_threshold = calculate_level_threshold(current_speed)
 
         next_threshold = calculate_level_threshold(current_speed + 1)
-        score_range = next_threshold - prev_threshold
-        score_progress = score - prev_threshold
+        momentum_range = next_threshold - prev_threshold
+        momentum_progress = momentum - prev_threshold
 
-        if score_range > 0:
-            momentum_pct = min(100.0, max(0.0, (score_progress / score_range) * 100))
+        if momentum_range > 0:
+            momentum_pct = min(100.0, max(0.0, (momentum_progress / momentum_range) * 100))
         else:
             momentum_pct = 0.0
 
@@ -1613,6 +1615,149 @@ def _fb_render_starting_line(fb):
 
     for i, char in enumerate(line[:constants.layout.width]):
         fb.put(GAME_X_OFFSET + i, starting_line_y + HEADER_HEIGHT, char, color)
+
+
+def _compute_momentum_factor(y_pos):
+    """Compute MOMENTUM factor based on Y position (center of mass).
+
+    Returns factor for momentum change:
+    - -1.0 at starting_line (bottom) → momentum decreases
+    -  0.0 at 1/3 height from bottom → momentum stable
+    - +2.0 at ceiling (top) → momentum increases fast
+    """
+    starting_line = constants.layout.starting_line
+    ceiling = 1
+
+    one_third_point = starting_line - (starting_line - ceiling) / 3
+
+    if y_pos >= starting_line:
+        return -1.0
+    elif y_pos >= one_third_point:
+        # Between starting_line and 1/3 point: -1.0 -> 0.0
+        t = (starting_line - y_pos) / (starting_line - one_third_point)
+        return -1.0 + t * 1.0
+    elif y_pos > ceiling:
+        # Between 1/3 point and ceiling: 0.0 -> +2.0
+        t = (one_third_point - y_pos) / (one_third_point - ceiling)
+        return t * 2.0
+    else:
+        return 2.0
+
+
+def _get_momentum_indicator(momentum_factor):
+    """Get arrow indicator based on momentum factor.
+
+    -1.0 to -0.3: ↓ (decreasing)
+    -0.3 to +0.3: - (stable)
+    +0.3 to +1.0: ↑ (increasing)
+    +1.0 to +2.0: ⇈ (fast increase)
+    """
+    if momentum_factor <= -0.3:
+        return "↓"
+    elif momentum_factor <= 0.3:
+        return "-"
+    elif momentum_factor <= 1.0:
+        return "↑"
+    else:
+        return "⇈"
+
+
+def _get_position_color(y_pos):
+    """Get color for center of mass line based on Y position.
+
+    Red at bottom (starting_line) -> Green at top (ceiling).
+    Uses faint modifier (ANSI code 2) for subtlety.
+    """
+    starting_line = constants.layout.starting_line
+    ceiling = 1
+
+    # Normalize position: 0 = bottom, 1 = top
+    if starting_line == ceiling:
+        t = 0.5
+    else:
+        t = (starting_line - y_pos) / (starting_line - ceiling)
+    t = max(0.0, min(1.0, t))
+
+    # Interpolate RGB from red (255, 0, 0) to green (0, 255, 0)
+    r = int(255 * (1 - t))
+    g = int(255 * t)
+    b = 0
+
+    # Convert to 256-color approximation
+    # Use the 6x6x6 color cube (colors 16-231)
+    r6 = int(r / 255 * 5)
+    g6 = int(g / 255 * 5)
+    b6 = int(b / 255 * 5)
+    color_code = 16 + 36 * r6 + 6 * g6 + b6
+
+    # Return ANSI with faint modifier (2m)
+    return f"\033[2;38;5;{color_code}m"
+
+
+def _fb_render_center_of_mass(fb):
+    """Render a dashed line at the center of mass of active birds.
+
+    Center of mass is calculated as weighted average of bird Y positions,
+    where weight = bird speed (faster birds contribute more to the average).
+
+    Line color: gradient from red (bottom) to green (top) with faint modifier.
+    Also shows the current multiplier on the right side of the game panel.
+    """
+    # Calculate center of mass
+    total_weight = 0.0
+    weighted_sum = 0.0
+
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i]:
+            continue
+        bird_y = state.birds.y[i]
+        # Skip orange birds in dormant state
+        if bird_y >= constants.layout.height:
+            continue
+
+        bird_speed = state.birds.speeds[i]
+        weight = max(1, bird_speed)  # Minimum weight of 1
+
+        weighted_sum += bird_y * weight
+        total_weight += weight
+
+    if total_weight <= 0:
+        return  # No active birds
+
+    center_y = weighted_sum / total_weight
+
+    # Convert to screen Y coordinate
+    screen_y = int(center_y) + HEADER_HEIGHT + 2
+
+    # Ensure within game area bounds
+    if screen_y < HEADER_HEIGHT + 3 or screen_y >= constants.layout.height + HEADER_HEIGHT + 1:
+        return
+
+    # Get color based on position (red at bottom -> green at top) with faint
+    line_color = _get_position_color(center_y)
+
+    # Draw dashed line across the game area
+    game_width = constants.layout.width
+    dash_pattern = "- "  # Dashed pattern
+
+    for x in range(game_width):
+        char = dash_pattern[x % len(dash_pattern)]
+        if char != ' ':
+            fb.put(GAME_X_OFFSET + x, screen_y, char, line_color)
+
+    # Calculate momentum factor and display arrow indicator
+    momentum_factor = _compute_momentum_factor(center_y)
+    indicator = _get_momentum_indicator(momentum_factor)
+
+    # Position: right side of game panel, just above the line
+    mult_x = GAME_X_OFFSET + game_width - 2
+    mult_y = screen_y - 1
+
+    # Only draw if within bounds
+    if mult_y >= HEADER_HEIGHT + 2:
+        # Use same color as line but brighter (no faint)
+        indicator_color = _get_position_color(center_y).replace("\033[2;", "\033[1;")  # Bold
+        fb.put(mult_x, mult_y, indicator, indicator_color)
 
 
 def _fb_render_obstacles(fb):
