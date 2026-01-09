@@ -1179,7 +1179,7 @@ def _fb_render_background(fb):
 def _fb_render_header(fb):
     """Render header to framebuffer - 3 rows with graphical boxes.
 
-    Shows: Lives, Prestige, Score in styled boxes.
+    Shows: Lives, Prestige, Score, Biome in styled boxes.
     """
     # Get values
     prestige_val = compute_prestige()
@@ -1194,19 +1194,24 @@ def _fb_render_header(fb):
     lives_empty = "♡" * (5 - state.game.lives)
     lives_display = lives_full + lives_empty
 
-    # Calculate box positions - 3 boxes evenly spaced
+    # Biome name
+    biome_name = get_biome_name(state.game.level_group)
+
+    # Calculate box positions - 4 boxes evenly spaced
     box_width = 18
-    total_boxes_width = box_width * 3 + 4  # 3 boxes + spacing
+    total_boxes_width = box_width * 4 + 6  # 4 boxes + spacing
     start_x = (TOTAL_WIDTH - total_boxes_width) // 2
 
     box1_x = start_x
     box2_x = start_x + box_width + 2
     box3_x = start_x + (box_width + 2) * 2
+    box4_x = start_x + (box_width + 2) * 3
 
     # Row 0: Top borders
     fb.put_string(box1_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
     fb.put_string(box2_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
     fb.put_string(box3_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
+    fb.put_string(box4_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
 
     # Row 1: Labels with values
     # Box 1: LIVES (hearts centered)
@@ -1237,10 +1242,18 @@ def _fb_render_header(fb):
     fb.put_string(box3_x + 8, 1, score_val, HEADER_ACCENT)
     fb.put(box3_x + box_width - 1, 1, '║', HEADER_BORDER)
 
+    # Box 4: BIOME
+    fb.put(box4_x, 1, '║', HEADER_BORDER)
+    biome_truncated = biome_name[:box_width - 3]  # Truncate if too long
+    biome_centered = f" {biome_truncated:^{box_width - 3}}"
+    fb.put_string(box4_x + 1, 1, biome_centered[:box_width - 2], HEADER_VALUE)
+    fb.put(box4_x + box_width - 1, 1, '║', HEADER_BORDER)
+
     # Row 2: Bottom borders
     fb.put_string(box1_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
     fb.put_string(box2_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
     fb.put_string(box3_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
+    fb.put_string(box4_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
 
     # Row 3: Separator line (this is where game area starts at row 4)
     fb.put_string(0, 3, "═" * TOTAL_WIDTH, HEADER_BORDER)
@@ -1290,24 +1303,6 @@ def _compute_momentum_factor(y_pos):
         return t * 2.0
     else:
         return 2.0
-
-
-def _get_momentum_indicator(momentum_factor):
-    """Get arrow indicator based on momentum factor.
-
-    -1.0 to -0.3: ↓ (decreasing)
-    -0.3 to +0.3: - (stable)
-    +0.3 to +1.0: ↑ (increasing)
-    +1.0 to +2.0: ⇈ (fast increase)
-    """
-    if momentum_factor <= -0.3:
-        return "↓"
-    elif momentum_factor <= 0.3:
-        return "-"
-    elif momentum_factor <= 1.0:
-        return "↑"
-    else:
-        return "⇈"
 
 
 def _get_position_color(y_pos):
@@ -1386,26 +1381,11 @@ def _fb_render_center_of_mass(fb):
 
     # Draw dashed line across the game area
     game_width = constants.layout.width
-    dash_pattern = "- "  # Dashed pattern
 
     for x in range(game_width):
-        char = dash_pattern[x % len(dash_pattern)]
-        if char != ' ':
-            fb.put(GAME_X_OFFSET + x, screen_y, char, line_color)
-
-    # Calculate momentum factor and display arrow indicator
-    momentum_factor = _compute_momentum_factor(center_y)
-    indicator = _get_momentum_indicator(momentum_factor)
-
-    # Position: right side of game panel, just above the line
-    mult_x = GAME_X_OFFSET + game_width - 2
-    mult_y = screen_y - 1
-
-    # Only draw if within bounds
-    if mult_y >= HEADER_HEIGHT + 2:
-        # Use same color as line but brighter (no faint)
-        indicator_color = _get_position_color(center_y).replace("\033[2;", "\033[1;")  # Bold
-        fb.put(mult_x, mult_y, indicator, indicator_color)
+        # Alternate between dash and space for dashed effect
+        if x % 2 == 0:
+            fb.put(GAME_X_OFFSET + x, screen_y, '-', line_color)
 
 
 def _fb_render_obstacles(fb):
