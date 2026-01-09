@@ -150,12 +150,14 @@ def handle_swap():
 
 def _execute_swap():
     """Execute a bird swap between selected lane and current lane."""
-    from src.functions import compute_level_from_score, deduct_score
+    from src.functions import compute_gear_from_momentum, calculate_gear_threshold, deduct_momentum
 
-    level = compute_level_from_score(state.game.score)
-    swap_cost = 200 * level
+    gear = compute_gear_from_momentum(state.game.momentum)
+    gear_momentum_delta = calculate_gear_threshold(gear + 1) - calculate_gear_threshold(gear)
+    swap_cost = gear_momentum_delta * 0.2  # Swap costs 20% of gear momentum delta
 
-    if state.game.score < swap_cost:
+    # Check if we have enough MOMENTUM for the swap
+    if state.game.momentum < swap_cost:
         state.player.selected_lane = None
         return
 
@@ -169,8 +171,8 @@ def _execute_swap():
         state.player.selected_lane = None
         return
 
-    # Deduct cost
-    deduct_score(swap_cost)
+    # Deduct momentum (not score - score never decreases)
+    deduct_momentum(swap_cost)
     state.game.swaps_used += 1
     achievements.check_achievements_event('swap', state.game.frame_count, state.ui.notifications, swaps=state.game.swaps_used)
 

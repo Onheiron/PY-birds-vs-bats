@@ -182,19 +182,11 @@ def allow_consume_power(idx, allowed_uses=1):
 # LEVEL & GRADE CALCULATIONS
 # =============================================================================
 
-def calculate_level_threshold(level):
-    """Calculate score threshold for given level."""
+def calculate_gear_threshold(gear):
+    """Calculate momentum threshold for given gear level (1-10)."""
     base = float(constants.progression.level_score_base)
     factor = float(constants.progression.level_score_factor)
-    return int(base ** (factor ** (level + 1)))
-
-
-def compute_level_from_score(score):
-    """Compute current level from score."""
-    level = 1
-    while score >= calculate_level_threshold(level + 1):
-        level += 1
-    return level
+    return int(base ** (factor ** (gear + 1)))
 
 
 def compute_grade_from_xp(xp):
@@ -224,20 +216,19 @@ def compute_grade_from_xp(xp):
 # SPEED / MILES / LEVEL SYSTEM
 # =============================================================================
 
-def compute_speed_from_momentum(momentum):
-    """Compute speed level (1-10) from momentum.
+def compute_gear_from_momentum(momentum):
+    """Compute gear level (1-10) from momentum.
 
-    Uses the SAME exponential progression as the old level system,
-    but capped at max_speed (10).
+    Gear controls game speed. Uses exponential progression.
     """
-    max_speed = getattr(constants.speed, 'max_speed', 10)
+    max_gear = getattr(constants.speed, 'max_speed', 10)
 
-    speed = 1
-    while momentum >= calculate_level_threshold(speed + 1):
-        speed += 1
-        if speed >= max_speed:
+    gear = 1
+    while momentum >= calculate_gear_threshold(gear + 1):
+        gear += 1
+        if gear >= max_gear:
             break
-    return speed
+    return gear
 
 
 def get_mph_for_speed(speed_level):
@@ -337,17 +328,17 @@ def update_miles(delta_time):
     return False
 
 
-def update_speed():
-    """Update speed based on current momentum.
+def update_gear():
+    """Update gear based on current momentum.
 
     Returns:
-        True if speed changed, False otherwise
+        True if gear changed, False otherwise
     """
-    old_speed = state.game.speed
-    new_speed = compute_speed_from_momentum(state.game.momentum)
+    old_gear = state.game.speed
+    new_gear = compute_gear_from_momentum(state.game.momentum)
 
-    if new_speed != old_speed:
-        state.game.speed = new_speed
+    if new_gear != old_gear:
+        state.game.speed = new_gear
         return True
 
     return False
@@ -404,7 +395,7 @@ def add_score(amount, by_bird=None):
     prestige = compute_prestige()
     score_amount = amt * prestige
 
-    state.game.score += score_amount
+    state.game.score += score_amount * 0.2
 
     if by_bird is not None and 0 <= int(by_bird) < len(state.birds.per_bird_xp):
         xp_award = int(max(0, int(amount)))
@@ -433,9 +424,9 @@ def update_momentum(momentum_factor):
     # Clamp to minimum
     state.game.momentum = max(1.0, state.game.momentum)
 
-    speed_changed = update_speed()
+    gear_changed = update_gear()
 
-    if speed_changed:
+    if gear_changed:
         audio = _get_audio()
         if audio:
             audio.update_music_for_level(state.game.speed)
@@ -461,10 +452,10 @@ def deduct_momentum(amount):
     old_momentum = state.game.momentum
     state.game.momentum = max(0, state.game.momentum - amount)
 
-    # Update speed if momentum changed significantly
-    speed_changed = update_speed()
+    # Update gear if momentum changed significantly
+    gear_changed = update_gear()
 
-    if speed_changed:
+    if gear_changed:
         audio = _get_audio()
         if audio:
             audio.update_music_for_level(state.game.speed)
@@ -474,11 +465,6 @@ def deduct_momentum(amount):
                 multiplier=1.0,
                 min_sleep=getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
             )
-
-
-def deduct_score(amount):
-    """Legacy function - now deducts momentum, not score. Score never decreases."""
-    deduct_momentum(amount)
 
 
 def adjust_rarity_weights(base_weights, prestige):
