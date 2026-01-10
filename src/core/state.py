@@ -84,9 +84,13 @@ special = SimpleNamespace(
 enemies = SimpleNamespace(
     obstacles=[],
     obstacle_spawn_timer=0,
+    obstacle_id_counter=0,  # Unique ID counter for obstacles
     bats=[],
     bat_spawn_timer=0,
     spawn_queue=[],
+    # Mini bats that hide in tier 3+ obstacles
+    mini_bats=[],  # Active mini bats on screen
+    hidden_mini_bats={},  # Mini bats hidden in obstacles: {obstacle_id: [mini_bat, ...]}
     # Decorative barriers in right panel (no collision)
     right_panel_barriers=[],
     right_panel_barrier_timer=0,
@@ -301,9 +305,12 @@ def init(seed=None):
     # Enemies
     enemies.obstacles = []
     enemies.obstacle_spawn_timer = 0
+    enemies.obstacle_id_counter = 0
     enemies.bats = []
     enemies.bat_spawn_timer = 0
     enemies.spawn_queue = []
+    enemies.mini_bats = []
+    enemies.hidden_mini_bats = {}
     enemies.right_panel_barriers = []
     enemies.right_panel_barrier_timer = 0
     

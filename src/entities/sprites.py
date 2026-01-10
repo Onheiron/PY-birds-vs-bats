@@ -172,13 +172,20 @@ DINOSAUR_DOWN_2 = [
 
 # Bat sprites - two frames for animation (compact version)
 BAT_FRAME_1 = [
-    " _ ^^ _",
+    " _ ⋀⋀ _",
     "/|(;;)|\\",
 ]
 BAT_FRAME_2 = [
-    "__ ^^ __",
+    "__ ⋀⋀ __",
     " /(;;)\\",
 ]
+
+# Mini bat sprites - small bats that hide in tier 3+ obstacles (5 chars wide)
+MINI_BAT_FRAME_1 = "¯/O\\¯"
+MINI_BAT_FRAME_2 = "/|O|\\"
+
+# Mini bat spawn/hide animation frames (in order)
+MINI_BAT_ANIM_FRAMES = ['·', '•', '*', 'O']
 
 # Background pattern
 BG_PATTERN = "/\\/\\/\\"

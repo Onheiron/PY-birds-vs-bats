@@ -573,6 +573,7 @@ def render_game():
     _fb_render_center_of_mass(fb)  # Dark blue dashed line at birds' center of mass
     _fb_render_obstacles(fb)
     _fb_render_bats(fb)
+    _fb_render_mini_bats(fb)
     _fb_render_loot(fb)
     _fb_render_projectiles(fb)
     _fb_render_birds(fb)
@@ -1474,6 +1475,51 @@ def _fb_render_bats(fb):
                 for i, char in enumerate(line):
                     if char != ' ':  # Solo caratteri non-spazio
                         fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, bat_color)
+
+
+def _fb_render_mini_bats(fb):
+    """Render mini bats to framebuffer."""
+    from src.entities.sprites import MINI_BAT_FRAME_1, MINI_BAT_FRAME_2, MINI_BAT_ANIM_FRAMES
+
+    for mb in state.enemies.mini_bats:
+        mb_hp = mb.get('hp', 0)
+        mb_max = mb.get('max_hp', mb_hp if mb_hp > 0 else 1)
+        # Use bat color but slightly different hue (more purple/pink)
+        mb_color = apply_bold(color_from_hp((200, 50, 255), mb_hp, mb_max))
+
+        mb_state = mb.get('state', 'active')
+        anim_frame = mb.get('anim_frame', 0)
+
+        # Determine what to render based on state
+        if mb_state == 'spawning':
+            # Spawn animation: · → • → ⛌ → 〇
+            if anim_frame < len(MINI_BAT_ANIM_FRAMES):
+                char = MINI_BAT_ANIM_FRAMES[anim_frame]
+                y_pos = mb['y_pos']
+                if 0 <= y_pos < constants.layout.height:
+                    fb.put(GAME_X_OFFSET + mb['x_pos'], y_pos + HEADER_HEIGHT, char, mb_color)
+
+        elif mb_state == 'hiding':
+            # Hide animation: reverse of spawn (〇 → ⛌ → • → ·)
+            if 0 <= anim_frame < len(MINI_BAT_ANIM_FRAMES):
+                char = MINI_BAT_ANIM_FRAMES[anim_frame]
+                y_pos = mb['y_pos']
+                if 0 <= y_pos < constants.layout.height:
+                    fb.put(GAME_X_OFFSET + mb['x_pos'], y_pos + HEADER_HEIGHT, char, mb_color)
+
+        else:  # 'active'
+            # Full sprite with 2-frame animation
+            sprite = MINI_BAT_FRAME_1 if (state.game.frame_count // 4) % 2 == 0 else MINI_BAT_FRAME_2
+
+            y_pos = mb['y_pos']
+            if 0 <= y_pos < constants.layout.height:
+                # Center the sprite on x_pos
+                sprite_width = len(sprite)
+                start_x = mb['x_pos'] - sprite_width // 2
+                for i, char in enumerate(sprite):
+                    x = start_x + i
+                    if 0 <= x < constants.layout.width:
+                        fb.put(GAME_X_OFFSET + x, y_pos + HEADER_HEIGHT, char, mb_color)
 
 
 def _fb_render_cloud_banks(fb):

@@ -231,6 +231,26 @@ def update_loot_positions():
     pass
 
 
+def update_mini_bat_positions():
+    """Update positions of mini bats (horizontal movement only)."""
+    for mb in state.enemies.mini_bats[:]:
+        # Only move active mini bats
+        if mb['state'] != 'active':
+            continue
+
+        # Horizontal movement every 4 frames (slightly slower than regular bats)
+        if state.game.frame_count % 4 == 0:
+            mb['x_pos'] += mb['direction'] * 2
+
+            # Bounce off walls
+            if mb['x_pos'] <= 2:
+                mb['x_pos'] = 2
+                mb['direction'] = 1
+            elif mb['x_pos'] >= constants.layout.width - 12:
+                mb['x_pos'] = constants.layout.width - 12
+                mb['direction'] = -1
+
+
 def update_glitch_chaos():
     """Apply GLITCH chaos behaviors: random direction flip, lane swap, cursor nudge, duplicate."""
     for i in range(constants.layout.num_balls):
@@ -308,5 +328,6 @@ def update_all():
     update_projectile_positions()
     update_obstacle_positions()
     update_bat_positions()
+    update_mini_bat_positions()
     update_loot_positions()
     update_right_panel_barriers()

@@ -167,11 +167,13 @@ eggs:
       glitch_egg: 50
 bat_enemy:
   hp_by_tier:
+    0: 16      # Mini bat (tier 0) - hides in obstacles
     1: 24      # era 16 (+50%)
     2: 48      # era 32 (+50%)
     3: 96      # era 64 (+50%)
     4: 192     # era 128 (+50%)
   loot_base_weights:
+    0: [80, 15, 5, 0]   # Mini bat - mostly common loot
     1: [60, 25, 10, 5]
     2: [50, 30, 15, 5]
     3: [40, 33, 17, 10]
@@ -181,6 +183,20 @@ bat_enemy:
     base_seconds: 2.0
     speed_boost_seconds: 2.0
   spawn_interval_range: [80, 160]  # era [120, 220] - spawn più frequente
+  # Mini bat (tier 0) spawn settings - spawns from tier 3+ obstacles
+  mini_bat:
+    min_level: 2                   # Minimum game level for mini bats to spawn (1-18)
+    min_obstacle_tier: 3           # Minimum obstacle tier that can hide mini bats
+    min_y_fraction: 0.25           # Obstacle must be at least this far down screen (0.0=top, 1.0=bottom)
+    anim_frames_per_step: 2        # Animation speed
+    # Spawn probability per level range (chance when tier 3+ obstacle is hit)
+    spawn_probability_by_level:
+      level_1_3: 0.10              # 10% - rare at early levels
+      level_4_6: 0.20              # 20%
+      level_7_9: 0.30              # 30%
+      level_10_12: 0.40            # 40%
+      level_13_15: 0.50            # 50%
+      level_16_18: 0.60            # 60% - common at high levels
   # Spawn rate per level range (frames between spawns)
   spawn_rate_by_level:
     level_4_6: 200
@@ -196,7 +212,9 @@ bat_enemy:
     level_13_15: 4
     level_16_18: 5
   # Tier weights per level range [tier1, tier2, tier3, tier4]
+  # Note: Tier 0 (mini bats) spawn from obstacles, not directly - see mini_bat config
   tier_weights_by_level:
+    level_1_3: [0, 0, 0, 0]        # No bats yet
     level_4_6: [70, 25, 5, 0]
     level_7_9: [50, 35, 12, 3]
     level_10_12: [30, 40, 22, 8]
@@ -448,6 +466,7 @@ prestige:
 bat:
   scared_seconds: 2.0
   scared_speed_boost_seconds: 2.0
+
 colors:
   bats_base_rgb: [255, 0, 255]
   obstacles_base_rgb: [0, 255, 0]
