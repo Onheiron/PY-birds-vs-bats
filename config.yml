@@ -197,6 +197,28 @@ bat_enemy:
       level_10_12: 0.40            # 40%
       level_13_15: 0.50            # 50%
       level_16_18: 0.60            # 60% - common at high levels
+  # Armored bat settings - heavier variant that appears from tier 2+
+  armored:
+    min_tier: 2                    # Only tier 2+ bats can be armored
+    despawn_time: 150              # 2.5 minutes (normal is 60s)
+    movement_speed_mult: 0.6       # Move 40% slower than normal
+    movement_range_mult: 0.7       # Move 30% less distance
+    # Damage reduction per tier (subtracted from damage)
+    damage_reduction_by_tier:
+      2: 1
+      3: 1
+      4: 2
+    # Additional scare effect when hit by armored bat
+    scare_speed_bonus: 1           # +1 speed boost
+    scare_bonus_duration: 1.0      # 1 second extra
+    # Spawn probability per level range (chance that a tier 2+ bat spawns armored)
+    spawn_probability_by_level:
+      level_1_3: 0.00              # No bats yet
+      level_4_6: 0.05              # 5% - very rare early
+      level_7_9: 0.10              # 10%
+      level_10_12: 0.15            # 15%
+      level_13_15: 0.20            # 20%
+      level_16_18: 0.25            # 25% - more common late game
   # Spawn rate per level range (frames between spawns)
   spawn_rate_by_level:
     level_4_6: 200

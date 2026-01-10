@@ -164,9 +164,24 @@ def update_right_panel_barriers():
 def update_bat_positions():
     """Update positions of all bats (horizontal wave + vertical descent)."""
     for bat in state.enemies.bats[:]:
-        # Horizontal movement every 3 frames
-        if state.game.frame_count % 3 == 0:
-            next_x = bat['x_pos'] + bat['direction'] * 2
+        is_armored = bat.get('armored', False)
+
+        # Get movement modifiers for armored bats
+        horiz_interval = 3  # Normal: move every 3 frames
+        move_distance = 2   # Normal: 2 pixels per move
+        if is_armored:
+            armored_cfg = getattr(constants.bat_enemy, 'armored', None)
+            if armored_cfg:
+                speed_mult = getattr(armored_cfg, 'movement_speed_mult', 0.6)
+                range_mult = getattr(armored_cfg, 'movement_range_mult', 0.7)
+                # Slower = higher interval (move less often)
+                horiz_interval = max(3, int(3 / speed_mult))
+                # Less distance per move
+                move_distance = max(1, int(2 * range_mult))
+
+        # Horizontal movement
+        if state.game.frame_count % horiz_interval == 0:
+            next_x = bat['x_pos'] + bat['direction'] * move_distance
             can_move = _check_bat_can_move(bat, next_x)
 
             if can_move:
@@ -181,8 +196,9 @@ def update_bat_positions():
             else:
                 bat['direction'] *= -1
 
-        # Vertical descent (same speed as obstacles)
-        if state.game.frame_count % 5 == 0:
+        # Vertical descent (same speed as obstacles, armored slightly slower)
+        vert_interval = 6 if is_armored else 5
+        if state.game.frame_count % vert_interval == 0:
             if bat['y_pos'] < bat['target_y']:
                 bat['y_pos'] += 1
 

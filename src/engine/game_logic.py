@@ -309,6 +309,20 @@ def check_bird_bat_collision():
             # Hit bat
             damage = _calculate_bird_damage(i)
 
+            # Apply armor damage reduction for armored bats
+            is_armored = bat.get('armored', False)
+            if is_armored and bird_color != ORANGE:
+                armored_cfg = getattr(constants.bat_enemy, 'armored', None)
+                if armored_cfg:
+                    bat_tier = bat.get('tier', 1)
+                    dmg_reduction_cfg = getattr(armored_cfg, 'damage_reduction_by_tier', None)
+                    if dmg_reduction_cfg:
+                        if isinstance(dmg_reduction_cfg, dict):
+                            reduction = dmg_reduction_cfg.get(bat_tier, dmg_reduction_cfg.get(str(bat_tier), 0))
+                        else:
+                            reduction = getattr(dmg_reduction_cfg, str(bat_tier), 0)
+                        damage = max(1, damage - reduction)  # Minimum 1 damage
+
             if bird_color == ORANGE:
                 bat['hp'] = 0
             else:
@@ -325,6 +339,17 @@ def check_bird_bat_collision():
                 if bat_tier >= speed_boost_min_tier:
                     speed_boost_duration = getattr(constants.combat, 'speed_boost_duration', 2.0)
                     state.special.speed_boosts[i] = int(speed_boost_duration / constants.timing.base_sleep)
+
+                # Armored bats give additional scare speed boost
+                if is_armored:
+                    armored_cfg = getattr(constants.bat_enemy, 'armored', None)
+                    if armored_cfg:
+                        armor_scare_bonus = getattr(armored_cfg, 'scare_speed_bonus', 1)
+                        armor_scare_duration = getattr(armored_cfg, 'scare_bonus_duration', 1.0)
+                        armor_scare_frames = int(armor_scare_duration / constants.timing.base_sleep)
+                        # Add to existing speed boost or create new one
+                        current_boost = state.special.speed_boosts.get(i, 0)
+                        state.special.speed_boosts[i] = max(current_boost, armor_scare_frames) + armor_scare_bonus
 
             if bat['hp'] <= 0:
                 _handle_bat_death(bat, i)
@@ -1087,6 +1112,29 @@ def spawn_bat():
 
     target_y = random.randint(target_y_min, min(target_y_max, constants.layout.starting_line - 3))
 
+    # Check if bat should be armored (tier 2+ only)
+    armored = False
+    armored_cfg = getattr(constants.bat_enemy, 'armored', None)
+    if armored_cfg:
+        min_armor_tier = getattr(armored_cfg, 'min_tier', 2)
+        if tier >= min_armor_tier:
+            # Get armored spawn probability for current level
+            armor_prob_cfg = getattr(armored_cfg, 'spawn_probability_by_level', None)
+            if armor_prob_cfg:
+                if level <= 3:
+                    armor_prob = getattr(armor_prob_cfg, 'level_1_3', 0.0)
+                elif level <= 6:
+                    armor_prob = getattr(armor_prob_cfg, 'level_4_6', 0.05)
+                elif level <= 9:
+                    armor_prob = getattr(armor_prob_cfg, 'level_7_9', 0.10)
+                elif level <= 12:
+                    armor_prob = getattr(armor_prob_cfg, 'level_10_12', 0.15)
+                elif level <= 15:
+                    armor_prob = getattr(armor_prob_cfg, 'level_13_15', 0.20)
+                else:
+                    armor_prob = getattr(armor_prob_cfg, 'level_16_18', 0.25)
+                armored = random.random() < armor_prob
+
     # Pipistrelli hanno sprite di 2 righe, spawn fuori schermo
     bat_sprite_height = 2
     start_y = -bat_sprite_height + 1
@@ -1101,7 +1149,8 @@ def spawn_bat():
             'hp': hp,
             'max_hp': hp,
             'target_y': target_y,
-            'spawn_ts': time.time()
+            'spawn_ts': time.time(),
+            'armored': armored,
         }
     })
 
@@ -1600,10 +1649,15 @@ def despawn_old_entities():
     """Remove entities that have been around too long."""
     now = time.time()
 
-    # Bats despawn after configured time
+    # Bats despawn after configured time (armored bats stay longer)
     bat_despawn = getattr(constants.loot, 'bat_despawn_time', 60)
+    armored_cfg = getattr(constants.bat_enemy, 'armored', None)
+    armored_despawn = getattr(armored_cfg, 'despawn_time', 150) if armored_cfg else 150
+
     for bat in state.enemies.bats[:]:
-        if now - bat.get('spawn_ts', now) > bat_despawn:
+        is_armored = bat.get('armored', False)
+        despawn_time = armored_despawn if is_armored else bat_despawn
+        if now - bat.get('spawn_ts', now) > despawn_time:
             state.enemies.bats.remove(bat)
 
     # Loot despawn after configured time

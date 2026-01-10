@@ -1461,20 +1461,42 @@ def _fb_render_right_panel_barriers(fb):
 
 def _fb_render_bats(fb):
     """Render bats to framebuffer."""
+    from src.entities.sprites import ARMORED_BAT_FRAME_1, ARMORED_BAT_FRAME_2, BAT_ARMOR
+
     for bat in state.enemies.bats:
         bat_hp = bat.get('hp', 0)
         bat_max = bat.get('max_hp', bat_hp if bat_hp > 0 else 1)
+        is_armored = bat.get('armored', False)
+
         # Apply bold modifier for foreground game elements
         bat_color = apply_bold(color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max))
 
-        bat_sprite = BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else BAT_FRAME_2
+        # Choose sprite based on armored status
+        if is_armored:
+            bat_sprite = ARMORED_BAT_FRAME_1 if (state.game.frame_count // 4) % 2 == 0 else ARMORED_BAT_FRAME_2
+        else:
+            bat_sprite = BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else BAT_FRAME_2
 
         for line_idx, line in enumerate(bat_sprite):
             y_pos = bat['y_pos'] + line_idx
             if 0 <= y_pos < constants.layout.height:
                 for i, char in enumerate(line):
                     if char != ' ':  # Solo caratteri non-spazio
-                        fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, bat_color)
+                        # For armored bats, color the outer parentheses with armor color
+                        char_color = bat_color
+                        if is_armored and line_idx == 1:  # Bottom line has the armor ()
+                            # The outer ( and ) in the sprite are the armor plates
+                            # In "//|((;;))|\\", positions 3 and 9 are the outer parens
+                            # In " /|((;;))|\\", positions 3 and 9 are the outer parens
+                            if char == '(' or char == ')':
+                                # Count parens to find outer ones
+                                line_before = line[:i]
+                                open_count = line_before.count('(')
+                                close_count = line_before.count(')')
+                                # First ( and last ) are the armor
+                                if (char == '(' and open_count == 0) or (char == ')' and i == len(line) - line[::-1].index(')') - 1):
+                                    char_color = BAT_ARMOR
+                        fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, char_color)
 
 
 def _fb_render_mini_bats(fb):

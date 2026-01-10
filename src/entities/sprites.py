@@ -47,6 +47,9 @@ BAT_TIER2 = theme.get_color('bats', 'tier2', 92)
 BAT_TIER3 = theme.get_color('bats', 'tier3', 129)
 BAT_TIER4 = theme.get_color('bats', 'tier4', 201)
 
+# Armored bat armor color (cyan/light blue)
+BAT_ARMOR = theme.get_color('bats', 'armor', 39)  # Light cyan-blue for armor
+
 
 # ============================================================================
 # DYNAMIC COLOR ACCESS - For runtime theme switching
@@ -81,6 +84,7 @@ _COLOR_MAP = {
     'BAT_TIER2': ('bats', 'tier2', 92),
     'BAT_TIER3': ('bats', 'tier3', 129),
     'BAT_TIER4': ('bats', 'tier4', 201),
+    'BAT_ARMOR': ('bats', 'armor', 39),
 }
 
 
@@ -178,6 +182,17 @@ BAT_FRAME_1 = [
 BAT_FRAME_2 = [
     "__ ⋀⋀ __",
     " /(;;)\\",
+]
+
+# Armored bat sprites - heavier variant with armor plates
+# The outer () are colored with BAT_ARMOR to show the armor
+ARMORED_BAT_FRAME_1 = [
+    "___  ⋀⋀  ___",
+    " ¯/((;;))\\¯",
+]
+ARMORED_BAT_FRAME_2 = [
+    " __  ⋀⋀  __",
+    "//|((;;))|\\\\",
 ]
 
 # Mini bat sprites - small bats that hide in tier 3+ obstacles (5 chars wide)
