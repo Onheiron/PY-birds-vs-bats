@@ -96,7 +96,11 @@ enemies = SimpleNamespace(
     right_panel_barrier_timer=0,
     # Mountain Range cloud banks (foreground fog)
     cloud_banks=[],
-    cloud_spawn_timer=0
+    cloud_spawn_timer=0,
+    # Boss state (end of biome bosses)
+    boss=None,  # None or dict with boss data
+    boss_spawned=False,  # True if boss has been spawned this level
+    boss_defeated=False,  # True if boss was defeated
 )
 
 # ============================================================================
@@ -313,6 +317,9 @@ def init(seed=None):
     enemies.hidden_mini_bats = {}
     enemies.right_panel_barriers = []
     enemies.right_panel_barrier_timer = 0
+    enemies.boss = None
+    enemies.boss_spawned = False
+    enemies.boss_defeated = False
     
     # Items
     items.loot_items = []

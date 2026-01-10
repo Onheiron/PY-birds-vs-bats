@@ -1320,6 +1320,89 @@ def sfx_bat_death():
     return (wave * MASTER_VOLUME).astype(np.float32)
 
 
+def sfx_boss_scream():
+    """
+    Boss scream - terrifying, distorted, low-frequency roar!
+    A deep, rumbling screech that freezes birds in fear.
+    """
+    duration = 0.6
+    samples = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, samples, False)
+
+    # Low fundamental frequency with harmonic distortion
+    freq_base = 120  # Deep bass
+    freq_high = 400  # Higher overtone
+
+    # Add wobble/distortion
+    wobble = 1 + 0.3 * np.sin(2 * np.pi * 8 * t)  # Slow tremolo
+    fast_wobble = 1 + 0.1 * np.sin(2 * np.pi * 45 * t)  # Fast vibrato
+
+    # Generate base tone
+    phase_base = np.cumsum(freq_base * wobble) / SAMPLE_RATE
+    wave = np.sin(2 * np.pi * phase_base)
+
+    # Add harsh overtones for distortion
+    phase_high = np.cumsum(freq_high * fast_wobble) / SAMPLE_RATE
+    wave += 0.5 * np.sin(2 * np.pi * phase_high)
+    wave += 0.3 * np.sin(4 * np.pi * phase_high)  # More harmonics
+    wave += 0.2 * np.sin(6 * np.pi * phase_high)
+
+    # Add noise for texture
+    noise = np.random.randn(samples) * 0.15
+    wave += noise
+
+    # Clip for distortion effect
+    wave = np.clip(wave, -0.8, 0.8)
+
+    # Envelope: quick attack, sustain, medium release
+    attack = np.minimum(t / 0.05, 1.0)
+    release = np.maximum(1.0 - (t - 0.4) / 0.2, 0.0)
+    envelope = np.minimum(attack, release)
+    wave = wave * envelope
+
+    # Normalize
+    wave = wave / np.max(np.abs(wave)) * 0.6
+
+    return (wave * MASTER_VOLUME).astype(np.float32)
+
+
+def sfx_boss_death():
+    """
+    Boss death - dramatic, long death cry with descending pitch!
+    A satisfying victory screech as the boss falls.
+    """
+    duration = 0.8
+    samples = int(SAMPLE_RATE * duration)
+    t = np.linspace(0, duration, samples, False)
+
+    # Start high, descend dramatically
+    freq_start = 600
+    freq_end = 80
+    freq = freq_start * np.exp(-t * 3)
+    freq = np.maximum(freq, freq_end)
+
+    # Add death rattle wobble
+    wobble = 1 + 0.2 * np.sin(2 * np.pi * 20 * t) * np.exp(-t * 2)
+    freq = freq * wobble
+
+    # Generate with phase accumulation
+    phase = np.cumsum(freq) / SAMPLE_RATE
+    wave = np.sin(2 * np.pi * phase)
+
+    # Add harmonics
+    wave += 0.4 * np.sin(2 * np.pi * phase * 2)
+    wave += 0.2 * np.sin(2 * np.pi * phase * 3)
+
+    # Envelope - quick attack, long decay
+    envelope = np.exp(-t * 2)
+    wave = wave * envelope
+
+    # Normalize
+    wave = wave / np.max(np.abs(wave)) * 0.6
+
+    return (wave * MASTER_VOLUME).astype(np.float32)
+
+
 # =============================================================================
 # SOUND EFFECT CACHE
 # =============================================================================
@@ -1339,7 +1422,9 @@ def _get_cached_sfx(name):
             'level_up': sfx_level_up,
             'game_over': sfx_game_over,
             'bird_lost': sfx_bird_lost,
-            'bat_death': sfx_bat_death,  # Shrieking bat death sound!
+            'bat_death': sfx_bat_death,
+            'boss_scream': sfx_boss_scream,
+            'boss_death': sfx_boss_death,
         }
         if name in sfx_map:
             _sfx_cache[name] = sfx_map[name]()

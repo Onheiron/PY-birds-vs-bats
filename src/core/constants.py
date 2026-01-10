@@ -52,6 +52,7 @@ speed = init.dict_to_namespace(config.get('speed', {}))
 score = init.dict_to_namespace(config.get('score', {}))
 levels = init.dict_to_namespace(config.get('levels', {}))
 background = init.dict_to_namespace(config.get('background', {'enabled': True, 'parallax': True}))
+boss = init.dict_to_namespace(config.get('boss', {}))
 
 # Special handling for transform limits (uses color codes as keys)
 # This is built from config if 'transform' section exists, otherwise use reasonable defaults

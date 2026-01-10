@@ -574,6 +574,7 @@ def render_game():
     _fb_render_obstacles(fb)
     _fb_render_bats(fb)
     _fb_render_mini_bats(fb)
+    _fb_render_boss(fb)
     _fb_render_loot(fb)
     _fb_render_projectiles(fb)
     _fb_render_birds(fb)
@@ -1542,6 +1543,52 @@ def _fb_render_mini_bats(fb):
                     x = start_x + i
                     if 0 <= x < constants.layout.width:
                         fb.put(GAME_X_OFFSET + x, y_pos + HEADER_HEIGHT, char, mb_color)
+
+
+def _fb_render_boss(fb):
+    """Render boss to framebuffer."""
+    boss = state.enemies.boss
+    if boss is None:
+        return
+
+    from src.entities.sprites import (
+        BOSS_FRAME_1, BOSS_FRAME_2, BOSS_SCREAM, BOSS_DEAD, BAT_ARMOR
+    )
+
+    boss_hp = boss.get('hp', 0)
+    boss_max = boss.get('max_hp', boss_hp if boss_hp > 0 else 1)
+    boss_state = boss.get('state', 'active')
+
+    # Choose sprite based on state
+    if boss_state == 'dying' or boss_state == 'dead':
+        boss_sprite = BOSS_DEAD
+    elif boss_state == 'screaming':
+        boss_sprite = BOSS_SCREAM
+    else:
+        # Alternate between frames
+        anim_frame = boss.get('anim_frame', 0)
+        boss_sprite = BOSS_FRAME_1 if anim_frame == 0 else BOSS_FRAME_2
+
+    # Color based on HP
+    boss_color = apply_bold(color_from_hp(constants.colors.bats_base_rgb, boss_hp, boss_max))
+
+    for line_idx, line in enumerate(boss_sprite):
+        y_pos = boss['y_pos'] + line_idx
+        if 0 <= y_pos < constants.layout.height:
+            for i, char in enumerate(line):
+                if char != ' ':
+                    x_pos = boss['x_pos'] + i
+                    if 0 <= x_pos < constants.layout.width:
+                        # Color outer parentheses with armor color
+                        char_color = boss_color
+                        if line_idx == 1:  # Middle line has the armor ()
+                            if char == '(' or char == ')':
+                                line_before = line[:i]
+                                open_count = line_before.count('(')
+                                # First ( and last ) are the armor
+                                if (char == '(' and open_count == 0) or (char == ')' and i == len(line) - line[::-1].index(')') - 1):
+                                    char_color = BAT_ARMOR
+                        fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, char_color)
 
 
 def _fb_render_cloud_banks(fb):

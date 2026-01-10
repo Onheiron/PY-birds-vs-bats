@@ -202,6 +202,36 @@ MINI_BAT_FRAME_2 = "/|O|\\"
 # Mini bat spawn/hide animation frames (in order)
 MINI_BAT_ANIM_FRAMES = ['·', '•', '*', 'O']
 
+# =============================================================================
+# BOSS SPRITES - End of biome bosses
+# =============================================================================
+# Boss for biome 1 (Windy Woods) - appears at level 1-3
+# The outer () are colored with BAT_ARMOR to show the armor
+
+BOSS_FRAME_1 = [
+    " ____  ⋀___⋀  ____",
+    "  --/((•,^,•))\\-- ",
+    "      (( x ))      ",
+]
+
+BOSS_FRAME_2 = [
+    "  ___  ⋀___⋀  ___",
+    " /-//((·,^,·))\\\\-\\",
+    "   /  (( x ))  \\  ",
+]
+
+BOSS_SCREAM = [
+    " ____  ⋀___⋀  ____",
+    "  --/((>,O,<))\\-- ",
+    "      (( x ))      ",
+]
+
+BOSS_DEAD = [
+    "  ___  ⋀___⋀  ___",
+    " /-//((x,^,x))\\\\-\\",
+    "   /  (( x ))  \\  ",
+]
+
 # Background pattern
 BG_PATTERN = "/\\/\\/\\"
 

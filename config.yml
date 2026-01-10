@@ -280,6 +280,27 @@ bat_enemy:
     weights_level_3_4: [40, 35, 18, 7]
     weights_level_5_7: [25, 35, 28, 12]
     weights_level_8_plus: [10, 25, 40, 25]  # tier 3 e 4 molto più comuni
+# Boss configuration - end of biome bosses
+boss:
+  # HP for the boss (high HP, requires sustained effort)
+  hp: 300
+  # Armor reduction (subtracted from each hit)
+  armor_reduction: 1
+  # Scream attack settings
+  scream:
+    probability_per_second: 0.15    # Chance per second to scream
+    cooldown_seconds: 3.0           # Minimum time between screams
+    scare_duration: 1.5             # Fear effect duration (like tier 1 bat)
+  # Movement settings
+  descent_speed: 8                  # Frames between descent steps
+  # Score and XP rewards
+  score: 1000
+  xp: 100
+  # Spawn timing - boss spawns when this many miles remain before level transition
+  spawn_miles_before_transition: 50
+  # Which levels have bosses (end of each biome = x-3 levels)
+  boss_levels: [3, 6, 9, 12, 15, 18]  # 1-3, 2-3, 3-3, 4-3, 5-3, 6-3
+
 obstacle:
   # Base HP per tier (before level scaling)
   hp_by_tier:

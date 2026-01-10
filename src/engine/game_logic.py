@@ -1530,6 +1530,284 @@ def check_bird_mini_bat_collision():
 
 
 # =============================================================================
+# BOSS - End of biome bosses
+# =============================================================================
+
+def _get_boss_config():
+    """Get boss configuration."""
+    return getattr(constants, 'boss', None)
+
+
+def _get_miles_to_next_level():
+    """Calculate miles remaining until next level transition."""
+    from src.functions import get_level_milestones
+    milestones = get_level_milestones()
+    current_level = state.game.level
+
+    if current_level >= len(milestones):
+        return float('inf')  # Max level reached
+
+    next_threshold = milestones[current_level - 1] if current_level <= len(milestones) else milestones[-1]
+    return max(0, next_threshold - state.game.miles)
+
+
+def should_spawn_boss():
+    """Check if boss should spawn (end of biome level, near transition)."""
+    boss_cfg = _get_boss_config()
+    if boss_cfg is None:
+        return False
+
+    # Already spawned or defeated this level?
+    if state.enemies.boss_spawned or state.enemies.boss is not None:
+        return False
+
+    # Check if current level is a boss level
+    boss_levels = getattr(boss_cfg, 'boss_levels', [3, 6, 9, 12, 15, 18])
+    if state.game.level not in boss_levels:
+        return False
+
+    # Check if close enough to level transition
+    spawn_miles_before = getattr(boss_cfg, 'spawn_miles_before_transition', 50)
+    miles_remaining = _get_miles_to_next_level()
+
+    return miles_remaining <= spawn_miles_before
+
+
+def spawn_boss():
+    """Spawn the boss for current biome."""
+    boss_cfg = _get_boss_config()
+    if boss_cfg is None:
+        return
+
+    hp = getattr(boss_cfg, 'hp', 300)
+
+    # Boss spawns at center of screen, above view
+    boss_sprite_height = 3  # Boss is 3 lines tall
+    boss_sprite_width = 19  # Width of boss sprite
+
+    state.enemies.boss = {
+        'x_pos': (constants.layout.width - boss_sprite_width) // 2,
+        'y_pos': -boss_sprite_height,  # Start above screen
+        'hp': hp,
+        'max_hp': hp,
+        'state': 'descending',  # 'descending', 'active', 'screaming', 'dying', 'dead'
+        'scream_cooldown': 0,  # Frames until can scream again
+        'scream_timer': 0,  # Frames remaining in current scream
+        'anim_frame': 0,  # Animation frame counter
+        'spawn_ts': time.time(),
+    }
+    state.enemies.boss_spawned = True
+    # Clear other enemies when boss appears for dramatic effect
+    state.enemies.bats = []
+    state.enemies.mini_bats = []
+
+
+def update_boss():
+    """Update boss state and behavior."""
+    boss = state.enemies.boss
+    if boss is None:
+        return
+
+    boss_cfg = _get_boss_config()
+    if boss_cfg is None:
+        return
+
+    boss_state = boss['state']
+
+    if boss_state == 'descending':
+        # Move boss down until fully visible
+        descent_speed = getattr(boss_cfg, 'descent_speed', 8)
+        if state.game.frame_count % descent_speed == 0:
+            boss['y_pos'] += 1
+            # Stop when fully on screen (3 lines visible)
+            if boss['y_pos'] >= 2:
+                boss['state'] = 'active'
+                boss['y_pos'] = 2  # Lock position
+
+    elif boss_state == 'active':
+        # Animation frame cycling
+        if state.game.frame_count % 6 == 0:
+            boss['anim_frame'] = (boss['anim_frame'] + 1) % 2
+
+        # Decrement scream cooldown
+        if boss['scream_cooldown'] > 0:
+            boss['scream_cooldown'] -= 1
+
+        # Random chance to scream
+        if boss['scream_cooldown'] == 0:
+            scream_cfg = getattr(boss_cfg, 'scream', None)
+            prob_per_second = getattr(scream_cfg, 'probability_per_second', 0.15) if scream_cfg else 0.15
+            prob_per_frame = prob_per_second * constants.timing.base_sleep
+
+            if random.random() < prob_per_frame:
+                _boss_start_scream(boss)
+
+    elif boss_state == 'screaming':
+        # Scream animation
+        boss['scream_timer'] -= 1
+        if boss['scream_timer'] <= 0:
+            boss['state'] = 'active'
+            # Set cooldown
+            scream_cfg = getattr(boss_cfg, 'scream', None)
+            cooldown_sec = getattr(scream_cfg, 'cooldown_seconds', 3.0) if scream_cfg else 3.0
+            boss['scream_cooldown'] = int(cooldown_sec / constants.timing.base_sleep)
+
+    elif boss_state == 'dying':
+        # Convert to falling obstacle (tier 4)
+        _convert_boss_to_obstacle(boss)
+        state.enemies.boss = None
+        state.enemies.boss_defeated = True
+
+
+def _boss_start_scream(boss):
+    """Start boss scream attack."""
+    boss['state'] = 'screaming'
+    boss['scream_timer'] = 15  # Scream duration in frames
+
+    # Play scream SFX
+    play_sfx('boss_scream')
+
+    # Apply scare effect to all birds below the boss
+    boss_cfg = _get_boss_config()
+    scream_cfg = getattr(boss_cfg, 'scream', None)
+    scare_duration = getattr(scream_cfg, 'scare_duration', 1.5) if scream_cfg else 1.5
+    scare_frames = int(scare_duration / constants.timing.base_sleep)
+
+    boss_bottom = boss['y_pos'] + 3  # Boss is 3 lines tall
+
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i]:
+            continue
+
+        bird_y = state.birds.y[i]
+
+        # Only affect birds below the boss
+        if bird_y > boss_bottom:
+            # Bounce bird down
+            if state.birds.vy[i] == -1:
+                _set_ball_vy(i, 1)
+
+            # Apply scare effect (like tier 1 bat)
+            state.special.scared_birds[i] = scare_frames
+
+
+def _convert_boss_to_obstacle(boss):
+    """Convert dead boss to a tier 4 obstacle that falls down."""
+    # Create tier 4 obstacle at boss position
+    boss_cfg = _get_boss_config()
+
+    # Get tier 4 HP from obstacle config
+    obs_hp_by_tier = constants.obstacle.hp_by_tier
+    if isinstance(obs_hp_by_tier, dict):
+        hp = obs_hp_by_tier.get(4, obs_hp_by_tier.get('4', 32))
+    else:
+        hp = getattr(obs_hp_by_tier, '4', 32)
+
+    # Find closest lane to boss center
+    boss_center_x = boss['x_pos'] + 9  # Boss is ~19 chars wide
+    closest_lane = min(range(constants.layout.num_lanes),
+                       key=lambda l: abs(constants.layout.lane_positions[l] - boss_center_x))
+
+    # Assign unique ID
+    obstacle_id = state.enemies.obstacle_id_counter
+    state.enemies.obstacle_id_counter += 1
+
+    state.enemies.obstacles.append({
+        'id': obstacle_id,
+        'lane': closest_lane,
+        'y_pos': boss['y_pos'],
+        'tier': 4,
+        'hp': hp,
+        'sprite_width': 12,  # Approximate
+        'is_boss_corpse': True,  # Mark as boss corpse for special rendering
+    })
+
+    # Award score and XP for defeating boss
+    score = getattr(boss_cfg, 'score', 1000)
+    xp = getattr(boss_cfg, 'xp', 100)
+    add_score(score)
+
+    # Award XP to all active birds
+    for i in range(constants.layout.num_balls):
+        if not state.birds.lost[i]:
+            award_xp(i, xp // max(1, sum(1 for j in range(constants.layout.num_balls) if not state.birds.lost[j])))
+
+
+def check_bird_boss_collision():
+    """Check bird-boss collisions."""
+    boss = state.enemies.boss
+    if boss is None or boss['state'] in ('dying', 'dead'):
+        return
+
+    boss_cfg = _get_boss_config()
+    if boss_cfg is None:
+        return
+
+    # Boss hitbox
+    boss_left = boss['x_pos']
+    boss_right = boss['x_pos'] + 19  # Boss sprite width
+    boss_top = boss['y_pos']
+    boss_bottom = boss['y_pos'] + 3  # Boss is 3 lines tall
+
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i] or state.birds.vy[i] != -1:
+            continue
+
+        # Skip charging purple
+        if state.special.purple_state[i] == 2 or state.special.purple_just_fired_frames[i] > 0:
+            continue
+
+        bird_lane = state.birds.random_lanes[i]
+        bird_lane_x = constants.layout.lane_positions[bird_lane]
+        bird_color = state.birds.colors[i]
+        bird_y = state.birds.y[i]
+
+        # STEALTH passes through unless tangible
+        if bird_color == STEALTH and i not in state.special.stealth_timers:
+            continue
+
+        bird_height = 3 if bird_color == DINOSAUR else 2
+
+        lane_left = bird_lane_x - 2
+        lane_right = bird_lane_x + 2
+
+        horizontal_overlap = not (boss_right < lane_left or boss_left > lane_right)
+        vertical_overlap = not (bird_y + bird_height < boss_top or bird_y > boss_bottom)
+
+        if not (horizontal_overlap and vertical_overlap):
+            continue
+
+        # Hit boss!
+        damage = _calculate_bird_damage(i)
+
+        # Apply armor reduction
+        armor_reduction = getattr(boss_cfg, 'armor_reduction', 1)
+        if bird_color != ORANGE:
+            damage = max(1, damage - armor_reduction)
+
+        if bird_color == ORANGE:
+            boss['hp'] -= boss['max_hp'] // 4  # Orange does 25% of max HP
+        else:
+            boss['hp'] -= damage
+            award_xp(i, damage)
+
+        # Boss scream if hit causes scare
+        scare_frames = int(1.0 / constants.timing.base_sleep)
+        state.special.scared_birds[i] = scare_frames
+
+        if boss['hp'] <= 0:
+            boss['state'] = 'dying'
+            play_sfx('boss_death')
+        else:
+            _set_ball_vy(i, 1)
+            state.birds.y[i] = boss_bottom + 1
+            if bird_color == BLUE:
+                _reset_bird_power(i)
+            play_sfx('hit')
+        break
+
+
+# =============================================================================
 # POWERUP TIMER UPDATES
 # =============================================================================
 
@@ -1878,19 +2156,25 @@ def update_all():
     # Score tick
     update_score_tick()
 
+    # Boss spawn check
+    if should_spawn_boss():
+        spawn_boss()
+
     # Collisions
     check_bird_ceiling_bounce()
     check_bird_obstacle_collision()
     check_bird_bat_collision()
     check_bird_mini_bat_collision()
+    check_bird_boss_collision()  # Boss collision
     check_projectile_collision()
     check_loot_collection()
     check_bat_obstacle_collision()
     check_bird_floor_collision()
 
-    # Spawning
-    spawn_obstacle()
-    spawn_bat()
+    # Spawning (don't spawn enemies while boss is active)
+    if state.enemies.boss is None:
+        spawn_obstacle()
+        spawn_bat()
     spawn_cloud_bank()  # Mountain Range clouds
     process_spawn_queue()
 
@@ -1899,6 +2183,9 @@ def update_all():
 
     # Update mini bats (animations, hiding logic)
     update_mini_bats()
+
+    # Update boss (movement, scream attacks)
+    update_boss()
 
     # Timer updates
     update_powerup_timers()

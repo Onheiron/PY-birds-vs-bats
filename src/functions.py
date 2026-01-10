@@ -308,6 +308,10 @@ def update_miles(delta_time):
     if delta_time <= 0:
         return False
 
+    # Block mile progression while boss is alive
+    if state.enemies.boss is not None:
+        return False
+
     # Get current speed and calculate mph
     mph = get_mph_for_speed(state.game.speed)
 
