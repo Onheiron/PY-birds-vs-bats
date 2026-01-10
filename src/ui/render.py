@@ -391,6 +391,21 @@ def color_from_hp(base_rgb: tuple, hp: int, max_hp: int) -> str:
     return _rgb_escape(r, g, b)
 
 
+def color_from_hp_to_red(base_rgb: tuple, hp: int, max_hp: int) -> str:
+    """Color that fades from base_rgb to red as HP decreases (stays visible)."""
+    hp_percentage = hp / max_hp if max_hp > 0 else 0
+    try:
+        # At full HP: base color, at low HP: bright red
+        # Interpolate from base_rgb to (255, 50, 50)
+        target_r, target_g, target_b = 255, 50, 50
+        r = int(base_rgb[0] * hp_percentage + target_r * (1 - hp_percentage))
+        g = int(base_rgb[1] * hp_percentage + target_g * (1 - hp_percentage))
+        b = int(base_rgb[2] * hp_percentage + target_b * (1 - hp_percentage))
+    except Exception:
+        r, g, b = 255, 50, 50
+    return _rgb_escape(r, g, b)
+
+
 # 256-color to RGB conversion table for the 6x6x6 color cube (indices 16-231)
 def _256_to_rgb(code):
     """Convert 256-color code to RGB tuple."""
@@ -1392,7 +1407,7 @@ def _fb_render_center_of_mass(fb):
 
 def _fb_render_obstacles(fb):
     """Render obstacles to framebuffer using biome-specific sprites and colors."""
-    from src.entities.sprites import get_biome_obstacles
+    from src.entities.sprites import get_biome_obstacles, BOSS_DEAD, BAT_ARMOR
 
     # Get obstacle sprites for current biome (fallback)
     biome_obstacles = get_biome_obstacles(state.game.level_group)
@@ -1401,31 +1416,60 @@ def _fb_render_obstacles(fb):
 
     for obs in state.enemies.obstacles:
         tier = obs.get('tier', 1)
+        is_boss_corpse = obs.get('is_boss_corpse', False)
 
-        # Calculate color based on HP - dims biome color as obstacle takes damage
-        max_hp = constants.obstacle.max_hp_by_tier.get(tier, obs.get('hp', 1))
-        obs_color = apply_bold(dim_ansi_color(biome_base_color, obs.get('hp', 0), max_hp))
+        if is_boss_corpse:
+            # Special rendering for boss corpse - use BOSS_DEAD sprite
+            sprite = BOSS_DEAD
+            obs_hp = obs.get('hp', 0)
+            obs_max = obs.get('max_hp', obs_hp if obs_hp > 0 else 1)
+            # Use red fade like the boss
+            obs_color = apply_bold(color_from_hp_to_red(constants.colors.bats_base_rgb, obs_hp, obs_max))
 
-        # Usa sprite salvata nell'ostacolo (variante + flip), o fallback a default bioma
-        sprite = obs.get('sprite')
-        if sprite is None:
-            sprite = biome_obstacles.get(tier, biome_obstacles.get(1, OBSTACLE_SPRITE_T1))
+            # Boss corpse uses exact x_pos, not centered on lane
+            x_start = obs.get('x_pos', 0)
+            for line_idx, line in enumerate(sprite):
+                y_pos = obs['y_pos'] + line_idx
+                if 0 <= y_pos < constants.layout.height:
+                    for i, char in enumerate(line):
+                        if char != ' ':
+                            x_pos = x_start + i
+                            if 0 <= x_pos < constants.layout.width:
+                                # Color outer parentheses with armor color
+                                char_color = obs_color
+                                if line_idx == 1:  # Middle line has the armor ()
+                                    if char == '(' or char == ')':
+                                        line_before = line[:i]
+                                        open_count = line_before.count('(')
+                                        if (char == '(' and open_count == 0) or (char == ')' and i == len(line) - line[::-1].index(')') - 1):
+                                            char_color = BAT_ARMOR
+                                fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, char_color)
+        else:
+            # Normal obstacle rendering
+            # Calculate color based on HP - dims biome color as obstacle takes damage
+            max_hp = constants.obstacle.max_hp_by_tier.get(tier, obs.get('hp', 1))
+            obs_color = apply_bold(dim_ansi_color(biome_base_color, obs.get('hp', 0), max_hp))
 
-        sprite_width = max(len(line) for line in sprite)
+            # Usa sprite salvata nell'ostacolo (variante + flip), o fallback a default bioma
+            sprite = obs.get('sprite')
+            if sprite is None:
+                sprite = biome_obstacles.get(tier, biome_obstacles.get(1, OBSTACLE_SPRITE_T1))
 
-        # Posizione x centrata sulla lane
-        start_lane = obs['lane']
-        center_x = constants.layout.lane_positions[start_lane]
-        x_offset = sprite_width // 2
+            sprite_width = max(len(line) for line in sprite)
 
-        for line_idx, line in enumerate(sprite):
-            y_pos = obs['y_pos'] + line_idx
-            if 0 <= y_pos < constants.layout.height:
-                for i, char in enumerate(line):
-                    if char != ' ':  # Solo caratteri non-spazio
-                        x_pos = center_x - x_offset + i
-                        if 0 <= x_pos < constants.layout.width:
-                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, obs_color)
+            # Posizione x centrata sulla lane
+            start_lane = obs['lane']
+            center_x = constants.layout.lane_positions[start_lane]
+            x_offset = sprite_width // 2
+
+            for line_idx, line in enumerate(sprite):
+                y_pos = obs['y_pos'] + line_idx
+                if 0 <= y_pos < constants.layout.height:
+                    for i, char in enumerate(line):
+                        if char != ' ':  # Solo caratteri non-spazio
+                            x_pos = center_x - x_offset + i
+                            if 0 <= x_pos < constants.layout.width:
+                                fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, obs_color)
 
 
 def _fb_render_right_panel_barriers(fb):
@@ -1569,8 +1613,8 @@ def _fb_render_boss(fb):
         anim_frame = boss.get('anim_frame', 0)
         boss_sprite = BOSS_FRAME_1 if anim_frame == 0 else BOSS_FRAME_2
 
-    # Color based on HP
-    boss_color = apply_bold(color_from_hp(constants.colors.bats_base_rgb, boss_hp, boss_max))
+    # Color based on HP - fades to red instead of dark (stays visible)
+    boss_color = apply_bold(color_from_hp_to_red(constants.colors.bats_base_rgb, boss_hp, boss_max))
 
     for line_idx, line in enumerate(boss_sprite):
         y_pos = boss['y_pos'] + line_idx

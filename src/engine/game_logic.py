@@ -1566,11 +1566,30 @@ def should_spawn_boss():
     if state.game.level not in boss_levels:
         return False
 
-    # Check if close enough to level transition
-    spawn_miles_before = getattr(boss_cfg, 'spawn_miles_before_transition', 50)
-    miles_remaining = _get_miles_to_next_level()
+    # Get milestones to calculate level progress
+    from src.functions import get_level_milestones
+    milestones = get_level_milestones()
+    current_level = state.game.level
 
-    return miles_remaining <= spawn_miles_before
+    # Get the threshold for ENTERING current level (start of this level)
+    level_start_miles = milestones[current_level - 2] if current_level >= 2 else 0
+    # Get the threshold for LEAVING current level (end of this level)
+    level_end_miles = milestones[current_level - 1] if current_level <= len(milestones) else milestones[-1]
+
+    # Miles traveled within THIS level
+    miles_in_level = state.game.miles - level_start_miles
+    # Total miles in this level
+    level_length = level_end_miles - level_start_miles
+    # Miles remaining in this level
+    miles_remaining = level_end_miles - state.game.miles
+
+    # Check if close enough to level transition
+    spawn_miles_before = getattr(boss_cfg, 'spawn_miles_before_transition', 15)
+
+    # Boss spawns when:
+    # 1. We have progressed into the level (not at start)
+    # 2. Miles remaining is less than spawn_miles_before
+    return miles_in_level > 0 and miles_remaining <= spawn_miles_before
 
 
 def spawn_boss():
@@ -1584,9 +1603,11 @@ def spawn_boss():
     # Boss spawns at center of screen, above view
     boss_sprite_height = 3  # Boss is 3 lines tall
     boss_sprite_width = 19  # Width of boss sprite
+    base_x = (constants.layout.width - boss_sprite_width) // 2
 
     state.enemies.boss = {
-        'x_pos': (constants.layout.width - boss_sprite_width) // 2,
+        'x_pos': base_x,
+        'base_x_pos': base_x,  # Center position for oscillation
         'y_pos': -boss_sprite_height,  # Start above screen
         'hp': hp,
         'max_hp': hp,
@@ -1594,6 +1615,7 @@ def spawn_boss():
         'scream_cooldown': 0,  # Frames until can scream again
         'scream_timer': 0,  # Frames remaining in current scream
         'anim_frame': 0,  # Animation frame counter
+        'oscillation_dir': 1,  # Direction of oscillation (1 = right, -1 = left)
         'spawn_ts': time.time(),
     }
     state.enemies.boss_spawned = True
@@ -1628,6 +1650,27 @@ def update_boss():
         # Animation frame cycling
         if state.game.frame_count % 6 == 0:
             boss['anim_frame'] = (boss['anim_frame'] + 1) % 2
+
+        # Subtle left/right oscillation
+        oscillation_speed = getattr(boss_cfg, 'oscillation_speed', 12)
+        oscillation_range = getattr(boss_cfg, 'oscillation_range', 2)
+        if state.game.frame_count % oscillation_speed == 0:
+            base_x = boss['base_x_pos']
+            current_offset = boss['x_pos'] - base_x
+            direction = boss.get('oscillation_dir', 1)
+
+            # Move in current direction
+            new_offset = current_offset + direction
+
+            # Reverse direction at boundaries
+            if new_offset >= oscillation_range:
+                new_offset = oscillation_range
+                boss['oscillation_dir'] = -1
+            elif new_offset <= -oscillation_range:
+                new_offset = -oscillation_range
+                boss['oscillation_dir'] = 1
+
+            boss['x_pos'] = base_x + new_offset
 
         # Decrement scream cooldown
         if boss['scream_cooldown'] > 0:
@@ -1692,16 +1735,12 @@ def _boss_start_scream(boss):
 
 
 def _convert_boss_to_obstacle(boss):
-    """Convert dead boss to a tier 4 obstacle that falls down."""
-    # Create tier 4 obstacle at boss position
+    """Convert dead boss to a falling obstacle using BOSS_DEAD sprite."""
     boss_cfg = _get_boss_config()
 
-    # Get tier 4 HP from obstacle config
-    obs_hp_by_tier = constants.obstacle.hp_by_tier
-    if isinstance(obs_hp_by_tier, dict):
-        hp = obs_hp_by_tier.get(4, obs_hp_by_tier.get('4', 32))
-    else:
-        hp = getattr(obs_hp_by_tier, '4', 32)
+    # Get corpse HP from config (special boss corpse, not tier 4)
+    corpse_cfg = getattr(boss_cfg, 'corpse', None)
+    hp = getattr(corpse_cfg, 'hp', 64) if corpse_cfg else 64
 
     # Find closest lane to boss center
     boss_center_x = boss['x_pos'] + 9  # Boss is ~19 chars wide
@@ -1715,10 +1754,12 @@ def _convert_boss_to_obstacle(boss):
     state.enemies.obstacles.append({
         'id': obstacle_id,
         'lane': closest_lane,
+        'x_pos': boss['x_pos'],  # Keep exact X position for BOSS_DEAD sprite
         'y_pos': boss['y_pos'],
-        'tier': 4,
+        'tier': 5,  # Special tier for boss corpse (not regular 1-4)
         'hp': hp,
-        'sprite_width': 12,  # Approximate
+        'max_hp': hp,
+        'sprite_width': 19,  # Full boss sprite width
         'is_boss_corpse': True,  # Mark as boss corpse for special rendering
     })
 
@@ -1731,6 +1772,39 @@ def _convert_boss_to_obstacle(boss):
     for i in range(constants.layout.num_balls):
         if not state.birds.lost[i]:
             award_xp(i, xp // max(1, sum(1 for j in range(constants.layout.num_balls) if not state.birds.lost[j])))
+
+    # Drop loot - boss drops 3 items with tier 3 weights
+    loot_cfg = getattr(boss_cfg, 'loot', None)
+    loot_count = getattr(loot_cfg, 'count', 3) if loot_cfg else 3
+    loot_tier = getattr(loot_cfg, 'tier', 3) if loot_cfg else 3
+
+    # Get tier 3 loot weights from bat_enemy config
+    loot_weights = constants.bat_enemy.loot_base_weights
+    if isinstance(loot_weights, dict):
+        tier_weights = loot_weights.get(loot_tier, loot_weights.get(str(loot_tier), [30, 35, 25, 10]))
+    else:
+        tier_weights = getattr(loot_weights, str(loot_tier), [30, 35, 25, 10])
+
+    # Adjust with prestige
+    prestige = compute_prestige()
+    adj_weights = adjust_rarity_weights(tier_weights, prestige)
+
+    # Spawn loot items spread across lanes near boss
+    for i in range(loot_count):
+        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=adj_weights)[0]
+        loot_type = choose_loot_type(rarity)
+
+        # Spread loot across nearby lanes
+        lane_offset = i - loot_count // 2
+        loot_lane = max(0, min(constants.layout.num_lanes - 1, closest_lane + lane_offset))
+
+        state.items.loot_items.append({
+            'x_pos': constants.layout.lane_positions[loot_lane],
+            'y_pos': boss['y_pos'] + 1,  # Just below boss
+            'type': loot_type,
+            'rarity': rarity,
+            'spawn_ts': time.time()
+        })
 
 
 def check_bird_boss_collision():

@@ -283,23 +283,32 @@ bat_enemy:
 # Boss configuration - end of biome bosses
 boss:
   # HP for the boss (high HP, requires sustained effort)
-  hp: 300
+  hp: 100
   # Armor reduction (subtracted from each hit)
   armor_reduction: 1
   # Scream attack settings
   scream:
     probability_per_second: 0.15    # Chance per second to scream
     cooldown_seconds: 3.0           # Minimum time between screams
-    scare_duration: 1.5             # Fear effect duration (like tier 1 bat)
+    scare_duration: 1               # Fear effect duration (like tier 1 bat)
   # Movement settings
   descent_speed: 8                  # Frames between descent steps
+  oscillation_range: 2              # Max columns to move left/right (subtle movement)
+  oscillation_speed: 12             # Frames between oscillation steps
   # Score and XP rewards
   score: 1000
   xp: 100
   # Spawn timing - boss spawns when this many miles remain before level transition
-  spawn_miles_before_transition: 50
+  spawn_miles_before_transition: 1  # Very close to transition (was 50)
   # Which levels have bosses (end of each biome = x-3 levels)
   boss_levels: [3, 6, 9, 12, 15, 18]  # 1-3, 2-3, 3-3, 4-3, 5-3, 6-3
+  # Boss corpse obstacle settings (after death, becomes falling obstacle)
+  corpse:
+    hp: 64                          # HP for the falling dead boss
+  # Loot settings (drops when boss dies)
+  loot:
+    count: 3                        # Number of items to drop
+    tier: 3                         # Use tier 3 loot weights
 
 obstacle:
   # Base HP per tier (before level scaling)
