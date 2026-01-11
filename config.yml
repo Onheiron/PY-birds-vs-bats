@@ -191,13 +191,19 @@ bat_enemy:
     anim_frames_per_step: 2        # Animation speed
     # Spawn probability per level range (chance when tier 3+ obstacle is hit)
     spawn_probability_by_level:
-      level_1_3: 0.10              # 10% - rare at early levels
+      level_1_3: 1              # 10% - rare at early levels
       level_4_6: 0.20              # 20%
       level_7_9: 0.30              # 30%
       level_10_12: 0.40            # 40%
       level_13_15: 0.50            # 50%
       level_16_18: 0.60            # 60% - common at high levels
-  # Armored bat settings - heavier variant that appears from tier 2+
+  # Jumpscare bat settings - rare mini bat variant with scary face attack
+  jumpscare_bat:
+    spawn_chance: 1                # 15% chance to spawn jumpscare instead of mini bat
+    visible_duration: 3.0          # Seconds to stay visible before hiding again
+    scary_face_duration: 0.5       # Seconds to show scary face
+    fear_duration: 2.0             # Base fear duration in seconds
+    affected_lanes: 3              # Number of lanes affected by scary face (centered on bat)    random_scream_chance: 0.02     # 2% chance per frame to do random scream while active  # Armored bat settings - heavier variant that appears from tier 2+
   armored:
     min_tier: 2                    # Only tier 2+ bats can be armored
     despawn_time: 150              # 2.5 minutes (normal is 60s)

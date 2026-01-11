@@ -1405,6 +1405,76 @@ def spawn_mini_bat_from_obstacle(obstacle):
     state.enemies.mini_bats.append(mini_bat)
 
 
+def spawn_jumpscare_bat_from_obstacle(obstacle):
+    """Spawn a jumpscare bat (rare mini bat variant) from an obstacle.
+
+    Jumpscare bats use Diver Bat sprites and do a scary face attack when they finish spawning.
+    """
+    hp_by_tier = constants.bat_enemy.hp_by_tier
+    if isinstance(hp_by_tier, dict):
+        hp = hp_by_tier.get(0, hp_by_tier.get('0', 8))
+    else:
+        hp = getattr(hp_by_tier, '0', 8)
+
+    obs_x = constants.layout.lane_positions[obstacle['lane']]
+    obs_y = obstacle['y_pos']
+    obs_id = obstacle.get('id')
+
+    jumpscare_cfg = getattr(constants.bat_enemy, 'jumpscare_bat', None)
+    visible_duration = getattr(jumpscare_cfg, 'visible_duration', 3.0) if jumpscare_cfg else 3.0
+
+    jumpscare_bat = {
+        'x_pos': obs_x,
+        'y_pos': obs_y,
+        'lane': obstacle['lane'],
+        'direction': random.choice([-1, 1]),
+        'tier': 0,
+        'hp': hp,
+        'max_hp': hp,
+        'state': 'spawning',
+        'anim_frame': 0,
+        'anim_timer': 0,
+        'source_obstacle_id': obs_id,
+        'visited_obstacles': {obs_id} if obs_id is not None else set(),
+        'is_jumpscare': True,
+        'scary_face_done': False,
+        'visible_timer': 0,
+        'visible_duration_frames': int(visible_duration / constants.timing.base_sleep),
+    }
+
+    # Add to mini_bats list (reuses existing system)
+    state.enemies.mini_bats.append(jumpscare_bat)
+
+
+def activate_jumpscare_scary_face(jumpscare_bat):
+    """Activate the scary face attack on a jumpscare bat.
+
+    Shows scary face sprite and causes fear to birds in affected lanes.
+    """
+    jumpscare_cfg = getattr(constants.bat_enemy, 'jumpscare_bat', None)
+    fear_duration = getattr(jumpscare_cfg, 'fear_duration', 2.0) if jumpscare_cfg else 2.0
+    affected_lanes = getattr(jumpscare_cfg, 'affected_lanes', 3) if jumpscare_cfg else 3
+
+    bat_lane = jumpscare_bat['lane']
+    half_range = affected_lanes // 2
+
+    # Calculate affected lane range
+    min_lane = max(0, bat_lane - half_range)
+    max_lane = min(constants.layout.num_lanes - 1, bat_lane + half_range)
+
+    # Apply fear to birds in affected lanes
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i]:
+            continue
+        bird_lane = state.birds.random_lanes[i]
+        if min_lane <= bird_lane <= max_lane:
+            state.special.scared_birds[i] = get_scared_frames(i, fear_duration)
+
+    # Set scary face timer on bat
+    scary_face_duration = getattr(jumpscare_cfg, 'scary_face_duration', 0.5) if jumpscare_cfg else 0.5
+    jumpscare_bat['scary_face_timer'] = int(scary_face_duration / constants.timing.base_sleep)
+
+
 def try_spawn_mini_bat_on_hit(obstacle):
     """Try to spawn a mini bat (tier 0) when a tier 3+ obstacle is hit.
 
@@ -1476,7 +1546,13 @@ def try_spawn_mini_bat_on_hit(obstacle):
         spawn_prob = getattr(mini_bat_cfg, 'spawn_probability', 0.3)
 
     if random.random() < spawn_prob:
-        spawn_mini_bat_from_obstacle(obstacle)
+        # Check if this should be a jumpscare bat instead
+        jumpscare_cfg = getattr(constants.bat_enemy, 'jumpscare_bat', None)
+        jumpscare_chance = getattr(jumpscare_cfg, 'spawn_chance', 0.15) if jumpscare_cfg else 0.15
+        if random.random() < jumpscare_chance:
+            spawn_jumpscare_bat_from_obstacle(obstacle)
+        else:
+            spawn_mini_bat_from_obstacle(obstacle)
         return True
 
     return False
@@ -1531,6 +1607,11 @@ def update_mini_bats():
                 if mb['anim_frame'] >= 4:  # Animation complete
                     mb['state'] = 'active'
                     mb['anim_frame'] = 0
+                    # Jumpscare bat: activate scary face when spawn completes
+                    if mb.get('is_jumpscare') and not mb.get('scary_face_done'):
+                        activate_jumpscare_scary_face(mb)
+                        mb['scary_face_done'] = True
+                        mb['visible_timer'] = 0
 
         elif mb['state'] == 'hiding':
             # Hide animation: sprite → O → * → • → · → disappear
@@ -1566,6 +1647,35 @@ def update_mini_bats():
         elif mb['state'] == 'active':
             source_id = mb.get('source_obstacle_id')
             visited = mb.get('visited_obstacles', set())
+
+            # Jumpscare bat: decrement scary face timer
+            if mb.get('scary_face_timer', 0) > 0:
+                mb['scary_face_timer'] -= 1
+
+            # Jumpscare bat: track visible time and hide after duration
+            if mb.get('is_jumpscare') and mb.get('scary_face_done'):
+                mb['visible_timer'] = mb.get('visible_timer', 0) + 1
+                
+                # Random chance to do another scary face while active
+                if mb.get('scary_face_timer', 0) <= 0:
+                    jumpscare_cfg = getattr(constants.bat_enemy, 'jumpscare_bat', None)
+                    random_scream_chance = getattr(jumpscare_cfg, 'random_scream_chance', 0.01) if jumpscare_cfg else 0.01
+                    if random.random() < random_scream_chance:
+                        activate_jumpscare_scary_face(mb)
+                
+                if mb['visible_timer'] >= mb.get('visible_duration_frames', 100):
+                    # Time to hide in another tier 3+ obstacle
+                    available_obstacles = [
+                        obs for obs in tier3_obstacles
+                        if obs.get('id') not in visited
+                    ]
+                    if available_obstacles:
+                        mb['state'] = 'hiding'
+                        mb['anim_frame'] = 3
+                        mb['anim_timer'] = 0
+                        mb['target_obstacle_id'] = random.choice(available_obstacles).get('id')
+                        mb['scary_face_done'] = False  # Reset for next appearance
+                        continue
 
             # Check if source obstacle still exists
             source_exists = any(

@@ -1584,7 +1584,10 @@ def _fb_render_bats(fb):
 
 def _fb_render_mini_bats(fb):
     """Render mini bats to framebuffer."""
-    from src.entities.sprites import MINI_BAT_FRAME_1, MINI_BAT_FRAME_2, MINI_BAT_ANIM_FRAMES
+    from src.entities.sprites import (
+        MINI_BAT_FRAME_1, MINI_BAT_FRAME_2, MINI_BAT_ANIM_FRAMES,
+        JUMPSCARE_BAT_FRAME_1, JUMPSCARE_BAT_FRAME_2, JUMPSCARE_BAT_SCARY_FACE
+    )
 
     for mb in state.enemies.mini_bats:
         mb_hp = mb.get('hp', 0)
@@ -1594,6 +1597,7 @@ def _fb_render_mini_bats(fb):
 
         mb_state = mb.get('state', 'active')
         anim_frame = mb.get('anim_frame', 0)
+        is_jumpscare = mb.get('is_jumpscare', False)
 
         # Determine what to render based on state
         if mb_state == 'spawning':
@@ -1613,18 +1617,42 @@ def _fb_render_mini_bats(fb):
                     fb.put(GAME_X_OFFSET + mb['x_pos'], y_pos + HEADER_HEIGHT, char, mb_color)
 
         else:  # 'active'
-            # Full sprite with 2-frame animation
-            sprite = MINI_BAT_FRAME_1 if (state.game.frame_count // 4) % 2 == 0 else MINI_BAT_FRAME_2
-
             y_pos = mb['y_pos']
-            if 0 <= y_pos < constants.layout.height:
-                # Center the sprite on x_pos
-                sprite_width = len(sprite)
-                start_x = mb['x_pos'] - sprite_width // 2
-                for i, char in enumerate(sprite):
-                    x = start_x + i
-                    if 0 <= x < constants.layout.width:
-                        fb.put(GAME_X_OFFSET + x, y_pos + HEADER_HEIGHT, char, mb_color)
+
+            # Jumpscare bat with scary face active
+            if is_jumpscare and mb.get('scary_face_timer', 0) > 0:
+                # Render scary face sprite (3 lines tall)
+                for line_offset, line in enumerate(JUMPSCARE_BAT_SCARY_FACE):
+                    render_y = y_pos - 1 + line_offset
+                    if 0 <= render_y < constants.layout.height:
+                        sprite_width = len(line)
+                        start_x = mb['x_pos'] - sprite_width // 2
+                        for i, char in enumerate(line):
+                            x = start_x + i
+                            if 0 <= x < constants.layout.width:
+                                fb.put(GAME_X_OFFSET + x, render_y + HEADER_HEIGHT, char, mb_color)
+            elif is_jumpscare:
+                # Jumpscare bat uses multi-line Diver Bat sprite
+                sprite = JUMPSCARE_BAT_FRAME_1 if (state.game.frame_count // 4) % 2 == 0 else JUMPSCARE_BAT_FRAME_2
+                for line_offset, line in enumerate(sprite):
+                    render_y = y_pos + line_offset
+                    if 0 <= render_y < constants.layout.height:
+                        sprite_width = len(line)
+                        start_x = mb['x_pos'] - sprite_width // 2
+                        for i, char in enumerate(line):
+                            x = start_x + i
+                            if 0 <= x < constants.layout.width:
+                                fb.put(GAME_X_OFFSET + x, render_y + HEADER_HEIGHT, char, mb_color)
+            else:
+                # Normal mini bat - single line sprite
+                sprite = MINI_BAT_FRAME_1 if (state.game.frame_count // 4) % 2 == 0 else MINI_BAT_FRAME_2
+                if 0 <= y_pos < constants.layout.height:
+                    sprite_width = len(sprite)
+                    start_x = mb['x_pos'] - sprite_width // 2
+                    for i, char in enumerate(sprite):
+                        x = start_x + i
+                        if 0 <= x < constants.layout.width:
+                            fb.put(GAME_X_OFFSET + x, y_pos + HEADER_HEIGHT, char, mb_color)
 
 
 def _fb_render_boss(fb):

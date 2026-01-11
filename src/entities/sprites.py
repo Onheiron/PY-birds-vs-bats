@@ -208,7 +208,7 @@ DIVER_BAT_FRAME_1 = [
     "‾/(oo)\\‾",
 ]
 DIVER_BAT_FRAME_2 = [
-    " _ ⋀⋀ _",
+    " _ ⋀⋀ _ ",
     "/|(--)|\\"
 ]
 DIVER_BAT_DIVE = [
@@ -218,6 +218,17 @@ DIVER_BAT_DIVE = [
 DIVER_BAT_STUNNED = [
     " _ ⋀⋀ _",
     "/|(@@)|\\"
+]
+
+# Jumpscare bat sprites - rare mini bat variant (uses Diver Bat base)
+JUMPSCARE_BAT_FRAME_1 = DIVER_BAT_FRAME_1
+JUMPSCARE_BAT_FRAME_2 = DIVER_BAT_FRAME_2
+
+# Jumpscare bat scary face sprite (3 lines tall)
+JUMPSCARE_BAT_SCARY_FACE = [
+    "\\\\ ⋀_⋀ //",
+    "‾/(o_o)\\‾",
+    "  'U'  "
 ]
 
 # Spellcaster bat sprites - bats that cast spells (3 lines tall with star)
