@@ -202,6 +202,41 @@ MINI_BAT_FRAME_2 = "/|O|\\"
 # Mini bat spawn/hide animation frames (in order)
 MINI_BAT_ANIM_FRAMES = ['·', '•', '*', 'O']
 
+# Diver bat sprites - bats that dive down at high speed
+DIVER_BAT_FRAME_1 = [
+    "__ ⋀⋀ __",
+    "‾/(oo)\\‾",
+]
+DIVER_BAT_FRAME_2 = [
+    " _ ⋀⋀ _",
+    "/|(--)|\\"
+]
+DIVER_BAT_DIVE = [
+    "__ ⋀⋀ __",
+    "‾/(><)\\‾",
+]
+DIVER_BAT_STUNNED = [
+    " _ ⋀⋀ _",
+    "/|(@@)|\\"
+]
+
+# Spellcaster bat sprites - bats that cast spells (3 lines tall with star)
+SPELLCASTER_BAT_FRAME_1 = [
+    "   *    ",
+    "__ /\\ __",
+    "‾/(oo)\\‾",
+]
+SPELLCASTER_BAT_FRAME_2 = [
+    "    *   ",
+    "__ /\\ __",
+    "/|(--)|\\"
+]
+SPELLCASTER_BAT_CASTING = [
+    "   *    ",
+    "\\\\ /\\ //",
+    "¯/(@@)\\¯",
+]
+
 # =============================================================================
 # BOSS SPRITES - End of biome bosses
 # =============================================================================

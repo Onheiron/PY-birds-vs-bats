@@ -1282,15 +1282,30 @@ def _fb_render_starting_line(fb):
     if starting_line_y < 0 or starting_line_y >= constants.layout.height:
         return
 
+    # Build the base starting line
     if state.powerups.tailwind_active:
-        line = "^ " * (constants.layout.width // 2)
-        color = BLUE
+        base_char = '^'
+        base_color = BLUE
     else:
-        line = "- " * (constants.layout.width // 2)
-        color = ''
+        base_char = '-'
+        base_color = ''
 
-    for i, char in enumerate(line[:constants.layout.width]):
-        fb.put(GAME_X_OFFSET + i, starting_line_y + HEADER_HEIGHT, char, color)
+    # Render base line first
+    for i in range(constants.layout.width):
+        char = base_char if i % 2 == 0 else ' '
+        fb.put(GAME_X_OFFSET + i, starting_line_y + HEADER_HEIGHT, char, base_color)
+
+    # Overlay spell markers on affected lanes
+    for lane_idx in range(constants.layout.num_lanes):
+        lane_x = constants.layout.lane_positions[lane_idx]
+
+        # Check for silence spell (x marker, gray)
+        if lane_idx in state.spells.silenced_lanes:
+            fb.put(GAME_X_OFFSET + lane_x, starting_line_y + HEADER_HEIGHT, 'x', DARK_GRAY)
+
+        # Check for repugnant wind spell (v marker, red)
+        elif lane_idx in state.spells.repugnant_wind_lanes:
+            fb.put(GAME_X_OFFSET + lane_x, starting_line_y + HEADER_HEIGHT, 'v', RED)
 
 
 def _compute_momentum_factor(y_pos):
@@ -1506,19 +1521,41 @@ def _fb_render_right_panel_barriers(fb):
 
 def _fb_render_bats(fb):
     """Render bats to framebuffer."""
-    from src.entities.sprites import ARMORED_BAT_FRAME_1, ARMORED_BAT_FRAME_2, BAT_ARMOR
+    from src.entities.sprites import (
+        ARMORED_BAT_FRAME_1, ARMORED_BAT_FRAME_2, BAT_ARMOR,
+        DIVER_BAT_FRAME_1, DIVER_BAT_FRAME_2, DIVER_BAT_DIVE, DIVER_BAT_STUNNED,
+        SPELLCASTER_BAT_FRAME_1, SPELLCASTER_BAT_FRAME_2, SPELLCASTER_BAT_CASTING
+    )
 
     for bat in state.enemies.bats:
         bat_hp = bat.get('hp', 0)
         bat_max = bat.get('max_hp', bat_hp if bat_hp > 0 else 1)
         is_armored = bat.get('armored', False)
+        is_diver = bat.get('diver', False)
+        is_spellcaster = bat.get('spellcaster', False)
+        diver_state = bat.get('diver_state', 'flying')
+        spell_state = bat.get('spell_state', 'idle')
 
         # Apply bold modifier for foreground game elements
         bat_color = apply_bold(color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max))
 
-        # Choose sprite based on armored status
-        if is_armored:
+        # Choose sprite based on bat type and state
+        if is_spellcaster:
+            # Spellcaster bat sprites based on casting state
+            if spell_state == 'casting':
+                bat_sprite = SPELLCASTER_BAT_CASTING
+            else:
+                bat_sprite = SPELLCASTER_BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else SPELLCASTER_BAT_FRAME_2
+        elif is_armored:
             bat_sprite = ARMORED_BAT_FRAME_1 if (state.game.frame_count // 4) % 2 == 0 else ARMORED_BAT_FRAME_2
+        elif is_diver:
+            # Diver bat sprites based on state
+            if diver_state == 'diving':
+                bat_sprite = DIVER_BAT_DIVE
+            elif diver_state in ('stunned', 'returning'):
+                bat_sprite = DIVER_BAT_STUNNED
+            else:  # flying
+                bat_sprite = DIVER_BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else DIVER_BAT_FRAME_2
         else:
             bat_sprite = BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else BAT_FRAME_2
 
@@ -1527,18 +1564,19 @@ def _fb_render_bats(fb):
             if 0 <= y_pos < constants.layout.height:
                 for i, char in enumerate(line):
                     if char != ' ':  # Solo caratteri non-spazio
-                        # For armored bats, color the outer parentheses with armor color
                         char_color = bat_color
-                        if is_armored and line_idx == 1:  # Bottom line has the armor ()
-                            # The outer ( and ) in the sprite are the armor plates
-                            # In "//|((;;))|\\", positions 3 and 9 are the outer parens
-                            # In " /|((;;))|\\", positions 3 and 9 are the outer parens
+                        # Spellcaster star is colored differently when casting
+                        if is_spellcaster and char == '*':
+                            if spell_state == 'casting':
+                                char_color = PURPLE  # Magic star glows purple when casting
+                            else:
+                                char_color = YELLOW  # Normal star is yellow
+                        # For armored bats, color the outer parentheses with armor color
+                        elif is_armored and line_idx == 1:  # Bottom line has the armor ()
                             if char == '(' or char == ')':
-                                # Count parens to find outer ones
                                 line_before = line[:i]
                                 open_count = line_before.count('(')
                                 close_count = line_before.count(')')
-                                # First ( and last ) are the armor
                                 if (char == '(' and open_count == 0) or (char == ')' and i == len(line) - line[::-1].index(')') - 1):
                                     char_color = BAT_ARMOR
                         fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, char_color)

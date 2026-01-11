@@ -219,6 +219,79 @@ bat_enemy:
       level_10_12: 0.15            # 15%
       level_13_15: 0.20            # 20%
       level_16_18: 0.25            # 25% - more common late game
+  # Diver bat settings - bats that dive down at high speed
+  diver:
+    min_tier: 1                    # All tiers can be divers
+    # Y position range (fraction of screen height) - stays in upper half
+    # Early levels: closer to ceiling, later levels: closer to middle
+    y_range_by_level:
+      level_1_3: {min: 0.05, max: 0.20}   # Very high (5-20% from top)
+      level_4_6: {min: 0.08, max: 0.25}   # High (8-25%)
+      level_7_9: {min: 0.10, max: 0.30}   # Upper (10-30%)
+      level_10_12: {min: 0.12, max: 0.35} # Upper-mid (12-35%)
+      level_13_15: {min: 0.15, max: 0.40} # Mid-upper (15-40%)
+      level_16_18: {min: 0.18, max: 0.45} # Closer to middle (18-45%)
+    # Dive settings
+    dive_probability_per_second: 0.20    # 20% chance per second to start dive
+    dive_speed: 2                        # Moves down every N frames (faster than obstacles)
+    dive_distance: 10                    # Max rows to dive before returning
+    # Stun settings (after dive ends)
+    stun_duration: 1.5                   # Seconds stunned after dive
+    return_speed: 6                      # Frames between return steps (slower rise)
+    # Collision effect during dive
+    dive_boost_speed: 1                  # +1 fall speed when hit during dive
+    dive_boost_duration: 0.5             # Duration of boost effect
+    # Spawn probability per level range (chance that a bat spawns as diver)
+    spawn_probability_by_level:
+      level_1_3: 0.00              # No bats yet
+      level_4_6: 0.08              # 8% - rare early
+      level_7_9: 0.12              # 12%
+      level_10_12: 0.16            # 16%
+      level_13_15: 0.20            # 20%
+      level_16_18: 0.25            # 25% - common late game
+  # Spellcaster bat settings - bats that cast spells
+  spellcaster:
+    min_tier: 2                    # Only tier 2+ bats can be spellcasters
+    # Number of spells known by tier
+    spells_by_tier:
+      2: 1                         # Tier 2: knows 1 spell (silence)
+      3: 2                         # Tier 3: knows 2 spells (silence, repugnant wind)
+      4: 3                         # Tier 4: knows all 3 spells
+    # Spell cast probability per second (increases with level)
+    cast_probability_by_level:
+      level_1_3: 0.00
+      level_4_6: 0.10              # 10% per second
+      level_7_9: 0.15              # 15%
+      level_10_12: 0.20            # 20%
+      level_13_15: 0.25            # 25%
+      level_16_18: 0.30            # 30%
+    # Cooldown between spell casts (seconds)
+    cast_cooldown: 3.0
+    # Casting animation duration (seconds)
+    casting_duration: 0.5
+    # Spell durations by tier (seconds)
+    silence:
+      duration_by_tier:
+        2: 3.0
+        3: 4.0
+        4: 5.0
+    repugnant_wind:
+      duration_by_tier:
+        3: 3.0
+        4: 4.5
+      speed_boost: 1               # +1 fall speed
+      speed_nerf: 1                # -1 rise speed
+    exile:
+      # No duration - instant effect
+      swap_delay: 0.3              # Seconds before swap happens
+    # Spawn probability per level range (chance that a tier 2+ bat spawns as spellcaster)
+    spawn_probability_by_level:
+      level_1_3: 0.00              # No bats yet
+      level_4_6: 0.05              # 5% - very rare early
+      level_7_9: 0.08              # 8%
+      level_10_12: 0.12            # 12%
+      level_13_15: 0.15            # 15%
+      level_16_18: 0.20            # 20% - more common late game
   # Spawn rate per level range (frames between spawns)
   spawn_rate_by_level:
     level_4_6: 200

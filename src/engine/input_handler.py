@@ -317,6 +317,12 @@ def _activate_bird_power(bird_idx):
     """Activate a bird's special power."""
     from src.functions import compute_grade_from_xp
 
+    # Check if lane is silenced by spellcaster bat
+    bird_lane = state.birds.random_lanes[bird_idx]
+    if bird_lane in state.spells.silenced_lanes:
+        # Power blocked by silence spell
+        return
+
     # Check allowed uses
     label, _ = compute_grade_from_xp(state.birds.per_bird_xp[bird_idx])
     allowed_uses = 2 if (label and label.startswith('A')) else 1
@@ -325,7 +331,6 @@ def _activate_bird_power(bird_idx):
         return
 
     bird_color = state.birds.colors[bird_idx]
-    bird_lane = state.birds.random_lanes[bird_idx]
 
     # Notify achievements
     color_name = _get_color_name(bird_color)

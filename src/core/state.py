@@ -44,10 +44,13 @@ special = SimpleNamespace(
     
     # Speed boosts
     speed_boosts={},
-    
+
+    # Dive fall boosts (from diver bats in diving state)
+    dive_fall_boosts={},
+
     # Dinosaur
     dinosaur_up_presses={},
-    
+
     # Scared birds
     scared_birds={},
 
@@ -108,6 +111,23 @@ enemies = SimpleNamespace(
 # ============================================================================
 items = SimpleNamespace(
     loot_items=[]
+)
+
+# ============================================================================
+# SPELL EFFECTS STATE (from spellcaster bats)
+# ============================================================================
+spells = SimpleNamespace(
+    # Silence spell - lanes where bird powers are disabled
+    # {lane_index: {'end_time': float, 'caster_tier': int}}
+    silenced_lanes={},
+
+    # Repugnant wind spell - reverse tailwind effect on lanes
+    # {lane_index: {'end_time': float, 'speed_boost': int, 'speed_nerf': int}}
+    repugnant_wind_lanes={},
+
+    # Exile spell - pending swaps
+    # [{'swap_time': float, 'bird_a_idx': int, 'bird_b_idx': int or None}]
+    pending_exiles=[],
 )
 
 # ============================================================================
@@ -283,6 +303,7 @@ def init(seed=None):
     
     # Special bird state
     special.speed_boosts = {}
+    special.dive_fall_boosts = {}
     special.dinosaur_up_presses = {}
     special.scared_birds = {}
     special.stunned_birds = {}
@@ -292,7 +313,12 @@ def init(seed=None):
     special.cookie_crumbs_made = {}
     special.up_hold_counter = 0
     special.up_miss_counter = 0
-    
+
+    # Spell effects
+    spells.silenced_lanes = {}
+    spells.repugnant_wind_lanes = {}
+    spells.pending_exiles = []
+
     # UI state
     ui.show_xp_overlay = False
     ui.bg_offset = 0

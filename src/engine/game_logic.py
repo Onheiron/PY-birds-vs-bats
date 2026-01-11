@@ -329,9 +329,14 @@ def check_bird_bat_collision():
                 bat['hp'] -= damage
                 award_xp(i, damage)
 
-            # Apply scared effect (unless stealth tangible)
+            # Check if diver bat in stunned/returning state (no scare)
+            is_diver = bat.get('diver', False)
+            diver_state = bat.get('diver_state', 'flying')
+            diver_no_scare = is_diver and diver_state in ('stunned', 'returning')
+
+            # Apply scared effect (unless stealth tangible or diver stunned/returning)
             is_stealth_tangible = bird_color == STEALTH and i in state.special.stealth_timers
-            if not is_stealth_tangible:
+            if not is_stealth_tangible and not diver_no_scare:
                 bat_tier = bat.get('tier', 1)
                 scared_duration = getattr(constants.combat, 'scared_duration', 2.0)
                 state.special.scared_birds[i] = get_scared_frames(i, scared_duration)
@@ -350,6 +355,19 @@ def check_bird_bat_collision():
                         # Add to existing speed boost or create new one
                         current_boost = state.special.speed_boosts.get(i, 0)
                         state.special.speed_boosts[i] = max(current_boost, armor_scare_frames) + armor_scare_bonus
+
+            # Diver bats in diving state give fall speed boost
+            if is_diver and diver_state == 'diving':
+                diver_cfg = getattr(constants.bat_enemy, 'diver', None)
+                if diver_cfg:
+                    dive_boost_speed = getattr(diver_cfg, 'dive_boost_speed', 1)
+                    dive_boost_duration = getattr(diver_cfg, 'dive_boost_duration', 0.5)
+                    dive_boost_frames = int(dive_boost_duration / constants.timing.base_sleep)
+                    # Apply dive fall boost (separate from scared speed boost)
+                    state.special.dive_fall_boosts[i] = {
+                        'frames': dive_boost_frames,
+                        'speed': dive_boost_speed
+                    }
 
             if bat['hp'] <= 0:
                 _handle_bat_death(bat, i)
@@ -1112,46 +1130,149 @@ def spawn_bat():
 
     target_y = random.randint(target_y_min, min(target_y_max, constants.layout.starting_line - 3))
 
-    # Check if bat should be armored (tier 2+ only)
+    # Check if bat should be armored or diver (mutually exclusive)
     armored = False
-    armored_cfg = getattr(constants.bat_enemy, 'armored', None)
-    if armored_cfg:
-        min_armor_tier = getattr(armored_cfg, 'min_tier', 2)
-        if tier >= min_armor_tier:
-            # Get armored spawn probability for current level
-            armor_prob_cfg = getattr(armored_cfg, 'spawn_probability_by_level', None)
-            if armor_prob_cfg:
-                if level <= 3:
-                    armor_prob = getattr(armor_prob_cfg, 'level_1_3', 0.0)
-                elif level <= 6:
-                    armor_prob = getattr(armor_prob_cfg, 'level_4_6', 0.05)
-                elif level <= 9:
-                    armor_prob = getattr(armor_prob_cfg, 'level_7_9', 0.10)
-                elif level <= 12:
-                    armor_prob = getattr(armor_prob_cfg, 'level_10_12', 0.15)
-                elif level <= 15:
-                    armor_prob = getattr(armor_prob_cfg, 'level_13_15', 0.20)
-                else:
-                    armor_prob = getattr(armor_prob_cfg, 'level_16_18', 0.25)
-                armored = random.random() < armor_prob
+    diver = False
 
-    # Pipistrelli hanno sprite di 2 righe, spawn fuori schermo
-    bat_sprite_height = 2
+    # First check for diver (any tier)
+    diver_cfg = getattr(constants.bat_enemy, 'diver', None)
+    if diver_cfg:
+        min_diver_tier = getattr(diver_cfg, 'min_tier', 1)
+        if tier >= min_diver_tier:
+            diver_prob_cfg = getattr(diver_cfg, 'spawn_probability_by_level', None)
+            if diver_prob_cfg:
+                if level <= 3:
+                    diver_prob = getattr(diver_prob_cfg, 'level_1_3', 0.0)
+                elif level <= 6:
+                    diver_prob = getattr(diver_prob_cfg, 'level_4_6', 0.08)
+                elif level <= 9:
+                    diver_prob = getattr(diver_prob_cfg, 'level_7_9', 0.12)
+                elif level <= 12:
+                    diver_prob = getattr(diver_prob_cfg, 'level_10_12', 0.16)
+                elif level <= 15:
+                    diver_prob = getattr(diver_prob_cfg, 'level_13_15', 0.20)
+                else:
+                    diver_prob = getattr(diver_prob_cfg, 'level_16_18', 0.25)
+                diver = random.random() < diver_prob
+
+    # If not diver, check for spellcaster (tier 2+ only)
+    spellcaster = False
+    if not diver:
+        spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
+        if spellcaster_cfg:
+            min_spell_tier = getattr(spellcaster_cfg, 'min_tier', 2)
+            if tier >= min_spell_tier:
+                spell_prob_cfg = getattr(spellcaster_cfg, 'spawn_probability_by_level', None)
+                if spell_prob_cfg:
+                    if level <= 3:
+                        spell_prob = getattr(spell_prob_cfg, 'level_1_3', 0.0)
+                    elif level <= 6:
+                        spell_prob = getattr(spell_prob_cfg, 'level_4_6', 0.05)
+                    elif level <= 9:
+                        spell_prob = getattr(spell_prob_cfg, 'level_7_9', 0.08)
+                    elif level <= 12:
+                        spell_prob = getattr(spell_prob_cfg, 'level_10_12', 0.12)
+                    elif level <= 15:
+                        spell_prob = getattr(spell_prob_cfg, 'level_13_15', 0.15)
+                    else:
+                        spell_prob = getattr(spell_prob_cfg, 'level_16_18', 0.20)
+                    spellcaster = random.random() < spell_prob
+
+    # If not diver or spellcaster, check for armored (tier 2+ only)
+    if not diver and not spellcaster:
+        armored_cfg = getattr(constants.bat_enemy, 'armored', None)
+        if armored_cfg:
+            min_armor_tier = getattr(armored_cfg, 'min_tier', 2)
+            if tier >= min_armor_tier:
+                armor_prob_cfg = getattr(armored_cfg, 'spawn_probability_by_level', None)
+                if armor_prob_cfg:
+                    if level <= 3:
+                        armor_prob = getattr(armor_prob_cfg, 'level_1_3', 0.0)
+                    elif level <= 6:
+                        armor_prob = getattr(armor_prob_cfg, 'level_4_6', 0.05)
+                    elif level <= 9:
+                        armor_prob = getattr(armor_prob_cfg, 'level_7_9', 0.10)
+                    elif level <= 12:
+                        armor_prob = getattr(armor_prob_cfg, 'level_10_12', 0.15)
+                    elif level <= 15:
+                        armor_prob = getattr(armor_prob_cfg, 'level_13_15', 0.20)
+                    else:
+                        armor_prob = getattr(armor_prob_cfg, 'level_16_18', 0.25)
+                    armored = random.random() < armor_prob
+
+    # Diver bats have different Y position (upper half of screen)
+    final_target_y = target_y
+    if diver and diver_cfg:
+        y_range_cfg = getattr(diver_cfg, 'y_range_by_level', None)
+        if y_range_cfg:
+            if level <= 3:
+                y_frac = getattr(y_range_cfg, 'level_1_3', None)
+            elif level <= 6:
+                y_frac = getattr(y_range_cfg, 'level_4_6', None)
+            elif level <= 9:
+                y_frac = getattr(y_range_cfg, 'level_7_9', None)
+            elif level <= 12:
+                y_frac = getattr(y_range_cfg, 'level_10_12', None)
+            elif level <= 15:
+                y_frac = getattr(y_range_cfg, 'level_13_15', None)
+            else:
+                y_frac = getattr(y_range_cfg, 'level_16_18', None)
+
+            if y_frac:
+                min_frac = y_frac.get('min', 0.10) if isinstance(y_frac, dict) else getattr(y_frac, 'min', 0.10)
+                max_frac = y_frac.get('max', 0.30) if isinstance(y_frac, dict) else getattr(y_frac, 'max', 0.30)
+                screen_height = constants.layout.starting_line
+                y_min = int(screen_height * min_frac)
+                y_max = int(screen_height * max_frac)
+                final_target_y = random.randint(max(1, y_min), max(2, y_max))
+
+    # Spellcasters are 3 lines tall, others are 2
+    bat_sprite_height = 3 if spellcaster else 2
     start_y = -bat_sprite_height + 1
+
+    bat_data = {
+        'x_pos': x_pos,
+        'y_pos': start_y,
+        'direction': random.choice([-1, 1]),
+        'tier': tier,
+        'hp': hp,
+        'max_hp': hp,
+        'target_y': final_target_y,
+        'spawn_ts': time.time(),
+        'armored': armored,
+        'diver': diver,
+        'spellcaster': spellcaster,
+    }
+
+    # Add diver-specific fields
+    if diver:
+        bat_data['diver_state'] = 'flying'  # 'flying', 'diving', 'stunned', 'returning'
+        bat_data['diver_home_y'] = final_target_y  # Remember home position
+        bat_data['dive_start_y'] = None  # Y when dive started
+        bat_data['stun_end_time'] = None  # When stun ends
+
+    # Add spellcaster-specific fields
+    if spellcaster:
+        bat_data['spell_state'] = 'idle'  # 'idle', 'casting'
+        bat_data['spell_cooldown'] = 0  # Time until can cast again
+        bat_data['casting_end_time'] = None  # When casting animation ends
+        # Determine known spells based on tier
+        spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
+        spells_by_tier = getattr(spellcaster_cfg, 'spells_by_tier', None) if spellcaster_cfg else None
+        if spells_by_tier:
+            if isinstance(spells_by_tier, dict):
+                num_spells = spells_by_tier.get(tier, spells_by_tier.get(str(tier), 1))
+            else:
+                num_spells = getattr(spells_by_tier, str(tier), 1)
+        else:
+            num_spells = min(tier - 1, 3)  # Default: tier 2=1, tier 3=2, tier 4=3
+        # Spells in order: silence, repugnant_wind, exile
+        all_spells = ['silence', 'repugnant_wind', 'exile']
+        bat_data['known_spells'] = all_spells[:num_spells]
 
     state.enemies.spawn_queue.append({
         'type': 'bat',
-        'data': {
-            'x_pos': x_pos,
-            'y_pos': start_y,
-            'direction': random.choice([-1, 1]),
-            'tier': tier,
-            'hp': hp,
-            'max_hp': hp,
-            'target_y': target_y,
-            'spawn_ts': time.time(),
-            'armored': armored,
-        }
+        'data': bat_data
     })
 
 
@@ -1940,6 +2061,13 @@ def update_special_bird_states():
         if state.special.stunned_birds[bird_idx] <= 0:
             del state.special.stunned_birds[bird_idx]
 
+    # Dive fall boosts (from diver bats)
+    for bird_idx in list(state.special.dive_fall_boosts.keys()):
+        boost_info = state.special.dive_fall_boosts[bird_idx]
+        boost_info['frames'] -= 1
+        if boost_info['frames'] <= 0:
+            del state.special.dive_fall_boosts[bird_idx]
+
     # Stealth timers
     for bird_idx in list(state.special.stealth_timers.keys()):
         state.special.stealth_timers[bird_idx] -= 1
@@ -1952,6 +2080,52 @@ def update_special_bird_states():
     for i in range(constants.layout.num_balls):
         if state.special.purple_just_fired_frames[i] > 0:
             state.special.purple_just_fired_frames[i] -= 1
+
+
+def update_spell_effects():
+    """Update spell effects from spellcaster bats."""
+    now = time.time()
+
+    # Update silenced lanes (remove expired)
+    for lane in list(state.spells.silenced_lanes.keys()):
+        if now >= state.spells.silenced_lanes[lane]['end_time']:
+            del state.spells.silenced_lanes[lane]
+
+    # Update repugnant wind lanes (remove expired)
+    for lane in list(state.spells.repugnant_wind_lanes.keys()):
+        if now >= state.spells.repugnant_wind_lanes[lane]['end_time']:
+            del state.spells.repugnant_wind_lanes[lane]
+
+    # Process pending exile swaps
+    for exile in state.spells.pending_exiles[:]:
+        if now >= exile['swap_time']:
+            _execute_exile_swap(exile)
+            state.spells.pending_exiles.remove(exile)
+
+
+def _execute_exile_swap(exile):
+    """Execute an exile swap between birds."""
+    bird_a_idx = exile['bird_a_idx']
+    bird_b_idx = exile['bird_b_idx']
+    empty_lane = exile.get('empty_lane')
+
+    # Validate bird A still exists
+    if state.birds.lost[bird_a_idx]:
+        return
+
+    if empty_lane is not None:
+        # Swap bird A to empty lane
+        state.birds.random_lanes[bird_a_idx] = empty_lane
+        state.birds.cols[bird_a_idx] = constants.layout.lane_positions[empty_lane]
+    elif bird_b_idx is not None and not state.birds.lost[bird_b_idx]:
+        # Swap lanes between bird A and bird B
+        lane_a = state.birds.random_lanes[bird_a_idx]
+        lane_b = state.birds.random_lanes[bird_b_idx]
+
+        state.birds.random_lanes[bird_a_idx] = lane_b
+        state.birds.random_lanes[bird_b_idx] = lane_a
+        state.birds.cols[bird_a_idx] = constants.layout.lane_positions[lane_b]
+        state.birds.cols[bird_b_idx] = constants.layout.lane_positions[lane_a]
 
 
 def update_purple_charging():
@@ -2264,6 +2438,7 @@ def update_all():
     # Timer updates
     update_powerup_timers()
     update_special_bird_states()
+    update_spell_effects()  # Spellcaster bat effects
     update_purple_charging()
 
     # Cleanup
