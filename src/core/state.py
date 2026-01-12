@@ -146,7 +146,10 @@ powerups = SimpleNamespace(
     tailwind_active=False,
     tailwind_frames=0,
     tailwind_up_bonus=0,
-    tailwind_down_penalty=0
+    tailwind_down_penalty=0,
+    # Wind Boss effects
+    wind_boss_up_bonus=0,
+    wind_boss_down_penalty=0,
 )
 
 # ============================================================================
@@ -364,6 +367,8 @@ def init(seed=None):
     powerups.tailwind_frames = 0
     powerups.tailwind_up_bonus = 0
     powerups.tailwind_down_penalty = 0
+    powerups.wind_boss_up_bonus = 0
+    powerups.wind_boss_down_penalty = 0
     
     # Game state
     game.score = 0

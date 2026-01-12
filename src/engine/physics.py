@@ -71,6 +71,21 @@ def update_bird_positions():
             elif state.birds.vy[i] == 1 and down_pen > 0:
                 current_speed = max(1, current_speed - down_pen)
 
+        # Apply Wind Boss effect
+        wind_up = state.powerups.wind_boss_up_bonus
+        wind_down = state.powerups.wind_boss_down_penalty
+        if wind_up != 0 or wind_down != 0:
+            if state.birds.vy[i] == -1:  # Going up
+                if wind_up > 0:  # Tailwind: boost up
+                    current_speed = min(6, current_speed + wind_up)
+                elif wind_up < 0:  # Headwind: nerf up
+                    current_speed = max(1, current_speed + wind_up)  # wind_up is negative
+            elif state.birds.vy[i] == 1:  # Going down
+                if wind_down < 0:  # Headwind: boost down (wind_down is negative, so abs)
+                    current_speed = min(6, current_speed + abs(wind_down))
+                elif wind_down > 0:  # Tailwind: nerf down
+                    current_speed = max(1, current_speed - wind_down)
+
         # Apply repugnant wind (reverse tailwind from spellcaster bats)
         bird_lane = state.birds.random_lanes[i]
         if bird_lane in state.spells.repugnant_wind_lanes:

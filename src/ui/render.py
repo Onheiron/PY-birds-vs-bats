@@ -1282,10 +1282,19 @@ def _fb_render_starting_line(fb):
     if starting_line_y < 0 or starting_line_y >= constants.layout.height:
         return
 
-    # Build the base starting line
+    # Determine base character based on active wind effects
+    wind_up = state.powerups.wind_boss_up_bonus
+    wind_down = state.powerups.wind_boss_down_penalty
+
     if state.powerups.tailwind_active:
         base_char = '^'
         base_color = BLUE
+    elif wind_up > 0:  # Wind boss tailwind phase
+        base_char = '^'
+        base_color = BLUE
+    elif wind_up < 0:  # Wind boss headwind phase
+        base_char = 'v'
+        base_color = RED
     else:
         base_char = '-'
         base_color = ''
@@ -1422,7 +1431,7 @@ def _fb_render_center_of_mass(fb):
 
 def _fb_render_obstacles(fb):
     """Render obstacles to framebuffer using biome-specific sprites and colors."""
-    from src.entities.sprites import get_biome_obstacles, BOSS_DEAD, BAT_ARMOR
+    from src.entities.sprites import get_biome_obstacles, BOSS_DEAD, BAT_ARMOR, WIND_BOSS_DEAD
 
     # Get obstacle sprites for current biome (fallback)
     biome_obstacles = get_biome_obstacles(state.game.level_group)
@@ -1432,10 +1441,14 @@ def _fb_render_obstacles(fb):
     for obs in state.enemies.obstacles:
         tier = obs.get('tier', 1)
         is_boss_corpse = obs.get('is_boss_corpse', False)
+        is_wind_boss_corpse = obs.get('is_wind_boss_corpse', False)
 
         if is_boss_corpse:
-            # Special rendering for boss corpse - use BOSS_DEAD sprite
-            sprite = BOSS_DEAD
+            # Special rendering for boss corpse
+            if is_wind_boss_corpse:
+                sprite = WIND_BOSS_DEAD
+            else:
+                sprite = BOSS_DEAD
             obs_hp = obs.get('hp', 0)
             obs_max = obs.get('max_hp', obs_hp if obs_hp > 0 else 1)
             # Use red fade like the boss
@@ -1450,15 +1463,7 @@ def _fb_render_obstacles(fb):
                         if char != ' ':
                             x_pos = x_start + i
                             if 0 <= x_pos < constants.layout.width:
-                                # Color outer parentheses with armor color
-                                char_color = obs_color
-                                if line_idx == 1:  # Middle line has the armor ()
-                                    if char == '(' or char == ')':
-                                        line_before = line[:i]
-                                        open_count = line_before.count('(')
-                                        if (char == '(' and open_count == 0) or (char == ')' and i == len(line) - line[::-1].index(')') - 1):
-                                            char_color = BAT_ARMOR
-                                fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, char_color)
+                                fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, obs_color)
         else:
             # Normal obstacle rendering
             # Calculate color based on HP - dims biome color as obstacle takes damage
@@ -1661,6 +1666,12 @@ def _fb_render_boss(fb):
     if boss is None:
         return
 
+    # Route to wind boss renderer if applicable
+    boss_type = boss.get('boss_type', 'normal')
+    if boss_type == 'wind':
+        _fb_render_wind_boss(fb)
+        return
+
     from src.entities.sprites import (
         BOSS_FRAME_1, BOSS_FRAME_2, BOSS_SCREAM, BOSS_DEAD, BAT_ARMOR
     )
@@ -1699,6 +1710,55 @@ def _fb_render_boss(fb):
                                 if (char == '(' and open_count == 0) or (char == ')' and i == len(line) - line[::-1].index(')') - 1):
                                     char_color = BAT_ARMOR
                         fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, char_color)
+
+
+def _fb_render_wind_boss(fb):
+    """Render Wind Boss to framebuffer."""
+    boss = state.enemies.boss
+    if boss is None:
+        return
+
+    from src.entities.sprites import (
+        WIND_BOSS_MAX_UP, WIND_BOSS_PUSH_1, WIND_BOSS_PUSH_2, WIND_BOSS_PUSH_3, WIND_BOSS_PUSH_4,
+        WIND_BOSS_MAX_DOWN, WIND_BOSS_PULL_1, WIND_BOSS_PULL_2, WIND_BOSS_PULL_3, WIND_BOSS_PULL_4,
+        WIND_BOSS_DEAD
+    )
+
+    boss_hp = boss.get('hp', 0)
+    boss_max = boss.get('max_hp', boss_hp if boss_hp > 0 else 1)
+    boss_state = boss.get('state', 'active')
+    anim_frame = boss.get('anim_frame', 0)
+
+    # Map animation frame to sprite
+    sprite_map = [
+        WIND_BOSS_MAX_UP,   # 0
+        WIND_BOSS_PUSH_1,   # 1
+        WIND_BOSS_PUSH_2,   # 2
+        WIND_BOSS_PUSH_3,   # 3
+        WIND_BOSS_PUSH_4,   # 4
+        WIND_BOSS_MAX_DOWN, # 5
+        WIND_BOSS_PULL_1,   # 6
+        WIND_BOSS_PULL_2,   # 7
+        WIND_BOSS_PULL_3,   # 8
+        WIND_BOSS_PULL_4,   # 9
+    ]
+
+    if boss_state == 'dying' or boss_state == 'dead':
+        boss_sprite = WIND_BOSS_DEAD
+    else:
+        boss_sprite = sprite_map[anim_frame % len(sprite_map)]
+
+    # Color based on HP
+    boss_color = apply_bold(color_from_hp_to_red(constants.colors.bats_base_rgb, boss_hp, boss_max))
+
+    for line_idx, line in enumerate(boss_sprite):
+        y_pos = boss['y_pos'] + line_idx
+        if 0 <= y_pos < constants.layout.height:
+            for i, char in enumerate(line):
+                if char != ' ':
+                    x_pos = boss['x_pos'] + i
+                    if 0 <= x_pos < constants.layout.width:
+                        fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, boss_color)
 
 
 def _fb_render_cloud_banks(fb):

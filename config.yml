@@ -378,7 +378,7 @@ boss:
   score: 1000
   xp: 100
   # Spawn timing - boss spawns when this many miles remain before level transition
-  spawn_miles_before_transition: 1  # Very close to transition (was 50)
+  spawn_miles_before_transition: 1  # Very close to transition
   # Which levels have bosses (end of each biome = x-3 levels)
   boss_levels: [3, 6, 9, 12, 15, 18]  # 1-3, 2-3, 3-3, 4-3, 5-3, 6-3
   # Boss corpse obstacle settings (after death, becomes falling obstacle)
@@ -388,6 +388,34 @@ boss:
   loot:
     count: 3                        # Number of items to drop
     tier: 3                         # Use tier 3 loot weights
+
+# Wind Boss configuration - boss for level 2-3 (The Borders)
+wind_boss:
+  level: 6                          # Which level this boss appears (2-3 = level 6)
+  hp: 200                           # Slightly more HP than regular boss
+  armor_reduction: 1
+  # Animation timing
+  anim_frames_per_step: 8           # Frames between animation steps
+  # Wind effects - intensity grows each frame
+  # Tailwind: starts at max_down (frame 5), grows until pull_up_4 (frame 9)
+  tailwind:
+    up_bonus_min: 2                 # Starting bonus at max_down
+    up_bonus_max: 5                 # Max bonus at pull_up_4
+    down_penalty_min: 1             # Starting penalty at max_down
+    down_penalty_max: 3             # Max penalty at pull_up_4
+  # Headwind: starts at max_up (frame 0), grows until push_down_4 (frame 4)
+  headwind:
+    up_penalty_min: 2               # Starting penalty at max_up
+    up_penalty_max: 4               # Max penalty at push_down_4
+    down_bonus_min: 2               # Starting bonus at max_up
+    down_bonus_max: 5               # Max bonus at push_down_4
+  # Movement settings
+  descent_speed: 8
+  oscillation_range: 2
+  oscillation_speed: 12
+  # Rewards
+  score: 1200
+  xp: 120
 
 obstacle:
   # Base HP per tier (before level scaling)

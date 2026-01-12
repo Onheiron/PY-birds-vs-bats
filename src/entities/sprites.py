@@ -278,6 +278,105 @@ BOSS_DEAD = [
     "   /  (( x ))  \\  ",
 ]
 
+# =============================================================================
+# WIND BOSS - Boss for level 2-3 (The Borders)
+# Flaps wings up and down creating tailwind/headwind effects
+# =============================================================================
+
+# Animation sequence: max_up -> push_down (1-4) -> max_down -> pull_up (1-4) -> repeat
+WIND_BOSS_MAX_UP = [
+    "    \\             /",
+    "‾\\‾‾‾\\   /\\_/\\   /‾‾‾/‾",
+    " /|   \\((> Y <))/   |\\",
+    "  /---((  '‾'  ))---\\ ",
+    "        W ‾‾‾ W         ",
+]
+
+WIND_BOSS_PUSH_1 = [
+    "______   /\\_/\\    ______",
+    " /    \\((> Y <)) /    \\",
+    " ‾‾/  ((  '‾'  ))  \\‾‾ ",
+    "        W ‾‾‾ W        ",
+]
+
+WIND_BOSS_PUSH_2 = [
+    "  ____   /\\_/\\    ____   ",
+    "‾‾    \\((> Y <)) /    ‾‾",
+    " / |  ((  '‾'  ))  | \\   ",
+    "        W ‾‾‾ W          ",
+]
+
+WIND_BOSS_PUSH_3 = [
+    "    __   /\\_/\\    __   ",
+    "/‾‾   \\((> Y <)) /   ‾‾\\",
+    " //   ((  '‾'  ))   \\\\   ",
+    "    ‾‾  W ‾‾‾ W  ‾‾     ",
+]
+
+WIND_BOSS_PUSH_4 = [
+    "         /\\_/\\       ",
+    "______ ((> Y <)) ______",
+    " //  _((  '‾'  ))_  \\\\   ",
+    "/\\/\\/   W ‾‾‾ W   \\/\\/\\ ",
+]
+
+WIND_BOSS_MAX_DOWN = [
+    "         /\\_/\\       ",
+    "______ ((o Y o)) ______",
+    " //  _((  '‾'  ))_  \\\\   ",
+    "/\\/\\/   W ‾‾‾ W   \\/\\/\\ ",
+]
+
+WIND_BOSS_PULL_1 = [
+    "    __   /\\_/\\    __   ",
+    "/‾‾   \\((o Y o)) /   ‾‾\\",
+    " //   ((  '‾'  ))   \\\\   ",
+    "    ‾‾  W ‾‾‾ W  ‾‾     ",
+]
+
+WIND_BOSS_PULL_2 = [
+    "  ____   /\\_/\\    ____   ",
+    "‾‾    \\((= Y =)) /    ‾‾",
+    " / |  ((  '‾'  ))  | \\   ",
+    "        W ‾‾‾ W           ",
+]
+
+WIND_BOSS_PULL_3 = [
+    "______   /\\_/\\    ______",
+    " /    \\((- Y -)) /    \\",
+    " ‾‾/  ((  '‾'  ))  \\‾‾ ",
+    "        W ‾‾‾ W         ",
+]
+
+WIND_BOSS_PULL_4 = [
+    "    \\             /",
+    "‾\\‾‾‾\\   /\\_/\\   /‾‾‾/‾",
+    " /|   \\((- Y -))/   |\\",
+    "  /---((  '‾'  ))---\\ ",
+    "        W ‾‾‾ W         ",
+]
+
+WIND_BOSS_DEAD = [
+    "         /\\_/\\       ",
+    "______ ((x Y x)) ______",
+    " //  _((  '‾'  ))_  \\\\   ",
+    "/\\/\\/   W ‾‾‾ W   \\/\\/\\ ",
+]
+
+# Animation sequence for wind boss (indices into sprite list)
+WIND_BOSS_ANIM_SEQUENCE = [
+    'max_up',      # 0 - wings fully up (tailwind)
+    'push_1',      # 1 - pushing down
+    'push_2',      # 2 - pushing down
+    'push_3',      # 3 - pushing down
+    'push_4',      # 4 - pushing down
+    'max_down',    # 5 - wings fully down (headwind starts)
+    'pull_1',      # 6 - pulling up
+    'pull_2',      # 7 - pulling up
+    'pull_3',      # 8 - pulling up
+    'pull_4',      # 9 - pulling up (back to max_up)
+]
+
 # Background pattern
 BG_PATTERN = "/\\/\\/\\"
 
