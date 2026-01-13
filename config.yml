@@ -392,7 +392,7 @@ boss:
 # Wind Boss configuration - boss for level 2-3 (The Borders)
 wind_boss:
   level: 6                          # Which level this boss appears (2-3 = level 6)
-  hp: 200                           # Slightly more HP than regular boss
+  hp: 300                           # Slightly more HP than regular boss
   armor_reduction: 1
   # Animation timing
   anim_frames_per_step: 8           # Frames between animation steps
@@ -401,8 +401,8 @@ wind_boss:
   tailwind:
     up_bonus_min: 2                 # Starting bonus at max_down
     up_bonus_max: 5                 # Max bonus at pull_up_4
-    down_penalty_min: 1             # Starting penalty at max_down
-    down_penalty_max: 3             # Max penalty at pull_up_4
+    down_penalty_min: 2             # Starting penalty at max_down
+    down_penalty_max: 5             # Max penalty at pull_up_4
   # Headwind: starts at max_up (frame 0), grows until push_down_4 (frame 4)
   headwind:
     up_penalty_min: 2               # Starting penalty at max_up
