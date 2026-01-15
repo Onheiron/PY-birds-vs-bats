@@ -417,6 +417,31 @@ wind_boss:
   score: 1200
   xp: 120
 
+# Jelly Boss configuration - boss for level 3-3 (Rotten Marshes)
+jelly_boss:
+  level: 9                            # Which level this boss appears (3-3 = level 9)
+  spawn_miles_before_transition: 1    # Spawn 1 mile before level end (like wind boss)
+  hp: 400                             # Higher HP
+  armor_reduction: -1                 # Less armor (takes more damage)
+  # Position - settles at 1/4 from top
+  target_y_fraction: 0.25             # Fraction of screen height from top
+  # Animation timing (10 frames, 1 fps = 10 seconds per cycle)
+  anim_frames_per_step: 5             # 5 game frames per animation frame (at ~5fps = 1s)
+  # Bat spawning
+  spawn_frame: 8                      # Spawn bat on frame 8 (1-indexed)
+  max_spawned_bats: 5                 # Maximum bats that can be spawned
+  spawn_anim_duration: 0.5            # Seconds for spawn animation
+  # Movement settings
+  descent_speed: 8
+  oscillation_range: 10               # Wide oscillation (left/right)
+  oscillation_speed: 5                # Faster oscillation
+  # Rewards
+  score: 1500
+  xp: 150
+  # Corpse settings
+  corpse:
+    hp: 80
+
 obstacle:
   # Base HP per tier (before level scaling)
   hp_by_tier:

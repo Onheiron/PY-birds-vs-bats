@@ -587,9 +587,9 @@ def render_game():
     _fb_render_starting_line(fb)
     _fb_render_center_of_mass(fb)  # Dark blue dashed line at birds' center of mass
     _fb_render_obstacles(fb)
+    _fb_render_boss(fb)  # Boss rendered BEFORE bats so bats appear in front
     _fb_render_bats(fb)
     _fb_render_mini_bats(fb)
-    _fb_render_boss(fb)
     _fb_render_loot(fb)
     _fb_render_projectiles(fb)
     _fb_render_birds(fb)
@@ -1666,10 +1666,13 @@ def _fb_render_boss(fb):
     if boss is None:
         return
 
-    # Route to wind boss renderer if applicable
+    # Route to specific boss renderer if applicable
     boss_type = boss.get('boss_type', 'normal')
     if boss_type == 'wind':
         _fb_render_wind_boss(fb)
+        return
+    elif boss_type == 'jelly':
+        _fb_render_jelly_boss(fb)
         return
 
     from src.entities.sprites import (
@@ -1759,6 +1762,52 @@ def _fb_render_wind_boss(fb):
                     x_pos = boss['x_pos'] + i
                     if 0 <= x_pos < constants.layout.width:
                         fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, boss_color)
+
+
+def _fb_render_jelly_boss(fb):
+    """Render Jelly Boss to framebuffer."""
+    boss = state.enemies.boss
+    if boss is None:
+        return
+
+    from src.entities.sprites import JELLY_BOSS_FRAMES, JELLY_BOSS_DEAD
+
+    boss_hp = boss.get('hp', 0)
+    boss_max = boss.get('max_hp', boss_hp if boss_hp > 0 else 1)
+    boss_state = boss.get('state', 'active')
+    anim_frame = boss.get('anim_frame', 0)
+
+    # Choose sprite based on state
+    if boss_state == 'dying' or boss_state == 'dead':
+        boss_sprite = JELLY_BOSS_DEAD
+    else:
+        boss_sprite = JELLY_BOSS_FRAMES[anim_frame % len(JELLY_BOSS_FRAMES)]
+
+    # Color based on HP - jelly boss uses a purple-ish base color
+    jelly_base_rgb = (180, 100, 220)  # Purple/jelly color
+    boss_color = apply_bold(color_from_hp_to_red(jelly_base_rgb, boss_hp, boss_max))
+
+    for line_idx, line in enumerate(boss_sprite):
+        y_pos = boss['y_pos'] + line_idx
+        if 0 <= y_pos < constants.layout.height:
+            for i, char in enumerate(line):
+                if char != ' ':
+                    x_pos = boss['x_pos'] + i
+                    if 0 <= x_pos < constants.layout.width:
+                        fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, boss_color)
+
+    # Render bat spawn animation if active
+    bat_anim = boss.get('bat_spawn_anim')
+    if bat_anim and bat_anim.get('active'):
+        anim_x = bat_anim.get('x_pos', 0)
+        anim_y = bat_anim.get('y_pos', 0)
+        anim_char = bat_anim.get('char', 'o')
+        if 0 <= anim_y < constants.layout.height and 0 <= anim_x < constants.layout.width:
+            # Spawn animation uses bright color
+            spawn_color = "\033[1;35m"  # Bright magenta
+            # Handle multi-char like "()"
+            for i, c in enumerate(anim_char):
+                fb.put(GAME_X_OFFSET + anim_x + i, anim_y + HEADER_HEIGHT, c, spawn_color)
 
 
 def _fb_render_cloud_banks(fb):

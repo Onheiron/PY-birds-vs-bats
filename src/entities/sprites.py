@@ -377,6 +377,127 @@ WIND_BOSS_ANIM_SEQUENCE = [
     'pull_4',      # 9 - pulling up (back to max_up)
 ]
 
+# =============================================================================
+# JELLY BOSS - Boss for level 3-3 (Rotten Marshes)
+# Oscillates and spawns bats from its head
+# =============================================================================
+
+JELLY_BOSS_FRAME_1 = [
+    " ____             ____",
+    "  /--\\   /\\_/\\   / --\\",
+    "   /-_\\((^ Y ^))/_-\\  ",
+    "      (( )'‾'( ))     ",
+    "      ((   x   ))     ",
+    "        W ‾‾‾ W        ",
+]
+
+JELLY_BOSS_FRAME_2 = [
+    "                       ",
+    "/‾‾‾‾\\   /\\_/\\   /‾‾‾‾\\",
+    "/\\/‾\\_\\((> Y <))/_/‾\\/\\",
+    "     ((  )'‾'(  ))     ",
+    "      ((   x   ))     ",
+    "        W ‾‾‾ W        ",
+]
+
+JELLY_BOSS_FRAME_3 = [
+    "                       ",
+    "_----_   /\\_/\\   _----_",
+    "/\\/-\\_(( > Y < ))_/-\\/\\",
+    "     ((   )‾(   ))     ",
+    "      ((   x   ))     ",
+    "        W ‾‾‾ W        ",
+]
+
+JELLY_BOSS_FRAME_4 = [
+    "                       ",
+    "         /\\_/\\         ",
+    "/‾‾‾\\((  )•Y•(  ))/‾‾‾\\",
+    "/‾/‾‾ ((  )‾(  )) ‾‾\\‾\\",
+    "      ((   x   ))     ",
+    "        W ‾‾‾ W        ",
+]
+
+JELLY_BOSS_FRAME_5 = [
+    "                       ",
+    "         /\\_/\\         ",
+    "_---\\((  )•o•(  ))/---_",
+    "//--\\_((  )|(  ))_/--\\\\",
+    "      ((   x   ))     ",
+    "        W ‾‾‾ W        ",
+]
+
+JELLY_BOSS_FRAME_6 = [
+    "                       ",
+    "       _⋀/(o)\\⋀_      ",
+    "  ___((   )U(   ))___ ",
+    " /-\\\\_  ((     )) _//-\\",
+    " ' '  ((   x   ))  ' '",
+    "        W ‾‾‾ W        ",
+]
+
+JELLY_BOSS_FRAME_7 = [
+    "                       ",
+    "        /\\_o_/\\       ",
+    " _---\\(( @ x @ ))/---_",
+    " //--\\_((  ~  ))_/--\\\\",
+    "      ((   x   ))     ",
+    "        W ‾‾‾ W        ",
+]
+
+JELLY_BOSS_FRAME_8 = [
+    "                       ",
+    "         /\\_/\\         ",
+    " /‾‾‾\\(( > Y < ))/‾‾‾\\ ",
+    " /‾/‾‾((  '‾'  )) ‾‾\\‾\\",
+    "      ((   x   ))      ",
+    "        W ‾‾‾ W         ",
+]
+
+JELLY_BOSS_FRAME_9 = [
+    "                       ",
+    "_----_   /\\_/\\   _----_",
+    "/\\/-\\_(( • Y • ))_/-\\/\\",
+    "      (( )'‾'( ))      ",
+    "     ((    x    ))     ",
+    "        W ‾‾‾ W         ",
+]
+
+JELLY_BOSS_FRAME_10 = [
+    "                       ",
+    "/‾‾‾‾\\   /\\_/\\   /‾‾‾‾\\",
+    "/\\/‾\\_\\((> Y <))/_/‾\\/\\",
+    "      (( )'‾'( ))      ",
+    "     ((    x    ))     ",
+    "        W ‾‾‾ W        ",
+]
+
+JELLY_BOSS_DEAD = [
+    "                       ",
+    "         /\\_/\\         ",
+    " /‾‾‾\\(( x _ x ))/‾‾‾\\ ",
+    " /‾/‾‾((  '‾'  )) ‾‾\\‾\\",
+    "      ((   x   ))      ",
+    "        W ‾‾‾ W         ",
+]
+
+# All jelly boss frames in sequence (1-10)
+JELLY_BOSS_FRAMES = [
+    JELLY_BOSS_FRAME_1,
+    JELLY_BOSS_FRAME_2,
+    JELLY_BOSS_FRAME_3,
+    JELLY_BOSS_FRAME_4,
+    JELLY_BOSS_FRAME_5,
+    JELLY_BOSS_FRAME_6,
+    JELLY_BOSS_FRAME_7,
+    JELLY_BOSS_FRAME_8,  # Frame 8 - spawn bat here
+    JELLY_BOSS_FRAME_9,
+    JELLY_BOSS_FRAME_10,
+]
+
+# Animation frames for bat spawning from jelly boss (o -> O -> () -> bat)
+JELLY_SPAWN_ANIM_FRAMES = ['o', 'O', '()', 'bat']
+
 # Background pattern
 BG_PATTERN = "/\\/\\/\\"
 
