@@ -580,6 +580,7 @@ def render_game():
     _fb_render_side_panels(fb)  # Side panels FIRST (background)
     _fb_render_header(fb)
     _fb_render_background(fb)  # Sfondo alberi PRIMA di tutto il resto
+    _fb_render_tree_boss_background(fb)  # Tree Boss faint bg AFTER biome bg (visible on top)
     _fb_render_level_line(fb)  # Level line in game area (before obstacles)
     _fb_render_right_panel_barriers(fb)  # Decorative barriers UNDER level signs
     _fb_render_right_panel_level_signs(fb)  # Level signs on TOP of barriers
@@ -1112,6 +1113,61 @@ def _fb_render_side_panels(fb):
         fb.put(right_start + SIDE_PANEL_WIDTH - 1, y, '│', PANEL_BORDER_COLOR)
 
 
+# Characters to hide in tree/branch rendering (overlap markers)
+TREE_HIDDEN_CHARS = set('12345o')
+
+
+def _fb_render_tree_boss_background(fb):
+    """Render Tree Boss background tree (on top of biome background).
+
+    This is called AFTER the biome background to create a layered effect.
+    The tree is rendered with ANSI faint modifier to appear ghostly/atmospheric.
+    The background scrolls down along with the branches.
+
+    Sprite convention:
+    - 'x' = solid fill (renders as space, overwrites biome background)
+    - ' ' = transparent (biome background shows through, nothing rendered)
+    - '1'-'5' = branch overlap markers (render as solid fill, hidden)
+    - 'o' = flower position marker (render as solid fill, hidden)
+    - Other chars = tree outline (rendered with faint color)
+    """
+    boss = state.enemies.boss
+    if boss is None:
+        return
+
+    # Only render for tree boss type
+    if boss.get('boss_type') != 'tree':
+        return
+
+    from src.entities.sprites import TREE_BOSS_BACKGROUND
+
+    # Use WHITE color BUT faint for tree outline
+    tree_outline_color = apply_faint("\033[1;37m")  # White faint
+
+    # Start from left edge (x=0)
+    tree_x_offset = 0
+
+    # Get vertical offset for scrolling (background comes from above)
+    bg_y_offset = boss.get('bg_y_offset', 0)
+
+    # Tree is exactly 45 chars wide (same as game panel), so no overflow
+    max_tree_x = constants.layout.width
+
+    for line_idx, line in enumerate(TREE_BOSS_BACKGROUND):
+        y_pos = line_idx + bg_y_offset  # Apply scroll offset
+        if 0 <= y_pos < constants.layout.height:
+            for i, char in enumerate(line):
+                x_pos = tree_x_offset + i
+                if 0 <= x_pos < max_tree_x:
+                    screen_x = GAME_X_OFFSET + x_pos
+                    if char == 'x' or char in TREE_HIDDEN_CHARS:
+                        # Solid fill - render space to overwrite biome background
+                        fb.put(screen_x, y_pos + HEADER_HEIGHT, ' ', '')
+                    elif char != ' ':
+                        # Tree outline character - render with white faint color
+                        fb.put(screen_x, y_pos + HEADER_HEIGHT, char, tree_outline_color)
+
+
 def _fb_render_background(fb):
     """Render parallax scrolling background for game area and right panel.
 
@@ -1124,6 +1180,11 @@ def _fb_render_background(fb):
     - background.enabled: false  -> disables all background layers
     - background.parallax: false -> disables only the middle layer
     """
+    # First, fill the entire game area with spaces to clear any artifacts
+    for screen_y in range(constants.layout.height):
+        for screen_x in range(constants.layout.width):
+            fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, ' ', '')
+
     # Check if background is enabled (runtime settings override config)
     bg_enabled = state.settings.background_enabled
     if not bg_enabled:
@@ -1491,6 +1552,41 @@ def _fb_render_obstacles(fb):
                             if 0 <= x_pos < constants.layout.width:
                                 fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, obs_color)
 
+            # Render flower if present
+            flower = obs.get('flower')
+            if flower and flower.get('active'):
+                _fb_render_obstacle_flower(fb, obs, flower, center_x, x_offset)
+
+
+def _fb_render_obstacle_flower(fb, obs, flower, center_x, x_offset):
+    """Render a flower on a swamp obstacle."""
+    from src.entities.sprites import FLOWER_COLORS, FLOWER_GROWTH_FRAMES, FLOWER_MATURE_FRAME
+
+    frame = flower.get('frame', 0)
+    flower_type = flower.get('type', 'red')
+    rel_x = flower.get('rel_x', 0)
+    rel_y = flower.get('rel_y', 0)
+
+    # Calculate absolute position
+    flower_x = center_x - x_offset + rel_x
+    flower_y = obs['y_pos'] + rel_y
+
+    if not (0 <= flower_y < constants.layout.height and 0 <= flower_x < constants.layout.width):
+        return
+
+    # Simple single-char representation for obstacle flowers
+    # o -> O -> @ -> @ -> @ -> * (mature)
+    simple_chars = ['o', 'O', '@', '@', '@', '*']
+    if frame < len(simple_chars):
+        char = simple_chars[frame]
+    else:
+        char = '*'
+
+    # Color based on flower type - ALWAYS show color (not dim gray)
+    flower_color = FLOWER_COLORS.get(flower_type, FLOWER_COLORS['red'])
+
+    fb.put(GAME_X_OFFSET + flower_x, flower_y + HEADER_HEIGHT, char, flower_color)
+
 
 def _fb_render_right_panel_barriers(fb):
     """Render decorative barriers in right panel using biome-specific sprites and colors."""
@@ -1674,6 +1770,9 @@ def _fb_render_boss(fb):
     elif boss_type == 'jelly':
         _fb_render_jelly_boss(fb)
         return
+    elif boss_type == 'tree':
+        _fb_render_tree_boss(fb)
+        return
 
     from src.entities.sprites import (
         BOSS_FRAME_1, BOSS_FRAME_2, BOSS_SCREAM, BOSS_DEAD, BAT_ARMOR
@@ -1810,6 +1909,181 @@ def _fb_render_jelly_boss(fb):
                 fb.put(GAME_X_OFFSET + anim_x + i, anim_y + HEADER_HEIGHT, c, spawn_color)
 
 
+def _fb_render_tree_boss(fb):
+    """Render Tree Boss foreground elements (branches, flowers, status indicators).
+
+    Note: The background tree is rendered separately by _fb_render_tree_boss_background()
+    which is called BEFORE the biome background for proper layering.
+    """
+    boss = state.enemies.boss
+    if boss is None:
+        return
+
+    from src.entities.sprites import (
+        TREE_BOSS_BRANCHES, FLOWER_GROWTH_FRAMES, FLOWER_COLORS
+    )
+
+    # =========================================================================
+    # 1. RENDER FOREGROUND BRANCHES (tangible, white bold, fades to red when damaged)
+    # =========================================================================
+    branches = boss.get('branches', [])
+
+    # Branch base color (white, like tree background but bold/foreground)
+    branch_base_rgb = (255, 255, 255)  # White
+
+    for branch_idx, branch in enumerate(branches):
+        if branch.get('destroyed'):
+            continue  # Don't render destroyed branches
+
+        branch_x = branch.get('x_pos', 0)
+        branch_y = branch.get('y_pos', 0)
+        branch_hp = branch.get('hp', 1)
+        branch_max_hp = branch.get('max_hp', 1)
+        sprite_idx = branch.get('sprite_idx', branch_idx % len(TREE_BOSS_BRANCHES))
+
+        # Get branch sprite
+        if sprite_idx < len(TREE_BOSS_BRANCHES):
+            branch_sprite = TREE_BOSS_BRANCHES[sprite_idx]
+        else:
+            branch_sprite = TREE_BOSS_BRANCHES[0]
+
+        # Color based on HP - white when full, fades to red as damaged
+        branch_color = apply_bold(color_from_hp_to_red(branch_base_rgb, branch_hp, branch_max_hp))
+
+        # Render branch sprite
+        # Hide digits 1-5 (overlap markers) and 'o' (flower position markers)
+        for line_idx, line in enumerate(branch_sprite):
+            y_pos = branch_y + line_idx
+            if 0 <= y_pos < constants.layout.height:
+                for i, char in enumerate(line):
+                    if char != ' ' and char not in TREE_HIDDEN_CHARS:
+                        x_pos = branch_x + i
+                        if 0 <= x_pos < constants.layout.width:
+                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, branch_color)
+
+        # =====================================================================
+        # 3. RENDER FLOWER on this branch (if active)
+        # =====================================================================
+        flower = branch.get('flower')
+        if flower and flower.get('active'):
+            flower_type = flower.get('type', 'red')
+            flower_frame = flower.get('frame', 0)
+
+            # Get flower sprite lines based on growth frame (can be multi-line)
+            if flower_frame < len(FLOWER_GROWTH_FRAMES):
+                flower_lines = FLOWER_GROWTH_FRAMES[flower_frame]
+            else:
+                flower_lines = FLOWER_GROWTH_FRAMES[-1]  # Mature flower
+
+            # Get flower color
+            flower_color = FLOWER_COLORS.get(flower_type, '\033[1;37m')  # Default white
+
+            # Get flower position from branch (stored when flower spawns)
+            flower_rel_x = flower.get('rel_x', 0)
+            flower_rel_y = flower.get('rel_y', 0)
+
+            # Calculate actual position
+            flower_base_x = branch_x + flower_rel_x
+            flower_base_y = branch_y + flower_rel_y
+
+            # Render each line of the flower sprite (from bottom to top for multi-line)
+            for line_offset, flower_line in enumerate(reversed(flower_lines)):
+                flower_y = flower_base_y - line_offset
+                # Center the flower line
+                line_width = len(flower_line)
+                flower_x = flower_base_x - line_width // 2
+
+                if 0 <= flower_y < constants.layout.height:
+                    for char_idx, char in enumerate(flower_line):
+                        x_pos = flower_x + char_idx
+                        if char != ' ' and 0 <= x_pos < constants.layout.width:
+                            fb.put(GAME_X_OFFSET + x_pos, flower_y + HEADER_HEIGHT, char, flower_color)
+
+    # =========================================================================
+    # 4. RENDER STATUS INDICATORS for stunned/frozen/poisoned birds
+    # =========================================================================
+    import time as time_module
+    import math
+    now = time_module.time()
+
+    # Stunned birds get a lightning indicator with countdown
+    for bird_idx in state.special.stunned_birds:
+        if bird_idx < constants.layout.num_balls and not state.birds.lost[bird_idx]:
+            stun_info = state.special.stunned_birds[bird_idx]
+            # Only show for time-based stuns (from flowers)
+            if isinstance(stun_info, dict) and stun_info.get('type') == 'flower':
+                bird_x = state.birds.cols[bird_idx]
+                bird_y = state.birds.y[bird_idx]
+                end_time = stun_info.get('end_time', now)
+                # Use ceil so counter never shows 0 until actually expired
+                remaining_secs = max(1, math.ceil(end_time - now)) if end_time > now else 0
+
+                # Show stun indicator above bird
+                if 0 <= bird_y - 1 < constants.layout.height and 0 <= bird_x < constants.layout.width:
+                    # Use * instead of ⚡ (unicode width issues) + digit
+                    indicator = f"*{remaining_secs}"
+                    stun_color = "\033[1;33m"  # Bright yellow
+                    for i, c in enumerate(indicator):
+                        if bird_x + i < constants.layout.width:
+                            fb.put(GAME_X_OFFSET + bird_x + i, bird_y - 1 + HEADER_HEIGHT, c, stun_color)
+
+    # Frozen birds get a snowflake indicator
+    for bird_idx in state.special.frozen_birds:
+        if bird_idx < constants.layout.num_balls and not state.birds.lost[bird_idx]:
+            bird_x = state.birds.cols[bird_idx]
+            bird_y = state.birds.y[bird_idx]
+            frozen_info = state.special.frozen_birds[bird_idx]
+            remaining = frozen_info.get('thaw_attempts_needed', 3) - frozen_info.get('thaw_attempts_done', 0)
+
+            # Show frozen indicator above bird
+            if 0 <= bird_y - 1 < constants.layout.height and 0 <= bird_x < constants.layout.width:
+                # Show remaining thaw attempts as number
+                indicator = f"❄{remaining}"
+                ice_color = "\033[1;36m"  # Bright cyan
+                for i, c in enumerate(indicator):
+                    if bird_x + i < constants.layout.width:
+                        fb.put(GAME_X_OFFSET + bird_x + i, bird_y - 1 + HEADER_HEIGHT, c, ice_color)
+
+    # Poisoned birds get a skull indicator with countdown
+    for bird_idx in state.special.poisoned_birds:
+        if bird_idx < constants.layout.num_balls and not state.birds.lost[bird_idx]:
+            bird_x = state.birds.cols[bird_idx]
+            bird_y = state.birds.y[bird_idx]
+            poison_info = state.special.poisoned_birds[bird_idx]
+            death_time = poison_info.get('death_time', now)
+            # Use ceil so counter never shows 0 until actually expired
+            remaining_secs = max(1, math.ceil(death_time - now)) if death_time > now else 0
+            cure_remaining = poison_info.get('cure_attempts_needed', 3) - poison_info.get('cure_attempts_done', 0)
+
+            # Show poison indicator above bird (skull + time until death / presses to heal)
+            if 0 <= bird_y - 1 < constants.layout.height and 0 <= bird_x < constants.layout.width:
+                indicator = f"☠{remaining_secs}s♥{cure_remaining}"
+                poison_color = "\033[1;32m"  # Bright green (poison)
+                for i, c in enumerate(indicator):
+                    if bird_x + i < constants.layout.width:
+                        fb.put(GAME_X_OFFSET + bird_x + i, bird_y - 1 + HEADER_HEIGHT, c, poison_color)
+
+    # Bleeding birds get a blood drop indicator with countdown (DON'T PRESS UP!)
+    for bird_idx in state.special.bleeding_birds:
+        if bird_idx < constants.layout.num_balls and not state.birds.lost[bird_idx]:
+            bird_x = state.birds.cols[bird_idx]
+            bird_y = state.birds.y[bird_idx]
+            bleed_info = state.special.bleeding_birds[bird_idx]
+            end_time = bleed_info.get('end_time', now)
+            # Use ceil so counter never shows 0 until actually expired
+            remaining_secs = max(1, math.ceil(end_time - now)) if end_time > now else 0
+            # Get remaining lives (UP presses before death)
+            lives_remaining = bleed_info.get('lives_needed', 3) - bleed_info.get('lives_lost', 0)
+
+            # Show bleed indicator above bird (time + lives remaining)
+            if 0 <= bird_y - 1 < constants.layout.height and 0 <= bird_x < constants.layout.width:
+                indicator = f"!{remaining_secs}s♥{lives_remaining}"
+                bleed_color = "\033[1;31m"  # Bright red (blood)
+                for i, c in enumerate(indicator):
+                    if bird_x + i < constants.layout.width:
+                        fb.put(GAME_X_OFFSET + bird_x + i, bird_y - 1 + HEADER_HEIGHT, c, bleed_color)
+
+
 def _fb_render_cloud_banks(fb):
     """Render Mountain Range cloud banks (foreground fog that obscures game area)."""
     # Only render in Mountain Range biome
@@ -1930,14 +2204,29 @@ def _fb_render_birds(fb):
         bird_color = get_render_color(state.birds.colors[i])
         x_pos = state.birds.cols[i]
 
+        # Check if bird is frozen or stunned (no animation)
+        is_frozen = i in state.special.frozen_birds
+        is_stunned = i in state.special.stunned_birds
+
         # Choose sprite based on direction and animation frame
-        if state.birds.vy[i] == -1:  # Moving up
-            sprite = BIRD_UP_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_UP_2
-        else:  # Moving down or stationary
-            sprite = BIRD_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
+        if is_frozen or is_stunned:
+            # Frozen/stunned birds don't animate - use static sprite based on direction
+            if state.birds.vy[i] == -1:
+                sprite = BIRD_UP_1
+            else:
+                sprite = BIRD_DOWN_1
+        else:
+            # Normal animation
+            if state.birds.vy[i] == -1:  # Moving up
+                sprite = BIRD_UP_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_UP_2
+            else:  # Moving down or stationary
+                sprite = BIRD_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
 
         # Special handling for different bird types
-        if state.birds.colors[i] == STEALTH:
+        if is_frozen:
+            # Frozen birds turn light blue (cyan)
+            bird_color = '\033[1;96m'  # Bright cyan (light blue)
+        elif state.birds.colors[i] == STEALTH:
             tangible = i in state.special.stealth_timers and state.special.stealth_timers.get(i, 0) > 0
             bird_color = get_render_color(WHITE) if tangible else get_render_color(DARK_GRAY)
         elif state.birds.colors[i] == BLUE and state.birds.power_used[i]:

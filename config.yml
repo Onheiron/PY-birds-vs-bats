@@ -442,6 +442,74 @@ jelly_boss:
   corpse:
     hp: 80
 
+# Tree Boss configuration - boss for level 4-3 (Dark Swamp)
+# Giant tree spanning entire screen with tangible branches
+tree_boss:
+  level: 12                           # Which level this boss appears (4-3 = level 12)
+  spawn_miles_before_transition: 3   # Spawn 3 miles before level end
+  stop_offset: -2                    # Tree stops N rows from top (negative = higher up)
+
+  # Branch settings (5 foreground tangible branches)
+  branches:
+    base_hp: 30                       # HP per branch
+    # Positions as fractions of screen (x_frac, y_frac from top-left)
+    # y_frac max 0.45 to keep branches in upper half of screen
+    positions:
+      - {x_frac: 0.15, y_frac: 0.15}  # Upper left
+      - {x_frac: 0.75, y_frac: 0.12}  # Upper right
+      - {x_frac: 0.45, y_frac: 0.28}  # Middle center
+      - {x_frac: 0.20, y_frac: 0.40}  # Lower left
+      - {x_frac: 0.70, y_frac: 0.35}  # Lower right
+
+    # Effects when bird hits a branch
+    on_hit:
+      stun_duration: 1.0              # Seconds bird can't be bounced after hit
+      fall_boost_duration: 1.0        # +1 fall speed for 1 second
+      fall_boost_speed: 1
+      jumpscare_probability: 0.02     # 2% chance to spawn jumpscare bat
+
+  # Flower settings (grow on branches)
+  flowers:
+    grow_interval: 2.0                # Seconds per growth frame (6 frames = 12s to mature)
+    hp: 30                            # Flower HP (destroyed before branch takes damage)
+    respawn_delay: 2.0                # Seconds before new flower starts growing
+
+    # Red flower: BLEED effect - countdown timer, each UP press costs a life
+    red:
+      probability: 0.6                # 60% chance to bleed on hit
+      bleed_duration: 3.0             # Seconds until bleed wears off (bird survives)
+      speed_penalty: 2                # -2 speed while bleeding
+      lives: 2                        # UP presses before death
+
+    # Yellow flower: STUN effect - bird falls slowly, can't bounce
+    yellow:
+      probability: 0.6                # 60% chance to stun on hit
+      stun_duration: 3.0              # Seconds bird is stunned
+      speed_penalty: 3                # -3 speed while stunned
+
+    # Blue flower: FREEZE effect - bird stuck in place, mash button to thaw
+    blue:
+      probability: 0.6                # 60% chance to freeze on hit
+      thaw_attempts_min: 3            # Minimum button presses to thaw
+      thaw_attempts_max: 5            # Maximum button presses to thaw
+
+    # Green flower: POISON effect - countdown to death, mash button to cure
+    green:
+      probability: 0.6                # 60% chance to poison on hit
+      poison_duration: 7.0           # Seconds until bird dies if not cured
+      cure_attempts_min: 2            # Minimum button presses to cure
+      cure_attempts_max: 4            # Maximum button presses to cure
+      speed_penalty: 1                # -1 speed while poisoned
+
+  # Rewards
+  score: 2000
+  xp: 200
+
+# Swamp obstacle flowers - Dark Swamp (biome 4) obstacles can bloom flowers
+swamp_flowers:
+  bloom_probability: 0.5            # 50% chance per obstacle to have a flower
+  # Uses same flower types and effects as tree_boss.flowers
+
 obstacle:
   # Base HP per tier (before level scaling)
   hp_by_tier:

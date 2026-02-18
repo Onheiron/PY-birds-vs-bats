@@ -236,6 +236,42 @@ def handle_bounce():
         if bird_idx in state.special.stunned_birds:
             continue
 
+        # BLEEDING BIRDS: each UP press costs a life, when lives reach 0 bird dies
+        if bird_idx in state.special.bleeding_birds:
+            bleed_info = state.special.bleeding_birds[bird_idx]
+            bleed_info['lives_lost'] = bleed_info.get('lives_lost', 0) + 1
+            if bleed_info['lives_lost'] >= bleed_info.get('lives_needed', 3):
+                # Lives depleted - bird dies!
+                if not state.birds.lost[bird_idx]:
+                    state.birds.lost[bird_idx] = True
+                    state.birds.y[bird_idx] = constants.layout.height - 1
+                    state.game.lives -= 1
+                    del state.special.bleeding_birds[bird_idx]
+                    if state.game.lives <= 0:
+                        state.game.game_over = True
+            continue  # Don't process normal bounce while bleeding
+
+        # FROZEN BIRDS: button press attempts to thaw
+        if bird_idx in state.special.frozen_birds:
+            frozen_info = state.special.frozen_birds[bird_idx]
+            frozen_info['thaw_attempts_done'] = frozen_info.get('thaw_attempts_done', 0) + 1
+            if frozen_info['thaw_attempts_done'] >= frozen_info.get('thaw_attempts_needed', 3):
+                # Bird thawed!
+                del state.special.frozen_birds[bird_idx]
+                # Reset to normal state - bounce up
+                state.birds.vy[bird_idx] = -1
+                _reset_bird_power(bird_idx)
+            continue  # Don't process normal bounce while frozen
+
+        # POISONED BIRDS: button press decrements heal counter, bird is cured when counter reaches 0
+        if bird_idx in state.special.poisoned_birds:
+            poison_info = state.special.poisoned_birds[bird_idx]
+            poison_info['cure_attempts_done'] = poison_info.get('cure_attempts_done', 0) + 1
+            if poison_info['cure_attempts_done'] >= poison_info.get('cure_attempts_needed', 3):
+                # Heal counter reached 0 - bird is cured!
+                del state.special.poisoned_birds[bird_idx]
+            # Continue to normal bounce processing (poisoned birds can still bounce)
+
         # Bird moving down - bounce it up
         if state.birds.vy[bird_idx] == 1:
             _bounce_bird_up(bird_idx)
@@ -316,6 +352,10 @@ def _handle_dinosaur_bounce(bird_idx):
 def _activate_bird_power(bird_idx):
     """Activate a bird's special power."""
     from src.functions import compute_grade_from_xp
+
+    # POISONED BIRDS: power is blocked while poisoned (cure handled in main input handler)
+    if bird_idx in state.special.poisoned_birds:
+        return
 
     # Check if lane is silenced by spellcaster bat
     bird_lane = state.birds.random_lanes[bird_idx]

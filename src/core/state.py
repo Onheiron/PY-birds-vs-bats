@@ -56,7 +56,19 @@ special = SimpleNamespace(
 
     # Stunned birds (from obstacle collision - short duration, no speed boost)
     stunned_birds={},
-    
+
+    # Frozen birds (from Tree Boss blue flower)
+    # {bird_idx: {'thaw_attempts_needed': int, 'thaw_attempts_done': int}}
+    frozen_birds={},
+
+    # Poisoned birds (from Tree Boss green flower)
+    # {bird_idx: {'death_time': float, 'cure_attempts_needed': int, 'cure_attempts_done': int}}
+    poisoned_birds={},
+
+    # Bleeding birds (from Tree Boss red flower)
+    # {bird_idx: {'end_time': float}} - press UP = instant death
+    bleeding_birds={},
+
     # Stealth
     stealth_timers={},
     stealth_prev_speeds={},
@@ -310,6 +322,9 @@ def init(seed=None):
     special.dinosaur_up_presses = {}
     special.scared_birds = {}
     special.stunned_birds = {}
+    special.frozen_birds = {}
+    special.poisoned_birds = {}
+    special.bleeding_birds = {}
     special.stealth_timers = {}
     special.stealth_prev_speeds = {}
     special.clockwork_charge = {}

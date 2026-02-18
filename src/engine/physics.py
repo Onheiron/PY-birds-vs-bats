@@ -33,6 +33,38 @@ def update_bird_positions():
         if state.birds.lost[i]:
             continue
 
+        # FROZEN BIRDS: stuck in place, can't move at all
+        if i in state.special.frozen_birds:
+            continue  # Skip all movement processing
+
+        # STUNNED BIRDS (from flower): speed penalty, always falling
+        stun_speed_penalty = 0
+        if i in state.special.stunned_birds:
+            stun_info = state.special.stunned_birds[i]
+            # Only apply speed penalty for flower stuns (dict with 'type': 'flower')
+            if isinstance(stun_info, dict) and stun_info.get('type') == 'flower':
+                tree_boss_cfg = getattr(constants, 'tree_boss', None)
+                flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
+                yellow_cfg = getattr(flowers_cfg, 'yellow', None) if flowers_cfg else None
+                stun_speed_penalty = getattr(yellow_cfg, 'speed_penalty', 3) if yellow_cfg else 3
+                state.birds.vy[i] = 1  # Always falling while stunned
+
+        # POISONED BIRDS: speed penalty
+        poison_speed_penalty = 0
+        if i in state.special.poisoned_birds:
+            tree_boss_cfg = getattr(constants, 'tree_boss', None)
+            flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
+            green_cfg = getattr(flowers_cfg, 'green', None) if flowers_cfg else None
+            poison_speed_penalty = getattr(green_cfg, 'speed_penalty', 1) if green_cfg else 1
+
+        # BLEEDING BIRDS: speed penalty from config
+        bleed_speed_penalty = 0
+        if i in state.special.bleeding_birds:
+            tree_boss_cfg = getattr(constants, 'tree_boss', None)
+            flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
+            red_cfg = getattr(flowers_cfg, 'red', None) if flowers_cfg else None
+            bleed_speed_penalty = getattr(red_cfg, 'speed_penalty', 1) if red_cfg else 1
+
         # Skip charging or just-fired purple birds
         if state.special.purple_state[i] == 2 or state.special.purple_just_fired_frames[i] > 0:
             continue
@@ -97,6 +129,18 @@ def update_bird_positions():
                 current_speed = min(6, current_speed + speed_boost)
             elif state.birds.vy[i] == -1 and speed_nerf > 0:
                 current_speed = max(1, current_speed - speed_nerf)
+
+        # Apply stun speed penalty
+        if stun_speed_penalty > 0:
+            current_speed = max(1, current_speed - stun_speed_penalty)
+
+        # Apply poison speed penalty
+        if poison_speed_penalty > 0:
+            current_speed = max(1, current_speed - poison_speed_penalty)
+
+        # Apply bleed speed penalty
+        if bleed_speed_penalty > 0:
+            current_speed = max(1, current_speed - bleed_speed_penalty)
 
         # Calculate move interval (higher speed = more frequent movement)
         move_interval = max(1, 6 - current_speed)

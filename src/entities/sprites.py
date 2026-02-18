@@ -496,7 +496,151 @@ JELLY_BOSS_FRAMES = [
 ]
 
 # Animation frames for bat spawning from jelly boss (o -> O -> () -> bat)
-JELLY_SPAWN_ANIM_FRAMES = ['o', 'O', '()', 'bat']
+JELLY_SPAWN_ANIM_FRAMES = ['o', 'O', '()', '/(@)\\', 'bat']
+
+# =============================================================================
+# TREE BOSS SPRITES - Giant tree spanning the entire game screen
+# =============================================================================
+# The tree boss has:
+# - A large BACKGROUND tree (rendered with faint font, behind everything)
+# - 5 FOREGROUND branches (tangible, birds collide with them)
+# - FLOWERS that grow on branches (3 colors: red, blue, green)
+
+# Background tree - 22 rows, 45 chars wide (fits game panel exactly)
+# This is rendered with ANSI faint (\033[2m) behind everything
+# 'x' = solid fill (replaces biome background with space)
+# ' ' = transparent (biome background shows through)
+# Digits 1-5 mark branch overlay positions (hidden at render time)
+TREE_BOSS_BACKGROUND = [
+    "                                             ",
+    "                     ||\\\\                    ",
+    "     |\\  /|          //x\\\\             /|    ",
+    "     \\x\\|x|    *     \\\\xx||            ||   |\\",
+    "*\\ \\\\*/||xxx\\\\  \\\\_// |xxx\\        /x| |//____/",
+    "_\\\\_|x|||xxxx|   |x| ||xx||   \\\\|x|__||xx/‾‾‾\\\\",
+    "\\\\__xxxxxxxx|| _  \\x\\|/xxxx\\     \\\\xxxx| __||‾‾",
+    "//‾‾\\\\xxxxxx\\\\//  ||xxxxxxxx\\  ||xxxx//‾‾‾‾*",
+    "_____||x/|xxx||  //xxxxxxUxx| //xx5x||___//__/",
+    "‾//‾‾\\\\(@)x3xx\\\\||xxxxx|||4x|//xxxxx//‾‾‾‾‾\\\\‾",
+    "     ||xx|xxxxx\\\\\\\\xxx\\|\\xxx||xx|\\x/x|__//___*",
+    " *    \\xxx\\xxxxx||||xxx(@)xxx/xx(@)x/‾‾‾‾\\\\‾‾",
+    "__\\_   \\_xxxxx\\\\xx\\\\xxx||xx/xxxx/xxx__//__",
+    "‾‾//\\____\\x\\\\xxxx\\xx\\_xx\\xx//xxx__/‾\\\\‾‾*",
+    "    * /‾‾‾\\\\|xx\\\\xxxxx\\\\‾‾x/2xx/    *",
+    "          |||xxx|xxxxxx|xxUxx|/---\\\\__\\\\--*-/",
+    "     /‾‾\\  \\\\xxUxx/1x//.\\\\xxx|||/‾‾\\____/‾‾‾\\",
+    "    |x/xx\\ |||YxxxUx((x@x))x\\x||__ ~   \\\\   *",
+    "    ~~ ~~~ ///xxxWxxxxxYxxxxxxx\\-__‾    /",
+    "       --‾‾x/x/xx|||///xx|\\__|x\\‾  ‾\\  ~~~",
+    "      /‾‾‾‾|xx@xxx\\|||xxx(@)xx\\x|   ~~",
+    "     ~~   /x/‾‾‾‾--/x/--_____-\\x-‾‾‾\\x\\",
+    "          ~~~~~~~~~~~  ~~~~  ~~~~~~~  ~~~~~",
+]
+
+# Foreground branch sprites - these are TANGIBLE (birds collide with them)
+# Each branch is positioned so its numbered area overlaps with the tree background
+# 'o' characters mark possible flower spawn positions
+# Digits (1-5) mark overlap areas with tree (hidden at render time)
+
+TREE_BOSS_BRANCH_1 = [  # Overlaps area 1 in tree (row 15)
+    "o     o",
+    "\\\\___//__",
+    "//‾‾//‾\\ \\",
+    "o   o  /1|",
+]
+
+TREE_BOSS_BRANCH_2 = [  # Overlaps area 2 in tree (row 13)
+    "o   o",
+    "\\\\__\\\\__o",
+    "___//‾‾\\\\‾",
+    "2___/    o",
+]
+
+TREE_BOSS_BRANCH_3 = [  # Overlaps area 3 in tree (row 9)
+    "o",
+    "_//_    o",
+    "‾‾‾\\\\___\\\\",
+    "//‾‾‾\\3\\",
+    "o",
+]
+
+TREE_BOSS_BRANCH_4 = [  # Overlaps area 4 in tree (row 9)
+    "o  o",
+    "\\\\//",
+    "o  ||",
+    "\\\\//",
+    "||",
+    "/4|",
+]
+
+TREE_BOSS_BRANCH_5 = [  # Overlaps area 5 in tree (row 7)
+    "\\5|    o   o",
+    "\\\\____\\\\_//",
+    "‾‾‾‾‾\\\\‾‾o",
+]
+
+# All branches in a list for easy iteration
+TREE_BOSS_BRANCHES = [
+    TREE_BOSS_BRANCH_1,
+    TREE_BOSS_BRANCH_2,
+    TREE_BOSS_BRANCH_3,
+    TREE_BOSS_BRANCH_4,
+    TREE_BOSS_BRANCH_5,
+]
+
+# Flower spawn positions for each branch (relative x,y within branch sprite)
+# These are the coordinates of 'o' characters in each branch
+TREE_BOSS_BRANCH_FLOWER_POSITIONS = [
+    # Branch 1 flower positions: o at (0,0), (6,0), (0,3), (4,3)
+    [(0, 0), (6, 0), (0, 3), (4, 3)],
+    # Branch 2 flower positions: o at (0,0), (4,0), (8,1), (9,3)
+    [(0, 0), (4, 0), (8, 1), (9, 3)],
+    # Branch 3 flower positions: o at (0,0), (8,1), (0,4)
+    [(0, 0), (8, 1), (0, 4)],
+    # Branch 4 flower positions: o at (0,0), (3,0), (0,2)
+    [(0, 0), (3, 0), (0, 2)],
+    # Branch 5 flower positions: o at (7,0), (11,0), (9,2)
+    [(7, 0), (11, 0), (9, 2)],
+]
+
+# =============================================================================
+# FLOWER SPRITES - 6 growth frames for each color
+# Flowers grow on branches and have special effects when mature
+# Some frames are multi-line sprites
+# =============================================================================
+
+# Growth frames (same for all colors, color applied at render time)
+# Each frame is a list of lines (single char frames are 1-element lists)
+FLOWER_FRAME_0 = ["o"]           # Small bud (frame 0)
+FLOWER_FRAME_1 = ["O"]           # Medium bud (frame 1)
+FLOWER_FRAME_2 = ["()"]          # Opening (frame 2)
+FLOWER_FRAME_3 = ["(@)"]         # Closed flower (frame 3)
+FLOWER_FRAME_4 = ["\\|/", "(@)"]  # Petals appearing (frame 4, 2 lines)
+FLOWER_FRAME_5 = [" _|\\⋀/|_", " \\(>@<)/"]  # Mature flower (frame 5, 2 lines)
+
+FLOWER_GROWTH_FRAMES = [
+    FLOWER_FRAME_0,
+    FLOWER_FRAME_1,
+    FLOWER_FRAME_2,
+    FLOWER_FRAME_3,
+    FLOWER_FRAME_4,
+    FLOWER_FRAME_5,
+]
+
+# Mature frame index (when flower effect activates)
+FLOWER_MATURE_FRAME = 5
+
+# Flower colors (for rendering)
+# Red flower: bleed effect (countdown, press up = instant death)
+# Yellow flower: stun effect (3 seconds)
+# Blue flower: freeze effect
+# Green flower: poison effect
+FLOWER_COLORS = {
+    'red': '\033[1;31m',      # Bright red (bleed)
+    'yellow': '\033[1;33m',   # Bright yellow (stun)
+    'blue': '\033[1;34m',     # Bright blue (freeze)
+    'green': '\033[1;32m',    # Bright green (poison)
+}
 
 # Background pattern
 BG_PATTERN = "/\\/\\/\\"
@@ -715,22 +859,31 @@ SWAMP_OBSTACLE_T1 = [
     "//¯ ",
 ]
 SWAMP_OBSTACLE_T2 = [
-    " _|\\_ ",
+    " _|\\_o",
     " ¯\\\\/ ",
     " /()  ",
 ]
 SWAMP_OBSTACLE_T3 = [
-    "  _|\\__/|_   ",
-    "  ¯\\\\__//¯   ",
+    "  _|\\__/|_o  ",
+    " o¯\\\\__//¯   ",
     "   \\\\||//    ",
     "   /(  )\\    ",
 ]
 SWAMP_OBSTACLE_T4 = [
-    " __|\\_____/|\\__  ",
-    " ¯\\\\__===__//¯¯  ",
-    "  ¯\\\\\\|||///¯    ",
+    "o__|\\_____/|\\__  ",
+    " ¯\\\\__===__//¯¯o ",
+    " o¯\\\\\\|||///¯    ",
     "   / (===) \\     ",
 ]
+
+# Flower positions for swamp obstacles (relative x,y within sprite)
+# These are the coordinates of 'o' characters in each tier
+SWAMP_OBSTACLE_FLOWER_POSITIONS = {
+    1: [],  # T1 has no 'o' markers
+    2: [(5, 0)],  # T2: o at col 5, row 0
+    3: [(10, 0), (1, 1)],  # T3: o at (10,0) and (1,1)
+    4: [(0, 0), (15, 1), (1, 2)],  # T4: o at (0,0), (15,1), (1,2)
+}
 
 # =============================================================================
 # BIOME 5: THE VOID CAVE - Underground cavern
