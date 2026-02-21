@@ -151,6 +151,12 @@ def update_bird_positions():
         if freeze_speed_penalty > 0:
             current_speed = max(1, current_speed - freeze_speed_penalty)
 
+        # CLOCKWORK discharged: falls fast when charge is 0
+        if state.birds.colors[i] == CLOCKWORK and state.birds.vy[i] == 1:
+            charge = state.special.clockwork_charge.get(i)
+            if charge is not None and charge == 0:
+                current_speed = 6  # Max speed fall
+
         # Calculate move interval (higher speed = more frequent movement)
         move_interval = max(1, 6 - current_speed)
 

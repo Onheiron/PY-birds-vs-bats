@@ -33,6 +33,7 @@ birds = SimpleNamespace(
     home_lanes=[],        # "Home" lane - where bird would end up following portals down
     per_bird_xp=[],
     transformed=[],
+    pending_transform=[],  # Bird wants to transform but can't (limit reached) - stores target color
     original_indices=[],
     portal_cooldown={},  # {bird_idx: frame_until_can_teleport_again}
 )
@@ -76,7 +77,8 @@ special = SimpleNamespace(
     stealth_prev_speeds={},
     
     # Clockwork
-    clockwork_charge={},
+    clockwork_charge={},       # bird_idx -> current charge (0-3)
+    clockwork_last_decay={},   # bird_idx -> timestamp of last decay
     
     # Cookie
     cookie_crumbs_made={},
@@ -92,7 +94,10 @@ special = SimpleNamespace(
     
     # Global UP counters
     up_hold_counter=0,
-    up_miss_counter=0
+    up_miss_counter=0,
+
+    # Track last UP press time (for Purple hold-to-charge)
+    last_up_time=0.0
 )
 
 # ============================================================================
@@ -319,7 +324,8 @@ def init(seed=None):
     
     birds.per_bird_xp = [0] * constants.layout.num_balls
     birds.transformed = [False] * constants.layout.num_balls
-    
+    birds.pending_transform = [None] * constants.layout.num_balls  # None or target color
+
     # Purple bird state
     special.purple_state = [0] * constants.layout.num_balls
     special.purple_primed_frame = [0] * constants.layout.num_balls
@@ -344,9 +350,11 @@ def init(seed=None):
     special.stealth_timers = {}
     special.stealth_prev_speeds = {}
     special.clockwork_charge = {}
+    special.clockwork_last_decay = {}
     special.cookie_crumbs_made = {}
     special.up_hold_counter = 0
     special.up_miss_counter = 0
+    special.last_up_time = 0.0
 
     # Spell effects
     spells.silenced_lanes = {}
@@ -410,7 +418,7 @@ def init(seed=None):
     
     # Game state
     game.score = 0
-    game.miles = 130.0
+    game.miles = 0.0
     game.level_group = 1
     game.level = 1
     game.level_sub = 1

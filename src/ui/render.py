@@ -2,6 +2,7 @@ import os
 import sys
 import random
 import re
+import time
 
 if os.name == 'nt':
     import msvcrt
@@ -546,23 +547,27 @@ def get_key():
         return last
     
 def render_clockwork_line(line, charge, blink_on):
-    """Render a CLOCKWORK bird line with special coloring."""
+    """Render a CLOCKWORK bird line with special coloring.
+
+    Beak (') color based on charge:
+    - charge 3 (full): normal clockwork color
+    - charge 1-2 (discharging): yellow blinking
+    - charge 0 (empty): red blinking
+    """
     colored = ""
     for ch in line:
-        if ch == '.':
+        if ch == "'":
+            # Beak - shows charge status
             if charge == 0:
-                colored += f"{DARK_GRAY}{ch}{RESET}"
-            elif charge == 1:
-                colored += f"{ORANGE}{ch}{RESET}"
-            elif charge == 2:
-                colored += f"{YELLOW}{ch}{RESET}"
+                # Empty: red blinking
+                beak_color = RED if blink_on else DARK_GRAY
+            elif charge < 3:
+                # Discharging: yellow blinking
+                beak_color = YELLOW if blink_on else DARK_GRAY
             else:
-                colored += f"{GREEN}{ch}{RESET}"
-        elif ch == "'":
-            if blink_on:
-                colored += f"{YELLOW}{ch}{RESET}"
-            else:
-                colored += f"{DARK_GRAY}{ch}{RESET}"
+                # Full: normal
+                beak_color = CLOCKWORK
+            colored += f"{beak_color}{ch}{RESET}"
         else:
             colored += f"{CLOCKWORK}{ch}{RESET}"
     return colored
@@ -2255,7 +2260,13 @@ def _fb_render_projectiles(fb):
     for proj in state.special.red_projectiles:
         y_pos = proj['y_pos']
         if 0 <= y_pos < constants.layout.height:
-            symbol = '•' if proj.get('powered', False) else '⋅'  # • piccolo, non ● grande
+            damage = proj.get('damage', 1)
+            if damage >= 64:
+                symbol = '●'  # Max charge (64 damage)
+            elif damage > 1:
+                symbol = '•'  # Powered
+            else:
+                symbol = '⋅'  # Basic
             proj_color = proj.get('color', RED)
             fb.put(GAME_X_OFFSET + proj['x_pos'], y_pos + HEADER_HEIGHT, symbol, proj_color)
 
@@ -2280,18 +2291,25 @@ def _fb_render_birds(fb):
         is_stunned = i in state.special.stunned_birds
 
         # Choose sprite based on direction and animation frame
+        is_dinosaur = state.birds.colors[i] == DINOSAUR
         if is_frozen or is_stunned:
             # Frozen/stunned birds don't animate - use static sprite based on direction
             if state.birds.vy[i] == -1:
-                sprite = BIRD_UP_1
+                sprite = DINOSAUR_UP_1 if is_dinosaur else BIRD_UP_1
             else:
-                sprite = BIRD_DOWN_1
+                sprite = DINOSAUR_DOWN_1 if is_dinosaur else BIRD_DOWN_1
         else:
             # Normal animation
             if state.birds.vy[i] == -1:  # Moving up
-                sprite = BIRD_UP_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_UP_2
+                if is_dinosaur:
+                    sprite = DINOSAUR_UP_1 if (state.game.frame_count // 3) % 2 == 0 else DINOSAUR_UP_2
+                else:
+                    sprite = BIRD_UP_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_UP_2
             else:  # Moving down or stationary
-                sprite = BIRD_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
+                if is_dinosaur:
+                    sprite = DINOSAUR_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else DINOSAUR_DOWN_2
+                else:
+                    sprite = BIRD_DOWN_1 if (state.game.frame_count // 3) % 2 == 0 else BIRD_DOWN_2
 
         # Special handling for different bird types
         if is_frozen:
@@ -2299,12 +2317,35 @@ def _fb_render_birds(fb):
             bird_color = '\033[1;96m'  # Bright cyan (light blue)
         elif state.birds.colors[i] == STEALTH:
             tangible = i in state.special.stealth_timers and state.special.stealth_timers.get(i, 0) > 0
-            bird_color = get_render_color(WHITE) if tangible else get_render_color(DARK_GRAY)
+            if tangible:
+                bird_color = get_render_color(WHITE)
+            else:
+                # Smooth flicker: 6-step gradient from bright to dim and back
+                stealth_phase = (state.game.frame_count // 3) % 6
+                stealth_colors = [
+                    '\033[38;5;255m',  # Bright white
+                    '\033[38;5;250m',  # Light gray
+                    '\033[38;5;245m',  # Medium gray
+                    '\033[38;5;240m',  # Dark gray
+                    '\033[38;5;245m',  # Medium gray (going back up)
+                    '\033[38;5;250m',  # Light gray (going back up)
+                ]
+                bird_color = stealth_colors[stealth_phase]
         elif state.birds.colors[i] == BLUE and state.birds.power_used[i]:
             bird_color = get_render_color(CYAN)
 
         # Apply bold modifier for foreground game elements
         bird_color = apply_bold(bird_color)
+
+        # Patchwork uses multicolor rendering (fixed colors by position)
+        is_patchwork = state.birds.colors[i] == PATCHWORK and not is_frozen
+        # Fixed color pattern: left=YELLOW, center=RED, right=BLUE
+        patchwork_colors = [YELLOW, RED, BLUE]
+
+        # Clockwork uses special beak coloring based on charge
+        is_clockwork = state.birds.colors[i] == CLOCKWORK and not is_frozen
+        clockwork_charge = state.special.clockwork_charge.get(i, 2) if is_clockwork else 0
+        clockwork_blink = (state.game.frame_count // 5) % 2 == 0  # Blink every 5 frames
 
         # Render bird sprite
         for line_idx, line in enumerate(sprite):
@@ -2313,18 +2354,33 @@ def _fb_render_birds(fb):
                 x_off = len(line) // 2
                 for ci, char in enumerate(line):
                     if char != ' ':
-                        fb.put(GAME_X_OFFSET + x_pos - x_off + ci, by + HEADER_HEIGHT, char, bird_color)
+                        if is_patchwork:
+                            # Color based on horizontal position only (stable across frames)
+                            char_color = apply_bold(patchwork_colors[ci % 3])
+                        elif is_clockwork and char in ("'", "."):
+                            # Clockwork beak (. when up, ' when down) - shows charge status
+                            if clockwork_charge == 0:
+                                # Empty: red blinking
+                                char_color = apply_bold(RED if clockwork_blink else DARK_GRAY)
+                            elif clockwork_charge < 3:
+                                # Discharging: yellow blinking
+                                char_color = apply_bold(YELLOW if clockwork_blink else CLOCKWORK)
+                            else:
+                                # Full: green blinking
+                                char_color = apply_bold(GREEN if clockwork_blink else CLOCKWORK)
+                        else:
+                            char_color = bird_color
+                        fb.put(GAME_X_OFFSET + x_pos - x_off + ci, by + HEADER_HEIGHT, char, char_color)
 
         # Purple bird charging orb
         if state.birds.colors[i] == PURPLE and state.special.purple_state[i] == 2:
-            start_frame = state.special.purple_charge_started_frame[i]
-            if state.game.frame_count >= start_frame:
-                elapsed_seconds = int((state.game.frame_count - start_frame) * constants.timing.base_sleep)
-                s = max(0, min(3, elapsed_seconds))
-                sym = '⋅' if s <= 0 else ('•' if s == 1 else '●')
-                orb_y = y_pos + 1
-                if 0 <= orb_y < constants.layout.height:
-                    fb.put(GAME_X_OFFSET + x_pos, orb_y + HEADER_HEIGHT, sym, get_render_color(PURPLE))
+            start_time = state.special.purple_charge_started_frame[i]  # Now stores timestamp
+            elapsed_seconds = int(time.time() - start_time)
+            s = max(0, min(3, elapsed_seconds))
+            sym = '⋅' if s <= 0 else ('•' if s == 1 else '●')
+            orb_y = y_pos + 1
+            if 0 <= orb_y < constants.layout.height:
+                fb.put(GAME_X_OFFSET + x_pos, orb_y + HEADER_HEIGHT, sym, get_render_color(PURPLE))
 
 
 def _fb_render_floor_and_cursor(fb):

@@ -32,7 +32,7 @@ background:
   parallax: false
 
 birds:
-  default_formation: [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]
+  default_formation: [YELLOW, YELLOW, DINOSAUR, YELLOW, RED, RED, RED, BLUE, BLUE]
   randomize_lanes: true
   # Base damage (DMG) per bird type - used in damage formula
   damage:
@@ -600,8 +600,8 @@ dinosaur:
   recovery_on_egg: 0.1
 stealth:
   damage: 24
-  speed_boost: 2
-  tangible_seconds: 2.0
+  speed_boost: 6
+  tangible_seconds: 3.0
 gold:
   damage: 1
   score_value: 100
@@ -614,20 +614,20 @@ clockwork:
   max_charge: 3
   min_charge: 0
 glitch:
-  bounce_ignore_chance: 0.05
+  bounce_ignore_chance: 0.02
   damage:
     max: 32
     min: 1
-  duplicate_chance: 0.01
-  flip_chance: 0.01
-  loot_ignore_chance: 0.05
-  loot_promote_chance: 0.05
-  nudge_chance: 0.01
+  duplicate_chance: 0.002
+  flip_chance: 0.003
+  loot_ignore_chance: 0.02
+  loot_promote_chance: 0.03
+  nudge_chance: 0.002
   speed:
     max: 6
     min: 1
-  survive_on_floor_chance: 0.2
-  swap_chance: 0.01
+  survive_on_floor_chance: 0.1
+  swap_chance: 0.003
 orange:
   out_of_play_y: 999
   recover_chance: 0.1

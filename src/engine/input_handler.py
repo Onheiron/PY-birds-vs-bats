@@ -244,6 +244,9 @@ def handle_bounce():
 
     Processes ALL birds in the affected lanes (multiple birds can be in same lane due to portals).
     """
+    # Record last UP press time (for Purple hold-to-charge)
+    state.special.last_up_time = time.time()
+
     lanes = _get_affected_lanes()
 
     for lane in lanes:
@@ -278,10 +281,14 @@ def handle_bounce():
                 if bleed_info['lives_lost'] >= bleed_info.get('lives_needed', 3):
                     # Lives depleted - bird dies!
                     if not state.birds.lost[bird_idx]:
+                        dead_color = state.birds.colors[bird_idx]
                         state.birds.lost[bird_idx] = True
                         state.birds.y[bird_idx] = constants.layout.height - 1
                         state.game.lives -= 1
                         del state.special.bleeding_birds[bird_idx]
+                        # Check if a pending bird can now transform
+                        from src.functions import check_pending_transforms
+                        check_pending_transforms(dead_color)
                         if state.game.lives <= 0:
                             state.game.game_over = True
                 continue  # Don't process normal bounce while bleeding
@@ -538,10 +545,14 @@ def _power_cookie(bird_idx, bird_lane):
     # After 5 crumbs, cookie bird dies
     if state.special.cookie_crumbs_made.get(bird_idx, 0) >= 5:
         if not state.birds.lost[bird_idx]:
+            dead_color = state.birds.colors[bird_idx]
             state.birds.lost[bird_idx] = True
             state.birds.y[bird_idx] = constants.layout.height - 1
             state.birds.per_bird_xp[bird_idx] = 0
             state.game.lives -= 1
+            # Check if a pending bird can now transform
+            from src.functions import check_pending_transforms
+            check_pending_transforms(dead_color)
             if state.game.lives <= 0:
                 state.game.game_over = True
 

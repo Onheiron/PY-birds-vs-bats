@@ -140,7 +140,7 @@ BIRD_TYPES = {
         'name': 'Gold',
         'display_name': 'Gold',
         'color': theme.get_color('birds', 'gold', 228),
-        'speed': 6,
+        'speed': 5,
         'damage': 1,
         'ability': 'score_multiplier',
         'description': 'Generates massive score per frame',
@@ -226,6 +226,10 @@ def get_color_for_bird_type(bird_type: str, dynamic: bool = True) -> str:
     Returns:
         ANSI escape sequence string for the color
     """
+    # STEALTH is special - return sentinel string, not ANSI code
+    if bird_type == BirdType.STEALTH:
+        return "STEALTH"
+
     if dynamic:
         # Map bird type to theme color name
         color_names = {
@@ -239,7 +243,6 @@ def get_color_for_bird_type(bird_type: str, dynamic: bool = True) -> str:
             BirdType.ORANGE: 'orange',
             BirdType.GOLD: 'gold',
             BirdType.COOKIE: 'cookie',
-            BirdType.STEALTH: 'white',  # Stealth uses white when visible
             BirdType.DINOSAUR: 'dinosaur',
             BirdType.GLITCH: 'glitch',
         }

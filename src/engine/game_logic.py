@@ -125,15 +125,14 @@ def check_bird_ceiling_bounce():
                 _set_ball_vy(i, 0)
                 _reset_bird_power(i)
                 state.birds.speeds[i] = 0
-                # Spawn orange egg loot if not transformed
-                if not state.birds.transformed[i]:
-                    state.items.loot_items.append({
-                        'x_pos': constants.layout.lane_positions[lane],
-                        'y_pos': constants.layout.starting_line,
-                        'type': 'orange_egg',
-                        'rarity': 'epic',
-                        'spawn_ts': time.time()
-                    })
+                # Spawn orange egg loot (both native and transformed Orange birds)
+                state.items.loot_items.append({
+                    'x_pos': constants.layout.lane_positions[lane],
+                    'y_pos': constants.layout.starting_line,
+                    'type': 'orange_egg',
+                    'rarity': 'epic',
+                    'spawn_ts': time.time()
+                })
                 continue
 
             # Normal bounce
@@ -176,11 +175,16 @@ def check_bird_floor_collision():
             continue
 
         # Bird dies
+        dead_color = state.birds.colors[i]
         state.birds.lost[i] = True
         state.birds.y[i] = constants.layout.height - 1
         state.birds.per_bird_xp[i] = 0
         state.game.lives -= 1
         play_sfx('bird_lost')
+
+        # Check if a pending bird can now transform
+        from src.functions import check_pending_transforms
+        check_pending_transforms(dead_color)
 
         if state.game.lives <= 0:
             state.game.game_over = True
@@ -792,7 +796,7 @@ def _spawn_bird_from_egg(egg_type):
     }
     default_speeds = {
         'yellow': 2, 'red': 3, 'blue': 4, 'white': 4, 'purple': 3,
-        'orange': 5, 'gold': 6, 'patchwork': 3, 'cookie': 3, 'clockwork': 2,
+        'orange': 5, 'gold': 5, 'patchwork': 3, 'cookie': 3, 'clockwork': 2,
         'stealth': 3, 'dinosaur': 4, 'glitch': 3
     }
 
@@ -3380,7 +3384,7 @@ def check_bird_boss_collision():
             damage = max(1, damage - armor_reduction)
 
         if bird_color == ORANGE:
-            boss['hp'] -= boss['max_hp'] // 4  # Orange does 25% of max HP
+            boss['hp'] -= 32  # Orange does fixed 32 damage to bosses
         else:
             boss['hp'] -= damage
             award_xp(i, damage)
@@ -3502,9 +3506,13 @@ def update_special_bird_states():
         if now >= death_time:
             # Bird dies from poison!
             if not state.birds.lost[bird_idx]:
+                dead_color = state.birds.colors[bird_idx]
                 state.birds.lost[bird_idx] = True
                 state.birds.y[bird_idx] = constants.layout.height - 1
                 state.game.lives -= 1
+                # Check if a pending bird can now transform
+                from src.functions import check_pending_transforms
+                check_pending_transforms(dead_color)
                 if state.game.lives <= 0:
                     state.game.game_over = True
             # Remove from poisoned dict
@@ -3517,6 +3525,25 @@ def update_special_bird_states():
         if now >= end_time:
             # Bleed expired - bird survives!
             del state.special.bleeding_birds[bird_idx]
+
+    # Clockwork charge decay
+    decay_seconds = getattr(constants.clockwork, 'decay_seconds', 30.0)
+    for i in range(constants.layout.num_balls):
+        if state.birds.colors[i] != CLOCKWORK or state.birds.lost[i]:
+            continue
+
+        charge = state.special.clockwork_charge.get(i)
+        if charge is None:
+            charge = constants.clockwork.initial_charge
+            state.special.clockwork_charge[i] = charge
+            state.special.clockwork_last_decay[i] = now
+
+        last_decay = state.special.clockwork_last_decay.get(i, now)
+
+        # Decay one charge level every decay_seconds
+        if charge > 0 and now - last_decay >= decay_seconds:
+            state.special.clockwork_charge[i] = charge - 1
+            state.special.clockwork_last_decay[i] = now
 
 
 def update_spell_effects():
@@ -3566,29 +3593,54 @@ def _execute_exile_swap(exile):
 
 
 def update_purple_charging():
-    """Update purple bird charging state machine."""
+    """Update purple bird charging state machine.
+
+    Purple charges ONLY while UP is held. Releases when UP is released.
+    Damage: <1s = 1, <2s = 4, <3s = 16, 3s (auto) = 64
+
+    We detect "UP released" by checking time since last UP input.
+    Terminal key repeat: first repeat after ~500ms, then every ~30ms.
+    So if no UP for 0.6s, user definitely released the key.
+    """
+    # Seconds without UP to consider it "released"
+    # Must be > terminal key repeat initial delay (~500ms)
+    RELEASE_THRESHOLD_SECS = 0.6
+
+    now = time.time()
+
     for b in range(constants.layout.num_balls):
         ps = state.special.purple_state[b]
 
-        if ps == 1:  # Primed
-            # Check if still holding
-            held_long_enough = state.game.frame_count > state.special.purple_primed_frame[b]
-            if held_long_enough and not state.birds.lost[b] and state.birds.vy[b] == -1:
+        if ps == 1:  # Primed - waiting for hold confirmation
+            # Transition to charging state, record start TIME
+            if not state.birds.lost[b] and state.birds.vy[b] == -1:
                 state.special.purple_state[b] = 2
-                state.special.purple_charge_started_frame[b] = state.game.frame_count
+                state.special.purple_charge_started_frame[b] = now  # Using as timestamp now
 
-        elif ps == 2:  # Charging
-            elapsed_frames = state.game.frame_count - state.special.purple_charge_started_frame[b]
-            charge_seconds = elapsed_frames * constants.timing.base_sleep
+        elif ps == 2:  # Charging - only while UP is held
+            charge_start_time = state.special.purple_charge_started_frame[b]
+            charge_seconds = now - charge_start_time
+            time_since_up = now - state.special.last_up_time
 
-            # Auto-fire at 3 seconds
+            # Auto-fire at 3 seconds (max charge)
             if charge_seconds >= 3:
                 _fire_purple_projectile(b, 3)
+            # Release shot when UP hasn't been pressed for too long
+            elif time_since_up >= RELEASE_THRESHOLD_SECS:
+                _fire_purple_projectile(b, charge_seconds)
 
 
 def _fire_purple_projectile(bird_idx, charge_seconds):
-    """Fire a purple charged projectile."""
-    damage = int(pow(4, charge_seconds))
+    """Fire a purple charged projectile.
+
+    Damage based on charge time (discrete tiers):
+    - <1s: 4^0 = 1
+    - <2s: 4^1 = 4
+    - <3s: 4^2 = 16
+    - 3s:  4^3 = 64
+    """
+    charge_tier = min(3, int(charge_seconds))  # 0, 1, 2, or 3
+    damage = int(pow(4, charge_tier))
     lane = state.birds.random_lanes[bird_idx]
 
     state.special.red_projectiles.append({
@@ -3887,6 +3939,9 @@ def despawn_old_entities():
                                 state.birds.lost[bi] = True
                                 state.birds.y[bi] = constants.layout.height - 1
                                 state.game.lives -= 1
+                                # Check if a pending bird can now transform
+                                from src.functions import check_pending_transforms
+                                check_pending_transforms(ORANGE)
                                 if state.game.lives <= 0:
                                     state.game.game_over = True
                                 break

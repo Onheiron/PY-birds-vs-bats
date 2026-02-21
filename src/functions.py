@@ -380,18 +380,39 @@ def get_frame_sleep_for_speed(speed_level):
 # =============================================================================
 
 def compute_prestige():
-    """Compute prestige multiplier based on active bird grades."""
+    """Compute prestige multiplier based on active bird grades and rarity."""
     total = 1.0
+
+    # Rarity-based prestige bonuses
+    rarity_bonuses = {
+        DINOSAUR: 5.0,    # Epic - massive bonus
+        GLITCH: 0.0,      # Handled separately (random)
+        WHITE: 2.0,       # Rare (S-grade evolution)
+        ORANGE: 2.0,      # Rare (S-grade evolution)
+        GOLD: 3.0,        # Rare (S-grade evolution) + score focus
+        PURPLE: 1.0,      # Uncommon
+        PATCHWORK: 1.0,   # Uncommon
+        COOKIE: 1.0,      # Uncommon
+        CLOCKWORK: 1.0,   # Uncommon
+        STEALTH: 1.5,     # Uncommon but strong
+    }
 
     for i in range(len(state.birds.per_bird_xp)):
         if state.birds.lost[i]:
             continue
 
+        bird_color = state.birds.colors[i]
+
         # GLITCH birds contribute random prestige
-        if state.birds.colors[i] == GLITCH:
+        if bird_color == GLITCH:
             total += float(random.randint(1, 7))
             continue
 
+        # Add rarity bonus
+        rarity_bonus = rarity_bonuses.get(bird_color, 0.0)
+        total += rarity_bonus
+
+        # Add grade bonus
         label, _ = compute_grade_from_xp(state.birds.per_bird_xp[i])
         add = constants.prestige.modifiers.get(label, 0.0)
         total += add
@@ -451,7 +472,11 @@ def award_xp(bird_idx, xp_amount):
     bi = int(bird_idx)
     if bi < 0 or bi >= len(state.birds.per_bird_xp):
         return
-    state.birds.per_bird_xp[bi] += int(max(0, int(xp_amount)))
+    xp = int(max(0, int(xp_amount)))
+    # Cookie birds gain 1.5x XP (XP bank)
+    if state.birds.colors[bi] == COOKIE:
+        xp = int(xp * 1.5)
+    state.birds.per_bird_xp[bi] += xp
     transform_bird_to_s(bi)
 
 
@@ -518,6 +543,7 @@ def transform_bird_to_s(bi):
     """Transform bird to S-grade color if it reached S grade.
 
     Mappings: BLUE->WHITE, RED->ORANGE, YELLOW->GOLD
+    If limit reached, bird is put in pending_transform state.
     """
     bi = int(bi)
     if bi < 0 or bi >= constants.layout.num_balls:
@@ -542,25 +568,59 @@ def transform_bird_to_s(bi):
         target_speed = 5
     elif old == YELLOW:
         target_color = GOLD
-        target_speed = 6
+        target_speed = 5
 
     if target_color is None:
         state.birds.transformed[bi] = True
         return
 
-    # Check spawn limits
-    limit = constants.transform.limits.get(target_color)
-    if limit is not None:
-        cnt = sum(1 for j in range(constants.layout.num_balls)
-                  if not state.birds.lost[j] and state.birds.colors[j] == target_color)
-        if cnt >= limit and state.birds.colors[bi] != target_color:
-            state.birds.transformed[bi] = True
-            return
+    # Check if rare bird of this type already exists (max 1 per rare type)
+    cnt = sum(1 for j in range(constants.layout.num_balls)
+              if not state.birds.lost[j] and state.birds.colors[j] == target_color)
+    if cnt >= 1:
+        # Can't transform yet - put in pending state
+        state.birds.pending_transform[bi] = target_color
+        return
 
+    # Transform!
     state.birds.colors[bi] = target_color
     if target_speed:
         state.birds.speeds[bi] = target_speed
     state.birds.transformed[bi] = True
+    state.birds.pending_transform[bi] = None
+
+
+def check_pending_transforms(dead_bird_color):
+    """When a rare bird dies, check if any pending birds can now transform.
+
+    Args:
+        dead_bird_color: The color of the bird that just died (WHITE, ORANGE, GOLD)
+    """
+    # Only care about rare bird deaths
+    if dead_bird_color not in (WHITE, ORANGE, GOLD):
+        return
+
+    # Find a bird waiting to transform to this color
+    for bi in range(constants.layout.num_balls):
+        if state.birds.lost[bi]:
+            continue
+        if state.birds.pending_transform[bi] == dead_bird_color:
+            # This bird was waiting - transform it now!
+            if dead_bird_color == WHITE:
+                target_speed = 4
+            elif dead_bird_color == ORANGE:
+                target_speed = 5
+            elif dead_bird_color == GOLD:
+                target_speed = 6
+            else:
+                target_speed = None
+
+            state.birds.colors[bi] = dead_bird_color
+            if target_speed:
+                state.birds.speeds[bi] = target_speed
+            state.birds.transformed[bi] = True
+            state.birds.pending_transform[bi] = None
+            return  # Only transform one
 
 
 # =============================================================================
@@ -693,19 +753,22 @@ def _choose_egg(rarity):
     raw_weights = rarity_data if isinstance(rarity_data, dict) else {}
     weights = [float(raw_weights.get(e, 1.0)) for e in candidates]
 
-    # Filter by spawn limits
+    # Map egg names to bird colors
+    egg_to_color = {
+        'white_egg': WHITE,
+        'orange_egg': ORANGE,
+        'gold_egg': GOLD,
+    }
+
+    # Filter by spawn limits (max 1 per rare type)
     def allowed(egg_name):
-        if not bird_types:
-            return True
-        bcol = getattr(bird_types, 'EGG_TO_COLOR', {}).get(egg_name)
-        if bcol is None:
-            return True
-        limit = getattr(bird_types, 'COLOR_LIMITS', {}).get(bcol)
-        if limit is None:
-            return True
+        target_color = egg_to_color.get(egg_name)
+        if target_color is None:
+            return True  # Not a rare egg, always allowed
+        # Check if this rare bird type already exists
         cnt = sum(1 for i in range(constants.layout.num_balls)
-                  if not state.birds.lost[i] and state.birds.colors[i] == bcol)
-        return cnt < limit
+                  if not state.birds.lost[i] and state.birds.colors[i] == target_color)
+        return cnt < 1  # Max 1 per rare type
 
     allowed_candidates = [(e, w) for e, w in zip(candidates, weights) if allowed(e)]
 
