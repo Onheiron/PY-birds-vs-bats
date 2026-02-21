@@ -324,9 +324,18 @@ def update_miles(delta_time):
     new_level, new_group, new_sub = compute_level_from_miles(state.game.miles)
 
     if new_level != old_level:
+        old_group = state.game.level_group
         state.game.level = new_level
         state.game.level_group = new_group
         state.game.level_sub = new_sub
+        # Reset boss spawn flag for new level
+        state.enemies.boss_spawned = False
+        state.enemies.boss_defeated = False
+        # Update music theme if biome changed
+        if new_group != old_group:
+            audio = _get_audio()
+            if audio:
+                audio.update_music_for_biome(new_group)
         return True
 
     return False
@@ -433,13 +442,8 @@ def update_momentum(momentum_factor):
     if gear_changed:
         audio = _get_audio()
         if audio:
-            audio.update_music_for_level(state.game.speed)
-            audio.update_game_speed(
-                state.game.speed,
-                base_sleep=getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18),
-                multiplier=1.0,
-                min_sleep=getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
-            )
+            # Update tempo for new gear (higher gear = faster tempo)
+            audio.update_tempo_for_gear(state.game.speed)
 
 
 def award_xp(bird_idx, xp_amount):
@@ -462,13 +466,8 @@ def deduct_momentum(amount):
     if gear_changed:
         audio = _get_audio()
         if audio:
-            audio.update_music_for_level(state.game.speed)
-            audio.update_game_speed(
-                state.game.speed,
-                base_sleep=getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18),
-                multiplier=1.0,
-                min_sleep=getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
-            )
+            # Update tempo for new gear (higher gear = faster tempo)
+            audio.update_tempo_for_gear(state.game.speed)
 
 
 def adjust_rarity_weights(base_weights, prestige):
@@ -663,10 +662,10 @@ def choose_loot_type(rarity):
 
     # Loot pools
     loot_pools = {
-        'common': ['wide_cursor', 'tailwind', 'shuffle'],
-        'uncommon': ['wide_cursor+', 'tailwind+', 'shuffle'],
-        'rare': ['wide_cursor++', 'tailwind++', 'shuffle+'],
-        'epic': ['wide_cursor_max', 'tailwind_max', 'shuffle++']
+        'common': ['wide_cursor', 'tailwind', 'timelapse'],
+        'uncommon': ['wide_cursor+', 'tailwind+', 'timelapse'],
+        'rare': ['wide_cursor++', 'tailwind++', 'timelapse+'],
+        'epic': ['wide_cursor_max', 'tailwind_max', 'timelapse++']
     }
 
     # Decide egg or powerup

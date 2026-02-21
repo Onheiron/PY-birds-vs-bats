@@ -29,10 +29,12 @@ birds = SimpleNamespace(
     lost=[],
     power_used=[],
     power_uses=[],
-    random_lanes=[],
+    random_lanes=[],      # Current physical lane
+    home_lanes=[],        # "Home" lane - where bird would end up following portals down
     per_bird_xp=[],
     transformed=[],
-    original_indices=[]
+    original_indices=[],
+    portal_cooldown={},  # {bird_idx: frame_until_can_teleport_again}
 )
 
 # ============================================================================
@@ -116,6 +118,11 @@ enemies = SimpleNamespace(
     boss=None,  # None or dict with boss data
     boss_spawned=False,  # True if boss has been spawned this level
     boss_defeated=False,  # True if boss was defeated
+    # Cave portals (biome 5) - always spawn in pairs
+    # Each portal: {'x_pos': int, 'y_pos': int, 'pair_id': int, 'portal_idx': 0 or 1}
+    portals=[],
+    portal_spawn_timer=0,
+    portal_pair_counter=0,  # Unique ID for portal pairs
 )
 
 # ============================================================================
@@ -159,6 +166,10 @@ powerups = SimpleNamespace(
     tailwind_frames=0,
     tailwind_up_bonus=0,
     tailwind_down_penalty=0,
+    # Timelapse effect (slows game tick)
+    timelapse_active=False,
+    timelapse_end_time=0.0,  # Unix timestamp when timelapse ends (real time)
+    timelapse_slowdown=1.0,  # Multiplier: 2.0 = game runs at half speed
     # Wind Boss effects
     wind_boss_up_bonus=0,
     wind_boss_down_penalty=0,
@@ -203,6 +214,9 @@ ui = SimpleNamespace(
     # Parallax background layers (3 layers with different speeds)
     bg_offset=0,         # Slowest layer (original tree pattern)
     bg_mid_offset=0,     # Middle layer (∧ symbols, intermediate speed)
+    # Cave shimmer effect - particles that fade in/out from darkness
+    # Dict of {(x, y): brightness} where brightness is 0.0 (dark) to 1.0 (bright)
+    cave_shimmer={},
     # Notifications: list of dicts with {title, text, expire_frame}
     # New notifications insert at index 0 (top), old ones at end (bottom)
     notifications=[],
@@ -291,7 +305,9 @@ def init(seed=None):
     birds.random_lanes = list(range(constants.layout.num_lanes))
     if constants.birds.randomize_lanes:
         random.shuffle(birds.random_lanes)
-    
+    # Home lanes start same as random_lanes (where bird would go following portals down)
+    birds.home_lanes = birds.random_lanes.copy()
+
     # Initialize position and velocity arrays
     birds.cols = [constants.layout.lane_positions[birds.random_lanes[i]] for i in range(constants.layout.num_balls)]
     constants.layout.starting_line = constants.layout.height - 4
@@ -341,6 +357,7 @@ def init(seed=None):
     ui.show_xp_overlay = False
     ui.bg_offset = 0
     ui.bg_mid_offset = 0
+    ui.cave_shimmer = {}
     ui.notifications = []
     ui.level_sign_scroll_y = 0
     ui.level_sign_scrolling = False
@@ -364,7 +381,10 @@ def init(seed=None):
     enemies.boss = None
     enemies.boss_spawned = False
     enemies.boss_defeated = False
-    
+    enemies.portals = []
+    enemies.portal_spawn_timer = 0
+    enemies.portal_pair_counter = 0
+
     # Items
     items.loot_items = []
     
@@ -382,16 +402,19 @@ def init(seed=None):
     powerups.tailwind_frames = 0
     powerups.tailwind_up_bonus = 0
     powerups.tailwind_down_penalty = 0
+    powerups.timelapse_active = False
+    powerups.timelapse_end_time = 0.0
+    powerups.timelapse_slowdown = 1.0
     powerups.wind_boss_up_bonus = 0
     powerups.wind_boss_down_penalty = 0
     
     # Game state
     game.score = 0
-    game.level = 1
+    game.miles = 130.0
     game.level_group = 1
+    game.level = 1
     game.level_sub = 1
     game.speed = 1
-    game.miles = 0.0
     game.lives = 5
     game.game_over = False
     game.quit_requested = False
@@ -408,6 +431,7 @@ def init(seed=None):
 
     # Track original bird indices
     birds.original_indices = list(range(constants.layout.num_balls))
+    birds.portal_cooldown = {}
     
     # Assign speeds based on bird formation
     birds.speeds = []

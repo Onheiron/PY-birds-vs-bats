@@ -1,32 +1,36 @@
-# BVB (Birds vs Bats) - EASY Difficulty Configuration
-# Relaxed settings for casual play
+# BVB (Birds vs Bats) - PEACEFUL Difficulty Configuration
+# Very relaxed settings for casual play - rare birds are extremely rare
 # Use with: python -m src.game --config config_easy.yml
 
-# Only override values that differ from config.yml (NORMAL)
+# Only override values that differ from config.yml (ADVENTURE)
+
+game:
+  difficulty_name: "PEACEFUL"
+  life_recovery_on_spawn: true  # Lives recovered when new birds spawn
 
 bat_enemy:
   # Lower HP - bats die faster
   hp_by_tier:
-    1: 12      # NORMAL: 24
-    2: 24      # NORMAL: 48
-    3: 48      # NORMAL: 96
-    4: 96      # NORMAL: 192
+    1: 12      # ADVENTURE: 24
+    2: 24      # ADVENTURE: 48
+    3: 48      # ADVENTURE: 96
+    4: 96      # ADVENTURE: 192
   # Fewer bats on screen
-  max_on_screen: 3    # NORMAL: 5
+  max_on_screen: 3    # ADVENTURE: 5
   # Slower spawn rate (higher = less frequent)
-  spawn_interval_range: [150, 280]  # NORMAL: [80, 160]
+  spawn_interval_range: [150, 280]  # ADVENTURE: [80, 160]
   spawn_rate_by_level:
-    level_4_6: 300    # NORMAL: 200
-    level_7_9: 220    # NORMAL: 150
-    level_10_12: 160  # NORMAL: 100
-    level_13_15: 120  # NORMAL: 70
-    level_16_18: 90   # NORMAL: 50
+    level_4_6: 300    # ADVENTURE: 200
+    level_7_9: 220    # ADVENTURE: 150
+    level_10_12: 160  # ADVENTURE: 100
+    level_13_15: 120  # ADVENTURE: 70
+    level_16_18: 90   # ADVENTURE: 50
   max_bats_by_level:
     level_4_6: 1
-    level_7_9: 1      # NORMAL: 2
-    level_10_12: 2    # NORMAL: 3
-    level_13_15: 3    # NORMAL: 4
-    level_16_18: 4    # NORMAL: 5
+    level_7_9: 1      # ADVENTURE: 2
+    level_10_12: 2    # ADVENTURE: 3
+    level_13_15: 3    # ADVENTURE: 4
+    level_16_18: 4    # ADVENTURE: 5
   tiers:
     hp_tier_1: 12
     hp_tier_2: 24
@@ -36,24 +40,48 @@ bat_enemy:
 obstacle:
   # Lower HP - obstacles break faster
   hp_by_tier:
-    1: 3       # NORMAL: 5
-    2: 5       # NORMAL: 8
-    3: 10      # NORMAL: 16
-    4: 20      # NORMAL: 32
+    1: 3       # ADVENTURE: 5
+    2: 5       # ADVENTURE: 8
+    3: 10      # ADVENTURE: 16
+    4: 20      # ADVENTURE: 32
   # Slower spawn rate
   spawning:
-    biome_base: 60           # NORMAL: 40 (higher = slower spawn)
-    biome_decay: 0.90        # NORMAL: 0.85
-    sublevel_decay: 0.95     # NORMAL: 0.9
-    min_spawn_rate: 12       # NORMAL: 6
+    biome_base: 60           # ADVENTURE: 40 (higher = slower spawn)
+    biome_decay: 0.90        # ADVENTURE: 0.85
+    sublevel_decay: 0.95     # ADVENTURE: 0.9
+    min_spawn_rate: 12       # ADVENTURE: 6
+
+# Eggs - rare birds are MUCH rarer in PEACEFUL
+eggs:
+  rarity_candidates:
+    common:
+      yellow_egg: 45         # More common birds
+      red_egg: 30
+      blue_egg: 20
+      patchwork_egg: 4       # Rarer
+      purple_egg: 1          # Very rare
+    uncommon:
+      blue_egg: 50           # More common
+      patchwork_egg: 30
+      purple_egg: 15
+      clockwork_egg: 4       # Rare
+      stealth_egg: 1         # Very rare
+      cookie_egg: 0          # Essentially unavailable
+    rare:
+      white_egg: 60          # More common of the rares
+      orange_egg: 35
+      gold_egg: 5            # Very rare
+    epic:
+      dinosaur_egg: 1        # Virtually impossible
+      glitch_egg: 1          # Virtually impossible
 
 progression:
-  # Faster grade progression - birds level up quicker
-  grade_exp_factor: 1.04     # NORMAL: 1.07 (lower = faster leveling)
+  # Faster grade progression - birds level up slower
+  grade_exp_factor: 1.2      # ADVENTURE: 1.07 (lower = faster leveling)
 
 speed:
   # Lower momentum threshold - easier to gain momentum
-  momentum_zero_height: 0.25  # NORMAL: 0.33 (lower = easier)
+  momentum_zero_height: 0.25  # ADVENTURE: 0.33 (lower = easier)
   # Slower game at high speeds
-  frame_sleep_at_speed_1: 0.20    # NORMAL: 0.18
-  frame_sleep_at_speed_10: 0.05   # NORMAL: 0.02 (higher = slower at max speed)
+  frame_sleep_at_speed_1: 0.20    # ADVENTURE: 0.18
+  frame_sleep_at_speed_10: 0.05   # ADVENTURE: 0.02 (higher = slower at max speed)

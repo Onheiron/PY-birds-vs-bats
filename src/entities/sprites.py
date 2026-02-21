@@ -249,6 +249,26 @@ SPELLCASTER_BAT_CASTING = [
 ]
 
 # =============================================================================
+# PORTAL SPRITES - Cave biome portals (biome 5)
+# =============================================================================
+# Portals appear in pairs - birds teleport between them, obstacles are destroyed
+
+PORTAL_FRAME_1 = [
+    "  _  ",
+    "\\(@)\\",
+    "  ‾  ",
+]
+
+PORTAL_FRAME_2 = [
+    "___  ",
+    "'(O)'",
+    "  ‾‾‾",
+]
+
+# Portal colors (loaded from theme.yml - portals.color)
+PORTAL_COLOR = theme.get_color('portals', 'color', 17)  # Default: very dark blue
+
+# =============================================================================
 # BOSS SPRITES - End of biome bosses
 # =============================================================================
 # Boss for biome 1 (Windy Woods) - appears at level 1-3

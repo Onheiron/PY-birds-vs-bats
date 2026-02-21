@@ -35,6 +35,15 @@ def _find_bird_in_lane(lane):
     return -1
 
 
+def _find_all_birds_in_lane(lane):
+    """Return list of all bird indices in given lane."""
+    birds = []
+    for i, bird_lane in enumerate(state.birds.random_lanes):
+        if bird_lane == lane:
+            birds.append(i)
+    return birds
+
+
 def _get_affected_lanes():
     """Return list of lanes affected by current cursor (considers wide cursor)."""
     if state.powerups.wide_cursor_active:
@@ -148,8 +157,20 @@ def handle_swap():
         _execute_swap()
 
 
+def _find_bird_by_home_lane(lane):
+    """Find bird whose home_lane is the given lane."""
+    for i, home_lane in enumerate(state.birds.home_lanes):
+        if home_lane == lane:
+            return i
+    return -1
+
+
 def _execute_swap():
-    """Execute a bird swap between selected lane and current lane."""
+    """Execute a bird swap between selected lane and current lane.
+
+    Uses home_lanes to determine which birds to swap - this ensures correct
+    behavior when birds are temporarily in different lanes due to portals.
+    """
     from src.functions import compute_gear_from_momentum, calculate_gear_threshold, deduct_momentum
 
     gear = compute_gear_from_momentum(state.game.momentum)
@@ -164,8 +185,9 @@ def _execute_swap():
     current_lane = state.player.lane
     selected_lane = state.player.selected_lane
 
-    bird_in_selected = _find_bird_in_lane(selected_lane)
-    bird_in_current = _find_bird_in_lane(current_lane)
+    # Find birds by their HOME lane, not current physical lane
+    bird_in_selected = _find_bird_by_home_lane(selected_lane)
+    bird_in_current = _find_bird_by_home_lane(current_lane)
 
     if bird_in_selected < 0 or bird_in_current < 0:
         state.player.selected_lane = None
@@ -179,14 +201,18 @@ def _execute_swap():
     # Handle orange eggs before swap
     for idx, other_idx in [(bird_in_selected, bird_in_current), (bird_in_current, bird_in_selected)]:
         if _is_orange_egg_state(idx):
-            old_lane = state.birds.random_lanes[idx]
-            new_lane = state.birds.random_lanes[other_idx]
+            old_lane = state.birds.home_lanes[idx]
+            new_lane = state.birds.home_lanes[other_idx]
             for loot in state.items.loot_items:
                 if loot['type'] == 'orange_egg' and loot['x_pos'] == constants.layout.lane_positions[old_lane]:
                     loot['x_pos'] = constants.layout.lane_positions[new_lane]
                     break
 
-    # Swap lanes
+    # Swap home_lanes
+    state.birds.home_lanes[bird_in_selected], state.birds.home_lanes[bird_in_current] = \
+        state.birds.home_lanes[bird_in_current], state.birds.home_lanes[bird_in_selected]
+
+    # Swap physical lanes too
     state.birds.random_lanes[bird_in_selected], state.birds.random_lanes[bird_in_current] = \
         state.birds.random_lanes[bird_in_current], state.birds.random_lanes[bird_in_selected]
 
@@ -194,9 +220,12 @@ def _execute_swap():
     state.birds.cols[bird_in_selected] = constants.layout.lane_positions[state.birds.random_lanes[bird_in_selected]]
     state.birds.cols[bird_in_current] = constants.layout.lane_positions[state.birds.random_lanes[bird_in_current]]
 
-    # Reset non-orange-egg birds to starting line
+    # Reset non-orange-egg birds to starting line (in their new home lane)
     for idx in [bird_in_selected, bird_in_current]:
         if not state.birds.lost[idx] and not _is_orange_egg_state(idx):
+            # Reset to home lane and starting position
+            state.birds.random_lanes[idx] = state.birds.home_lanes[idx]
+            state.birds.cols[idx] = constants.layout.lane_positions[state.birds.home_lanes[idx]]
             state.birds.y[idx] = constants.layout.starting_line
             _set_ball_vy(idx, -1)
 
@@ -211,73 +240,79 @@ def _is_orange_egg_state(bird_idx):
 
 
 def handle_bounce():
-    """Handle UP key for bouncing birds."""
+    """Handle UP key for bouncing birds.
+
+    Processes ALL birds in the affected lanes (multiple birds can be in same lane due to portals).
+    """
     lanes = _get_affected_lanes()
 
     for lane in lanes:
-        bird_idx = _find_bird_in_lane(lane)
-        if bird_idx < 0 or state.birds.lost[bird_idx]:
-            continue
+        # Find ALL birds in this lane (not just one)
+        birds_in_lane = _find_all_birds_in_lane(lane)
 
-        bird_color = state.birds.colors[bird_idx]
-
-        # Handle orange egg recovery
-        if bird_color == ORANGE and state.birds.speeds[bird_idx] == 0:
-            if random.random() >= constants.orange.recover_chance:
+        for bird_idx in birds_in_lane:
+            if state.birds.lost[bird_idx]:
                 continue
-            _recover_orange_bird(bird_idx, lane)
-            continue
 
-        # Can't bounce scared birds (except purple)
-        if bird_idx in state.special.scared_birds and bird_color != PURPLE:
-            continue
+            bird_color = state.birds.colors[bird_idx]
 
-        # Can't bounce stunned birds (from obstacle collision)
-        if bird_idx in state.special.stunned_birds:
-            continue
+            # Handle orange egg recovery
+            if bird_color == ORANGE and state.birds.speeds[bird_idx] == 0:
+                if random.random() >= constants.orange.recover_chance:
+                    continue
+                _recover_orange_bird(bird_idx, lane)
+                continue
 
-        # BLEEDING BIRDS: each UP press costs a life, when lives reach 0 bird dies
-        if bird_idx in state.special.bleeding_birds:
-            bleed_info = state.special.bleeding_birds[bird_idx]
-            bleed_info['lives_lost'] = bleed_info.get('lives_lost', 0) + 1
-            if bleed_info['lives_lost'] >= bleed_info.get('lives_needed', 3):
-                # Lives depleted - bird dies!
-                if not state.birds.lost[bird_idx]:
-                    state.birds.lost[bird_idx] = True
-                    state.birds.y[bird_idx] = constants.layout.height - 1
-                    state.game.lives -= 1
-                    del state.special.bleeding_birds[bird_idx]
-                    if state.game.lives <= 0:
-                        state.game.game_over = True
-            continue  # Don't process normal bounce while bleeding
+            # Can't bounce scared birds (except purple)
+            if bird_idx in state.special.scared_birds and bird_color != PURPLE:
+                continue
 
-        # FROZEN BIRDS: button press attempts to thaw
-        if bird_idx in state.special.frozen_birds:
-            frozen_info = state.special.frozen_birds[bird_idx]
-            frozen_info['thaw_attempts_done'] = frozen_info.get('thaw_attempts_done', 0) + 1
-            if frozen_info['thaw_attempts_done'] >= frozen_info.get('thaw_attempts_needed', 3):
-                # Bird thawed!
-                del state.special.frozen_birds[bird_idx]
-                # Reset to normal state - bounce up
-                state.birds.vy[bird_idx] = -1
-                _reset_bird_power(bird_idx)
-            continue  # Don't process normal bounce while frozen
+            # Can't bounce stunned birds (from obstacle collision)
+            if bird_idx in state.special.stunned_birds:
+                continue
 
-        # POISONED BIRDS: button press decrements heal counter, bird is cured when counter reaches 0
-        if bird_idx in state.special.poisoned_birds:
-            poison_info = state.special.poisoned_birds[bird_idx]
-            poison_info['cure_attempts_done'] = poison_info.get('cure_attempts_done', 0) + 1
-            if poison_info['cure_attempts_done'] >= poison_info.get('cure_attempts_needed', 3):
-                # Heal counter reached 0 - bird is cured!
-                del state.special.poisoned_birds[bird_idx]
-            # Continue to normal bounce processing (poisoned birds can still bounce)
+            # BLEEDING BIRDS: each UP press costs a life, when lives reach 0 bird dies
+            if bird_idx in state.special.bleeding_birds:
+                bleed_info = state.special.bleeding_birds[bird_idx]
+                bleed_info['lives_lost'] = bleed_info.get('lives_lost', 0) + 1
+                if bleed_info['lives_lost'] >= bleed_info.get('lives_needed', 3):
+                    # Lives depleted - bird dies!
+                    if not state.birds.lost[bird_idx]:
+                        state.birds.lost[bird_idx] = True
+                        state.birds.y[bird_idx] = constants.layout.height - 1
+                        state.game.lives -= 1
+                        del state.special.bleeding_birds[bird_idx]
+                        if state.game.lives <= 0:
+                            state.game.game_over = True
+                continue  # Don't process normal bounce while bleeding
 
-        # Bird moving down - bounce it up
-        if state.birds.vy[bird_idx] == 1:
-            _bounce_bird_up(bird_idx)
-        # Bird moving up - activate power
-        elif state.birds.vy[bird_idx] == -1:
-            _activate_bird_power(bird_idx)
+            # FROZEN BIRDS: button press attempts to thaw
+            if bird_idx in state.special.frozen_birds:
+                frozen_info = state.special.frozen_birds[bird_idx]
+                frozen_info['thaw_attempts_done'] = frozen_info.get('thaw_attempts_done', 0) + 1
+                if frozen_info['thaw_attempts_done'] >= frozen_info.get('thaw_attempts_needed', 3):
+                    # Bird thawed!
+                    del state.special.frozen_birds[bird_idx]
+                    # Reset to normal state - bounce up
+                    state.birds.vy[bird_idx] = -1
+                    _reset_bird_power(bird_idx)
+                continue  # Don't process normal bounce while frozen
+
+            # POISONED BIRDS: button press decrements heal counter, bird is cured when counter reaches 0
+            if bird_idx in state.special.poisoned_birds:
+                poison_info = state.special.poisoned_birds[bird_idx]
+                poison_info['cure_attempts_done'] = poison_info.get('cure_attempts_done', 0) + 1
+                if poison_info['cure_attempts_done'] >= poison_info.get('cure_attempts_needed', 3):
+                    # Heal counter reached 0 - bird is cured!
+                    del state.special.poisoned_birds[bird_idx]
+                # Continue to normal bounce processing (poisoned birds can still bounce)
+
+            # Bird moving down - bounce it up
+            if state.birds.vy[bird_idx] == 1:
+                _bounce_bird_up(bird_idx)
+            # Bird moving up - activate power
+            elif state.birds.vy[bird_idx] == -1:
+                _activate_bird_power(bird_idx)
 
 
 def _recover_orange_bird(bird_idx, lane):

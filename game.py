@@ -61,7 +61,13 @@ def calculate_frames_per_update(speed_level):
     max_frames = 10
     min_frames = 2
     frames = max_frames - t * (max_frames - min_frames)
-    return max(min_frames, round(frames))
+    base_frames = max(min_frames, round(frames))
+
+    # Apply timelapse slowdown if active
+    if state.powerups.timelapse_active:
+        base_frames = int(base_frames * state.powerups.timelapse_slowdown)
+
+    return base_frames
 
 
 def show_game_over_screen():
@@ -368,10 +374,10 @@ def run_game():
         audio.stop_music()
         # Only start music if enabled in settings
         if state.settings.music_enabled:
-            # Sync speed/gear for correct music theme (theme changes with speed, not level milestone)
-            audio.update_music_for_level(state.game.speed)
-            # Sync game speed for correct tempo
-            audio.update_game_speed(state.game.speed)
+            # Sync biome for correct music theme
+            audio.update_music_for_biome(state.game.level_group)
+            # Sync gear for tempo (higher gear = faster tempo)
+            audio.update_tempo_for_gear(state.game.speed)
             # Sync active birds BEFORE starting music (force=True to bypass rate limiter)
             game_logic.sync_active_birds_audio(force=True)
             # Now start fresh music with correct state

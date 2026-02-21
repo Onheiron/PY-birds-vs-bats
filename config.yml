@@ -392,6 +392,7 @@ boss:
 # Wind Boss configuration - boss for level 2-3 (The Borders)
 wind_boss:
   level: 6                          # Which level this boss appears (2-3 = level 6)
+  spawn_miles_before_transition: 1  # Spawn 1 mile before level end
   hp: 300                           # Slightly more HP than regular boss
   armor_reduction: 1
   # Animation timing
@@ -487,11 +488,12 @@ tree_boss:
       stun_duration: 3.0              # Seconds bird is stunned
       speed_penalty: 3                # -3 speed while stunned
 
-    # Blue flower: FREEZE effect - bird stuck in place, mash button to thaw
+    # Blue flower: FREEZE effect - falls slowly, mash button to thaw
     blue:
       probability: 0.6                # 60% chance to freeze on hit
       thaw_attempts_min: 3            # Minimum button presses to thaw
       thaw_attempts_max: 5            # Maximum button presses to thaw
+      speed_penalty: 3                # -3 speed while frozen (same as stun)
 
     # Green flower: POISON effect - countdown to death, mash button to cure
     green:
@@ -629,12 +631,18 @@ glitch:
 orange:
   out_of_play_y: 999
   recover_chance: 0.1
-shuffle:
-  level:
-    base: 10
-    max: 25
-    plus: 15
-    plusplus: 20
+timelapse:
+  # Duration in seconds (real time, not affected by slowdown)
+  seconds:
+    base: 2.0       # timelapse: 2 seconds
+    plus: 3.0       # timelapse+: 3 seconds
+    plusplus: 4.0   # timelapse++: 4 seconds
+    max: 5.0        # timelapse_max: 5 seconds
+  # Slowdown multiplier (2.0 = game runs at half speed)
+  slowdown:
+    base: 1.5
+    plus: 1.75
+    max: 2.0
 progression:
   grade_exp_factor: 1.07
   level_score_base: 500.0
@@ -702,6 +710,9 @@ controls:
   toggle_audio_alt: M
 game:
   version: 0.8.0
+  # Difficulty settings
+  difficulty_name: "ADVENTURE"  # Display name for difficulty
+  life_recovery_on_spawn: true  # If true, spawning a new bird from egg recovers a life
 synergy:
   transfer_ratio: 0.1
 prestige:

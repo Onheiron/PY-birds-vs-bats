@@ -33,9 +33,14 @@ def update_bird_positions():
         if state.birds.lost[i]:
             continue
 
-        # FROZEN BIRDS: stuck in place, can't move at all
+        # FROZEN BIRDS: speed penalty, always falling (like stun but with button counter)
+        freeze_speed_penalty = 0
         if i in state.special.frozen_birds:
-            continue  # Skip all movement processing
+            tree_boss_cfg = getattr(constants, 'tree_boss', None)
+            flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
+            blue_cfg = getattr(flowers_cfg, 'blue', None) if flowers_cfg else None
+            freeze_speed_penalty = getattr(blue_cfg, 'speed_penalty', 3) if blue_cfg else 3
+            state.birds.vy[i] = 1  # Always falling while frozen
 
         # STUNNED BIRDS (from flower): speed penalty, always falling
         stun_speed_penalty = 0
@@ -142,6 +147,10 @@ def update_bird_positions():
         if bleed_speed_penalty > 0:
             current_speed = max(1, current_speed - bleed_speed_penalty)
 
+        # Apply freeze speed penalty
+        if freeze_speed_penalty > 0:
+            current_speed = max(1, current_speed - freeze_speed_penalty)
+
         # Calculate move interval (higher speed = more frequent movement)
         move_interval = max(1, 6 - current_speed)
 
@@ -178,8 +187,31 @@ def update_projectile_positions():
                 break
 
 
+def update_cave_shimmer():
+    """Update cave shimmer effect - all background chars flicker randomly.
+
+    Only active in biome 5 (The Void Cave).
+    Uses a simple phase counter that the renderer uses to compute brightness.
+    """
+    if state.game.level_group != 5:
+        if state.ui.cave_shimmer:
+            state.ui.cave_shimmer = {}
+        return
+
+    # Store current phase for renderer to use
+    # Phase increments every 3 frames for smooth animation
+    if 'phase' not in state.ui.cave_shimmer:
+        state.ui.cave_shimmer['phase'] = 0
+
+    if state.game.frame_count % 5 == 0:
+        state.ui.cave_shimmer['phase'] = (state.ui.cave_shimmer['phase'] + 1) % 1000
+
+
 def update_obstacle_positions():
     """Update positions of all obstacles."""
+    # Update cave shimmer effect (biome 5)
+    update_cave_shimmer()
+
     # Parallax background layers - different scroll speeds
     # Layer 1 (bg_offset): Slowest - every 15 frames (3x slower than obstacles)
     # Layer 2 (bg_mid_offset): Medium - every 8 frames (~1.6x slower than obstacles)

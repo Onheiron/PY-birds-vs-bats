@@ -157,6 +157,17 @@ def apply_bold(color):
     return MOD_BOLD + color
 
 
+def get_shimmer_color(brightness):
+    """Get ANSI color for cave shimmer based on brightness (0.0 to 1.0).
+
+    Uses 256-color grayscale: 232 (darkest) to 255 (brightest white).
+    """
+    # Map brightness to grayscale range 232-255 (24 shades)
+    gray_index = int(232 + brightness * 23)
+    gray_index = max(232, min(255, gray_index))
+    return f"\033[38;5;{gray_index}m"
+
+
 # =============================================================================
 # PARALLAX BACKGROUND PATTERNS - 3-layer scrolling effect
 # =============================================================================
@@ -588,6 +599,7 @@ def render_game():
     _fb_render_starting_line(fb)
     _fb_render_center_of_mass(fb)  # Dark blue dashed line at birds' center of mass
     _fb_render_obstacles(fb)
+    _fb_render_portals(fb)  # Cave biome portals
     _fb_render_boss(fb)  # Boss rendered BEFORE bats so bats appear in front
     _fb_render_bats(fb)
     _fb_render_mini_bats(fb)
@@ -1210,6 +1222,10 @@ def _fb_render_background(fb):
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
     right_panel_inner_width = SIDE_PANEL_WIDTH - 2  # Exclude borders
 
+    # Check if cave shimmer is active (biome 5)
+    cave_shimmer_active = state.game.level_group == 5 and state.ui.cave_shimmer
+    shimmer_phase = state.ui.cave_shimmer.get('phase', 0) if cave_shimmer_active else 0
+
     # Game area goes from row HEADER_HEIGHT to row height+HEADER_HEIGHT-1
     for screen_y in range(constants.layout.height):
         # === Layer 1: Slowest background (biome-specific pattern) ===
@@ -1223,14 +1239,27 @@ def _fb_render_background(fb):
             pattern_x = screen_x % layer1_width
             char = pattern_line[pattern_x] if pattern_x < len(pattern_line) else ' '
             if char != ' ':
-                fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, layer1_faint)
+                if cave_shimmer_active:
+                    # Compute pseudo-random brightness based on position and phase
+                    seed = (screen_x * 73 + screen_y * 137 + shimmer_phase * 31) % 100
+                    brightness = seed / 100.0 * 0.4 + 0.05  # Range 0.05 to 0.45 (darker)
+                    color = get_shimmer_color(brightness)
+                else:
+                    color = layer1_faint
+                fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, color)
 
         # Also render in right panel (continuing the pattern)
         for panel_x in range(right_panel_inner_width):
             pattern_x = (constants.layout.width + panel_x) % layer1_width
             char = pattern_line[pattern_x] if pattern_x < len(pattern_line) else ' '
             if char != ' ':
-                fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, layer1_faint)
+                if cave_shimmer_active:
+                    seed = ((constants.layout.width + panel_x) * 73 + screen_y * 137 + shimmer_phase * 31) % 100
+                    brightness = seed / 100.0 * 0.4 + 0.05
+                    color = get_shimmer_color(brightness)
+                else:
+                    color = layer1_faint
+                fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, color)
 
         # === Layer 2: Medium speed (biome-specific pattern) - only if parallax enabled ===
         if parallax_enabled:
@@ -1244,14 +1273,27 @@ def _fb_render_background(fb):
                 pattern_x = screen_x % layer2_width
                 char = mid_pattern_line[pattern_x] if pattern_x < len(mid_pattern_line) else ' '
                 if char != ' ':
-                    fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, layer2_faint)
+                    if cave_shimmer_active:
+                        # Different seed pattern for layer 2
+                        seed = (screen_x * 97 + screen_y * 151 + shimmer_phase * 47) % 100
+                        brightness = seed / 100.0 * 0.4 + 0.05  # Range 0.05 to 0.45 (darker)
+                        color = get_shimmer_color(brightness)
+                    else:
+                        color = layer2_faint
+                    fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, color)
 
             # Also render in right panel
             for panel_x in range(right_panel_inner_width):
                 pattern_x = (constants.layout.width + panel_x) % layer2_width
                 char = mid_pattern_line[pattern_x] if pattern_x < len(mid_pattern_line) else ' '
                 if char != ' ':
-                    fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, layer2_faint)
+                    if cave_shimmer_active:
+                        seed = ((constants.layout.width + panel_x) * 97 + screen_y * 151 + shimmer_phase * 47) % 100
+                        brightness = seed / 100.0 * 0.4 + 0.05
+                        color = get_shimmer_color(brightness)
+                    else:
+                        color = layer2_faint
+                    fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, color)
 
 
 def _fb_render_header(fb):
@@ -1618,6 +1660,35 @@ def _fb_render_right_panel_barriers(fb):
                         # Make sure it stays within panel bounds
                         if right_panel_start <= x_pos < right_panel_start + right_panel_inner_width:
                             fb.put(x_pos, y_pos + HEADER_HEIGHT, char, biome_obs_color)
+
+
+def _fb_render_portals(fb):
+    """Render cave portals to framebuffer (biome 5 only)."""
+    if state.game.level_group != 5:
+        return
+
+    from src.entities.sprites import PORTAL_FRAME_1, PORTAL_FRAME_2, PORTAL_COLOR
+
+    for portal in state.enemies.portals:
+        px = portal['x_pos']
+        py = portal['y_pos']
+        portal_idx = portal['portal_idx']
+
+        # Animate between frames
+        frame_toggle = (state.game.frame_count // 6) % 2
+        if portal_idx == 0:
+            sprite = PORTAL_FRAME_1 if frame_toggle == 0 else PORTAL_FRAME_2
+        else:
+            sprite = PORTAL_FRAME_2 if frame_toggle == 0 else PORTAL_FRAME_1
+
+        for line_idx, line in enumerate(sprite):
+            y_pos = py + line_idx
+            if 0 <= y_pos < constants.layout.height:
+                for i, char in enumerate(line):
+                    if char != ' ':
+                        x_pos = px + i
+                        if 0 <= x_pos < constants.layout.width:
+                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, PORTAL_COLOR)
 
 
 def _fb_render_bats(fb):
@@ -2169,8 +2240,8 @@ def _fb_render_loot(fb):
             elif 'tailwind' in loot_type:
                 char = '༄'  # Originale
                 color = power_color
-            elif 'shuffle' in loot_type:
-                char = '𖦹'  # Originale
+            elif 'timelapse' in loot_type:
+                char = '◴'  # Clock/time symbol
                 color = power_color
             else:
                 char = '?'
@@ -2516,7 +2587,7 @@ def _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
 def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     """Render the settings submenu based on current settings_menu state."""
     # Define all settings menus
-    DIFFICULTY_NAMES = ["EASY", "NORMAL", "HARD", "HELL"]
+    DIFFICULTY_NAMES = ["PEACEFUL", "ADVENTURE", "SURVIVAL", "LEGENDARY"]
 
     def get_toggle(value):
         return "ON" if value else "OFF"
@@ -2987,7 +3058,7 @@ def render_title_screen():
     fb = get_framebuffer()
 
     # Difficulty names for display
-    DIFFICULTY_NAMES = ["EASY", "NORMAL", "HARD", "HELL"]
+    DIFFICULTY_NAMES = ["PEACEFUL", "ADVENTURE", "SURVIVAL", "LEGENDARY"]
 
     # Clear the screen with dark background
     for y in range(fb.height):
@@ -3137,7 +3208,7 @@ def _fb_render_title_load_menu(fb, start_y):
 
 def _fb_render_title_settings_menu(fb, start_y):
     """Render settings menu overlay on title screen."""
-    DIFFICULTY_NAMES = ["EASY", "NORMAL", "HARD", "HELL"]
+    DIFFICULTY_NAMES = ["PEACEFUL", "ADVENTURE", "SURVIVAL", "LEGENDARY"]
 
     def get_toggle(value):
         return "ON" if value else "OFF"

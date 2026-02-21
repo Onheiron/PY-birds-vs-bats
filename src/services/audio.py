@@ -25,10 +25,10 @@ MUSIC_VOLUME = 0.5   # Music volume relative to master
 # Audio state
 _audio_enabled = True
 _music_playing = False  # Must be False initially - only True after start_music()
-_current_level = 1
+_current_biome = 1  # Current biome (1-6) for theme selection
 _current_theme = None
 _theme_cache = {}
-_game_speed_multiplier = 1.0  # 1.0 = base speed, higher = faster game
+_game_speed_multiplier = 1.0  # 1.0 = base speed, higher = faster game (based on gear)
 
 # Sound mixing state
 _sfx_lock = threading.Lock()
@@ -1036,35 +1036,20 @@ def create_theme_6():
 # DYNAMIC MUSIC GENERATION
 # =============================================================================
 
-def get_theme_for_level(level):
-    """Get the appropriate theme for the current level."""
-    # TEMP: Change theme every level for testing (normally every 5 levels)
-    theme_idx = ((level - 1) % 6) + 1
-    if theme_idx == 1:
-        return create_theme_1()
-    elif theme_idx == 2:
-        return create_theme_2()
-    elif theme_idx == 3:
-        return create_theme_3()
-    elif theme_idx == 4:
-        return create_theme_4()
-    elif theme_idx == 5:
-        return create_theme_5()
+def get_theme_for_biome(biome):
+    """Get the appropriate theme for the current biome (1-6)."""
+    if biome == 1:
+        return create_theme_1()  # Windy Woods
+    elif biome == 2:
+        return create_theme_2()  # The Borders
+    elif biome == 3:
+        return create_theme_3()  # Rotten Marshes
+    elif biome == 4:
+        return create_theme_4()  # Dark Swamp
+    elif biome == 5:
+        return create_theme_5()  # Void Cave
     else:
-        return create_theme_6()
-    # ORIGINAL CODE (restore when done testing):
-    # if level <= 5:
-    #     return create_theme_1()
-    # elif level <= 10:
-    #     return create_theme_2()
-    # elif level <= 15:
-    #     return create_theme_3()
-    # elif level <= 20:
-    #     return create_theme_4()
-    # elif level <= 25:
-    #     return create_theme_5()
-    # else:
-    #     return create_theme_6()
+        return create_theme_6()  # Mountain Range
 
 
 def generate_track_for_bird(bird_type, notes, note_dur, scale, volume=0.25):
@@ -1196,10 +1181,10 @@ def create_dynamic_music(theme, active_birds):
 
 
 def create_game_music():
-    """Create music for current level and bird composition."""
-    global _current_level, _active_birds
+    """Create music for current biome and bird composition."""
+    global _current_biome, _active_birds
 
-    theme = get_theme_for_level(_current_level)
+    theme = get_theme_for_biome(_current_biome)
 
     with _birds_lock:
         birds = set(_active_birds) if _active_birds else {'YELLOW', 'RED', 'BLUE'}
@@ -1592,24 +1577,16 @@ def _schedule_music_regen():
     thread.start()
 
 
-def update_music_for_level(level):
-    """Update music when level changes."""
-    global _current_level
+def update_music_for_biome(biome):
+    """Update music theme when biome changes (1-6)."""
+    global _current_biome
 
-    # TEMP: Change every level for testing (normally every 5)
-    old_level = _current_level
-    _current_level = level
+    old_biome = _current_biome
+    _current_biome = biome
 
-    # Regenerate if level changed
-    if old_level != level and _music_playing:
+    # Regenerate music if biome changed
+    if old_biome != biome and _music_playing:
         _schedule_music_regen()
-
-    # ORIGINAL CODE (restore when done testing):
-    # old_theme_range = (_current_level - 1) // 5
-    # new_theme_range = (level - 1) // 5
-    # _current_level = level
-    # if old_theme_range != new_theme_range and _music_playing:
-    #     _schedule_music_regen()
 
 
 def update_active_birds(bird_types):
@@ -1625,36 +1602,27 @@ def update_active_birds(bird_types):
                 _schedule_music_regen()
 
 
-def update_game_speed(level, base_sleep=0.2, multiplier=0.88, min_sleep=0.02):
+def update_tempo_for_gear(gear):
     """
-    Update music tempo based on game speed.
-    Higher levels = faster game = faster music.
-    Music tempo increases MORE GRADUALLY than game speed!
+    Update music tempo based on gear (1-10).
+    Higher gear = faster game = faster music tempo.
+    Gives impression of time acceleration.
 
     Args:
-        level: Current game level
-        base_sleep: Base sleep time (from config)
-        multiplier: Frame sleep level multiplier (from config)
-        min_sleep: Minimum sleep time (from config)
+        gear: Current gear level (1-10)
     """
     global _game_speed_multiplier
 
-    # Music tempo increases gradually over 30 levels
-    # Level 1: 1.0x (base tempo)
-    # Level 10: ~1.15x
-    # Level 20: ~1.35x
-    # Level 30: ~1.6x
-    # This is much gentler than game speed increase!
+    # Gear 1: 1.0x (base tempo)
+    # Gear 5: ~1.25x
+    # Gear 10: ~1.6x
+    # Linear interpolation for smooth acceleration feel
 
-    # Use a gentler curve: 2% increase per level (compounding)
-    # 1.02^30 ≈ 1.81 at level 30
-    music_multiplier = 0.97  # Gentler than game's 0.88
-
-    # Calculate music speed multiplier
-    new_multiplier = 1.0 / (music_multiplier ** (level - 1))
-
-    # Cap between 1.0x and 1.8x speed
-    new_multiplier = min(1.8, max(1.0, new_multiplier))
+    # Map gear 1-10 to multiplier 1.0-1.6
+    min_mult = 1.0
+    max_mult = 1.6
+    t = (gear - 1) / 9.0  # 0.0 at gear 1, 1.0 at gear 10
+    new_multiplier = min_mult + t * (max_mult - min_mult)
 
     if abs(new_multiplier - _game_speed_multiplier) > 0.02:
         _game_speed_multiplier = new_multiplier

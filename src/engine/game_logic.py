@@ -19,7 +19,6 @@ from src.functions import (
     adjust_rarity_weights,
     choose_loot_type,
     get_scared_frames,
-    perform_shuffle,
     set_ball_vy,
     reset_bird_power,
     find_bird_in_lane,
@@ -769,8 +768,8 @@ def _apply_loot_effect(loot, collector_idx):
         _apply_suction_power(loot_type)
     elif loot_type.startswith('tailwind'):
         _apply_tailwind_power(loot_type)
-    elif loot_type.startswith('shuffle'):
-        _apply_shuffle_power(loot_type)
+    elif loot_type.startswith('timelapse'):
+        _apply_timelapse_power(loot_type)
 
 
 def _spawn_bird_from_egg(egg_type):
@@ -817,7 +816,9 @@ def _spawn_bird_from_egg(egg_type):
             state.birds.vy[idx] = -1
             state.birds.transformed[idx] = False
             state.birds.per_bird_xp[idx] = 0
-            state.game.lives += 1
+            # Only recover life if enabled in config (disabled in SURVIVAL/LEGENDARY)
+            if getattr(constants.game, 'life_recovery_on_spawn', True):
+                state.game.lives += 1
 
             if bird_color == CLOCKWORK:
                 state.special.clockwork_charge[idx] = constants.clockwork.initial_charge
@@ -934,21 +935,30 @@ def _apply_tailwind_power(loot_type):
     achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power='tailwind')
 
 
-def _apply_shuffle_power(loot_type):
-    """Apply shuffle powerup."""
-    sh = constants.shuffle
-    sh_lvl = getattr(sh, 'level', None)
+def _apply_timelapse_power(loot_type):
+    """Apply timelapse powerup - slows down game tick."""
+    # Get config values (with fallbacks)
+    seconds_cfg = getattr(constants.timelapse, 'seconds', None)
+    slowdown_cfg = getattr(constants.timelapse, 'slowdown', None)
 
-    if loot_type == 'shuffle':
-        level = getattr(sh_lvl, 'base', 10) if sh_lvl else 2
-    elif loot_type == 'shuffle+':
-        level = getattr(sh_lvl, 'plus', 15) if sh_lvl else 4
-    elif loot_type == 'shuffle++':
-        level = getattr(sh_lvl, 'plusplus', 20) if sh_lvl else 6
+    # Duration in real seconds
+    if loot_type == 'timelapse':
+        duration = getattr(seconds_cfg, 'base', 2.0) if seconds_cfg else 2.0
+        slowdown = getattr(slowdown_cfg, 'base', 1.5) if slowdown_cfg else 1.5
+    elif loot_type == 'timelapse+':
+        duration = getattr(seconds_cfg, 'plus', 3.0) if seconds_cfg else 3.0
+        slowdown = getattr(slowdown_cfg, 'plus', 1.75) if slowdown_cfg else 1.75
+    elif loot_type == 'timelapse++':
+        duration = getattr(seconds_cfg, 'plusplus', 4.0) if seconds_cfg else 4.0
+        slowdown = getattr(slowdown_cfg, 'max', 2.0) if slowdown_cfg else 2.0
     else:  # max
-        level = getattr(sh_lvl, 'max', 25) if sh_lvl else 9
-    perform_shuffle(level)
-    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power='shuffle')
+        duration = getattr(seconds_cfg, 'max', 5.0) if seconds_cfg else 5.0
+        slowdown = getattr(slowdown_cfg, 'max', 2.0) if slowdown_cfg else 2.0
+
+    state.powerups.timelapse_active = True
+    state.powerups.timelapse_end_time = time.time() + duration
+    state.powerups.timelapse_slowdown = slowdown
+    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power='timelapse')
 
 
 def check_bat_obstacle_collision():
@@ -1399,10 +1409,13 @@ def _maybe_add_flower_to_obstacle(obstacle_data):
     flower_types = ['red', 'yellow', 'blue', 'green']
     flower_type = random.choice(flower_types)
 
-    # Add flower to obstacle
+    # Import mature frame constant
+    from src.entities.sprites import FLOWER_MATURE_FRAME
+
+    # Add flower to obstacle - spawn already bloomed so they have effect immediately
     obstacle_data['flower'] = {
         'type': flower_type,
-        'frame': 0,  # Growth frame (0-5, 6 total frames)
+        'frame': FLOWER_MATURE_FRAME,  # Already bloomed (obstacles get destroyed too fast otherwise)
         'hp': flower_hp,
         'max_hp': flower_hp,
         'grow_timer': time.time() + grow_interval,
@@ -1977,13 +1990,13 @@ def should_spawn_boss():
     # For special bosses, use their own config or default
     if is_special_boss_level:
         if state.game.level == jelly_boss_level:
-            spawn_miles_before = getattr(jelly_boss_cfg, 'spawn_miles_before_transition', 15) if jelly_boss_cfg else 15
+            spawn_miles_before = getattr(jelly_boss_cfg, 'spawn_miles_before_transition', 1) if jelly_boss_cfg else 1
         elif state.game.level == tree_boss_level:
-            spawn_miles_before = getattr(tree_boss_cfg, 'spawn_miles_before_transition', 1) if tree_boss_cfg else 1
+            spawn_miles_before = getattr(tree_boss_cfg, 'spawn_miles_before_transition', 3) if tree_boss_cfg else 3
         else:
-            spawn_miles_before = getattr(wind_boss_cfg, 'spawn_miles_before_transition', 15) if wind_boss_cfg else 15
+            spawn_miles_before = getattr(wind_boss_cfg, 'spawn_miles_before_transition', 1) if wind_boss_cfg else 1
     else:
-        spawn_miles_before = getattr(boss_cfg, 'spawn_miles_before_transition', 15)
+        spawn_miles_before = getattr(boss_cfg, 'spawn_miles_before_transition', 1)
 
     # Boss spawns when:
     # 1. We have progressed into the level (not at start)
@@ -3419,6 +3432,12 @@ def update_powerup_timers():
             state.powerups.tailwind_up_bonus = 0
             state.powerups.tailwind_down_penalty = 0
 
+    if state.powerups.timelapse_active:
+        # Use real time instead of frame count
+        if time.time() >= state.powerups.timelapse_end_time:
+            state.powerups.timelapse_active = False
+            state.powerups.timelapse_slowdown = 1.0
+
 
 def update_special_bird_states():
     """Update special bird state timers (speed boosts, scared, stealth, etc.)."""
@@ -3587,6 +3606,253 @@ def _fire_purple_projectile(bird_idx, charge_seconds):
     state.special.purple_state[bird_idx] = 0
     state.special.purple_charge_started_frame[bird_idx] = 0
     state.special.purple_primed_frame[bird_idx] = 0
+
+
+# =============================================================================
+# CAVE PORTALS (Biome 5)
+# =============================================================================
+
+def spawn_portal_pair():
+    """Spawn a pair of portals in the cave biome - FIXED positions, no scrolling."""
+    if state.game.level_group != 5:
+        return
+
+    state.enemies.portal_spawn_timer -= 1
+    if state.enemies.portal_spawn_timer > 0:
+        return
+
+    # Random spawn interval (rare)
+    state.enemies.portal_spawn_timer = random.randint(300, 500)
+
+    # Portal sprite is 5 wide, 3 tall
+    portal_width = 5
+    portal_height = 3
+
+    # Game area dimensions
+    game_height = constants.layout.height
+    num_lanes = constants.layout.num_lanes
+    lane_positions = constants.layout.lane_positions
+
+    # Pick two different lanes with at least 1 lane between them
+    max_attempts = 30
+    for _ in range(max_attempts):
+        lane1 = random.randint(0, num_lanes - 1)
+        lane2 = random.randint(0, num_lanes - 1)
+
+        # At least 2 lanes apart (so 1 lane in between)
+        if abs(lane1 - lane2) >= 2:
+            break
+    else:
+        return  # Couldn't find valid lanes
+
+    # Center portals on their lanes
+    x1 = lane_positions[lane1] - portal_width // 2
+    x2 = lane_positions[lane2] - portal_width // 2
+
+    # Random y positions - max 2/3 of screen height from top
+    max_y = (game_height * 2) // 3
+    y1 = random.randint(3, max_y - portal_height)
+    y2 = random.randint(3, max_y - portal_height)
+
+    # Create portal pair
+    pair_id = state.enemies.portal_pair_counter
+    state.enemies.portal_pair_counter += 1
+
+    # Duration: how long portals stay on screen (in frames)
+    duration = random.randint(200, 400)
+    expire_frame = state.game.frame_count + duration
+
+    portal_a = {
+        'x_pos': x1,
+        'y_pos': y1,
+        'pair_id': pair_id,
+        'portal_idx': 0,
+        'lane': lane1,
+        'width': portal_width,
+        'height': portal_height,
+        'expire_frame': expire_frame,
+    }
+
+    portal_b = {
+        'x_pos': x2,
+        'y_pos': y2,
+        'pair_id': pair_id,
+        'portal_idx': 1,
+        'lane': lane2,
+        'width': portal_width,
+        'height': portal_height,
+        'expire_frame': expire_frame,
+    }
+
+    state.enemies.portals.append(portal_a)
+    state.enemies.portals.append(portal_b)
+
+
+def update_portals():
+    """Update portals - fixed position, handle teleportation/destruction."""
+    if state.game.level_group != 5:
+        # Clear portals when not in cave biome
+        if state.enemies.portals:
+            _return_birds_to_home_lanes()
+            state.enemies.portals = []
+        return
+
+    # Spawn new portal pairs
+    spawn_portal_pair()
+
+    # Remove expired portals - when a portal pair expires, return birds to home lanes
+    expired_pairs = set()
+    for portal in state.enemies.portals[:]:
+        if state.game.frame_count >= portal.get('expire_frame', float('inf')):
+            expired_pairs.add(portal['pair_id'])
+            state.enemies.portals.remove(portal)
+
+    # If any portals expired, check if we need to return birds to home lanes
+    if expired_pairs:
+        _return_birds_to_home_lanes()
+
+    # Check bird-portal collisions (teleportation)
+    _check_bird_portal_teleport()
+
+    # Check obstacle-portal collisions (destruction)
+    _check_obstacle_portal_destruction()
+
+
+def _return_birds_to_home_lanes():
+    """Return all birds to their home lanes (where they belong when no portals exist)."""
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i]:
+            continue
+
+        home_lane = state.birds.home_lanes[i]
+        current_lane = state.birds.random_lanes[i]
+
+        if current_lane != home_lane:
+            # Return bird to home lane
+            state.birds.random_lanes[i] = home_lane
+            state.birds.cols[i] = constants.layout.lane_positions[home_lane]
+
+
+def _get_portal_pair(portal):
+    """Get the paired portal for a given portal."""
+    pair_id = portal['pair_id']
+    portal_idx = portal['portal_idx']
+    other_idx = 1 - portal_idx  # 0 -> 1, 1 -> 0
+
+    for p in state.enemies.portals:
+        if p['pair_id'] == pair_id and p['portal_idx'] == other_idx:
+            return p
+    return None
+
+
+def _check_bird_portal_teleport():
+    """Check if any birds CROSS through a portal and teleport them.
+
+    A bird crosses a portal when:
+    - Going UP (vy=-1): bird enters portal from below and exits above
+    - Going DOWN (vy=+1): bird enters portal from above and exits below
+
+    We detect crossing by checking if the bird is in the portal's lane
+    and its y position crosses the portal boundary in the direction of movement.
+    """
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i]:
+            continue
+
+        bird_lane = state.birds.random_lanes[i]
+        bird_y = state.birds.y[i]
+        bird_vy = state.birds.vy[i]  # -1 = up, +1 = down
+
+        for portal in state.enemies.portals:
+            portal_lane = portal['lane']
+
+            # Bird must be in the same lane as the portal
+            if bird_lane != portal_lane:
+                continue
+
+            py = portal['y_pos']
+            ph = portal['height']
+
+            # Portal vertical bounds
+            portal_top = py
+            portal_bottom = py + ph - 1
+
+            # Check if bird is crossing through the portal
+            # Bird is "inside" portal vertically if portal_top <= bird_y <= portal_bottom
+            if portal_top <= bird_y <= portal_bottom:
+                # Find paired portal
+                other_portal = _get_portal_pair(portal)
+                if other_portal is None:
+                    continue
+
+                # Teleport to other portal based on direction
+                new_lane = other_portal['lane']
+                other_ph = other_portal['height']
+
+                if bird_vy == -1:
+                    # Going UP: exit ABOVE the other portal
+                    new_y = other_portal['y_pos'] - 1
+                    # Home lane stays the same (bird will come back down through this portal)
+                else:
+                    # Going DOWN: exit BELOW the other portal
+                    new_y = other_portal['y_pos'] + other_ph
+                    # Update home_lane - bird is now "homed" to the destination lane
+                    state.birds.home_lanes[i] = new_lane
+
+                # Update bird position
+                state.birds.cols[i] = constants.layout.lane_positions[new_lane]
+                state.birds.random_lanes[i] = new_lane
+                state.birds.y[i] = new_y
+                # vy stays the same - bird continues in same direction!
+
+                break
+
+
+def _find_closest_lane(x_pos):
+    """Find the closest lane to an x position."""
+    lane_positions = constants.layout.lane_positions
+    min_dist = float('inf')
+    closest_lane = 0
+
+    for lane_idx, lane_x in enumerate(lane_positions):
+        dist = abs(x_pos - lane_x)
+        if dist < min_dist:
+            min_dist = dist
+            closest_lane = lane_idx
+
+    return closest_lane
+
+
+def _check_obstacle_portal_destruction():
+    """Check if obstacles touch portals and destroy them."""
+    for portal in state.enemies.portals:
+        px = portal['x_pos']
+        py = portal['y_pos']
+        pw = portal['width']
+        ph = portal['height']
+
+        for obs in state.enemies.obstacles[:]:
+            # Calculate obstacle x position from lane (centered on lane)
+            obs_lane = obs.get('lane', 0)
+            sprite = obs.get('sprite')
+            if sprite:
+                sprite_width = max(len(line) for line in sprite)
+            else:
+                sprite_width = obs.get('sprite_width', 5)
+
+            # Obstacle is centered on lane
+            lane_x = constants.layout.lane_positions[obs_lane]
+            ox = lane_x - sprite_width // 2
+            oy = obs['y_pos']
+            ow = sprite_width
+            oh = len(sprite) if sprite else obs.get('sprite_height', 3)
+
+            # Check overlap
+            if (ox < px + pw and ox + ow > px and
+                oy < py + ph and oy + oh > py):
+                # Destroy obstacle
+                state.enemies.obstacles.remove(obs)
+                break  # One obstacle per portal per frame
 
 
 def despawn_old_entities():
@@ -3810,6 +4076,11 @@ def calculate_frame_sleep():
     t = (speed - min_speed) / (max_speed - min_speed) if max_speed > min_speed else 0
     t = max(0, min(1, t))
     sleep_time = sleep_at_1 - t * (sleep_at_1 - sleep_at_10)
+
+    # Apply timelapse slowdown if active
+    if state.powerups.timelapse_active:
+        sleep_time *= state.powerups.timelapse_slowdown
+
     return max(constants.timing.min_sleep, sleep_time)
 
 
@@ -3861,6 +4132,7 @@ def update_all():
     update_special_bird_states()
     update_spell_effects()  # Spellcaster bat effects
     update_purple_charging()
+    update_portals()  # Cave biome portals
 
     # Cleanup
     despawn_old_entities()
