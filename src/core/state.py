@@ -97,7 +97,26 @@ special = SimpleNamespace(
     up_miss_counter=0,
 
     # Track last UP press time (for Purple hold-to-charge)
-    last_up_time=0.0
+    last_up_time=0.0,
+
+    # Rainbow bird state
+    rainbow_charge={},          # bird_idx -> charge level (0-100)
+    rainbow_last_decay={},      # bird_idx -> timestamp of last decay
+
+    # Twister bird state
+    twister_tailwind={},        # bird_idx -> {'end_time': float, 'lanes': [int]}
+
+    # Status effect birds (power boost mode)
+    frosty_boosted={},          # bird_idx -> end_time (60% freeze mode)
+    poison_boosted={},          # bird_idx -> end_time (60% poison mode)
+    berserk_boosted={},         # bird_idx -> end_time (60% bleed mode)
+    rock_boosted={},            # bird_idx -> end_time (boosted push mode)
+    rock_prev_speeds={},        # bird_idx -> original speed before ROCK boost
+
+    # Enemy debuffs (NEW - applied by birds to enemies)
+    frozen_enemies={},          # enemy_id -> {'end_time': float, 'type': 'bat'|'obstacle'}
+    poisoned_enemies={},        # enemy_id -> {'end_time': float, 'last_tick': float}
+    bleeding_enemies={},        # enemy_id -> {'end_time': float, 'last_tick': float}
 )
 
 # ============================================================================
@@ -356,6 +375,21 @@ def init(seed=None):
     special.up_miss_counter = 0
     special.last_up_time = 0.0
 
+    # New bird states
+    special.rainbow_charge = {}
+    special.rainbow_last_decay = {}
+    special.twister_tailwind = {}
+    special.frosty_boosted = {}
+    special.poison_boosted = {}
+    special.berserk_boosted = {}
+    special.rock_boosted = {}
+    special.rock_prev_speeds = {}
+
+    # Enemy debuffs
+    special.frozen_enemies = {}
+    special.poisoned_enemies = {}
+    special.bleeding_enemies = {}
+
     # Spell effects
     spells.silenced_lanes = {}
     spells.repugnant_wind_lanes = {}
@@ -418,7 +452,7 @@ def init(seed=None):
     
     # Game state
     game.score = 0
-    game.miles = 0.0
+    game.miles = 20.0
     game.level_group = 1
     game.level = 1
     game.level_sub = 1

@@ -314,6 +314,15 @@ def handle_bounce():
                     del state.special.poisoned_birds[bird_idx]
                 # Continue to normal bounce processing (poisoned birds can still bounce)
 
+            # RAINBOW: chance to recharge on ANY UP press (regardless of direction)
+            if bird_color == RAINBOW:
+                recharge_chance = getattr(constants.rainbow, 'recharge_chance', 0.25)
+                if random.random() < recharge_chance:
+                    recharge_amount = getattr(constants.rainbow, 'recharge_amount', 25)
+                    max_charge = getattr(constants.rainbow, 'max_charge', 100)
+                    current = state.special.rainbow_charge.get(bird_idx, 0)
+                    state.special.rainbow_charge[bird_idx] = min(max_charge, current + recharge_amount)
+
             # Bird moving down - bounce it up
             if state.birds.vy[bird_idx] == 1:
                 _bounce_bird_up(bird_idx)
@@ -435,6 +444,16 @@ def _activate_bird_power(bird_idx):
         _power_clockwork(bird_idx)
     elif bird_color == STEALTH:
         _power_stealth(bird_idx, bird_lane)
+    elif bird_color == TWISTER:
+        _power_twister(bird_idx, bird_lane)
+    elif bird_color == FROSTY:
+        _power_frosty(bird_idx)
+    elif bird_color == POISON:
+        _power_poison(bird_idx)
+    elif bird_color == BERSERK:
+        _power_berserk(bird_idx)
+    elif bird_color == ROCK:
+        _power_rock(bird_idx)
 
 
 def _get_color_name(bird_color):
@@ -443,7 +462,9 @@ def _get_color_name(bird_color):
         YELLOW: 'yellow', RED: 'red', BLUE: 'blue', WHITE: 'white',
         PURPLE: 'purple', ORANGE: 'orange', STEALTH: 'stealth',
         CLOCKWORK: 'clockwork', GOLD: 'gold', PATCHWORK: 'patchwork',
-        COOKIE: 'cookie', DINOSAUR: 'dinosaur', GLITCH: 'glitch'
+        COOKIE: 'cookie', DINOSAUR: 'dinosaur', GLITCH: 'glitch',
+        RAINBOW: 'rainbow', TWISTER: 'twister', FROSTY: 'frosty',
+        POISON: 'poison', BERSERK: 'berserk', ROCK: 'rock'
     }
     return color_map.get(bird_color, 'unknown')
 
@@ -625,6 +646,52 @@ def _power_stealth(bird_idx, bird_lane):
     state.special.stealth_prev_speeds[bird_idx] = state.birds.speeds[bird_idx]
     state.birds.speeds[bird_idx] = constants.stealth.speed_boost
     achievements.append_recent_action('stealth', lane=bird_lane, color=STEALTH, frame_count=state.game.frame_count)
+
+
+def _power_twister(bird_idx, bird_lane):
+    """Twister power: create local tailwind in current lane + 2 adjacent."""
+    duration = getattr(constants.twister, 'tailwind_duration', 2.0)
+    end_time = time.time() + duration
+    # Affected lanes: current + adjacent
+    lanes = [bird_lane]
+    if bird_lane > 0:
+        lanes.append(bird_lane - 1)
+    if bird_lane < constants.layout.num_lanes - 1:
+        lanes.append(bird_lane + 1)
+    state.special.twister_tailwind[bird_idx] = {
+        'end_time': end_time,
+        'lanes': lanes
+    }
+    achievements.append_recent_action('twister', lane=bird_lane, color=TWISTER, frame_count=state.game.frame_count)
+
+
+def _power_frosty(bird_idx):
+    """Frosty power: boost freeze chance to 60% for 2s."""
+    duration = getattr(constants.frosty, 'boost_duration', 2.0)
+    state.special.frosty_boosted[bird_idx] = time.time() + duration
+
+
+def _power_poison(bird_idx):
+    """Poison power: boost poison chance to 60% for 2s."""
+    duration = getattr(constants.poison, 'boost_duration', 2.0)
+    state.special.poison_boosted[bird_idx] = time.time() + duration
+
+
+def _power_berserk(bird_idx):
+    """Berserk power: boost bleed chance to 60% for 2s."""
+    duration = getattr(constants.berserk, 'boost_duration', 2.0)
+    state.special.berserk_boosted[bird_idx] = time.time() + duration
+
+
+def _power_rock(bird_idx):
+    """Rock power: boost push to 2 rows and speed to 3 for 3s."""
+    duration = getattr(constants.rock, 'boost_duration', 3.0)
+    # Save original speed before boosting
+    if bird_idx not in state.special.rock_boosted:
+        state.special.rock_prev_speeds = getattr(state.special, 'rock_prev_speeds', {})
+        state.special.rock_prev_speeds[bird_idx] = state.birds.speeds[bird_idx]
+    state.special.rock_boosted[bird_idx] = time.time() + duration
+    state.birds.speeds[bird_idx] = getattr(constants.rock, 'boosted_speed', 3)
 
 
 def handle_suction():

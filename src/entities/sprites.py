@@ -34,6 +34,13 @@ PATCHWORK = theme.get_color('birds', 'patchwork', 202)
 COOKIE = theme.get_color('birds', 'cookie', 180)
 GLITCH = theme.get_color('birds', 'glitch', 205)
 DINOSAUR = theme.get_color('birds', 'dinosaur', 46)
+# New birds
+RAINBOW = "RAINBOW"  # Sentinel for animated multicolor
+TWISTER = "TWISTER"  # Sentinel for gray body + cyan wings
+FROSTY = theme.get_color('birds', 'frosty', 159)  # Cyan/ice blue
+POISON = theme.get_color('birds', 'poison', 118)  # Acid green
+BERSERK = theme.get_color('birds', 'berserk', 124)  # Dark red
+ROCK = theme.get_color('birds', 'rock', 94)  # Brown
 
 # Obstacle tiers
 OBSTACLE_TIER1 = theme.get_color('obstacles', 'tier1', 94)
@@ -74,6 +81,10 @@ _COLOR_MAP = {
     'COOKIE': ('birds', 'cookie', 180),
     'GLITCH': ('birds', 'glitch', 205),
     'DINOSAUR': ('birds', 'dinosaur', 46),
+    'FROSTY': ('birds', 'frosty', 159),
+    'POISON': ('birds', 'poison', 118),
+    'BERSERK': ('birds', 'berserk', 124),
+    'ROCK': ('birds', 'rock', 94),
     # Obstacle tiers
     'OBSTACLE_TIER1': ('obstacles', 'tier1', 94),
     'OBSTACLE_TIER2': ('obstacles', 'tier2', 100),

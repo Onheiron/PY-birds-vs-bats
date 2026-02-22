@@ -385,16 +385,26 @@ def compute_prestige():
 
     # Rarity-based prestige bonuses
     rarity_bonuses = {
-        DINOSAUR: 5.0,    # Epic - massive bonus
-        GLITCH: 0.0,      # Handled separately (random)
-        WHITE: 2.0,       # Rare (S-grade evolution)
-        ORANGE: 2.0,      # Rare (S-grade evolution)
-        GOLD: 3.0,        # Rare (S-grade evolution) + score focus
-        PURPLE: 1.0,      # Uncommon
-        PATCHWORK: 1.0,   # Uncommon
-        COOKIE: 1.0,      # Uncommon
-        CLOCKWORK: 1.0,   # Uncommon
-        STEALTH: 1.5,     # Uncommon but strong
+        # Epic (+5)
+        DINOSAUR: 5.0,
+        GLITCH: 0.0,      # Handled separately (random 1-7)
+        # Mythic (+6)
+        RAINBOW: 6.0,
+        # Rare (+2)
+        WHITE: 2.0,
+        ORANGE: 2.0,
+        GOLD: 3.0,        # Extra +1 for score focus
+        TWISTER: 2.0,
+        FROSTY: 2.0,
+        POISON: 2.0,
+        BERSERK: 2.0,
+        ROCK: 2.0,
+        # Uncommon (+1)
+        PURPLE: 1.0,
+        PATCHWORK: 1.0,
+        COOKIE: 1.0,
+        CLOCKWORK: 1.0,
+        STEALTH: 1.5,     # Extra +0.5 for strong ability
     }
 
     for i in range(len(state.birds.per_bird_xp)):

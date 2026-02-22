@@ -68,9 +68,13 @@ def get_render_color(static_color):
     Returns:
         The dynamic color from current theme, or the original if not mapped
     """
-    # Handle special cases
+    # Handle special cases (sentinel colors with custom rendering)
     if static_color == STEALTH:
         return STEALTH
+    if static_color == RAINBOW:
+        return RAINBOW  # Custom multicolor rendering
+    if static_color == TWISTER:
+        return TWISTER  # Custom gray+cyan rendering
     if static_color == RESET:
         return RESET
 
@@ -1424,6 +1428,25 @@ def _fb_render_starting_line(fb):
         elif lane_idx in state.spells.repugnant_wind_lanes:
             fb.put(GAME_X_OFFSET + lane_x, starting_line_y + HEADER_HEIGHT, 'v', RED)
 
+    # TWISTER local tailwind: draw ^ ^ ^ pattern on affected lane regions (same as global tailwind)
+    if not state.powerups.tailwind_active:  # Don't overlap with global tailwind
+        twister_lanes = set()
+        for tw_info in state.special.twister_tailwind.values():
+            twister_lanes.update(tw_info.get('lanes', []))
+
+        if twister_lanes:
+            # Calculate x ranges for affected lanes
+            for lane_idx in twister_lanes:
+                if lane_idx < 0 or lane_idx >= constants.layout.num_lanes:
+                    continue
+                lane_x = constants.layout.lane_positions[lane_idx]
+                # Draw same ^ ^ ^ pattern as global tailwind in this lane's area
+                lane_start = lane_x - 3 if lane_idx > 0 else 0
+                lane_end = lane_x + 4 if lane_idx < constants.layout.num_lanes - 1 else constants.layout.width
+                for x in range(lane_start, lane_end):
+                    if x % 2 == 0:  # Same alternating pattern as global tailwind
+                        fb.put(GAME_X_OFFSET + x, starting_line_y + HEADER_HEIGHT, '^', BLUE)
+
 
 def _compute_momentum_factor(y_pos):
     """Compute MOMENTUM factor based on Y position (center of mass).
@@ -1757,6 +1780,25 @@ def _fb_render_bats(fb):
                                 if (char == '(' and open_count == 0) or (char == ')' and i == len(line) - line[::-1].index(')') - 1):
                                     char_color = BAT_ARMOR
                         fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, char_color)
+
+        # Render debuff indicators above bat (using flower-like symbols)
+        bat_id = id(bat)
+        indicator_y = bat['y_pos'] - 1
+        if 0 <= indicator_y < constants.layout.height:
+            indicator_x = bat['x_pos'] + 3  # Center above bat
+            indicators = []
+            # FROZEN: snowflake (cyan) - ❄ or *
+            if bat_id in state.special.frozen_enemies:
+                indicators.append(('*', CYAN))
+            # POISONED: skull (green) - ☠ or %
+            if bat_id in state.special.poisoned_enemies:
+                indicators.append(('%', GREEN))
+            # BLEEDING: drop (red) - 💧 or ~
+            if bat_id in state.special.bleeding_enemies:
+                indicators.append(('~', RED))
+            # Render indicators side by side
+            for idx, (symbol, color) in enumerate(indicators):
+                fb.put(GAME_X_OFFSET + indicator_x + idx, indicator_y + HEADER_HEIGHT, symbol, apply_bold(color))
 
 
 def _fb_render_mini_bats(fb):
@@ -2347,6 +2389,25 @@ def _fb_render_birds(fb):
         clockwork_charge = state.special.clockwork_charge.get(i, 2) if is_clockwork else 0
         clockwork_blink = (state.game.frame_count // 5) % 2 == 0  # Blink every 5 frames
 
+        # RAINBOW uses animated multicolor that fades based on charge
+        is_rainbow = state.birds.colors[i] == RAINBOW and not is_frozen
+        # Bright vivid rainbow colors (256-color ANSI)
+        rainbow_colors = [
+            '\033[38;5;196m',  # Bright red
+            '\033[38;5;208m',  # Bright orange
+            '\033[38;5;226m',  # Bright yellow
+            '\033[38;5;46m',   # Bright green
+            '\033[38;5;51m',   # Bright cyan
+            '\033[38;5;21m',   # Bright blue
+            '\033[38;5;201m',  # Bright magenta/pink
+        ]
+        rainbow_charge = state.special.rainbow_charge.get(i, 100) if is_rainbow else 100
+        # Fade factor: at 100% charge = full brightness, at 0% = very dim
+        rainbow_brightness = max(0.2, rainbow_charge / 100.0)
+
+        # TWISTER uses gray body with cyan wings
+        is_twister = state.birds.colors[i] == TWISTER and not is_frozen
+
         # Render bird sprite
         for line_idx, line in enumerate(sprite):
             by = y_pos + line_idx
@@ -2368,6 +2429,23 @@ def _fb_render_birds(fb):
                             else:
                                 # Full: green blinking
                                 char_color = apply_bold(GREEN if clockwork_blink else CLOCKWORK)
+                        elif is_rainbow:
+                            # Fast animated rainbow colors cycling + fade based on charge
+                            color_idx = (state.game.frame_count // 2 + ci * 2 + line_idx) % len(rainbow_colors)
+                            base_color = rainbow_colors[color_idx]
+                            # Apply brightness fade based on charge
+                            if rainbow_brightness < 0.3:
+                                char_color = '\033[38;5;240m'  # Dark gray - dying
+                            elif rainbow_brightness < 0.5:
+                                char_color = '\033[38;5;245m'  # Medium gray - fading
+                            else:
+                                char_color = base_color  # Full vivid colors
+                        elif is_twister:
+                            # Gray body with cyan wings
+                            if char in ('<', '>', '/', '\\', '_'):
+                                char_color = apply_bold(CYAN)
+                            else:
+                                char_color = apply_bold(DARK_GRAY)
                         else:
                             char_color = bird_color
                         fb.put(GAME_X_OFFSET + x_pos - x_off + ci, by + HEADER_HEIGHT, char, char_color)

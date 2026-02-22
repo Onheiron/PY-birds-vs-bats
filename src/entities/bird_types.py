@@ -25,6 +25,13 @@ class BirdType:
     STEALTH = 'STEALTH'
     DINOSAUR = 'DINOSAUR'
     GLITCH = 'GLITCH'
+    # New birds
+    RAINBOW = 'RAINBOW'
+    TWISTER = 'TWISTER'
+    FROSTY = 'FROSTY'
+    POISON = 'POISON'
+    BERSERK = 'BERSERK'
+    ROCK = 'ROCK'
 
 
 # ============================================================================
@@ -200,6 +207,85 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'glitch_egg',
     },
+
+    # New birds
+    BirdType.RAINBOW: {
+        'name': 'Rainbow',
+        'display_name': 'Rainbow',
+        'color': 'RAINBOW',  # Special sentinel for animated multicolor
+        'speed': 6,  # Decreases with charge
+        'damage': 3,
+        'ability': 'warp_flight',
+        'description': 'Warps between ceiling/floor, colors fade over time, recharge with UP',
+        'rarity': 'mythic',
+        'spawn_limit': 1,
+        'egg_type': 'rainbow_egg',
+    },
+
+    BirdType.TWISTER: {
+        'name': 'Twister',
+        'display_name': 'Twister',
+        'color': 'TWISTER',  # Special sentinel for gray body + cyan wings
+        'speed': 4,
+        'damage': 5,
+        'ability': 'local_tailwind',
+        'description': 'Creates tailwind in current lane and 2 adjacent lanes',
+        'rarity': 'rare',
+        'spawn_limit': 1,
+        'egg_type': 'twister_egg',
+    },
+
+    BirdType.FROSTY: {
+        'name': 'Frosty',
+        'display_name': 'Frosty',
+        'color': theme.get_color('birds', 'frosty', 159),
+        'speed': 3,
+        'damage': 3,
+        'ability': 'freeze',
+        'description': '30% chance to freeze enemies on hit, power boosts to 60%',
+        'rarity': 'rare',
+        'spawn_limit': 1,
+        'egg_type': 'frosty_egg',
+    },
+
+    BirdType.POISON: {
+        'name': 'Poison',
+        'display_name': 'Poison',
+        'color': theme.get_color('birds', 'poison', 118),
+        'speed': 3,
+        'damage': 3,
+        'ability': 'poison',
+        'description': '30% chance to poison bats (2HP/s), power boosts to 60%',
+        'rarity': 'rare',
+        'spawn_limit': 1,
+        'egg_type': 'poison_egg',
+    },
+
+    BirdType.BERSERK: {
+        'name': 'Berserk',
+        'display_name': 'Berserk',
+        'color': theme.get_color('birds', 'berserk', 124),
+        'speed': 3,
+        'damage': 4,
+        'ability': 'bleed',
+        'description': '30% chance to cause bleeding (1HP/s, -1 armor), power boosts to 60%',
+        'rarity': 'rare',
+        'spawn_limit': 1,
+        'egg_type': 'berserk_egg',
+    },
+
+    BirdType.ROCK: {
+        'name': 'Rock',
+        'display_name': 'Rock',
+        'color': theme.get_color('birds', 'rock', 94),
+        'speed': 2,
+        'damage': 3,
+        'ability': 'push',
+        'description': 'Pushes enemies up 1 row on hit, power boosts to 2 rows + speed 3',
+        'rarity': 'rare',
+        'spawn_limit': 1,
+        'egg_type': 'rock_egg',
+    },
 }
 
 
@@ -226,9 +312,13 @@ def get_color_for_bird_type(bird_type: str, dynamic: bool = True) -> str:
     Returns:
         ANSI escape sequence string for the color
     """
-    # STEALTH is special - return sentinel string, not ANSI code
+    # Special sentinel types - return string, not ANSI code
     if bird_type == BirdType.STEALTH:
         return "STEALTH"
+    if bird_type == BirdType.RAINBOW:
+        return "RAINBOW"
+    if bird_type == BirdType.TWISTER:
+        return "TWISTER"
 
     if dynamic:
         # Map bird type to theme color name
@@ -245,6 +335,10 @@ def get_color_for_bird_type(bird_type: str, dynamic: bool = True) -> str:
             BirdType.COOKIE: 'cookie',
             BirdType.DINOSAUR: 'dinosaur',
             BirdType.GLITCH: 'glitch',
+            BirdType.FROSTY: 'frosty',
+            BirdType.POISON: 'poison',
+            BirdType.BERSERK: 'berserk',
+            BirdType.ROCK: 'rock',
         }
         color_name = color_names.get(bird_type)
         if color_name:

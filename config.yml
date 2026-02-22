@@ -32,7 +32,7 @@ background:
   parallax: false
 
 birds:
-  default_formation: [YELLOW, YELLOW, DINOSAUR, YELLOW, RED, RED, RED, BLUE, BLUE]
+  default_formation: [YELLOW, YELLOW, ROCK, YELLOW, RED, RED, RED, BLUE, BLUE]
   randomize_lanes: true
   # Base damage (DMG) per bird type - used in damage formula
   damage:
@@ -49,6 +49,12 @@ birds:
     stealth: 8
     dinosaur: 5
     glitch: 1  # Glitch uses random multiplier
+    rainbow: 3
+    twister: 5
+    frosty: 3
+    poison: 3
+    berserk: 4
+    rock: 3
   # Base speed (SPD) per bird type
   speed:
     yellow: 2
@@ -64,6 +70,12 @@ birds:
     stealth: 3
     dinosaur: 4
     glitch: 3
+    rainbow: 6
+    twister: 4
+    frosty: 3
+    poison: 3
+    berserk: 3
+    rock: 2
 timing:
   base_sleep: 0.2
   frame_sleep_level_multiplier: 0.88
@@ -98,8 +110,8 @@ combat:
 
 # Loot and rarity
 loot:
-  # Base rarity weights [common, uncommon, rare, epic]
-  base_rarity_weights: [60, 25, 10, 5]
+  # Base rarity weights [common, uncommon, rare, epic, mythic]
+  base_rarity_weights: [60, 25, 10, 4, 1]
   # Glitch bird special loot interactions
   glitch_ignore_chance: 0.05         # Chance to ignore loot
   glitch_promote_chance: 0.10        # Chance to promote rarity (cumulative with ignore)
@@ -159,12 +171,19 @@ eggs:
       stealth_egg: 7
       cookie_egg: 3
     rare:
-      white_egg: 34
-      orange_egg: 33
-      gold_egg: 33
+      white_egg: 15
+      orange_egg: 15
+      gold_egg: 14
+      twister_egg: 14
+      frosty_egg: 14
+      poison_egg: 10
+      berserk_egg: 10
+      rock_egg: 8
     epic:
       dinosaur_egg: 50
       glitch_egg: 50
+    mythic:
+      rainbow_egg: 100
 bat_enemy:
   hp_by_tier:
     0: 16      # Mini bat (tier 0) - hides in obstacles
@@ -631,6 +650,49 @@ glitch:
 orange:
   out_of_play_y: 999
   recover_chance: 0.1
+
+# New birds
+rainbow:
+  enabled: false              # Set to true to allow rainbow spawns
+  max_charge: 100
+  decay_per_second: 5         # Lose 5 charge per second
+  recharge_chance: 0.25       # 25% chance to recharge on UP press
+  recharge_amount: 25         # Amount of charge restored
+
+twister:
+  tailwind_duration: 2.0      # Seconds of tailwind effect
+  tailwind_up_bonus: 2        # Speed boost when going up
+  tailwind_down_penalty: 1    # Speed reduction when going down
+
+frosty:
+  base_chance: 0.30           # 30% base freeze chance
+  boosted_chance: 0.60        # 60% when power active
+  boost_duration: 2.0         # Power boost lasts 2s
+  freeze_duration: 3.0        # Frozen enemies stay frozen 3s
+  boss_chance: 0.10           # 10% chance on bosses
+  armor_reduction: 2          # Frozen enemies take +2 damage
+
+poison:
+  base_chance: 0.30
+  boosted_chance: 0.60
+  boost_duration: 2.0
+  effect_duration: 5.0        # Poison lasts 5s
+  damage_per_second: 2        # 2 HP per second
+
+berserk:
+  base_chance: 0.30
+  boosted_chance: 0.60
+  boost_duration: 2.0
+  effect_duration: 10.0       # Bleed lasts 10s
+  damage_per_second: 1        # 1 HP per second
+  armor_reduction: 1          # -1 armor while bleeding
+
+rock:
+  push_rows: 1                # Normal push amount
+  boosted_push_rows: 2        # Push when power active
+  boost_duration: 3.0         # Power lasts 3s
+  boosted_speed: 3            # Speed during power
+
 timelapse:
   # Duration in seconds (real time, not affected by slowdown)
   seconds:

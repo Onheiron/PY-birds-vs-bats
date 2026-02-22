@@ -99,6 +99,9 @@ def update_bird_positions():
             boost_info = state.special.dive_fall_boosts[i]
             current_speed += boost_info.get('speed', 1)
 
+        # Get bird lane for wind effects
+        bird_lane = state.birds.random_lanes[i]
+
         # Apply tailwind
         if state.powerups.tailwind_active:
             up_bonus = state.powerups.tailwind_up_bonus
@@ -107,6 +110,24 @@ def update_bird_positions():
                 current_speed = min(6, current_speed + up_bonus)
             elif state.birds.vy[i] == 1 and down_pen > 0:
                 current_speed = max(1, current_speed - down_pen)
+
+        # Apply TWISTER local tailwind (affects only birds in specific lanes)
+        import time as time_module
+        now = time_module.time()
+        for twister_idx, tw_info in list(state.special.twister_tailwind.items()):
+            if now >= tw_info['end_time']:
+                # Expired, clean up
+                del state.special.twister_tailwind[twister_idx]
+                continue
+            # Check if this bird is in one of the affected lanes
+            if bird_lane in tw_info['lanes']:
+                tw_up_bonus = getattr(constants.twister, 'tailwind_up_bonus', 2)
+                tw_down_pen = getattr(constants.twister, 'tailwind_down_penalty', 1)
+                if state.birds.vy[i] == -1 and tw_up_bonus > 0:
+                    current_speed = min(6, current_speed + tw_up_bonus)
+                elif state.birds.vy[i] == 1 and tw_down_pen > 0:
+                    current_speed = max(1, current_speed - tw_down_pen)
+                break  # Only one twister tailwind applies at a time
 
         # Apply Wind Boss effect
         wind_up = state.powerups.wind_boss_up_bonus
@@ -124,7 +145,6 @@ def update_bird_positions():
                     current_speed = max(1, current_speed - wind_down)
 
         # Apply repugnant wind (reverse tailwind from spellcaster bats)
-        bird_lane = state.birds.random_lanes[i]
         if bird_lane in state.spells.repugnant_wind_lanes:
             wind_info = state.spells.repugnant_wind_lanes[bird_lane]
             speed_boost = wind_info.get('speed_boost', 1)

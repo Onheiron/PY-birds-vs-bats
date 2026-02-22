@@ -54,6 +54,12 @@ COLOR_TO_BIRD_TYPE = {
     STEALTH: 'STEALTH',
     DINOSAUR: 'DINOSAUR',
     GLITCH: 'GLITCH',
+    RAINBOW: 'RAINBOW',
+    TWISTER: 'TWISTER',
+    FROSTY: 'FROSTY',
+    POISON: 'POISON',
+    BERSERK: 'BERSERK',
+    ROCK: 'ROCK',
 }
 
 
@@ -135,6 +141,16 @@ def check_bird_ceiling_bounce():
                 })
                 continue
 
+            # RAINBOW special: warp to floor instead of bounce
+            if state.birds.colors[i] == RAINBOW:
+                # Check if still has charge
+                charge = state.special.rainbow_charge.get(i, 100)
+                if charge > 0:
+                    # Warp to floor, keep going up (will warp again)
+                    state.birds.y[i] = constants.layout.starting_line - 1
+                    # Keep vy=-1 (going up) - continues through the warp
+                continue
+
             # Normal bounce
             state.birds.y[i] = 1
             _set_ball_vy(i, 1)
@@ -162,6 +178,16 @@ def check_bird_floor_collision():
                 _set_ball_vy(i, -1)
                 _reset_bird_power(i)
                 continue
+
+        # RAINBOW warp to ceiling if has charge
+        if bird_color == RAINBOW:
+            charge = state.special.rainbow_charge.get(i, 100)
+            if charge > 0:
+                # Warp to ceiling, keep going down
+                state.birds.y[i] = 2
+                # Keep vy=1 (going down) - continues through the warp
+                continue
+            # No charge - RAINBOW dies (handled below)
 
         # ORANGE birds don't die at floor
         if bird_color == ORANGE:
@@ -335,6 +361,14 @@ def check_bird_bat_collision():
                             reduction = dmg_reduction_cfg.get(bat_tier, dmg_reduction_cfg.get(str(bat_tier), 0))
                         else:
                             reduction = getattr(dmg_reduction_cfg, str(bat_tier), 0)
+                        # Reduce armor by FROZEN/BLEEDING debuffs
+                        bat_id = id(bat)
+                        if bat_id in state.special.frozen_enemies:
+                            frozen_reduction = state.special.frozen_enemies[bat_id].get('armor_reduction', 2)
+                            reduction = max(0, reduction - frozen_reduction)
+                        if bat_id in state.special.bleeding_enemies:
+                            bleed_reduction = state.special.bleeding_enemies[bat_id].get('armor_reduction', 1)
+                            reduction = max(0, reduction - bleed_reduction)
                         damage = max(1, damage - reduction)  # Minimum 1 damage
 
             if bird_color == ORANGE:
@@ -381,6 +415,84 @@ def check_bird_bat_collision():
                     state.special.dive_fall_boosts[i] = {
                         'frames': dive_boost_frames,
                         'speed': dive_boost_speed
+                    }
+
+            # ROCK bird pushes enemies up
+            if bird_color == ROCK:
+                import time as time_module
+                now = time_module.time()
+                # Check if boosted (power active)
+                is_boosted = i in state.special.rock_boosted and now < state.special.rock_boosted[i]
+                if is_boosted:
+                    push_rows = getattr(constants.rock, 'boosted_push_rows', 2)
+                else:
+                    push_rows = getattr(constants.rock, 'push_rows', 1)
+                # Push bat up (decrease y_pos, but not above 0)
+                bat['y_pos'] = max(0, bat['y_pos'] - push_rows)
+                bat['target_y'] = max(0, bat['target_y'] - push_rows)
+
+            # FROSTY bird applies FROZEN debuff to enemies
+            if bird_color == FROSTY:
+                import time as time_module
+                now = time_module.time()
+                # Check if boosted
+                is_boosted = i in state.special.frosty_boosted and now < state.special.frosty_boosted[i]
+                # Boss has lower chance
+                is_boss = bat.get('is_boss', False)
+                if is_boss:
+                    chance = getattr(constants.frosty, 'boss_chance', 0.10)
+                elif is_boosted:
+                    chance = getattr(constants.frosty, 'boosted_chance', 0.60)
+                else:
+                    chance = getattr(constants.frosty, 'base_chance', 0.30)
+                if random.random() < chance:
+                    bat_id = id(bat)
+                    freeze_duration = getattr(constants.frosty, 'freeze_duration', 3.0)
+                    state.special.frozen_enemies[bat_id] = {
+                        'end_time': now + freeze_duration,
+                        'bat': bat,
+                        'armor_reduction': getattr(constants.frosty, 'armor_reduction', 2)
+                    }
+
+            # POISON bird applies POISON debuff to bats/boss only
+            if bird_color == POISON:
+                import time as time_module
+                now = time_module.time()
+                # Check if boosted
+                is_boosted = i in state.special.poison_boosted and now < state.special.poison_boosted[i]
+                if is_boosted:
+                    chance = getattr(constants.poison, 'boosted_chance', 0.60)
+                else:
+                    chance = getattr(constants.poison, 'base_chance', 0.30)
+                if random.random() < chance:
+                    bat_id = id(bat)
+                    effect_duration = getattr(constants.poison, 'effect_duration', 5.0)
+                    state.special.poisoned_enemies[bat_id] = {
+                        'end_time': now + effect_duration,
+                        'last_tick': now,
+                        'bat': bat,
+                        'damage_per_second': getattr(constants.poison, 'damage_per_second', 2)
+                    }
+
+            # BERSERK bird applies BLEED debuff
+            if bird_color == BERSERK:
+                import time as time_module
+                now = time_module.time()
+                # Check if boosted
+                is_boosted = i in state.special.berserk_boosted and now < state.special.berserk_boosted[i]
+                if is_boosted:
+                    chance = getattr(constants.berserk, 'boosted_chance', 0.60)
+                else:
+                    chance = getattr(constants.berserk, 'base_chance', 0.30)
+                if random.random() < chance:
+                    bat_id = id(bat)
+                    effect_duration = getattr(constants.berserk, 'effect_duration', 10.0)
+                    state.special.bleeding_enemies[bat_id] = {
+                        'end_time': now + effect_duration,
+                        'last_tick': now,
+                        'bat': bat,
+                        'damage_per_second': getattr(constants.berserk, 'damage_per_second', 1),
+                        'armor_reduction': getattr(constants.berserk, 'armor_reduction', 1)
                     }
 
             if bat['hp'] <= 0:
@@ -783,7 +895,9 @@ def _spawn_bird_from_egg(egg_type):
         'white_egg': WHITE, 'purple_egg': PURPLE, 'orange_egg': ORANGE,
         'gold_egg': GOLD, 'patchwork_egg': PATCHWORK, 'cookie_egg': COOKIE,
         'clockwork_egg': CLOCKWORK, 'stealth_egg': STEALTH,
-        'dinosaur_egg': DINOSAUR, 'glitch_egg': GLITCH
+        'dinosaur_egg': DINOSAUR, 'glitch_egg': GLITCH,
+        'rainbow_egg': RAINBOW, 'twister_egg': TWISTER, 'frosty_egg': FROSTY,
+        'poison_egg': POISON, 'berserk_egg': BERSERK, 'rock_egg': ROCK
     }
     # Get speeds from config
     spd_config = getattr(constants.birds, 'speed', {})
@@ -792,12 +906,15 @@ def _spawn_bird_from_egg(egg_type):
         'white_egg': 'white', 'purple_egg': 'purple', 'orange_egg': 'orange',
         'gold_egg': 'gold', 'patchwork_egg': 'patchwork', 'cookie_egg': 'cookie',
         'clockwork_egg': 'clockwork', 'stealth_egg': 'stealth',
-        'dinosaur_egg': 'dinosaur', 'glitch_egg': 'glitch'
+        'dinosaur_egg': 'dinosaur', 'glitch_egg': 'glitch',
+        'rainbow_egg': 'rainbow', 'twister_egg': 'twister', 'frosty_egg': 'frosty',
+        'poison_egg': 'poison', 'berserk_egg': 'berserk', 'rock_egg': 'rock'
     }
     default_speeds = {
         'yellow': 2, 'red': 3, 'blue': 4, 'white': 4, 'purple': 3,
         'orange': 5, 'gold': 5, 'patchwork': 3, 'cookie': 3, 'clockwork': 2,
-        'stealth': 3, 'dinosaur': 4, 'glitch': 3
+        'stealth': 3, 'dinosaur': 4, 'glitch': 3,
+        'rainbow': 6, 'twister': 4, 'frosty': 3, 'poison': 3, 'berserk': 3, 'rock': 2
     }
 
     bird_color = color_map.get(egg_type)
@@ -826,6 +943,10 @@ def _spawn_bird_from_egg(egg_type):
 
             if bird_color == CLOCKWORK:
                 state.special.clockwork_charge[idx] = constants.clockwork.initial_charge
+            if bird_color == RAINBOW:
+                max_charge = getattr(constants.rainbow, 'max_charge', 100)
+                state.special.rainbow_charge[idx] = max_charge
+                state.special.rainbow_last_decay[idx] = time.time()
             break
 
 
@@ -3526,6 +3647,29 @@ def update_special_bird_states():
             # Bleed expired - bird survives!
             del state.special.bleeding_birds[bird_idx]
 
+    # ROCK boost cleanup - restore original speed when expired
+    for bird_idx in list(state.special.rock_boosted.keys()):
+        if now >= state.special.rock_boosted[bird_idx]:
+            del state.special.rock_boosted[bird_idx]
+            # Restore original speed
+            if bird_idx in state.special.rock_prev_speeds:
+                state.birds.speeds[bird_idx] = state.special.rock_prev_speeds.pop(bird_idx)
+
+    # FROSTY boost cleanup
+    for bird_idx in list(state.special.frosty_boosted.keys()):
+        if now >= state.special.frosty_boosted[bird_idx]:
+            del state.special.frosty_boosted[bird_idx]
+
+    # POISON boost cleanup
+    for bird_idx in list(state.special.poison_boosted.keys()):
+        if now >= state.special.poison_boosted[bird_idx]:
+            del state.special.poison_boosted[bird_idx]
+
+    # BERSERK boost cleanup
+    for bird_idx in list(state.special.berserk_boosted.keys()):
+        if now >= state.special.berserk_boosted[bird_idx]:
+            del state.special.berserk_boosted[bird_idx]
+
     # Clockwork charge decay
     decay_seconds = getattr(constants.clockwork, 'decay_seconds', 30.0)
     for i in range(constants.layout.num_balls):
@@ -3544,6 +3688,42 @@ def update_special_bird_states():
         if charge > 0 and now - last_decay >= decay_seconds:
             state.special.clockwork_charge[i] = charge - 1
             state.special.clockwork_last_decay[i] = now
+
+    # RAINBOW charge decay and death
+    decay_per_second = getattr(constants.rainbow, 'decay_per_second', 5)
+    for i in range(constants.layout.num_balls):
+        if state.birds.colors[i] != RAINBOW or state.birds.lost[i]:
+            continue
+
+        charge = state.special.rainbow_charge.get(i)
+        if charge is None:
+            max_charge = getattr(constants.rainbow, 'max_charge', 100)
+            charge = max_charge
+            state.special.rainbow_charge[i] = charge
+            state.special.rainbow_last_decay[i] = now
+
+        last_decay = state.special.rainbow_last_decay.get(i, now)
+
+        # Decay charge every second
+        if now - last_decay >= 1.0:
+            elapsed = now - last_decay
+            decay_amount = int(elapsed * decay_per_second)
+            state.special.rainbow_charge[i] = max(0, charge - decay_amount)
+            state.special.rainbow_last_decay[i] = now
+
+            # Check if charge depleted - RAINBOW dies immediately
+            if state.special.rainbow_charge[i] <= 0:
+                dead_color = state.birds.colors[i]
+                state.birds.lost[i] = True
+                state.birds.y[i] = constants.layout.height - 1  # Show X at bottom
+                state.birds.per_bird_xp[i] = 0
+                state.game.lives -= 1
+                play_sfx('bird_lost')
+                # Check pending transforms
+                from src.functions import check_pending_transforms
+                check_pending_transforms(dead_color)
+                if state.game.lives <= 0:
+                    state.game.game_over = True
 
 
 def update_spell_effects():
@@ -3590,6 +3770,62 @@ def _execute_exile_swap(exile):
         state.birds.random_lanes[bird_b_idx] = lane_a
         state.birds.cols[bird_a_idx] = constants.layout.lane_positions[lane_b]
         state.birds.cols[bird_b_idx] = constants.layout.lane_positions[lane_a]
+
+
+def update_enemy_debuffs():
+    """Update enemy debuffs applied by FROSTY/POISON/BERSERK birds."""
+    now = time.time()
+
+    # FROZEN enemies - cleanup expired, no damage tick
+    for enemy_id in list(state.special.frozen_enemies.keys()):
+        debuff = state.special.frozen_enemies[enemy_id]
+        if now >= debuff['end_time']:
+            del state.special.frozen_enemies[enemy_id]
+            continue
+        # Check if bat is still alive
+        bat = debuff.get('bat')
+        if bat and bat not in state.enemies.bats:
+            del state.special.frozen_enemies[enemy_id]
+
+    # POISONED enemies - damage tick every second
+    for enemy_id in list(state.special.poisoned_enemies.keys()):
+        debuff = state.special.poisoned_enemies[enemy_id]
+        if now >= debuff['end_time']:
+            del state.special.poisoned_enemies[enemy_id]
+            continue
+        bat = debuff.get('bat')
+        if bat and bat not in state.enemies.bats:
+            del state.special.poisoned_enemies[enemy_id]
+            continue
+        # Apply damage tick
+        if now - debuff['last_tick'] >= 1.0:
+            debuff['last_tick'] = now
+            damage = debuff.get('damage_per_second', 2)
+            if bat:
+                bat['hp'] -= damage
+                if bat['hp'] <= 0:
+                    _handle_bat_death(bat, 0)  # No specific killer
+                    del state.special.poisoned_enemies[enemy_id]
+
+    # BLEEDING enemies - damage tick every second, armor reduction
+    for enemy_id in list(state.special.bleeding_enemies.keys()):
+        debuff = state.special.bleeding_enemies[enemy_id]
+        if now >= debuff['end_time']:
+            del state.special.bleeding_enemies[enemy_id]
+            continue
+        bat = debuff.get('bat')
+        if bat and bat not in state.enemies.bats:
+            del state.special.bleeding_enemies[enemy_id]
+            continue
+        # Apply damage tick
+        if now - debuff['last_tick'] >= 1.0:
+            debuff['last_tick'] = now
+            damage = debuff.get('damage_per_second', 1)
+            if bat:
+                bat['hp'] -= damage
+                if bat['hp'] <= 0:
+                    _handle_bat_death(bat, 0)
+                    del state.special.bleeding_enemies[enemy_id]
 
 
 def update_purple_charging():
@@ -4186,6 +4422,7 @@ def update_all():
     update_powerup_timers()
     update_special_bird_states()
     update_spell_effects()  # Spellcaster bat effects
+    update_enemy_debuffs()  # FROSTY/POISON/BERSERK debuffs on enemies
     update_purple_charging()
     update_portals()  # Cave biome portals
 

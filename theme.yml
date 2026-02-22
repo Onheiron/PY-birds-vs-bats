@@ -37,6 +37,12 @@ birds:
   cookie: 180      # Light brown
   dinosaur: 46     # Bright lime green (legendary)
   glitch: 205      # Pink-ish
+  frosty: 159      # Ice blue/cyan
+  poison: 118      # Acid green
+  berserk: 124     # Dark red
+  rock: 94         # Brown
+  rainbow: 201     # Placeholder (animated multicolor)
+  twister: 244     # Placeholder (gray body, cyan wings)
 
 # -----------------------------------------------------------------------------
 # OBSTACLE COLORS - Tiered colors for obstacles (darker = easier)
