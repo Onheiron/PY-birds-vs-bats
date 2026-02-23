@@ -384,27 +384,35 @@ def compute_prestige():
     total = 1.0
 
     # Rarity-based prestige bonuses
+    # COMMON (0): yellow, red, blue, patchwork
+    # UNCOMMON (+1): frosty, poison, berserk, purple, rock
+    # RARE (+2): clockwork, cookie, stealth, twister
+    # EPIC (+3): white, orange, gold
+    # LEGENDARY (+4): dinosaur, glitch (random 1-7)
+    # MYTHICAL (+5): rainbow
     rarity_bonuses = {
-        # Epic (+5)
-        DINOSAUR: 5.0,
-        GLITCH: 0.0,      # Handled separately (random 1-7)
-        # Mythic (+6)
-        RAINBOW: 6.0,
-        # Rare (+2)
-        WHITE: 2.0,
-        ORANGE: 2.0,
-        GOLD: 3.0,        # Extra +1 for score focus
-        TWISTER: 2.0,
-        FROSTY: 2.0,
-        POISON: 2.0,
-        BERSERK: 2.0,
-        ROCK: 2.0,
+        # Common (+0) - yellow, red, blue, patchwork have no bonus
+        PATCHWORK: 0.0,
         # Uncommon (+1)
+        FROSTY: 1.0,
+        POISON: 1.0,
+        BERSERK: 1.0,
         PURPLE: 1.0,
-        PATCHWORK: 1.0,
-        COOKIE: 1.0,
-        CLOCKWORK: 1.0,
-        STEALTH: 1.5,     # Extra +0.5 for strong ability
+        ROCK: 1.0,
+        # Rare (+2)
+        CLOCKWORK: 2.0,
+        COOKIE: 2.0,
+        STEALTH: 2.0,
+        TWISTER: 2.0,
+        # Epic (+3)
+        WHITE: 3.0,
+        ORANGE: 3.0,
+        GOLD: 3.0,
+        # Legendary (+4)
+        DINOSAUR: 4.0,
+        GLITCH: 0.0,      # Handled separately (random 1-7)
+        # Mythical (+5)
+        RAINBOW: 5.0,
     }
 
     for i in range(len(state.birds.per_bird_xp)):
@@ -506,31 +514,48 @@ def deduct_momentum(amount):
 
 
 def adjust_rarity_weights(base_weights, prestige):
-    """Adjust loot rarity weights based on prestige."""
-    factor = 1.0 + float(prestige) * float(constants.prestige.rarity_factor)
-    new = [float(w) * factor for w in base_weights]
-    total = sum(new)
+    """Adjust loot rarity weights based on prestige and difficulty mode.
 
+    Formula: weight[i] = base_weight[i] * base_boost * (1 + prestige * factor * i * tier_scaling)
+
+    Difficulty coefficients from config.yml:
+    - tier_scaling: multiplier for prestige effect per tier (higher = more boost to rare)
+    - base_rarity_boost: flat multiplier to all rare weights (i > 0)
+    - rarity_factor: base prestige factor
+
+    ADVENTURE mode (default): tier_scaling=1.0, base_boost=1.0, factor=0.1
+    LEGENDARY mode: tier_scaling=2.0, base_boost=10.0, factor=0.15
+    """
+    # Get difficulty settings (default to adventure)
+    difficulty_name = getattr(constants.game, 'difficulty_name', 'ADVENTURE').lower()
+    difficulty_config = getattr(constants, 'difficulty', None)
+
+    if difficulty_config and hasattr(difficulty_config, difficulty_name):
+        diff = getattr(difficulty_config, difficulty_name)
+        tier_scaling = float(getattr(diff, 'tier_scaling', 1.0))
+        base_rarity_boost = float(getattr(diff, 'base_rarity_boost', 1.0))
+        rarity_factor = float(getattr(diff, 'rarity_factor', 0.1))
+    else:
+        # Fallback defaults
+        tier_scaling = 1.0
+        base_rarity_boost = 1.0
+        rarity_factor = float(getattr(constants.prestige, 'rarity_factor', 0.1))
+
+    # Apply tier-scaled multiplier: rarer tiers get bigger boost from prestige
+    new = []
+    for i, w in enumerate(base_weights):
+        # Base boost only applies to non-common (i > 0)
+        base_boost = base_rarity_boost if i > 0 else 1.0
+        tier_multiplier = 1.0 + float(prestige) * rarity_factor * i * tier_scaling
+        new.append(float(w) * base_boost * tier_multiplier)
+
+    # Normalize to percentages
+    total = sum(new)
     if total <= 0.0:
         n = len(base_weights)
         return [100.0 / n] * n
 
-    if total > 100.0:
-        excess = total - 100.0
-        for i in range(len(new)):
-            if excess <= 0:
-                break
-            take = min(excess, new[i])
-            new[i] -= take
-            excess -= take
-    elif total < 100.0:
-        new[0] += 100.0 - total
-
-    tot = sum(new)
-    if abs(tot - 100.0) > 1e-6 and tot > 0:
-        new = [w * 100.0 / tot for w in new]
-
-    return new
+    return [w * 100.0 / total for w in new]
 
 
 # =============================================================================

@@ -32,7 +32,7 @@ background:
   parallax: false
 
 birds:
-  default_formation: [YELLOW, YELLOW, ROCK, YELLOW, RED, RED, RED, BLUE, BLUE]
+  default_formation: [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]
   randomize_lanes: true
   # Base damage (DMG) per bird type - used in damage formula
   damage:
@@ -110,8 +110,9 @@ combat:
 
 # Loot and rarity
 loot:
-  # Base rarity weights [common, uncommon, rare, epic, mythic]
-  base_rarity_weights: [60, 25, 10, 4, 1]
+  # Base rarity weights [common, uncommon, rare, epic, legendary, mythical]
+  # Spawn chance: common=1, uncommon=0.1, rare=0.01, epic=0.001, legendary=0.0001, mythical=0.00001
+  base_rarity_weights: [1, 0.1, 0.01, 0.001, 0.0001, 0.00001]
   # Glitch bird special loot interactions
   glitch_ignore_chance: 0.05         # Chance to ignore loot
   glitch_promote_chance: 0.10        # Chance to promote rarity (cumulative with ignore)
@@ -135,54 +136,64 @@ eggs:
     2: 0.35
     3: 0.45
     4: 0.55
+  # Bird rarity distribution:
+  # COMMON: yellow, red, blue, patchwork
+  # UNCOMMON: frosty, poison, berserk, purple, rock
+  # RARE: clockwork, cookie, stealth, twister
+  # EPIC: white, orange, gold
+  # LEGENDARY: dinosaur, glitch
+  # MYTHICAL: rainbow
   rarity_candidates:
     common:
       yellow_egg: 30
-      red_egg: 25
-      blue_egg: 20
+      red_egg: 30
+      blue_egg: 25
       patchwork_egg: 15
-      purple_egg: 10
     uncommon:
-      blue_egg: 33
-      patchwork_egg: 25
-      purple_egg: 20
-      clockwork_egg: 12
-      stealth_egg: 7
-      cookie_egg: 3
+      frosty_egg: 25
+      poison_egg: 25
+      berserk_egg: 20
+      purple_egg: 15
+      rock_egg: 15
     rare:
+      clockwork_egg: 30
+      cookie_egg: 30
+      stealth_egg: 20
+      twister_egg: 20
+    epic:
       white_egg: 34
       orange_egg: 33
       gold_egg: 33
-    epic:
+    legendary:
       dinosaur_egg: 50
       glitch_egg: 50
+    mythical:
+      rainbow_egg: 100
   rarity_weights:
     common:
       yellow_egg: 30
-      red_egg: 25
-      blue_egg: 20
+      red_egg: 30
+      blue_egg: 25
       patchwork_egg: 15
-      purple_egg: 10
     uncommon:
-      blue_egg: 33
-      patchwork_egg: 25
-      purple_egg: 20
-      clockwork_egg: 12
-      stealth_egg: 7
-      cookie_egg: 3
+      frosty_egg: 25
+      poison_egg: 25
+      berserk_egg: 20
+      purple_egg: 15
+      rock_egg: 15
     rare:
-      white_egg: 15
-      orange_egg: 15
-      gold_egg: 14
-      twister_egg: 14
-      frosty_egg: 14
-      poison_egg: 10
-      berserk_egg: 10
-      rock_egg: 8
+      clockwork_egg: 30
+      cookie_egg: 30
+      stealth_egg: 20
+      twister_egg: 20
     epic:
+      white_egg: 34
+      orange_egg: 33
+      gold_egg: 33
+    legendary:
       dinosaur_egg: 50
       glitch_egg: 50
-    mythic:
+    mythical:
       rainbow_egg: 100
 bat_enemy:
   hp_by_tier:
@@ -775,6 +786,22 @@ game:
   # Difficulty settings
   difficulty_name: "ADVENTURE"  # Display name for difficulty
   life_recovery_on_spawn: true  # If true, spawning a new bird from egg recovers a life
+
+# Difficulty modes - affects rarity spawn probabilities
+# Formula: weight[i] = base_weight[i] * (1 + prestige * rarity_factor * i * tier_scaling)
+# Higher tier_scaling = more boost to rare items
+# Higher base_rarity_boost = flat multiplier to all rare weights (i > 0)
+difficulty:
+  adventure:
+    name: "ADVENTURE"
+    tier_scaling: 1.0           # Standard scaling
+    base_rarity_boost: 1.0      # No boost to rare weights
+    rarity_factor: 0.1          # Standard prestige factor
+  legendary:
+    name: "LEGENDARY"
+    tier_scaling: 2.0           # Double the prestige effect on rare tiers
+    base_rarity_boost: 10.0     # 10x base weight for uncommon+
+    rarity_factor: 0.15         # 50% more prestige effect
 synergy:
   transfer_ratio: 0.1
 prestige:
