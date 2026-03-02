@@ -274,7 +274,7 @@ def handle_bounce():
             if bird_idx in state.special.stunned_birds:
                 continue
 
-            # BLEEDING BIRDS: each UP press costs a life, when lives reach 0 bird dies
+            # BLEEDING BIRDS: each UP press costs a bleed counter, bird dies when counter depleted
             if bird_idx in state.special.bleeding_birds:
                 bleed_info = state.special.bleeding_birds[bird_idx]
                 bleed_info['lives_lost'] = bleed_info.get('lives_lost', 0) + 1
@@ -291,7 +291,8 @@ def handle_bounce():
                         check_pending_transforms(dead_color)
                         if state.game.lives <= 0:
                             state.game.game_over = True
-                continue  # Don't process normal bounce while bleeding
+                    continue  # Bird is dead, skip bounce
+                # Bird still alive - continue to normal bounce processing below
 
             # FROZEN BIRDS: button press attempts to thaw
             if bird_idx in state.special.frozen_birds:

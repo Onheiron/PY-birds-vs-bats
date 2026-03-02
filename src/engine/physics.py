@@ -248,6 +248,14 @@ def update_obstacle_positions():
         state.ui.bg_mid_offset += 1
 
     for obs in state.enemies.obstacles[:]:
+        # Stationary obstacles (from Owl Boss overgrowth) don't move
+        if obs.get('stationary'):
+            # Remove stationary obstacles if owl boss is dead
+            boss = state.enemies.boss
+            if boss is None or boss.get('boss_type') != 'owl' or boss.get('state') in ('dying', 'dead'):
+                state.enemies.obstacles.remove(obs)
+            continue
+
         # Obstacles move at speed 1 (every 5 frames)
         if state.game.frame_count % 5 == 0:
             obs['y_pos'] += 1

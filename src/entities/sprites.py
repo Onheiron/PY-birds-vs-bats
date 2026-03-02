@@ -673,6 +673,155 @@ FLOWER_COLORS = {
     'green': '\033[1;32m',    # Bright green (poison)
 }
 
+# =============================================================================
+# OWL BOSS - Boss for level 5-3 (The Void Cave)
+# Wizard owl that casts powerful spells
+# Animation cycle: fly (4s) -> conjure (4s) -> cast (4s) -> recharge (4s)
+# =============================================================================
+
+# NORMAL FLY - wings open/closed animation
+OWL_BOSS_FLY_1 = [
+    "    *    ",
+    "    /\\    ",
+    "___/__\\___",
+    "‾/(@v@)\\‾",
+    "   ^  ^  ",
+]
+
+OWL_BOSS_FLY_2 = [
+    "    *    ",
+    "   /\\    ",
+    "\\\\/__\\ //",
+    "‾/(@v@)\\‾",
+    "  ^  ^   ",
+]
+
+# CONJURING - preparing a spell (eyes narrow)
+OWL_BOSS_CONJURE_1 = [
+    "    *    ",
+    "    /\\    ",
+    "___/__\\___",
+    "‾/(>v<)\\‾",
+    "   ^  ^  ",
+]
+
+OWL_BOSS_CONJURE_2 = [
+    "    *    ",
+    "   /\\    ",
+    "\\\\/__\\ //",
+    "‾/(>v<)\\‾",
+    "  ^  ^   ",
+]
+
+# CASTING - releasing the spell (eyes star)
+OWL_BOSS_CAST_1 = [
+    "    *    ",
+    "    /\\    ",
+    "___/__\\___",
+    "‾/(*v*)\\‾",
+    "   ^  ^  ",
+]
+
+OWL_BOSS_CAST_2 = [
+    "    *    ",
+    "   /\\    ",
+    "\\\\/__\\ //",
+    "‾/(*v*)\\‾",
+    "  ^  ^   ",
+]
+
+# RECHARGING - recovering after spell (eyes drowsy)
+OWL_BOSS_RECHARGE_1 = [
+    "    *    ",
+    "    /\\    ",
+    "___/__\\___",
+    "‾/(~v~)\\‾",
+    "   ^  ^  ",
+]
+
+OWL_BOSS_RECHARGE_2 = [
+    "    *    ",
+    "   /\\    ",
+    "\\\\/__\\ //",
+    "‾/(~v~)\\‾",
+    "  ^  ^   ",
+]
+
+# DEAD
+OWL_BOSS_DEAD = [
+    "    *    ",
+    "    /\\    ",
+    "___/__\\___",
+    "‾/(xvx)\\‾",
+    "   ^  ^  ",
+]
+
+# Animation frames grouped by state
+OWL_BOSS_FRAMES = {
+    'fly': [OWL_BOSS_FLY_1, OWL_BOSS_FLY_2],
+    'conjure': [OWL_BOSS_CONJURE_1, OWL_BOSS_CONJURE_2],
+    'cast': [OWL_BOSS_CAST_1, OWL_BOSS_CAST_2],
+    'recharge': [OWL_BOSS_RECHARGE_1, OWL_BOSS_RECHARGE_2],
+    'dead': [OWL_BOSS_DEAD],
+}
+
+# State cycle order
+OWL_BOSS_STATE_CYCLE = ['fly', 'conjure', 'cast', 'recharge']
+
+# Spell names for cycle
+OWL_BOSS_SPELLS = [
+    'overgrowth',     # Conjures tree obstacles with flowers
+    'terror',         # Swaps all birds to outer lanes
+    'ominous_wind',   # Headwind pushing down
+    'evocation',      # Summons special bats
+    'bend_space',     # Creates portal pairs
+    'bend_time',      # Slows game time
+    'meteor_shower',  # Summons falling meteors
+]
+
+# =============================================================================
+# METEOR SPRITES - Used by Owl Boss meteor_shower attack
+# =============================================================================
+
+# Large meteor - LEFT side (falls on left half of screen)
+METEOR_LEFT = [
+    "  ---__---",
+    " /        |",
+    "|    ( )   \\",
+    "( o        )",
+    " \\___---__/",
+]
+
+# Large meteor - RIGHT side (falls on right half of screen) - mirrored
+METEOR_RIGHT = [
+    "---__---  ",
+    "|        \\ ",
+    "/   ( )    |",
+    "(        o )",
+    " \\__---___/",
+]
+
+METEOR_TRAIL = [
+    "  |  ",
+    " \\|/ ",
+]
+
+# =============================================================================
+# PORTAL SPRITES FOR OWL BOSS - bend_space attack
+# =============================================================================
+
+OWL_PORTAL_FRAME_1 = [
+    " (O) ",
+    "((●))",
+    " (O) ",
+]
+
+OWL_PORTAL_FRAME_2 = [
+    " (●) ",
+    "((O))",
+    " (●) ",
+]
+
 # Background pattern
 BG_PATTERN = "/\\/\\/\\"
 

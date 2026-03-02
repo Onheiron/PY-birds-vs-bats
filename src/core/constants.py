@@ -63,6 +63,8 @@ boss = init.dict_to_namespace(config.get('boss', {}))
 wind_boss = init.dict_to_namespace(config.get('wind_boss', {}))
 jelly_boss = init.dict_to_namespace(config.get('jelly_boss', {}))
 tree_boss = init.dict_to_namespace(config.get('tree_boss', {}))
+owl_boss = init.dict_to_namespace(config.get('owl_boss', {}))
+difficulty = init.dict_to_namespace(config.get('difficulty', {}))
 
 # Special handling for transform limits (uses color codes as keys)
 # This is built from config if 'transform' section exists, otherwise use reasonable defaults

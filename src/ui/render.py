@@ -1629,33 +1629,39 @@ def _fb_render_obstacles(fb):
 
 
 def _fb_render_obstacle_flower(fb, obs, flower, center_x, x_offset):
-    """Render a flower on a swamp obstacle."""
-    from src.entities.sprites import FLOWER_COLORS, FLOWER_GROWTH_FRAMES, FLOWER_MATURE_FRAME
+    """Render a flower on a swamp obstacle using the same FLOWER_GROWTH_FRAMES as Tree Boss."""
+    from src.entities.sprites import FLOWER_COLORS, FLOWER_GROWTH_FRAMES
 
     frame = flower.get('frame', 0)
     flower_type = flower.get('type', 'red')
     rel_x = flower.get('rel_x', 0)
     rel_y = flower.get('rel_y', 0)
 
-    # Calculate absolute position
-    flower_x = center_x - x_offset + rel_x
-    flower_y = obs['y_pos'] + rel_y
+    # Calculate absolute position (base position)
+    flower_base_x = center_x - x_offset + rel_x
+    flower_base_y = obs['y_pos'] + rel_y
 
-    if not (0 <= flower_y < constants.layout.height and 0 <= flower_x < constants.layout.width):
-        return
-
-    # Simple single-char representation for obstacle flowers
-    # o -> O -> @ -> @ -> @ -> * (mature)
-    simple_chars = ['o', 'O', '@', '@', '@', '*']
-    if frame < len(simple_chars):
-        char = simple_chars[frame]
+    # Get flower sprite lines based on growth frame (can be multi-line like Tree Boss)
+    if frame < len(FLOWER_GROWTH_FRAMES):
+        flower_lines = FLOWER_GROWTH_FRAMES[frame]
     else:
-        char = '*'
+        flower_lines = FLOWER_GROWTH_FRAMES[-1]  # Mature flower
 
-    # Color based on flower type - ALWAYS show color (not dim gray)
+    # Get flower color
     flower_color = FLOWER_COLORS.get(flower_type, FLOWER_COLORS['red'])
 
-    fb.put(GAME_X_OFFSET + flower_x, flower_y + HEADER_HEIGHT, char, flower_color)
+    # Render each line of the flower sprite (from bottom to top for multi-line)
+    for line_offset, flower_line in enumerate(reversed(flower_lines)):
+        flower_y = flower_base_y - line_offset
+        # Center the flower line
+        line_width = len(flower_line)
+        flower_x = flower_base_x - line_width // 2
+
+        if 0 <= flower_y < constants.layout.height:
+            for char_idx, char in enumerate(flower_line):
+                x_pos = flower_x + char_idx
+                if char != ' ' and 0 <= x_pos < constants.layout.width:
+                    fb.put(GAME_X_OFFSET + x_pos, flower_y + HEADER_HEIGHT, char, flower_color)
 
 
 def _fb_render_right_panel_barriers(fb):
@@ -1691,8 +1697,9 @@ def _fb_render_right_panel_barriers(fb):
 
 
 def _fb_render_portals(fb):
-    """Render cave portals to framebuffer (biome 5 only)."""
-    if state.game.level_group != 5:
+    """Render portals to framebuffer (biome 5 natural portals OR Owl Boss bend_space portals)."""
+    # Render if we're in biome 5 OR if there are any portals (from Owl Boss)
+    if state.game.level_group != 5 and not state.enemies.portals:
         return
 
     from src.entities.sprites import PORTAL_FRAME_1, PORTAL_FRAME_2, PORTAL_COLOR
@@ -1890,6 +1897,9 @@ def _fb_render_boss(fb):
         return
     elif boss_type == 'tree':
         _fb_render_tree_boss(fb)
+        return
+    elif boss_type == 'owl':
+        _fb_render_owl_boss(fb)
         return
 
     from src.entities.sprites import (
@@ -2120,6 +2130,116 @@ def _fb_render_tree_boss(fb):
     # =========================================================================
     # 4. RENDER STATUS INDICATORS for stunned/frozen/poisoned birds
     # =========================================================================
+    _fb_render_bird_status_indicators(fb)
+
+
+def _fb_render_owl_boss(fb):
+    """Render Owl Boss and its spell effects."""
+    boss = state.enemies.boss
+    if boss is None:
+        return
+
+    from src.entities.sprites import (
+        OWL_BOSS_FRAMES, OWL_BOSS_DEAD,
+        METEOR_LEFT, METEOR_RIGHT, METEOR_TRAIL
+    )
+
+    boss_hp = boss.get('hp', 0)
+    boss_max = boss.get('max_hp', boss_hp if boss_hp > 0 else 1)
+    boss_state = boss.get('state', 'fly')
+    anim_frame = boss.get('anim_frame', 0)
+
+    # Choose sprite based on state
+    # boss['state'] contains: 'descending', 'fly', 'conjure', 'cast', 'recharge', 'dying', 'dead'
+    if boss_state in ('dying', 'dead'):
+        boss_sprite = OWL_BOSS_DEAD
+    elif boss_state == 'descending':
+        # While descending, use fly animation
+        stage_frames = OWL_BOSS_FRAMES.get('fly', OWL_BOSS_FRAMES['fly'])
+        boss_sprite = stage_frames[anim_frame % len(stage_frames)]
+    else:
+        # Get frames for current stage (fly, conjure, cast, recharge)
+        stage_frames = OWL_BOSS_FRAMES.get(boss_state, OWL_BOSS_FRAMES['fly'])
+        boss_sprite = stage_frames[anim_frame % len(stage_frames)]
+
+    # Color based on HP - uses purple base for magical owl
+    owl_base_rgb = (180, 100, 220)  # Purple
+    boss_color = apply_bold(color_from_hp_to_red(owl_base_rgb, boss_hp, boss_max))
+
+    # Render owl boss sprite
+    for line_idx, line in enumerate(boss_sprite):
+        y_pos = boss['y_pos'] + line_idx
+        if 0 <= y_pos < constants.layout.height:
+            for i, char in enumerate(line):
+                if char != ' ':
+                    x_pos = boss['x_pos'] + i
+                    if 0 <= x_pos < constants.layout.width:
+                        # Special coloring for certain characters
+                        char_color = boss_color
+                        if char == '*':  # Magic star
+                            char_color = "\033[1;33m"  # Yellow
+                        elif char in ('@', 'v'):  # Eyes/beak
+                            # Different eye colors based on stage
+                            if boss_state == 'conjure':
+                                char_color = "\033[1;31m"  # Red (narrowed)
+                            elif boss_state == 'cast':
+                                char_color = "\033[1;37m"  # White (star eyes)
+                            elif boss_state == 'recharge':
+                                char_color = "\033[1;34m"  # Blue (drowsy)
+                            else:
+                                char_color = "\033[1;33m"  # Yellow (normal)
+                        fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, char_color)
+
+    # Owl boss portals now use state.enemies.portals and are rendered by _fb_render_portals()
+
+    # Render owl meteors (2 large meteors: one left, one right)
+    owl_meteors = boss.get('owl_meteors', [])
+    trail_color = "\033[38;5;208m"  # Orange trail
+    for meteor in owl_meteors:
+        meteor_x = meteor['x_pos']
+        meteor_y = meteor['y_pos']
+        meteor_hp = meteor.get('hp', 1)
+        meteor_max = meteor.get('max_hp', 1)
+        meteor_side = meteor.get('side', 'left')
+
+        # Choose sprite based on side
+        meteor_sprite = METEOR_LEFT if meteor_side == 'left' else METEOR_RIGHT
+
+        # Color based on meteor HP
+        meteor_base_rgb = (255, 100, 0)  # Orange
+        m_color = apply_bold(color_from_hp_to_red(meteor_base_rgb, meteor_hp, meteor_max))
+
+        # Render trail above meteor (centered on meteor)
+        sprite_width = max(len(line) for line in meteor_sprite)
+        trail_x = meteor_x + sprite_width // 2
+        for line_idx, line in enumerate(METEOR_TRAIL):
+            y_pos = meteor_y - len(METEOR_TRAIL) + line_idx
+            if 0 <= y_pos < constants.layout.height:
+                for i, char in enumerate(line):
+                    if char != ' ':
+                        x_pos = trail_x + i - len(line) // 2
+                        if 0 <= x_pos < constants.layout.width:
+                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, trail_color)
+
+        # Render meteor body
+        for line_idx, line in enumerate(meteor_sprite):
+            y_pos = meteor_y + line_idx
+            if 0 <= y_pos < constants.layout.height:
+                for i, char in enumerate(line):
+                    if char != ' ':
+                        x_pos = meteor_x + i
+                        if 0 <= x_pos < constants.layout.width:
+                            fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, m_color)
+
+    # Render status indicators for affected birds (same as Tree Boss)
+    _fb_render_bird_status_indicators(fb)
+
+
+def _fb_render_bird_status_indicators(fb):
+    """Render status indicators (stunned/frozen/poisoned/bleeding) above affected birds.
+
+    This is extracted from Tree Boss rendering so it can be reused by Owl Boss and other bosses.
+    """
     import time as time_module
     import math
     now = time_module.time()

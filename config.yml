@@ -542,6 +542,77 @@ swamp_flowers:
   bloom_probability: 0.5            # 50% chance per obstacle to have a flower
   # Uses same flower types and effects as tree_boss.flowers
 
+# Owl Boss configuration - boss for level 5-3 (Haunted Woods)
+# Wizard owl that casts powerful spells
+owl_boss:
+  level: 15                           # Which level this boss appears (5-3 = level 15)
+  spawn_miles_before_transition: 3    # Spawn 3 miles before level end
+  hp: 500                             # High HP
+  armor_reduction: 1                  # Standard armor
+
+  # Position - settles at 1/6 from top (very high on screen)
+  target_y_fraction: 0.15             # Fraction of screen height from top
+
+  # Animation timing - 4 seconds per stage (fly, conjure, cast, recharge)
+  stage_duration: 4.0                 # Seconds per stage
+  anim_frames_per_step: 8             # Frames between animation steps
+
+  # Movement settings
+  descent_speed: 6                    # Frames between descent steps
+  oscillation_range: 8                # Columns to move left/right
+  oscillation_speed: 10               # Frames between oscillation steps
+
+  # Spell cycle: each spell is cast in sequence
+  # Order: overgrowth, terror, ominous_wind, evocation, bend_space, bend_time, meteor_shower
+  spells:
+    overgrowth:
+      tree_count: 5                   # Number of tree obstacles to conjure
+      flower_probability: 1.0         # 100% chance each tree has a flower
+      tree_hp: 40                     # HP of conjured trees
+      spawn_radius_x: 0.3             # Horizontal spawn radius (fraction of screen)
+      spawn_radius_y: 0.2             # Vertical spawn radius (fraction of screen)
+
+    terror:
+      # Swaps all birds, filling outer lanes first, center lanes last
+      swap_delay: 0.3                 # Seconds between each swap
+
+    ominous_wind:
+      duration: 3.0                   # Wind effect duration (seconds)
+      down_bonus: 2                   # Speed boost when going down
+      up_penalty: 2                   # Speed penalty when going up
+
+    evocation:
+      bat_count: 3                    # Number of bats to summon
+      bat_tier_min: 2                 # Minimum bat tier
+      bat_tier_max: 4                 # Maximum bat tier
+      spawn_as_special: true          # Can spawn as armored/diver/spellcaster
+
+    bend_space:
+      portal_pairs: 2                 # Number of portal pairs (2 pairs = 4 portals)
+      bottom_y_fraction: 0.66         # Y position of bottom portals (2/3 down)
+      top_y_fraction: 0.33            # Y position of top portals (1/3 down)
+      portal_duration: 60.0           # How long portals stay active (seconds)
+
+    bend_time:
+      duration: 4.0                   # Slowdown duration (seconds)
+      slowdown_factor: 2.0            # Game runs at 1/2 speed
+      boss_immune: true               # Boss continues at normal speed
+
+    meteor_shower:
+      meteor_count: 4                 # Number of meteors (2 left, 2 right of boss)
+      meteor_width: 6                 # Width in characters (2 lanes)
+      meteor_hp: 30                   # HP per meteor
+      speed_multiplier: 1.5           # 1.5x obstacle speed
+      spawn_offset: 2                 # Lanes offset from boss center
+
+  # Rewards
+  score: 2500
+  xp: 250
+
+  # Corpse settings
+  corpse:
+    hp: 100
+
 obstacle:
   # Base HP per tier (before level scaling)
   hp_by_tier:

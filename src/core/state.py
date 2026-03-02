@@ -452,7 +452,7 @@ def init(seed=None):
     
     # Game state
     game.score = 0
-    game.miles = 20.0
+    game.miles = 0.0
     game.level_group = 1
     game.level = 1
     game.level_sub = 1
