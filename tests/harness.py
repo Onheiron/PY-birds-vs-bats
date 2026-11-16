@@ -102,7 +102,7 @@ class Simulation:
         from src.core import constants, state
         from src.engine import input_handler, physics
         from src.engine import logic as game_logic
-        from src.ui import render
+        from src.ui import framebuffer, render
         from src import functions
 
         self.game = game
@@ -136,8 +136,8 @@ class Simulation:
             state.game.miles = float(milestones[level - 2]) + 0.01
         functions.update_miles(1e-9)
 
-        render._framebuffer = None
-        self.fb = render.get_framebuffer()
+        framebuffer.reset_framebuffer()
+        self.fb = framebuffer.get_framebuffer()
         self.screen = Screen(self.fb.width, self.fb.height)
         self.output_bytes = 0
         self.frame = 0

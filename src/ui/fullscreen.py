@@ -13,8 +13,8 @@ import subprocess
 def _get_dimensions():
     """Get game dimensions from render module or use defaults."""
     try:
-        from src.ui import render
-        return render.TOTAL_WIDTH, render.TOTAL_HEIGHT
+        from src.ui import layout
+        return layout.TOTAL_WIDTH, layout.TOTAL_HEIGHT
     except Exception:
         # Fallback defaults
         SIDE_PANEL_WIDTH = 20

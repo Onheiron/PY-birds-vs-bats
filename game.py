@@ -12,6 +12,9 @@ from src import functions
 from src.core import state
 from src.core import constants
 from src.ui import render
+from src.ui import framebuffer
+from src.ui.keyboard import get_key
+from src.ui.layers.title import render_title_screen
 from src.engine import input_handler
 from src.engine import physics
 from src.engine import logic as game_logic
@@ -78,11 +81,11 @@ def show_game_over_screen():
     Returns:
         'retry' to play again, 'exit' to quit
     """
-    from src.ui.render import TOTAL_WIDTH, SIDE_PANEL_WIDTH, GAME_X_OFFSET
+    from src.ui.layout import TOTAL_WIDTH, SIDE_PANEL_WIDTH, GAME_X_OFFSET
     import sys
 
     # Get the existing framebuffer (same one used by the game)
-    fb = render.get_framebuffer()
+    fb = framebuffer.get_framebuffer()
 
     # CRITICAL: Force full redraw by clearing BOTH buffers
     fb.first_frame = True
@@ -236,7 +239,7 @@ def show_game_over_screen():
         # Always render every frame (like the game does)
         draw_game_over(0, player_name, "name")
 
-        key = render.get_key()
+        key = get_key()
         if key == 'QUIT' or key == 'ESC':
             player_name = ""
             name_done = True
@@ -262,7 +265,7 @@ def show_game_over_screen():
         # Always render every frame
         draw_game_over(selected, player_name, "menu")
 
-        key = render.get_key()
+        key = get_key()
         if key == 'UP':
             selected = 0
         elif key == 'DOWN':
@@ -341,10 +344,10 @@ def run_game():
         while state.ui.show_title and not state.game.quit_requested:
             frame_start = time.time()
 
-            key = render.get_key()
+            key = get_key()
             input_handler.process_input(key)
 
-            render.render_title_screen()
+            render_title_screen()
 
             elapsed = time.time() - frame_start
             sleep_time = FIXED_FRAME_TIME - elapsed
@@ -392,7 +395,7 @@ def run_game():
             frame_start = time.time()
 
             # === INPUT (sempre, ogni frame) ===
-            key = render.get_key()
+            key = get_key()
             input_handler.process_input(key)
 
             # Se in pausa, solo render e aspetta (but don't accumulate miles)
@@ -491,7 +494,7 @@ def main():
 
             if result == 'retry':
                 # Reset framebuffer for new game
-                render._framebuffer = None
+                framebuffer.reset_framebuffer()
                 continue
             else:
                 # Exit or quit
