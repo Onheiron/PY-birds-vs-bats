@@ -3,6 +3,7 @@
 The loop renders at a fixed 60 FPS so input stays responsive, while physics
 and game logic advance every N frames, N shrinking as the gear goes up.
 """
+
 import time
 
 from src.core import state
@@ -41,8 +42,8 @@ class Session:
         game.last_mile_update = now
 
         if self.frame % frames_per_update(game.speed) == 0:
-            physics.update_all()   # movement
-            logic.update_all()     # collisions, spawning, power-ups
+            physics.update_all()  # movement
+            logic.update_all()  # collisions, spawning, power-ups
             game.frame_count += 1  # game-time counter (spawn timing, effects)
 
         self.frame += 1

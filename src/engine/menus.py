@@ -1,14 +1,13 @@
 """Pause, settings and title menu navigation."""
 
 from src.core import state
-from src.services.sound import apply_music_setting
 from src.engine.actions import handle_pause
 from src.engine.notifications import _add_notification
+from src.services.sound import apply_music_setting
 
 
 def _execute_pause_menu_action():
     """Execute the currently selected pause menu action."""
-    from src.core import state as game_state
 
     selected = state.ui.pause_menu_index
 
@@ -63,22 +62,29 @@ def _get_settings_options_count():
     menu = state.ui.settings_menu
     if menu == 'main':
         return 5  # SOUND, GRAPHICS, CONTROLS, DIFFICULTY, < BACK
-    elif menu == 'sound':
+    if menu == 'sound':
         return 3  # SFX, MUSIC, < BACK
-    elif menu == 'graphics':
+    if menu == 'graphics':
         return 4  # BACKGROUND, PARALLAX, ACCESSIBILITY, < BACK
-    elif menu == 'controls':
+    if menu == 'controls':
         return 6  # 5 control display items + < BACK
-    elif menu == 'save':
+    if menu == 'save':
         return 4  # SLOT 1, SLOT 2, SLOT 3, < BACK
-    elif menu == 'load':
+    if menu == 'load':
         return 5  # AUTO, SLOT 1, SLOT 2, SLOT 3, < BACK
-    elif menu == 'birdpedia':
+    if menu == 'birdpedia':
         return 5  # GUIDE, BIRDPEDIA, BATPEDIA, BIOMES, < BACK
-    elif menu == 'guide':
+    if menu == 'guide':
         return 5  # HOW TO PLAY, COMMANDS, OBSTACLES, ENEMIES, < BACK
-    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies',
-                  'birdpedia_list', 'batpedia_list', 'biomes_list'):
+    if menu in (
+        'guide_howto',
+        'guide_commands',
+        'guide_obstacles',
+        'guide_enemies',
+        'birdpedia_list',
+        'batpedia_list',
+        'biomes_list',
+    ):
         return 1  # Just < BACK (content view)
     return 1
 
@@ -139,6 +145,7 @@ def _handle_settings_enter():
         elif idx < 3:  # Slot 1-3
             slot = idx + 1
             from src.services import save_manager
+
             if save_manager.save_game(slot):
                 _add_notification(f"Saved to Slot {slot}", title="Save:")
                 state.ui.settings_menu = None
@@ -152,6 +159,7 @@ def _handle_settings_enter():
         elif idx <= 3:  # Slot 0 (auto), 1, 2, 3
             slot = idx  # idx 0 = autosave, idx 1-3 = slots 1-3
             from src.services import save_manager
+
             slots = save_manager.list_save_slots()
             if slots.get(slot, {}).get('exists'):
                 if save_manager.load_game(slot):
@@ -196,8 +204,15 @@ def _handle_settings_enter():
         elif idx == 4:  # < BACK
             state.ui.settings_menu = 'birdpedia'
             state.ui.settings_index = 0
-    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies',
-                  'birdpedia_list', 'batpedia_list', 'biomes_list'):
+    elif menu in (
+        'guide_howto',
+        'guide_commands',
+        'guide_obstacles',
+        'guide_enemies',
+        'birdpedia_list',
+        'batpedia_list',
+        'biomes_list',
+    ):
         # Content views - any key goes back
         _handle_settings_back()
 
@@ -218,11 +233,7 @@ def _handle_settings_back():
             state.ui.settings_index = 1
         else:  # controls
             state.ui.settings_index = 2
-    elif menu in ('save', 'load'):
-        # Return directly to pause menu
-        state.ui.settings_menu = None
-        state.ui.settings_index = 0
-    elif menu == 'birdpedia':
+    elif menu in ('save', 'load') or menu == 'birdpedia':
         # Return directly to pause menu
         state.ui.settings_menu = None
         state.ui.settings_index = 0
@@ -311,6 +322,7 @@ def _handle_title_input(key):
             else:
                 # Load slot idx (0=autosave, 1-3=manual)
                 from src.services import save_manager
+
                 if save_manager.load_game(idx):
                     state.ui.show_title = False
                     state.ui.settings_menu = None
@@ -340,18 +352,21 @@ def _handle_title_input(key):
         if idx == 0:  # CONTINUE
             # Try to load the most recent save (by timestamp)
             from src.services import save_manager
+
             most_recent = save_manager.get_most_recent_save()
             if most_recent is not None and save_manager.load_game(most_recent):
                 state.ui.show_title = False
             else:
                 # No saves, start new game with default settings
                 from src.services import save_manager
+
                 state.init()
                 save_manager.load_default_settings()
                 state.ui.show_title = False
         elif idx == 1:  # NEW GAME
-            from src.services import save_manager
             from src.core import constants
+            from src.services import save_manager
+
             # Save the difficulty selection before init (which doesn't reset settings)
             selected_difficulty = state.settings.difficulty
             # Load difficulty-specific configuration
@@ -387,14 +402,76 @@ def _handle_title_settings_input(key):
         if key == 'ESC':
             state.ui.rebinding_control = None
         else:
-            valid_keys = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE', 'ENTER',
-                          'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-                          'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-                          'U', 'V', 'W', 'X', 'Y', 'Z',
-                          'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-                          'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                          'u', 'v', 'w', 'x', 'y', 'z',
-                          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+            valid_keys = [
+                'LEFT',
+                'RIGHT',
+                'UP',
+                'DOWN',
+                'SPACE',
+                'ENTER',
+                'A',
+                'B',
+                'C',
+                'D',
+                'E',
+                'F',
+                'G',
+                'H',
+                'I',
+                'J',
+                'K',
+                'L',
+                'M',
+                'N',
+                'O',
+                'P',
+                'Q',
+                'R',
+                'S',
+                'T',
+                'U',
+                'V',
+                'W',
+                'X',
+                'Y',
+                'Z',
+                'a',
+                'b',
+                'c',
+                'd',
+                'e',
+                'f',
+                'g',
+                'h',
+                'i',
+                'j',
+                'k',
+                'l',
+                'm',
+                'n',
+                'o',
+                'p',
+                'q',
+                'r',
+                's',
+                't',
+                'u',
+                'v',
+                'w',
+                'x',
+                'y',
+                'z',
+                '0',
+                '1',
+                '2',
+                '3',
+                '4',
+                '5',
+                '6',
+                '7',
+                '8',
+                '9',
+            ]
             if key in valid_keys:
                 state.settings.key_bindings[state.ui.rebinding_control] = key.upper() if len(key) == 1 else key
                 state.ui.rebinding_control = None
@@ -430,6 +507,7 @@ def _handle_title_settings_input(key):
 def _handle_title_settings_back():
     """Handle ESC or < BACK in title settings menu."""
     from src.services import save_manager
+
     menu = state.ui.settings_menu
 
     if menu == 'main':
@@ -468,6 +546,7 @@ def _handle_title_settings_back():
 def _handle_title_settings_left_right(key):
     """Handle LEFT/RIGHT in title settings menu."""
     from src.services import save_manager
+
     menu = state.ui.settings_menu
     idx = state.ui.settings_index
     delta = 1 if key == 'RIGHT' else -1
@@ -500,6 +579,7 @@ def _handle_title_settings_left_right(key):
 def _handle_title_settings_enter():
     """Handle ENTER in title settings menu."""
     from src.services import save_manager
+
     menu = state.ui.settings_menu
     idx = state.ui.settings_index
 
@@ -578,7 +658,14 @@ def _handle_title_settings_enter():
             state.ui.settings_index = 0
         elif idx == 4:  # < BACK
             _handle_title_settings_back()
-    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies',
-                  'birdpedia_list', 'batpedia_list', 'biomes_list'):
+    elif menu in (
+        'guide_howto',
+        'guide_commands',
+        'guide_obstacles',
+        'guide_enemies',
+        'birdpedia_list',
+        'batpedia_list',
+        'biomes_list',
+    ):
         # Content views - any key goes back
         _handle_title_settings_back()

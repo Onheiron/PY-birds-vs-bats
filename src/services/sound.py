@@ -4,11 +4,13 @@ The real backend (src.services.audio) needs numpy and sounddevice, which are
 optional. Game code talks to this module only, so it never has to check
 whether audio is available.
 """
+
 from src.core import constants, state
 from src.entities.bird_types import get_bird_type_by_color
 
 try:
     from src.services import audio as _backend
+
     if not _backend.is_audio_available():
         _backend = None
 except ImportError:

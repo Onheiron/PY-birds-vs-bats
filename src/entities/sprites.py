@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
 """
 Sprite definitions and rendering functions for BVB.
 Contains all ASCII art sprites for birds, bats, obstacles, and related rendering helpers.
 """
+
 # Import theme from src (not src.core to avoid circular imports)
 import src.theme as theme
 
@@ -127,6 +127,7 @@ def get_dynamic_color(color_name):
     # Fallback to module constant if exists
     return globals().get(color_name, RESET)
 
+
 # Bird sprites - two frames for animation (compact version)
 BIRD_UP_1 = [
     " . ",
@@ -164,26 +165,10 @@ BIRD_PATCH_DOWN_2 = [
 ]
 
 # DINOSAUR legendary bird sprites (3 lines × 5 chars)
-DINOSAUR_UP_1 = [
-    ' .|. ',
-    '/\\O/\\',
-    '  "  '
-]
-DINOSAUR_UP_2 = [
-    '_.|._',
-    ' \\O/ ',
-    '  "  '
-]
-DINOSAUR_DOWN_1 = [
-    '  "  ',
-    '\\/O\\/',
-    " '|' "
-]
-DINOSAUR_DOWN_2 = [
-    '  "  ',
-    '_/O\\_',
-    " '|' "
-]
+DINOSAUR_UP_1 = [' .|. ', '/\\O/\\', '  "  ']
+DINOSAUR_UP_2 = ['_.|._', ' \\O/ ', '  "  ']
+DINOSAUR_DOWN_1 = ['  "  ', '\\/O\\/', " '|' "]
+DINOSAUR_DOWN_2 = ['  "  ', '_/O\\_', " '|' "]
 
 # Bat sprites - two frames for animation (compact version)
 BAT_FRAME_1 = [
@@ -218,29 +203,19 @@ DIVER_BAT_FRAME_1 = [
     "__ ⋀⋀ __",
     "‾/(oo)\\‾",
 ]
-DIVER_BAT_FRAME_2 = [
-    " _ ⋀⋀ _ ",
-    "/|(--)|\\"
-]
+DIVER_BAT_FRAME_2 = [" _ ⋀⋀ _ ", "/|(--)|\\"]
 DIVER_BAT_DIVE = [
     "__ ⋀⋀ __",
     "‾/(><)\\‾",
 ]
-DIVER_BAT_STUNNED = [
-    " _ ⋀⋀ _",
-    "/|(@@)|\\"
-]
+DIVER_BAT_STUNNED = [" _ ⋀⋀ _", "/|(@@)|\\"]
 
 # Jumpscare bat sprites - rare mini bat variant (uses Diver Bat base)
 JUMPSCARE_BAT_FRAME_1 = DIVER_BAT_FRAME_1
 JUMPSCARE_BAT_FRAME_2 = DIVER_BAT_FRAME_2
 
 # Jumpscare bat scary face sprite (3 lines tall)
-JUMPSCARE_BAT_SCARY_FACE = [
-    "\\\\ ⋀_⋀ //",
-    "‾/(o_o)\\‾",
-    "  'U'  "
-]
+JUMPSCARE_BAT_SCARY_FACE = ["\\\\ ⋀_⋀ //", "‾/(o_o)\\‾", "  'U'  "]
 
 # Spellcaster bat sprites - bats that cast spells (3 lines tall with star)
 SPELLCASTER_BAT_FRAME_1 = [
@@ -248,11 +223,7 @@ SPELLCASTER_BAT_FRAME_1 = [
     "__ /\\ __",
     "‾/(oo)\\‾",
 ]
-SPELLCASTER_BAT_FRAME_2 = [
-    "    *   ",
-    "__ /\\ __",
-    "/|(--)|\\"
-]
+SPELLCASTER_BAT_FRAME_2 = ["    *   ", "__ /\\ __", "/|(--)|\\"]
 SPELLCASTER_BAT_CASTING = [
     "   *    ",
     "\\\\ /\\ //",
@@ -396,16 +367,16 @@ WIND_BOSS_DEAD = [
 
 # Animation sequence for wind boss (indices into sprite list)
 WIND_BOSS_ANIM_SEQUENCE = [
-    'max_up',      # 0 - wings fully up (tailwind)
-    'push_1',      # 1 - pushing down
-    'push_2',      # 2 - pushing down
-    'push_3',      # 3 - pushing down
-    'push_4',      # 4 - pushing down
-    'max_down',    # 5 - wings fully down (headwind starts)
-    'pull_1',      # 6 - pulling up
-    'pull_2',      # 7 - pulling up
-    'pull_3',      # 8 - pulling up
-    'pull_4',      # 9 - pulling up (back to max_up)
+    'max_up',  # 0 - wings fully up (tailwind)
+    'push_1',  # 1 - pushing down
+    'push_2',  # 2 - pushing down
+    'push_3',  # 3 - pushing down
+    'push_4',  # 4 - pushing down
+    'max_down',  # 5 - wings fully down (headwind starts)
+    'pull_1',  # 6 - pulling up
+    'pull_2',  # 7 - pulling up
+    'pull_3',  # 8 - pulling up
+    'pull_4',  # 9 - pulling up (back to max_up)
 ]
 
 # =============================================================================
@@ -642,10 +613,10 @@ TREE_BOSS_BRANCH_FLOWER_POSITIONS = [
 
 # Growth frames (same for all colors, color applied at render time)
 # Each frame is a list of lines (single char frames are 1-element lists)
-FLOWER_FRAME_0 = ["o"]           # Small bud (frame 0)
-FLOWER_FRAME_1 = ["O"]           # Medium bud (frame 1)
-FLOWER_FRAME_2 = ["()"]          # Opening (frame 2)
-FLOWER_FRAME_3 = ["(@)"]         # Closed flower (frame 3)
+FLOWER_FRAME_0 = ["o"]  # Small bud (frame 0)
+FLOWER_FRAME_1 = ["O"]  # Medium bud (frame 1)
+FLOWER_FRAME_2 = ["()"]  # Opening (frame 2)
+FLOWER_FRAME_3 = ["(@)"]  # Closed flower (frame 3)
 FLOWER_FRAME_4 = ["\\|/", "(@)"]  # Petals appearing (frame 4, 2 lines)
 FLOWER_FRAME_5 = [" _|\\⋀/|_", " \\(>@<)/"]  # Mature flower (frame 5, 2 lines)
 
@@ -667,10 +638,10 @@ FLOWER_MATURE_FRAME = 5
 # Blue flower: freeze effect
 # Green flower: poison effect
 FLOWER_COLORS = {
-    'red': '\033[1;31m',      # Bright red (bleed)
-    'yellow': '\033[1;33m',   # Bright yellow (stun)
-    'blue': '\033[1;34m',     # Bright blue (freeze)
-    'green': '\033[1;32m',    # Bright green (poison)
+    'red': '\033[1;31m',  # Bright red (bleed)
+    'yellow': '\033[1;33m',  # Bright yellow (stun)
+    'blue': '\033[1;34m',  # Bright blue (freeze)
+    'green': '\033[1;32m',  # Bright green (poison)
 }
 
 # =============================================================================
@@ -770,12 +741,12 @@ OWL_BOSS_STATE_CYCLE = ['fly', 'conjure', 'cast', 'recharge']
 
 # Spell names for cycle
 OWL_BOSS_SPELLS = [
-    'overgrowth',     # Conjures tree obstacles with flowers
-    'terror',         # Swaps all birds to outer lanes
-    'ominous_wind',   # Headwind pushing down
-    'evocation',      # Summons special bats
-    'bend_space',     # Creates portal pairs
-    'bend_time',      # Slows game time
+    'overgrowth',  # Conjures tree obstacles with flowers
+    'terror',  # Swaps all birds to outer lanes
+    'ominous_wind',  # Headwind pushing down
+    'evocation',  # Summons special bats
+    'bend_space',  # Creates portal pairs
+    'bend_time',  # Slows game time
     'meteor_shower',  # Summons falling meteors
 ]
 
@@ -1235,15 +1206,18 @@ def get_random_obstacle_sprite(level_group, tier, allow_flip=True):
 
     return sprite, flipped
 
+
 def get_biome_bg(level_group):
     """Get background patterns for the current biome."""
     layer1 = BIOME_BG_LAYER1.get(level_group, BIOME_BG_LAYER1[1])
     layer2 = BIOME_BG_LAYER2.get(level_group, BIOME_BG_LAYER2[1])
     return layer1, layer2
 
+
 def get_biome_name(level_group):
     """Get the name of the current biome."""
     return BIOME_NAMES.get(level_group, "Unknown")
+
 
 # =============================================================================
 # LEGACY OBSTACLE SPRITES (for backward compatibility)
@@ -1285,13 +1259,20 @@ def flip_sprite_horizontal(sprite):
 
     # Mappa caratteri che devono essere invertiti
     flip_map = {
-        '/': '\\', '\\': '/',
-        '(': ')', ')': '(',
-        '[': ']', ']': '[',
-        '{': '}', '}': '{',
-        '<': '>', '>': '<',
-        '⌋': '⌊', '⌊': '⌋',
-        '⌉': '⌈', '⌈': '⌉',
+        '/': '\\',
+        '\\': '/',
+        '(': ')',
+        ')': '(',
+        '[': ']',
+        ']': '[',
+        '{': '}',
+        '}': '{',
+        '<': '>',
+        '>': '<',
+        '⌋': '⌊',
+        '⌊': '⌋',
+        '⌉': '⌈',
+        '⌈': '⌉',
     }
 
     flipped = []
@@ -1358,12 +1339,13 @@ def get_obstacle_hitbox_lanes(obs_lane, sprite_width, lane_positions, num_lanes)
 
     return covered_lanes
 
+
 # Legacy: mantieni per compatibilità
 OBSTACLE_SPRITE = OBSTACLE_SPRITE_T1
 
 # Base colors (full HP) for color interpolation
-BATS_BASE_RGB = (255, 0, 255)   # magenta FF00FF
-OBST_BASE_RGB = (0, 255, 0)     # green 00FF00
+BATS_BASE_RGB = (255, 0, 255)  # magenta FF00FF
+OBST_BASE_RGB = (0, 255, 0)  # green 00FF00
 
 
 # Rendering helper functions

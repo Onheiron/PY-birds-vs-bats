@@ -1,20 +1,16 @@
 """Player actions during play: move, swap, bounce, suction and toggles."""
 
-from src.core import constants
-from src.core import state
-from src.engine.birds import find_bird_in_lane
-from src.engine.birds import get_affected_lanes
-from src.engine.birds import is_orange_egg_state
-from src.engine.birds import reset_bird_power
-from src.engine.birds import set_ball_vy
-from src.entities import bird_types
-from src.services import achievements
-from src.services.sound import get_audio
 import random
 import time
-from src.entities.sprites import CLOCKWORK, DINOSAUR, GLITCH, ORANGE, PURPLE, RAINBOW
+
+from src.core import constants, state
+from src.engine.birds import find_bird_in_lane, get_affected_lanes, is_orange_egg_state, reset_bird_power, set_ball_vy
 from src.engine.notifications import _add_notification
 from src.engine.powers import _activate_bird_power
+from src.entities import bird_types
+from src.entities.sprites import CLOCKWORK, DINOSAUR, GLITCH, ORANGE, PURPLE, RAINBOW
+from src.services import achievements
+from src.services.sound import get_audio
 
 
 def _find_all_birds_in_lane(lane):
@@ -64,7 +60,7 @@ def _execute_swap():
     Uses home_lanes to determine which birds to swap - this ensures correct
     behavior when birds are temporarily in different lanes due to portals.
     """
-    from src.engine.progression import compute_gear_from_momentum, calculate_gear_threshold, deduct_momentum
+    from src.engine.progression import calculate_gear_threshold, compute_gear_from_momentum, deduct_momentum
 
     gear = compute_gear_from_momentum(state.game.momentum)
     gear_momentum_delta = calculate_gear_threshold(gear + 1) - calculate_gear_threshold(gear)
@@ -89,7 +85,9 @@ def _execute_swap():
     # Deduct momentum (not score - score never decreases)
     deduct_momentum(swap_cost)
     state.game.swaps_used += 1
-    achievements.check_achievements_event('swap', state.game.frame_count, state.ui.notifications, swaps=state.game.swaps_used)
+    achievements.check_achievements_event(
+        'swap', state.game.frame_count, state.ui.notifications, swaps=state.game.swaps_used
+    )
 
     # Handle orange eggs before swap
     for idx, other_idx in [(bird_in_selected, bird_in_current), (bird_in_current, bird_in_selected)]:
@@ -102,12 +100,16 @@ def _execute_swap():
                     break
 
     # Swap home_lanes
-    state.birds.home_lanes[bird_in_selected], state.birds.home_lanes[bird_in_current] = \
-        state.birds.home_lanes[bird_in_current], state.birds.home_lanes[bird_in_selected]
+    state.birds.home_lanes[bird_in_selected], state.birds.home_lanes[bird_in_current] = (
+        state.birds.home_lanes[bird_in_current],
+        state.birds.home_lanes[bird_in_selected],
+    )
 
     # Swap physical lanes too
-    state.birds.random_lanes[bird_in_selected], state.birds.random_lanes[bird_in_current] = \
-        state.birds.random_lanes[bird_in_current], state.birds.random_lanes[bird_in_selected]
+    state.birds.random_lanes[bird_in_selected], state.birds.random_lanes[bird_in_current] = (
+        state.birds.random_lanes[bird_in_current],
+        state.birds.random_lanes[bird_in_selected],
+    )
 
     # Update columns
     state.birds.cols[bird_in_selected] = constants.layout.lane_positions[state.birds.random_lanes[bird_in_selected]]
@@ -174,6 +176,7 @@ def handle_bounce():
                         del state.special.bleeding_birds[bird_idx]
                         # Check if a pending bird can now transform
                         from src.engine.birds import check_pending_transforms
+
                         check_pending_transforms(dead_color)
                         if state.game.lives <= 0:
                             state.game.game_over = True
@@ -227,9 +230,11 @@ def _recover_orange_bird(bird_idx, lane):
 
     # Remove the orange egg loot item
     for loot in state.items.loot_items[:]:
-        if (loot.get('type') == 'orange_egg' and
-            loot.get('x_pos') == constants.layout.lane_positions[lane] and
-            loot.get('y_pos') == constants.layout.starting_line):
+        if (
+            loot.get('type') == 'orange_egg'
+            and loot.get('x_pos') == constants.layout.lane_positions[lane]
+            and loot.get('y_pos') == constants.layout.starting_line
+        ):
             state.items.loot_items.remove(loot)
             break
 
@@ -267,8 +272,9 @@ def _bounce_bird_up(bird_idx):
         state.special.speed_boosts[bird_idx] = boost_frames
 
     # Record for combos
-    achievements.append_recent_action('bounce', lane=state.birds.random_lanes[bird_idx],
-                                     color=bird_color, frame_count=state.game.frame_count)
+    achievements.append_recent_action(
+        'bounce', lane=state.birds.random_lanes[bird_idx], color=bird_color, frame_count=state.game.frame_count
+    )
 
 
 def _handle_dinosaur_bounce(bird_idx):
@@ -306,9 +312,9 @@ def handle_suction():
                 boost_frames = int(state.powerups.suction_boost_duration / constants.timing.base_sleep)
                 state.special.speed_boosts[bird_idx] = boost_frames
 
-            achievements.append_recent_action('suction', lane=lane,
-                                             color=state.birds.colors[bird_idx],
-                                             frame_count=state.game.frame_count)
+            achievements.append_recent_action(
+                'suction', lane=lane, color=state.birds.colors[bird_idx], frame_count=state.game.frame_count
+            )
 
 
 def handle_xp_toggle():

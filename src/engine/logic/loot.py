@@ -1,12 +1,32 @@
 """Loot collection, eggs and power-up pickups."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import award_xp
-from src.services import achievements
 import random
 import time
-from src.entities.sprites import BERSERK, BLUE, CLOCKWORK, COOKIE, DINOSAUR, FROSTY, GLITCH, GOLD, ORANGE, PATCHWORK, POISON, PURPLE, RAINBOW, RED, ROCK, STEALTH, TWISTER, WHITE, YELLOW
+
+from src.core import constants, state
+from src.engine.progression import award_xp
+from src.entities.sprites import (
+    BERSERK,
+    BLUE,
+    CLOCKWORK,
+    COOKIE,
+    DINOSAUR,
+    FROSTY,
+    GLITCH,
+    GOLD,
+    ORANGE,
+    PATCHWORK,
+    POISON,
+    PURPLE,
+    RAINBOW,
+    RED,
+    ROCK,
+    STEALTH,
+    TWISTER,
+    WHITE,
+    YELLOW,
+)
+from src.services import achievements
 from src.services.sound import play_sfx
 
 
@@ -44,12 +64,14 @@ def check_loot_collection():
                 glitch_promote = getattr(constants.loot, 'glitch_promote_chance', 0.10)
                 if r < glitch_ignore:
                     continue
-                elif r < glitch_ignore + glitch_promote:
+                if r < glitch_ignore + glitch_promote:
                     _promote_loot_rarity(loot)
 
             state.items.loot_items.remove(loot)
             _apply_loot_effect(loot, i)
-            achievements.check_achievements_event('collect', state.game.frame_count, state.ui.notifications, loot=loot_type)
+            achievements.check_achievements_event(
+                'collect', state.game.frame_count, state.ui.notifications, loot=loot_type
+            )
             # Play sound based on loot type
             if '_egg' in loot_type:
                 play_sfx('egg')
@@ -74,9 +96,7 @@ def _apply_loot_effect(loot, collector_idx):
     loot_type = loot['type']
 
     # Egg types - spawn new bird
-    if loot_type.endswith('_egg') and loot_type != 'orange_egg':
-        _spawn_bird_from_egg(loot_type)
-    elif loot_type == 'orange_egg':
+    if loot_type.endswith('_egg') and loot_type != 'orange_egg' or loot_type == 'orange_egg':
         _spawn_bird_from_egg(loot_type)
     elif loot_type == 'cookie_crumb':
         xp_val = loot.get('xp', 0)
@@ -97,30 +117,69 @@ def _apply_loot_effect(loot, collector_idx):
 def _spawn_bird_from_egg(egg_type):
     """Spawn a new bird from an egg."""
     color_map = {
-        'yellow_egg': YELLOW, 'red_egg': RED, 'blue_egg': BLUE,
-        'white_egg': WHITE, 'purple_egg': PURPLE, 'orange_egg': ORANGE,
-        'gold_egg': GOLD, 'patchwork_egg': PATCHWORK, 'cookie_egg': COOKIE,
-        'clockwork_egg': CLOCKWORK, 'stealth_egg': STEALTH,
-        'dinosaur_egg': DINOSAUR, 'glitch_egg': GLITCH,
-        'rainbow_egg': RAINBOW, 'twister_egg': TWISTER, 'frosty_egg': FROSTY,
-        'poison_egg': POISON, 'berserk_egg': BERSERK, 'rock_egg': ROCK
+        'yellow_egg': YELLOW,
+        'red_egg': RED,
+        'blue_egg': BLUE,
+        'white_egg': WHITE,
+        'purple_egg': PURPLE,
+        'orange_egg': ORANGE,
+        'gold_egg': GOLD,
+        'patchwork_egg': PATCHWORK,
+        'cookie_egg': COOKIE,
+        'clockwork_egg': CLOCKWORK,
+        'stealth_egg': STEALTH,
+        'dinosaur_egg': DINOSAUR,
+        'glitch_egg': GLITCH,
+        'rainbow_egg': RAINBOW,
+        'twister_egg': TWISTER,
+        'frosty_egg': FROSTY,
+        'poison_egg': POISON,
+        'berserk_egg': BERSERK,
+        'rock_egg': ROCK,
     }
     # Get speeds from config
     spd_config = getattr(constants.birds, 'speed', {})
     egg_to_bird = {
-        'yellow_egg': 'yellow', 'red_egg': 'red', 'blue_egg': 'blue',
-        'white_egg': 'white', 'purple_egg': 'purple', 'orange_egg': 'orange',
-        'gold_egg': 'gold', 'patchwork_egg': 'patchwork', 'cookie_egg': 'cookie',
-        'clockwork_egg': 'clockwork', 'stealth_egg': 'stealth',
-        'dinosaur_egg': 'dinosaur', 'glitch_egg': 'glitch',
-        'rainbow_egg': 'rainbow', 'twister_egg': 'twister', 'frosty_egg': 'frosty',
-        'poison_egg': 'poison', 'berserk_egg': 'berserk', 'rock_egg': 'rock'
+        'yellow_egg': 'yellow',
+        'red_egg': 'red',
+        'blue_egg': 'blue',
+        'white_egg': 'white',
+        'purple_egg': 'purple',
+        'orange_egg': 'orange',
+        'gold_egg': 'gold',
+        'patchwork_egg': 'patchwork',
+        'cookie_egg': 'cookie',
+        'clockwork_egg': 'clockwork',
+        'stealth_egg': 'stealth',
+        'dinosaur_egg': 'dinosaur',
+        'glitch_egg': 'glitch',
+        'rainbow_egg': 'rainbow',
+        'twister_egg': 'twister',
+        'frosty_egg': 'frosty',
+        'poison_egg': 'poison',
+        'berserk_egg': 'berserk',
+        'rock_egg': 'rock',
     }
     default_speeds = {
-        'yellow': 2, 'red': 3, 'blue': 4, 'white': 4, 'purple': 3,
-        'orange': 5, 'gold': 5, 'patchwork': 3, 'cookie': 3, 'clockwork': 2,
-        'stealth': 3, 'dinosaur': 4, 'glitch': 3,
-        'rainbow': 6, 'twister': 4, 'frosty': 3, 'poison': 3, 'berserk': 3, 'rock': 2
+        'yellow': 2,
+        'red': 3,
+        'blue': 4,
+        'white': 4,
+        'purple': 3,
+        'orange': 5,
+        'gold': 5,
+        'patchwork': 3,
+        'cookie': 3,
+        'clockwork': 2,
+        'stealth': 3,
+        'dinosaur': 4,
+        'glitch': 3,
+        'rainbow': 6,
+        'twister': 4,
+        'frosty': 3,
+        'poison': 3,
+        'berserk': 3,
+        'rock': 2,
     }
 
     bird_color = color_map.get(egg_type)
@@ -179,7 +238,9 @@ def _apply_wide_cursor_power(loot_type):
 
     state.powerups.wide_cursor_frames = int(seconds / constants.timing.base_sleep)
     state.powerups.wide_cursor_lanes = lanes
-    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power='wide_cursor')
+    achievements.check_achievements_event(
+        'power_used', state.game.frame_count, state.ui.notifications, power='wide_cursor'
+    )
 
 
 def _apply_bounce_boost_power(loot_type):
@@ -205,7 +266,9 @@ def _apply_bounce_boost_power(loot_type):
 
     state.powerups.bounce_boost_frames = int(seconds / constants.timing.base_sleep)
     state.powerups.bounce_boost_duration = duration
-    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power='bounce_boost')
+    achievements.check_achievements_event(
+        'power_used', state.game.frame_count, state.ui.notifications, power='bounce_boost'
+    )
 
 
 def _apply_suction_power(loot_type):
@@ -263,7 +326,9 @@ def _apply_tailwind_power(loot_type):
     state.powerups.tailwind_frames = int(seconds / constants.timing.base_sleep)
     state.powerups.tailwind_up_bonus = up_bonus
     state.powerups.tailwind_down_penalty = down_pen
-    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power='tailwind')
+    achievements.check_achievements_event(
+        'power_used', state.game.frame_count, state.ui.notifications, power='tailwind'
+    )
 
 
 def _apply_timelapse_power(loot_type):
@@ -289,4 +354,6 @@ def _apply_timelapse_power(loot_type):
     state.powerups.timelapse_active = True
     state.powerups.timelapse_end_time = time.time() + duration
     state.powerups.timelapse_slowdown = slowdown
-    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power='timelapse')
+    achievements.check_achievements_event(
+        'power_used', state.game.frame_count, state.ui.notifications, power='timelapse'
+    )

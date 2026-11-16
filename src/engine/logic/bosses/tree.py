@@ -1,17 +1,14 @@
 """Tree Boss (Dark Swamp)."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import add_score
-from src.engine.loot_tables import adjust_rarity_weights
-from src.engine.progression import award_xp
-from src.engine.loot_tables import choose_loot_type
-from src.engine.progression import compute_prestige
 import random
 import time
-from src.entities.sprites import DINOSAUR, STEALTH
+
+from src.core import constants, state
 from src.engine.logic.damage import _calculate_bird_damage
 from src.engine.logic.flowers import _apply_flower_collision_effect, _apply_mature_flower_effect
+from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
+from src.engine.progression import add_score, award_xp, compute_prestige
+from src.entities.sprites import DINOSAUR, STEALTH
 from src.services.sound import play_sfx
 
 
@@ -42,13 +39,13 @@ def spawn_tree_boss():
     branch_positions = [
         {'x': 11, 'tree_row': 13, 'sprite_idx': 0},  # Branch 1 - covers lanes 1,2,3,4
         {'x': 28, 'tree_row': 11, 'sprite_idx': 1},  # Branch 2 - covers lanes 6,7,8
-        {'x': 5, 'tree_row': 6, 'sprite_idx': 2},    # Branch 3 - covers lanes 0,1,2,3
-        {'x': 25, 'tree_row': 4, 'sprite_idx': 3},   # Branch 4 - covers lanes 5,6
-        {'x': 33, 'tree_row': 8, 'sprite_idx': 4},   # Branch 5 - covers lanes 7,8
+        {'x': 5, 'tree_row': 6, 'sprite_idx': 2},  # Branch 3 - covers lanes 0,1,2,3
+        {'x': 25, 'tree_row': 4, 'sprite_idx': 3},  # Branch 4 - covers lanes 5,6
+        {'x': 33, 'tree_row': 8, 'sprite_idx': 4},  # Branch 5 - covers lanes 7,8
     ]
 
     # Import branch sprites and background tree for size calculation
-    from src.entities.sprites import TREE_BOSS_BRANCHES, TREE_BOSS_BACKGROUND
+    from src.entities.sprites import TREE_BOSS_BACKGROUND, TREE_BOSS_BRANCHES
 
     # Calculate background tree height (needed for branch positioning)
     bg_height = len(TREE_BOSS_BACKGROUND)
@@ -56,8 +53,6 @@ def spawn_tree_boss():
     # Create branches with calculated positions
     branches = []
     flower_types = ['red', 'yellow', 'blue', 'green']
-    screen_width = constants.layout.width
-    screen_height = constants.layout.starting_line
 
     for i, pos in enumerate(branch_positions):
         # Get position from branch_positions (absolute tree coordinates)
@@ -92,6 +87,7 @@ def spawn_tree_boss():
 
         # Get flower spawn positions for this branch (use sprite_idx to match sprite)
         from src.entities.sprites import TREE_BOSS_BRANCH_FLOWER_POSITIONS
+
         if sprite_idx < len(TREE_BOSS_BRANCH_FLOWER_POSITIONS):
             flower_positions = TREE_BOSS_BRANCH_FLOWER_POSITIONS[sprite_idx]
         else:
@@ -101,33 +97,35 @@ def spawn_tree_boss():
         flower_pos = random.choice(flower_positions)
 
         # Get grow interval from config
-        grow_interval = getattr(flowers_cfg, 'grow_interval', 2.0) if flowers_cfg else 2.0
+        getattr(flowers_cfg, 'grow_interval', 2.0) if flowers_cfg else 2.0
 
-        branches.append({
-            'id': i,
-            'x_pos': x_pos,
-            'y_pos': y_pos,
-            'target_y': target_y,  # Final position (descends until here)
-            'sprite': sprite,
-            'sprite_idx': sprite_idx,
-            'sprite_width': sprite_width,
-            'sprite_height': sprite_height,
-            'hp': base_hp,
-            'max_hp': base_hp,
-            'lanes_covered': lanes_covered,
-            'destroyed': False,
-            'flower': {
-                'type': flower_type,
-                'frame': 0,  # Growth frame (0-5, 6 total frames)
-                'hp': flower_hp,
-                'max_hp': flower_hp,
-                'grow_timer': None,  # Will be set when tree stops moving
-                'active': True,  # Flower exists
-                'rel_x': flower_pos[0],  # Relative X position in branch sprite
-                'rel_y': flower_pos[1],  # Relative Y position in branch sprite
-            },
-            'flower_positions': flower_positions,  # All possible positions for respawn
-        })
+        branches.append(
+            {
+                'id': i,
+                'x_pos': x_pos,
+                'y_pos': y_pos,
+                'target_y': target_y,  # Final position (descends until here)
+                'sprite': sprite,
+                'sprite_idx': sprite_idx,
+                'sprite_width': sprite_width,
+                'sprite_height': sprite_height,
+                'hp': base_hp,
+                'max_hp': base_hp,
+                'lanes_covered': lanes_covered,
+                'destroyed': False,
+                'flower': {
+                    'type': flower_type,
+                    'frame': 0,  # Growth frame (0-5, 6 total frames)
+                    'hp': flower_hp,
+                    'max_hp': flower_hp,
+                    'grow_timer': None,  # Will be set when tree stops moving
+                    'active': True,  # Flower exists
+                    'rel_x': flower_pos[0],  # Relative X position in branch sprite
+                    'rel_y': flower_pos[1],  # Relative Y position in branch sprite
+                },
+                'flower_positions': flower_positions,  # All possible positions for respawn
+            }
+        )
 
     # Background tree starting position (above screen) - bg_height already calculated above
     state.enemies.boss = {
@@ -156,7 +154,7 @@ def update_tree_boss():
     tree_boss_cfg = getattr(constants, 'tree_boss', None)
     flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
     grow_interval = getattr(flowers_cfg, 'grow_interval', 2.0) if flowers_cfg else 2.0
-    respawn_delay = getattr(flowers_cfg, 'respawn_delay', 3.0) if flowers_cfg else 3.0
+    getattr(flowers_cfg, 'respawn_delay', 3.0) if flowers_cfg else 3.0
     flower_hp = getattr(flowers_cfg, 'hp', 10) if flowers_cfg else 10
 
     now = time.time()
@@ -177,7 +175,8 @@ def update_tree_boss():
     # bg_y_offset is the Y position of the TOP of the tree sprite
     # Tree stops when fully visible on screen (configurable offset from top)
     from src.entities.sprites import TREE_BOSS_BACKGROUND
-    bg_height = len(TREE_BOSS_BACKGROUND)
+
+    len(TREE_BOSS_BACKGROUND)
     stop_offset = getattr(tree_boss_cfg, 'stop_offset', 0) if tree_boss_cfg else 0
     target_bg_y = stop_offset  # Stop position (negative = higher up)
 
@@ -259,6 +258,7 @@ def _handle_tree_branch_hit(branch, bird_idx):
     flower = branch.get('flower')
     # Only apply effects if flower is active AND fully mature (frame 5)
     from src.entities.sprites import FLOWER_MATURE_FRAME
+
     flower_was_mature = flower and flower.get('active') and flower.get('frame', 0) >= FLOWER_MATURE_FRAME
 
     # Damage flower first, then branch
@@ -367,17 +367,21 @@ def _tree_boss_defeated(boss):
         adj_weights = adjust_rarity_weights(base_weights, prestige)
 
         for i in range(loot_count):
-            rarity = random.choices(['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical'], weights=adj_weights)[0]
+            rarity = random.choices(
+                ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical'], weights=adj_weights
+            )[0]
             loot_type = choose_loot_type(rarity)
 
             lane = i % constants.layout.num_lanes
-            state.items.loot_items.append({
-                'x_pos': constants.layout.lane_positions[lane],
-                'y_pos': 5 + i * 3,
-                'type': loot_type,
-                'rarity': rarity,
-                'spawn_ts': time.time()
-            })
+            state.items.loot_items.append(
+                {
+                    'x_pos': constants.layout.lane_positions[lane],
+                    'y_pos': 5 + i * 3,
+                    'type': loot_type,
+                    'rarity': rarity,
+                    'spawn_ts': time.time(),
+                }
+            )
 
         # Clear frozen/poisoned/bleeding birds
         state.special.frozen_birds.clear()
@@ -391,7 +395,8 @@ def _tree_boss_defeated(boss):
 
     # Already scrolling down - continue scrolling
     from src.entities.sprites import TREE_BOSS_BACKGROUND
-    bg_height = len(TREE_BOSS_BACKGROUND)
+
+    len(TREE_BOSS_BACKGROUND)
 
     # Scroll tree down every few frames
     if state.game.frame_count % 3 == 0:

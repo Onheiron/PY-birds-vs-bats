@@ -1,11 +1,18 @@
 """Bird helpers: velocity, powers, lanes, transformations and shuffling."""
 
-from src.core import constants
-from src.entities.bird_types import get_bird_type_by_color
-from src.core import state
 import random
-from src.entities.sprites import BLUE, CLOCKWORK, COOKIE, DINOSAUR, GLITCH, GOLD, ORANGE, PATCHWORK, PURPLE, RED, STEALTH, WHITE, YELLOW
+
+from src.core import constants, state
 from src.engine.grades import compute_grade_from_xp
+from src.entities.bird_types import get_bird_type_by_color
+from src.entities.sprites import (
+    BLUE,
+    GOLD,
+    ORANGE,
+    RED,
+    WHITE,
+    YELLOW,
+)
 
 try:
     from src.entities import bird_types
@@ -86,8 +93,11 @@ def transform_bird_to_s(bi):
         return
 
     # Check if rare bird of this type already exists (max 1 per rare type)
-    cnt = sum(1 for j in range(constants.layout.num_balls)
-              if not state.birds.lost[j] and state.birds.colors[j] == target_color)
+    cnt = sum(
+        1
+        for j in range(constants.layout.num_balls)
+        if not state.birds.lost[j] and state.birds.colors[j] == target_color
+    )
     if cnt >= 1:
         # Can't transform yet - put in pending state
         state.birds.pending_transform[bi] = target_color
@@ -148,22 +158,17 @@ def perform_shuffle(count):
             break
 
         # Pick bird farthest from center
-        living_sorted = sorted(living_available,
-                              key=lambda i: abs(state.birds.random_lanes[i] - center),
-                              reverse=True)
+        living_sorted = sorted(living_available, key=lambda i: abs(state.birds.random_lanes[i] - center), reverse=True)
         src_idx = living_sorted[0]
         src_lane = state.birds.random_lanes[src_idx]
 
         # Try to find empty lane closest to center
-        lost_slots = [i for i in range(constants.layout.num_balls)
-                      if state.birds.lost[i] and i not in used_lost_slots]
+        lost_slots = [i for i in range(constants.layout.num_balls) if state.birds.lost[i] and i not in used_lost_slots]
 
         if lost_slots:
-            empty_lanes = sorted([state.birds.random_lanes[i] for i in lost_slots],
-                                key=lambda l: abs(l - center))
+            empty_lanes = sorted([state.birds.random_lanes[i] for i in lost_slots], key=lambda lane: abs(lane - center))
             target_lane = empty_lanes[0]
-            target_idx = next((li for li in lost_slots
-                              if state.birds.random_lanes[li] == target_lane), None)
+            target_idx = next((li for li in lost_slots if state.birds.random_lanes[li] == target_lane), None)
 
             if target_idx is not None:
                 _swap_lanes(src_idx, target_idx)
@@ -173,8 +178,13 @@ def perform_shuffle(count):
                 continue
 
         # Try inner living bird
-        inner = [i for i in living if i != src_idx and i not in moved_indices
-                 and abs(state.birds.random_lanes[i] - center) < abs(src_lane - center)]
+        inner = [
+            i
+            for i in living
+            if i != src_idx
+            and i not in moved_indices
+            and abs(state.birds.random_lanes[i] - center) < abs(src_lane - center)
+        ]
 
         if inner:
             tgt_idx = sorted(inner, key=lambda i: abs(state.birds.random_lanes[i] - center))[0]
@@ -195,8 +205,10 @@ def perform_shuffle(count):
 
 def _swap_lanes(idx1, idx2):
     """Helper to swap lane assignments and reset positions."""
-    state.birds.random_lanes[idx1], state.birds.random_lanes[idx2] = \
-        state.birds.random_lanes[idx2], state.birds.random_lanes[idx1]
+    state.birds.random_lanes[idx1], state.birds.random_lanes[idx2] = (
+        state.birds.random_lanes[idx2],
+        state.birds.random_lanes[idx1],
+    )
 
     state.birds.cols[idx1] = constants.layout.lane_positions[state.birds.random_lanes[idx1]]
     state.birds.cols[idx2] = constants.layout.lane_positions[state.birds.random_lanes[idx2]]
@@ -236,6 +248,6 @@ def get_color_name(bird_color):
 
 def is_orange_egg_state(bird_idx):
     """Check if bird is in orange egg dormant state."""
-    return (state.birds.colors[bird_idx] == ORANGE and
-            state.birds.speeds[bird_idx] == 0 and
-            state.birds.y[bird_idx] == 999)
+    return (
+        state.birds.colors[bird_idx] == ORANGE and state.birds.speeds[bird_idx] == 0 and state.birds.y[bird_idx] == 999
+    )

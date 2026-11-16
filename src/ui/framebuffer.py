@@ -1,4 +1,5 @@
 """Double-buffered framebuffer with differential terminal output."""
+
 import re
 
 from src.entities.sprites import RESET
@@ -46,7 +47,7 @@ class FrameBuffer:
 
     def put_cells(self, x, y, cells):
         """Blit a pre-built run of cells; the run must fit inside the row."""
-        self.current[y][x:x + len(cells)] = cells
+        self.current[y][x : x + len(cells)] = cells
 
     def fill(self, x, y, count, cell=BLANK):
         """Fill ``count`` cells of a row with the same cell, clipped to the buffer."""
@@ -65,7 +66,7 @@ class FrameBuffer:
             text = _ANSI_SGR.sub('', text)
         end = x + len(text)
         if end > self.width:
-            text = text[:self.width - x]
+            text = text[: self.width - x]
             end = self.width
         if x < 0:
             text = text[-x:]
@@ -89,7 +90,7 @@ class FrameBuffer:
                 # Find end of ANSI sequence
                 end = text.find('m', i)
                 if end != -1:
-                    code = text[i:end + 1]
+                    code = text[i : end + 1]
                     current_color = '' if code == RESET else code
                     i = end + 1
                     continue
@@ -179,7 +180,7 @@ class RegionCache:
     def store(self, fb, key, x, y, width, height):
         """Remember the region as it is currently drawn."""
         current = fb.current
-        self.rows = [current[y + offset][x:x + width] for offset in range(height)]
+        self.rows = [current[y + offset][x : x + width] for offset in range(height)]
         self.key = key
 
 
@@ -192,6 +193,7 @@ def get_framebuffer():
     global _framebuffer
     if _framebuffer is None:
         from src.core import constants
+
         # Height: header + game area + floor + cursor + notification + footer + extra
         total_height = constants.layout.height + 8
         # Width: game area + side panels for 16:9 widescreen

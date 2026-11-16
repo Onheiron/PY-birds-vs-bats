@@ -1,16 +1,28 @@
 """Bird powers, triggered by bouncing a bird that is already rising."""
 
-from src.core import constants
-from src.core import state
-from src.engine.birds import allow_consume_power
-from src.engine.birds import find_bird_in_lane
-from src.engine.birds import get_color_name
-from src.engine.birds import reset_bird_power
-from src.engine.birds import set_ball_vy
-from src.services import achievements
 import random
 import time
-from src.entities.sprites import BERSERK, BLUE, CLOCKWORK, COOKIE, FROSTY, GLITCH, PATCHWORK, POISON, PURPLE, RED, ROCK, STEALTH, TWISTER, WHITE, YELLOW
+
+from src.core import constants, state
+from src.engine.birds import allow_consume_power, find_bird_in_lane, get_color_name, reset_bird_power, set_ball_vy
+from src.entities.sprites import (
+    BERSERK,
+    BLUE,
+    CLOCKWORK,
+    COOKIE,
+    FROSTY,
+    GLITCH,
+    PATCHWORK,
+    POISON,
+    PURPLE,
+    RED,
+    ROCK,
+    STEALTH,
+    TWISTER,
+    WHITE,
+    YELLOW,
+)
+from src.services import achievements
 
 
 def _activate_bird_power(bird_idx):
@@ -38,7 +50,9 @@ def _activate_bird_power(bird_idx):
 
     # Notify achievements
     color_name = get_color_name(bird_color)
-    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power=color_name, lane=bird_lane)
+    achievements.check_achievements_event(
+        'power_used', state.game.frame_count, state.ui.notifications, power=color_name, lane=bird_lane
+    )
 
     # Execute power based on color
     if bird_color == YELLOW:
@@ -83,14 +97,15 @@ def _power_yellow(bird_idx, bird_lane):
             continue
 
         adj_color = state.birds.colors[adj_bird]
-        if adj_color == YELLOW or adj_color == PATCHWORK:
+        if adj_color in (YELLOW, PATCHWORK):
             # Bounce adjacent yellow/patchwork
             if adj_color == GLITCH and random.random() < constants.glitch.bounce_ignore_chance:
                 continue
             set_ball_vy(adj_bird, -1)
             reset_bird_power(adj_bird)
-            achievements.append_recent_action('bounce', lane=adj_lane,
-                                             color=adj_color, frame_count=state.game.frame_count)
+            achievements.append_recent_action(
+                'bounce', lane=adj_lane, color=adj_color, frame_count=state.game.frame_count
+            )
             # Cure scared blue birds nearby
             _cure_nearby_scared_blues(adj_lane)
         else:
@@ -105,11 +120,13 @@ def _cure_nearby_scared_blues(lane):
         if not (0 <= cross_lane < constants.layout.num_lanes):
             continue
         for bi in range(constants.layout.num_balls):
-            if (state.birds.random_lanes[bi] == cross_lane and
-                not state.birds.lost[bi] and
-                state.birds.colors[bi] == BLUE and
-                bi in state.special.scared_birds and
-                state.birds.vy[bi] == 1):
+            if (
+                state.birds.random_lanes[bi] == cross_lane
+                and not state.birds.lost[bi]
+                and state.birds.colors[bi] == BLUE
+                and bi in state.special.scared_birds
+                and state.birds.vy[bi] == 1
+            ):
                 del state.special.scared_birds[bi]
 
 
@@ -127,16 +144,18 @@ def _power_red(bird_idx, bird_lane):
                     damage_bonus += 1
                 break
 
-    state.special.red_projectiles.append({
-        'x_pos': constants.layout.lane_positions[bird_lane],
-        'y_pos': state.birds.y[bird_idx],
-        'lane': bird_lane,
-        'damage': 1 + damage_bonus,
-        'powered': damage_bonus > 0,
-        'owner': bird_idx,
-        'speed': 1,
-        'color': RED
-    })
+    state.special.red_projectiles.append(
+        {
+            'x_pos': constants.layout.lane_positions[bird_lane],
+            'y_pos': state.birds.y[bird_idx],
+            'lane': bird_lane,
+            'damage': 1 + damage_bonus,
+            'powered': damage_bonus > 0,
+            'owner': bird_idx,
+            'speed': 1,
+            'color': RED,
+        }
+    )
 
 
 def _power_purple(bird_idx):
@@ -151,14 +170,16 @@ def _power_cookie(bird_idx, bird_lane):
     """Cookie power: drop a cookie crumb with XP."""
     crumb_xp = int(max(0, int(state.birds.per_bird_xp[bird_idx] * 0.75)))
 
-    state.items.loot_items.append({
-        'x_pos': constants.layout.lane_positions[bird_lane],
-        'y_pos': state.birds.y[bird_idx],
-        'type': 'cookie_crumb',
-        'rarity': 'rare',
-        'xp': crumb_xp,
-        'spawn_ts': time.time()
-    })
+    state.items.loot_items.append(
+        {
+            'x_pos': constants.layout.lane_positions[bird_lane],
+            'y_pos': state.birds.y[bird_idx],
+            'type': 'cookie_crumb',
+            'rarity': 'rare',
+            'xp': crumb_xp,
+            'spawn_ts': time.time(),
+        }
+    )
 
     # Track crumbs made
     state.special.cookie_crumbs_made[bird_idx] = state.special.cookie_crumbs_made.get(bird_idx, 0) + 1
@@ -173,6 +194,7 @@ def _power_cookie(bird_idx, bird_lane):
             state.game.lives -= 1
             # Check if a pending bird can now transform
             from src.engine.birds import check_pending_transforms
+
             check_pending_transforms(dead_color)
             if state.game.lives <= 0:
                 state.game.game_over = True
@@ -208,8 +230,9 @@ def _power_white(bird_idx, bird_lane):
                 continue
             set_ball_vy(adj_bird, -1)
             reset_bird_power(adj_bird)
-            achievements.append_recent_action('bounce', lane=adj_lane,
-                                             color=adj_color, frame_count=state.game.frame_count)
+            achievements.append_recent_action(
+                'bounce', lane=adj_lane, color=adj_color, frame_count=state.game.frame_count
+            )
         elif state.birds.vy[adj_bird] == -1:  # Rising - activate power
             label, _ = compute_grade_from_xp(state.birds.per_bird_xp[adj_bird])
             adj_allowed = 2 if (label and label.startswith('A')) else 1
@@ -242,7 +265,9 @@ def _power_clockwork(bird_idx):
 
 def _power_stealth(bird_idx, bird_lane):
     """Stealth power: become tangible with speed boost."""
-    state.special.stealth_timers[bird_idx] = max(1, int(constants.stealth.tangible_seconds / constants.timing.base_sleep))
+    state.special.stealth_timers[bird_idx] = max(
+        1, int(constants.stealth.tangible_seconds / constants.timing.base_sleep)
+    )
     state.special.stealth_prev_speeds[bird_idx] = state.birds.speeds[bird_idx]
     state.birds.speeds[bird_idx] = constants.stealth.speed_boost
     achievements.append_recent_action('stealth', lane=bird_lane, color=STEALTH, frame_count=state.game.frame_count)
@@ -258,10 +283,7 @@ def _power_twister(bird_idx, bird_lane):
         lanes.append(bird_lane - 1)
     if bird_lane < constants.layout.num_lanes - 1:
         lanes.append(bird_lane + 1)
-    state.special.twister_tailwind[bird_idx] = {
-        'end_time': end_time,
-        'lanes': lanes
-    }
+    state.special.twister_tailwind[bird_idx] = {'end_time': end_time, 'lanes': lanes}
     achievements.append_recent_action('twister', lane=bird_lane, color=TWISTER, frame_count=state.game.frame_count)
 
 

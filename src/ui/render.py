@@ -5,10 +5,29 @@ from src.ui.framebuffer import get_framebuffer
 from src.ui.layers.background import _fb_render_background, _fb_render_cloud_banks, _fb_render_tree_boss_background
 from src.ui.layers.birds import _fb_render_birds
 from src.ui.layers.bosses import _fb_render_boss
-from src.ui.layers.enemies import _fb_render_bats, _fb_render_loot, _fb_render_mini_bats, _fb_render_obstacles, _fb_render_portals, _fb_render_projectiles
-from src.ui.layers.hud import _fb_render_center_of_mass, _fb_render_floor_and_cursor, _fb_render_footer, _fb_render_header, _fb_render_starting_line
+from src.ui.layers.enemies import (
+    _fb_render_bats,
+    _fb_render_loot,
+    _fb_render_mini_bats,
+    _fb_render_obstacles,
+    _fb_render_portals,
+    _fb_render_projectiles,
+)
+from src.ui.layers.hud import (
+    _fb_render_center_of_mass,
+    _fb_render_floor_and_cursor,
+    _fb_render_footer,
+    _fb_render_header,
+    _fb_render_starting_line,
+)
 from src.ui.layers.menus import _fb_render_pause_overlay
-from src.ui.layers.panels import _fb_render_level_line, _fb_render_notifications, _fb_render_right_panel_barriers, _fb_render_right_panel_level_signs, _fb_render_side_panels
+from src.ui.layers.panels import (
+    _fb_render_level_line,
+    _fb_render_notifications,
+    _fb_render_right_panel_barriers,
+    _fb_render_right_panel_level_signs,
+    _fb_render_side_panels,
+)
 
 
 def render_game():

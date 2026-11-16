@@ -1,8 +1,8 @@
 """Cave portals (Void Cave biome)."""
 
-from src.core import constants
-from src.core import state
 import random
+
+from src.core import constants, state
 
 
 def spawn_portal_pair():
@@ -87,7 +87,6 @@ def update_portals():
     Works for both biome 5 natural portals AND Owl Boss bend_space portals.
     """
     # Check if we're in biome 5 OR if Owl Boss spawned portals
-    boss = state.enemies.boss
     has_owl_boss_portals = any(p.get('from_owl_boss') for p in state.enemies.portals)
 
     if state.game.level_group != 5 and not has_owl_boss_portals:
@@ -184,8 +183,8 @@ def _check_bird_portal_teleport():
             inside_now = portal_top <= bird_y <= portal_bottom
 
             # Check if bird crossed the portal boundary this frame
-            crossed_going_up = (bird_vy == -1 and prev_y >= portal_bottom and bird_y <= portal_top)
-            crossed_going_down = (bird_vy == 1 and prev_y <= portal_top and bird_y >= portal_bottom)
+            crossed_going_up = bird_vy == -1 and prev_y >= portal_bottom and bird_y <= portal_top
+            crossed_going_down = bird_vy == 1 and prev_y <= portal_top and bird_y >= portal_bottom
 
             if inside_now or crossed_going_up or crossed_going_down:
                 # Find paired portal
@@ -241,8 +240,7 @@ def _check_obstacle_portal_destruction():
             oh = len(sprite) if sprite else obs.get('sprite_height', 3)
 
             # Check overlap
-            if (ox < px + pw and ox + ow > px and
-                oy < py + ph and oy + oh > py):
+            if ox < px + pw and ox + ow > px and oy < py + ph and oy + oh > py:
                 # Destroy obstacle
                 state.enemies.obstacles.remove(obs)
                 break  # One obstacle per portal per frame

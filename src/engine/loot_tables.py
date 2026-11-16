@@ -1,8 +1,8 @@
 """Loot tables: rarity weights and drop selection."""
 
-from src.core import constants
-from src.core import state
 import random
+
+from src.core import constants, state
 from src.entities.sprites import GOLD, ORANGE, WHITE
 
 
@@ -62,7 +62,7 @@ def choose_loot_type(rarity):
         if num_empty in constants.eggs.drop_probs:
             egg_prob = float(constants.eggs.drop_probs[num_empty])
         else:
-            int_keys = sorted([k for k in constants.eggs.drop_probs.keys() if isinstance(k, int)])
+            int_keys = sorted([k for k in constants.eggs.drop_probs if isinstance(k, int)])
             if int_keys:
                 egg_prob = float(constants.eggs.drop_probs[int_keys[-1]])
 
@@ -71,15 +71,14 @@ def choose_loot_type(rarity):
         'common': ['wide_cursor', 'tailwind', 'timelapse'],
         'uncommon': ['wide_cursor+', 'tailwind+', 'timelapse'],
         'rare': ['wide_cursor++', 'tailwind++', 'timelapse+'],
-        'epic': ['wide_cursor_max', 'tailwind_max', 'timelapse++']
+        'epic': ['wide_cursor_max', 'tailwind_max', 'timelapse++'],
     }
 
     # Decide egg or powerup
     if random.random() < egg_prob:
         return _choose_egg(rarity)
-    else:
-        pool = loot_pools.get(rarity, loot_pools['common'])
-        return random.choice(pool)
+    pool = loot_pools.get(rarity, loot_pools['common'])
+    return random.choice(pool)
 
 
 def _choose_egg(rarity):
@@ -92,7 +91,7 @@ def _choose_egg(rarity):
             'common': ['yellow_egg', 'red_egg', 'blue_egg'],
             'uncommon': ['blue_egg', 'patchwork_egg', 'purple_egg'],
             'rare': ['white_egg', 'orange_egg', 'gold_egg'],
-            'epic': ['dinosaur_egg', 'glitch_egg']
+            'epic': ['dinosaur_egg', 'glitch_egg'],
         }
         candidates = defaults.get(rarity, ['yellow_egg'])
 
@@ -112,8 +111,11 @@ def _choose_egg(rarity):
         if target_color is None:
             return True  # Not a rare egg, always allowed
         # Check if this rare bird type already exists
-        cnt = sum(1 for i in range(constants.layout.num_balls)
-                  if not state.birds.lost[i] and state.birds.colors[i] == target_color)
+        cnt = sum(
+            1
+            for i in range(constants.layout.num_balls)
+            if not state.birds.lost[i] and state.birds.colors[i] == target_color
+        )
         return cnt < 1  # Max 1 per rare type
 
     allowed_candidates = [(e, w) for e, w in zip(candidates, weights) if allowed(e)]

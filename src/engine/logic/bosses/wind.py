@@ -1,15 +1,12 @@
 """Wind Boss (The Borders)."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import add_score
-from src.engine.loot_tables import adjust_rarity_weights
-from src.engine.progression import award_xp
-from src.engine.loot_tables import choose_loot_type
-from src.engine.progression import compute_prestige
 import random
 import time
+
+from src.core import constants, state
 from src.engine.logic.bosses.common import _get_boss_config
+from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
+from src.engine.progression import add_score, award_xp, compute_prestige
 
 
 def spawn_wind_boss():
@@ -111,18 +108,18 @@ def _apply_wind_boss_effect(boss):
         # Frame 5 = intensity 0, frame 9 = intensity 4 (max)
         intensity = anim_frame - 5  # 0 to 4
         max_intensity = 4
-        
+
         tw_cfg = getattr(wind_boss_cfg, 'tailwind', None) if wind_boss_cfg else None
         up_min = getattr(tw_cfg, 'up_bonus_min', 1) if tw_cfg else 1
         up_max = getattr(tw_cfg, 'up_bonus_max', 3) if tw_cfg else 3
         down_min = getattr(tw_cfg, 'down_penalty_min', 0) if tw_cfg else 0
         down_max = getattr(tw_cfg, 'down_penalty_max', 2) if tw_cfg else 2
-        
+
         # Interpolate based on intensity
         t = intensity / max_intensity if max_intensity > 0 else 0
         up_bonus = int(up_min + (up_max - up_min) * t)
         down_penalty = int(down_min + (down_max - down_min) * t)
-        
+
         state.powerups.wind_boss_up_bonus = up_bonus
         state.powerups.wind_boss_down_penalty = down_penalty
     else:
@@ -130,18 +127,18 @@ def _apply_wind_boss_effect(boss):
         # Frame 0 = intensity 0, frame 4 = intensity 4 (max)
         intensity = anim_frame  # 0 to 4
         max_intensity = 4
-        
+
         hw_cfg = getattr(wind_boss_cfg, 'headwind', None) if wind_boss_cfg else None
         up_min = getattr(hw_cfg, 'up_penalty_min', 1) if hw_cfg else 1
         up_max = getattr(hw_cfg, 'up_penalty_max', 2) if hw_cfg else 2
         down_min = getattr(hw_cfg, 'down_bonus_min', 1) if hw_cfg else 1
         down_max = getattr(hw_cfg, 'down_bonus_max', 3) if hw_cfg else 3
-        
+
         # Interpolate based on intensity
         t = intensity / max_intensity if max_intensity > 0 else 0
         up_penalty = int(up_min + (up_max - up_min) * t)
         down_bonus = int(down_min + (down_max - down_min) * t)
-        
+
         # Negative values = headwind
         state.powerups.wind_boss_up_bonus = -up_penalty
         state.powerups.wind_boss_down_penalty = -down_bonus
@@ -156,24 +153,27 @@ def _convert_wind_boss_to_obstacle(boss):
     hp = getattr(corpse_cfg, 'hp', 64) if corpse_cfg else 64
 
     boss_center_x = boss['x_pos'] + 13  # Wind boss is ~26 chars wide
-    closest_lane = min(range(constants.layout.num_lanes),
-                       key=lambda l: abs(constants.layout.lane_positions[l] - boss_center_x))
+    closest_lane = min(
+        range(constants.layout.num_lanes), key=lambda lane: abs(constants.layout.lane_positions[lane] - boss_center_x)
+    )
 
     obstacle_id = state.enemies.obstacle_id_counter
     state.enemies.obstacle_id_counter += 1
 
-    state.enemies.obstacles.append({
-        'id': obstacle_id,
-        'lane': closest_lane,
-        'x_pos': boss['x_pos'],
-        'y_pos': boss['y_pos'],
-        'tier': 5,
-        'hp': hp,
-        'max_hp': hp,
-        'sprite_width': 26,
-        'is_boss_corpse': True,
-        'is_wind_boss_corpse': True,
-    })
+    state.enemies.obstacles.append(
+        {
+            'id': obstacle_id,
+            'lane': closest_lane,
+            'x_pos': boss['x_pos'],
+            'y_pos': boss['y_pos'],
+            'tier': 5,
+            'hp': hp,
+            'max_hp': hp,
+            'sprite_width': 26,
+            'is_boss_corpse': True,
+            'is_wind_boss_corpse': True,
+        }
+    )
 
     # Clear wind effects
     state.powerups.wind_boss_up_bonus = 0
@@ -206,15 +206,17 @@ def _convert_wind_boss_to_obstacle(boss):
     for i in range(loot_count):
         rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=adj_weights)[0]
         loot_type = choose_loot_type(rarity)
-        
+
         # Spread loot across nearby lanes
         lane_offset = i - loot_count // 2
         loot_lane = max(0, min(constants.layout.num_lanes - 1, closest_lane + lane_offset))
-        
-        state.items.loot_items.append({
-            'x_pos': constants.layout.lane_positions[loot_lane],
-            'y_pos': boss['y_pos'] + 2,
-            'type': loot_type,
-            'rarity': rarity,
-            'spawn_ts': time.time()
-        })
+
+        state.items.loot_items.append(
+            {
+                'x_pos': constants.layout.lane_positions[loot_lane],
+                'y_pos': boss['y_pos'] + 2,
+                'type': loot_type,
+                'rarity': rarity,
+                'spawn_ts': time.time(),
+            }
+        )

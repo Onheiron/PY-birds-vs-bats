@@ -1,11 +1,7 @@
 """Parallax background, cave shimmer and foreground clouds."""
 
-from src.core import constants
-from src.core import state
-from src.entities.sprites import TREE_BOSS_BACKGROUND
-from src.entities.sprites import WOODS_BG_LAYER1
-from src.entities.sprites import WOODS_BG_LAYER2
-from src.entities.sprites import get_biome_bg
+from src.core import constants, state
+from src.entities.sprites import TREE_BOSS_BACKGROUND, WOODS_BG_LAYER1, WOODS_BG_LAYER2, get_biome_bg
 from src.ui.colors import apply_faint, get_biome_colors, get_shimmer_color
 from src.ui.framebuffer import BLANK
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
@@ -29,6 +25,7 @@ def get_current_biome_bg():
     level_group = state.game.level_group
     layer1, layer2 = get_biome_bg(level_group)
     return layer1, layer2
+
 
 # Characters to hide in tree/branch rendering (overlap markers)
 TREE_HIDDEN_CHARS = set('12345o')
@@ -96,9 +93,9 @@ def _tree_boss_background_cells():
 # Cave shimmer brightness is a pure function of a 0-99 pseudo-random seed.
 _SHIMMER_COLORS = [get_shimmer_color(seed / 100.0 * 0.4 + 0.05) for seed in range(100)]
 
-_sparse_rows = {}    # (pattern line, pattern width, span) -> [(x, char)] for non-space cells
-_static_rows = {}    # pattern lines + colours -> composed row of cells
-_frame_memo = [None, None]   # [key, rows] of the last composed background
+_sparse_rows = {}  # (pattern line, pattern width, span) -> [(x, char)] for non-space cells
+_static_rows = {}  # pattern lines + colours -> composed row of cells
+_frame_memo = [None, None]  # [key, rows] of the last composed background
 
 
 def _sparse_row(line, pattern_width, span):
@@ -182,8 +179,7 @@ def _fb_render_background(fb):
     shimmer = state.ui.cave_shimmer if level_group == 5 else None
     phase = shimmer.get('phase', 0) if shimmer else None
 
-    memo_key = (level_group, bg_offset, mid_offset, phase, parallax_enabled,
-                layer1_color, layer2_color, width, height)
+    memo_key = (level_group, bg_offset, mid_offset, phase, parallax_enabled, layer1_color, layer2_color, width, height)
     if _frame_memo[0] == memo_key:
         composed = _frame_memo[1]
     else:
@@ -226,7 +222,6 @@ def _fb_render_cloud_banks(fb):
     CLOUD_COLOR = "\033[38;5;251m"  # Light gray
 
     # Cloud characters for different densities
-    cloud_chars = ['░', '▒', '▓', '~', '⌒', '⌢']
 
     for cloud in state.enemies.cloud_banks:
         x_pos = cloud['x_pos']

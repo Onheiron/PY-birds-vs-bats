@@ -1,14 +1,12 @@
 """Movement of birds, projectiles, obstacles, loot and scenery."""
 
-from src.core import constants
-from src.core import state
-from src.engine.birds import reset_bird_power
-from src.engine.birds import set_ball_vy
-from src.entities.sprites import CLOCKWORK
-from src.entities.sprites import GLITCH
 import random
+
+from src.core import constants, state
 from src.engine.bat_ai import update_bat_positions
+from src.engine.birds import reset_bird_power, set_ball_vy
 from src.engine.glitch import update_glitch_chaos
+from src.entities.sprites import CLOCKWORK, GLITCH
 
 
 def update_bird_positions():
@@ -60,10 +58,7 @@ def update_bird_positions():
 
         # GLITCH random speed each frame
         if state.birds.colors[i] == GLITCH:
-            state.birds.speeds[i] = random.randint(
-                constants.glitch.speed.min,
-                constants.glitch.speed.max
-            )
+            state.birds.speeds[i] = random.randint(constants.glitch.speed.min, constants.glitch.speed.max)
 
         current_speed = state.birds.speeds[i]
 
@@ -97,6 +92,7 @@ def update_bird_positions():
 
         # Apply TWISTER local tailwind (affects only birds in specific lanes)
         import time as time_module
+
         now = time_module.time()
         for twister_idx, tw_info in list(state.special.twister_tailwind.items()):
             if now >= tw_info['end_time']:
@@ -167,9 +163,11 @@ def update_bird_positions():
         # Move bird
         if state.game.frame_count % move_interval == 0:
             # CLOCKWORK auto-bounce at starting line
-            if (state.birds.colors[i] == CLOCKWORK and
-                state.birds.vy[i] == 1 and
-                state.birds.y[i] + state.birds.vy[i] >= constants.layout.starting_line):
+            if (
+                state.birds.colors[i] == CLOCKWORK
+                and state.birds.vy[i] == 1
+                and state.birds.y[i] + state.birds.vy[i] >= constants.layout.starting_line
+            ):
                 charge = state.special.clockwork_charge.get(i)
                 if charge is None:
                     charge = constants.clockwork.initial_charge
@@ -245,9 +243,7 @@ def update_obstacle_positions():
             obs['y_pos'] += 1
 
         # Remove if reached floor or starting line
-        if obs['y_pos'] >= constants.layout.starting_line - 1:
-            state.enemies.obstacles.remove(obs)
-        elif obs['y_pos'] >= constants.layout.height:
+        if obs['y_pos'] >= constants.layout.starting_line - 1 or obs['y_pos'] >= constants.layout.height:
             state.enemies.obstacles.remove(obs)
 
 
@@ -272,11 +268,7 @@ def update_right_panel_barriers():
         max_x_offset = max(0, PANEL_INNER_WIDTH - sprite_width)
         x_offset = random.randint(0, max_x_offset)
 
-        state.enemies.right_panel_barriers.append({
-            'y_pos': -sprite_height,
-            'tier': tier,
-            'x_offset': x_offset
-        })
+        state.enemies.right_panel_barriers.append({'y_pos': -sprite_height, 'tier': tier, 'x_offset': x_offset})
 
     # Move barriers down
     if state.game.frame_count % 5 == 0:
@@ -290,7 +282,6 @@ def update_right_panel_barriers():
 def update_loot_positions():
     """Update positions of loot items (they don't move, but could in future)."""
     # Currently loot items are stationary until collected or despawned
-    pass
 
 
 def update_mini_bat_positions():

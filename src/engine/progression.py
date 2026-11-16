@@ -1,13 +1,30 @@
 """Progression: gears, grades, miles, levels, prestige, score and momentum."""
 
-from src.core import constants
-from src.core import state
-from src.services import achievements
 import functools
 import random
-from src.entities.sprites import BERSERK, CLOCKWORK, COOKIE, DINOSAUR, FROSTY, GLITCH, GOLD, ORANGE, PATCHWORK, POISON, PURPLE, RAINBOW, ROCK, STEALTH, TWISTER, WHITE
+
+from src.core import constants, state
 from src.engine.birds import transform_bird_to_s
 from src.engine.grades import compute_grade_from_xp
+from src.entities.sprites import (
+    BERSERK,
+    CLOCKWORK,
+    COOKIE,
+    DINOSAUR,
+    FROSTY,
+    GLITCH,
+    GOLD,
+    ORANGE,
+    PATCHWORK,
+    POISON,
+    PURPLE,
+    RAINBOW,
+    ROCK,
+    STEALTH,
+    TWISTER,
+    WHITE,
+)
+from src.services import achievements
 from src.services.background import background_call
 from src.services.optional import firebase_client
 from src.services.sound import get_audio
@@ -212,7 +229,7 @@ def compute_prestige():
         GOLD: 3.0,
         # Legendary (+4)
         DINOSAUR: 4.0,
-        GLITCH: 0.0,      # Handled separately (random 1-7)
+        GLITCH: 0.0,  # Handled separately (random 1-7)
         # Mythical (+5)
         RAINBOW: 5.0,
     }
@@ -257,9 +274,12 @@ def add_score(amount, by_bird=None):
         transform_bird_to_s(int(by_bird))
 
     achievements.check_achievements_event(
-        'score', state.game.frame_count, state.ui.notifications,
-        firebase_client=firebase_client, background_call=background_call,
-        score=state.game.score
+        'score',
+        state.game.frame_count,
+        state.ui.notifications,
+        firebase_client=firebase_client,
+        background_call=background_call,
+        score=state.game.score,
     )
 
 
@@ -280,16 +300,15 @@ def compute_momentum_factor(y_pos):
 
     if y_pos >= starting_line:
         return -1.0
-    elif y_pos >= zero_point:
+    if y_pos >= zero_point:
         # Between starting_line and zero point: -1.0 -> 0.0
         t = (starting_line - y_pos) / (starting_line - zero_point)
         return -1.0 + t * 1.0
-    elif y_pos > ceiling:
+    if y_pos > ceiling:
         # Between zero point and ceiling: 0.0 -> +2.0
         t = (zero_point - y_pos) / (zero_point - ceiling)
         return t * 2.0
-    else:
-        return 2.0
+    return 2.0
 
 
 def update_momentum(momentum_factor):
@@ -331,7 +350,6 @@ def award_xp(bird_idx, xp_amount):
 
 def deduct_momentum(amount):
     """Deduct momentum safely (used for swaps). Score is NOT affected."""
-    old_momentum = state.game.momentum
     state.game.momentum = max(0, state.game.momentum - amount)
 
     # Update gear if momentum changed significantly

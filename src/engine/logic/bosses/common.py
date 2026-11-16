@@ -1,14 +1,11 @@
 """Shared boss helpers."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import add_score
-from src.engine.loot_tables import adjust_rarity_weights
-from src.engine.progression import award_xp
-from src.engine.loot_tables import choose_loot_type
-from src.engine.progression import compute_prestige
 import random
 import time
+
+from src.core import constants, state
+from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
+from src.engine.progression import add_score, award_xp, compute_prestige
 
 
 def _get_boss_config():
@@ -19,6 +16,7 @@ def _get_boss_config():
 def _get_miles_to_next_level():
     """Calculate miles remaining until next level transition."""
     from src.engine.progression import get_level_milestones
+
     milestones = get_level_milestones()
     current_level = state.game.level
 
@@ -39,24 +37,27 @@ def _convert_boss_to_obstacle(boss):
 
     # Find closest lane to boss center
     boss_center_x = boss['x_pos'] + 9  # Boss is ~19 chars wide
-    closest_lane = min(range(constants.layout.num_lanes),
-                       key=lambda l: abs(constants.layout.lane_positions[l] - boss_center_x))
+    closest_lane = min(
+        range(constants.layout.num_lanes), key=lambda lane: abs(constants.layout.lane_positions[lane] - boss_center_x)
+    )
 
     # Assign unique ID
     obstacle_id = state.enemies.obstacle_id_counter
     state.enemies.obstacle_id_counter += 1
 
-    state.enemies.obstacles.append({
-        'id': obstacle_id,
-        'lane': closest_lane,
-        'x_pos': boss['x_pos'],  # Keep exact X position for BOSS_DEAD sprite
-        'y_pos': boss['y_pos'],
-        'tier': 5,  # Special tier for boss corpse (not regular 1-4)
-        'hp': hp,
-        'max_hp': hp,
-        'sprite_width': 19,  # Full boss sprite width
-        'is_boss_corpse': True,  # Mark as boss corpse for special rendering
-    })
+    state.enemies.obstacles.append(
+        {
+            'id': obstacle_id,
+            'lane': closest_lane,
+            'x_pos': boss['x_pos'],  # Keep exact X position for BOSS_DEAD sprite
+            'y_pos': boss['y_pos'],
+            'tier': 5,  # Special tier for boss corpse (not regular 1-4)
+            'hp': hp,
+            'max_hp': hp,
+            'sprite_width': 19,  # Full boss sprite width
+            'is_boss_corpse': True,  # Mark as boss corpse for special rendering
+        }
+    )
 
     # Award score and XP for defeating boss
     score = getattr(boss_cfg, 'score', 1000)
@@ -93,10 +94,12 @@ def _convert_boss_to_obstacle(boss):
         lane_offset = i - loot_count // 2
         loot_lane = max(0, min(constants.layout.num_lanes - 1, closest_lane + lane_offset))
 
-        state.items.loot_items.append({
-            'x_pos': constants.layout.lane_positions[loot_lane],
-            'y_pos': boss['y_pos'] + 1,  # Just below boss
-            'type': loot_type,
-            'rarity': rarity,
-            'spawn_ts': time.time()
-        })
+        state.items.loot_items.append(
+            {
+                'x_pos': constants.layout.lane_positions[loot_lane],
+                'y_pos': boss['y_pos'] + 1,  # Just below boss
+                'type': loot_type,
+                'rarity': rarity,
+                'spawn_ts': time.time(),
+            }
+        )

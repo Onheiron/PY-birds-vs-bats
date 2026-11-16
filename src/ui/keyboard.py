@@ -3,6 +3,7 @@
 Raw input is turned into key names: 'LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE',
 'ENTER', 'ESC', 'BACKSPACE', 'QUIT' or a single printable character.
 """
+
 import os
 import sys
 
@@ -16,12 +17,12 @@ _ARROWS = {'A': 'UP', 'B': 'DOWN', 'C': 'RIGHT', 'D': 'LEFT'}
 _WINDOWS_ARROWS = {'H': 'A', 'P': 'B', 'M': 'C', 'K': 'D'}
 _CONTROL_KEYS = {
     ' ': 'SPACE',
-    '\x03': 'QUIT',       # Ctrl+C
+    '\x03': 'QUIT',  # Ctrl+C
     '\r': 'ENTER',
     '\n': 'ENTER',
     '\x7f': 'BACKSPACE',
     '\x08': 'BACKSPACE',
-    '\x1b': 'ESC',        # Lone ESC (not part of an arrow sequence)
+    '\x1b': 'ESC',  # Lone ESC (not part of an arrow sequence)
 }
 
 

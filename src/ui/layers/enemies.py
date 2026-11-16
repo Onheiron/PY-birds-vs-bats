@@ -1,16 +1,25 @@
 """Obstacles, flowers, portals, bats, loot and projectiles."""
 
-from src.core import constants
-from src.core import state
-from src.entities.sprites import get_dynamic_color
-from src.entities.sprites import BAT_FRAME_1, BAT_FRAME_2, CYAN, GREEN, OBSTACLE_SPRITE_T1, PURPLE, RED, WHITE, YELLOW
+from src.core import constants, state
+from src.entities.sprites import (
+    BAT_FRAME_1,
+    BAT_FRAME_2,
+    CYAN,
+    GREEN,
+    OBSTACLE_SPRITE_T1,
+    PURPLE,
+    RED,
+    WHITE,
+    YELLOW,
+    get_dynamic_color,
+)
 from src.ui.colors import apply_bold, color_from_hp, color_from_hp_to_red, dim_ansi_color, get_biome_obstacle_color
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
 
 def _fb_render_obstacles(fb):
     """Render obstacles to framebuffer using biome-specific sprites and colors."""
-    from src.entities.sprites import get_biome_obstacles, BOSS_DEAD, BAT_ARMOR, WIND_BOSS_DEAD
+    from src.entities.sprites import BOSS_DEAD, WIND_BOSS_DEAD, get_biome_obstacles
 
     # Get obstacle sprites for current biome (fallback)
     biome_obstacles = get_biome_obstacles(state.game.level_group)
@@ -118,7 +127,7 @@ def _fb_render_portals(fb):
     if state.game.level_group != 5 and not state.enemies.portals:
         return
 
-    from src.entities.sprites import PORTAL_FRAME_1, PORTAL_FRAME_2, PORTAL_COLOR
+    from src.entities.sprites import PORTAL_COLOR, PORTAL_FRAME_1, PORTAL_FRAME_2
 
     for portal in state.enemies.portals:
         px = portal['x_pos']
@@ -145,9 +154,16 @@ def _fb_render_portals(fb):
 def _fb_render_bats(fb):
     """Render bats to framebuffer."""
     from src.entities.sprites import (
-        ARMORED_BAT_FRAME_1, ARMORED_BAT_FRAME_2, BAT_ARMOR,
-        DIVER_BAT_FRAME_1, DIVER_BAT_FRAME_2, DIVER_BAT_DIVE, DIVER_BAT_STUNNED,
-        SPELLCASTER_BAT_FRAME_1, SPELLCASTER_BAT_FRAME_2, SPELLCASTER_BAT_CASTING
+        ARMORED_BAT_FRAME_1,
+        ARMORED_BAT_FRAME_2,
+        BAT_ARMOR,
+        DIVER_BAT_DIVE,
+        DIVER_BAT_FRAME_1,
+        DIVER_BAT_FRAME_2,
+        DIVER_BAT_STUNNED,
+        SPELLCASTER_BAT_CASTING,
+        SPELLCASTER_BAT_FRAME_1,
+        SPELLCASTER_BAT_FRAME_2,
     )
 
     for bat in state.enemies.bats:
@@ -168,7 +184,9 @@ def _fb_render_bats(fb):
             if spell_state == 'casting':
                 bat_sprite = SPELLCASTER_BAT_CASTING
             else:
-                bat_sprite = SPELLCASTER_BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else SPELLCASTER_BAT_FRAME_2
+                bat_sprite = (
+                    SPELLCASTER_BAT_FRAME_1 if (state.game.frame_count // 3) % 2 == 0 else SPELLCASTER_BAT_FRAME_2
+                )
         elif is_armored:
             bat_sprite = ARMORED_BAT_FRAME_1 if (state.game.frame_count // 4) % 2 == 0 else ARMORED_BAT_FRAME_2
         elif is_diver:
@@ -199,8 +217,10 @@ def _fb_render_bats(fb):
                             if char == '(' or char == ')':
                                 line_before = line[:i]
                                 open_count = line_before.count('(')
-                                close_count = line_before.count(')')
-                                if (char == '(' and open_count == 0) or (char == ')' and i == len(line) - line[::-1].index(')') - 1):
+                                line_before.count(')')
+                                if (char == '(' and open_count == 0) or (
+                                    char == ')' and i == len(line) - line[::-1].index(')') - 1
+                                ):
                                     char_color = BAT_ARMOR
                         fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, char_color)
 
@@ -227,8 +247,12 @@ def _fb_render_bats(fb):
 def _fb_render_mini_bats(fb):
     """Render mini bats to framebuffer."""
     from src.entities.sprites import (
-        MINI_BAT_FRAME_1, MINI_BAT_FRAME_2, MINI_BAT_ANIM_FRAMES,
-        JUMPSCARE_BAT_FRAME_1, JUMPSCARE_BAT_FRAME_2, JUMPSCARE_BAT_SCARY_FACE
+        JUMPSCARE_BAT_FRAME_1,
+        JUMPSCARE_BAT_FRAME_2,
+        JUMPSCARE_BAT_SCARY_FACE,
+        MINI_BAT_ANIM_FRAMES,
+        MINI_BAT_FRAME_1,
+        MINI_BAT_FRAME_2,
     )
 
     for mb in state.enemies.mini_bats:
@@ -301,11 +325,20 @@ def _fb_render_loot(fb):
     """Render loot items to framebuffer."""
     # Use dynamic colors for accessibility support
     loot_symbols = {
-        'yellow_egg': ('⬯', 'YELLOW'), 'red_egg': ('⬯', 'RED'), 'blue_egg': ('⬯', 'BLUE'),
-        'white_egg': ('⬯', 'WHITE'), 'clockwork_egg': ('⬯', 'CLOCKWORK'), 'gold_egg': ('⬯', 'GOLD'),
-        'stealth_egg': ('⬯', 'DARK_GRAY'), 'patchwork_egg': ('⬯', 'PATCHWORK'),
-        'orange_egg': ('⬯', 'ORANGE'), 'cookie_egg': ('⬯', 'COOKIE'), 'cookie_crumb': ('•', 'COOKIE'),
-        'dinosaur_egg': ('⬯', 'DINOSAUR'), 'glitch_egg': ('⬯', 'GLITCH'), 'purple_egg': ('⬯', 'PURPLE'),
+        'yellow_egg': ('⬯', 'YELLOW'),
+        'red_egg': ('⬯', 'RED'),
+        'blue_egg': ('⬯', 'BLUE'),
+        'white_egg': ('⬯', 'WHITE'),
+        'clockwork_egg': ('⬯', 'CLOCKWORK'),
+        'gold_egg': ('⬯', 'GOLD'),
+        'stealth_egg': ('⬯', 'DARK_GRAY'),
+        'patchwork_egg': ('⬯', 'PATCHWORK'),
+        'orange_egg': ('⬯', 'ORANGE'),
+        'cookie_egg': ('⬯', 'COOKIE'),
+        'cookie_crumb': ('•', 'COOKIE'),
+        'dinosaur_egg': ('⬯', 'DINOSAUR'),
+        'glitch_egg': ('⬯', 'GLITCH'),
+        'purple_egg': ('⬯', 'PURPLE'),
     }
 
     for loot in state.items.loot_items:

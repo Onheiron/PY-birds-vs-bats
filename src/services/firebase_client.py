@@ -1,9 +1,10 @@
 # Minimal firebase-admin helper for BVB game
 # No triple-quoted module docstring to avoid parser issues.
-from typing import Optional, Dict, Any
+import contextlib
 import os
 import time
 import uuid
+from typing import Any, Optional
 
 # module state
 _app = None
@@ -27,7 +28,7 @@ def get_or_create_local_user_id() -> str:
     path = _id_file()
     try:
         if os.path.exists(path):
-            with open(path, 'r') as f:
+            with open(path) as f:
                 _user_id = f.read().strip()
                 if _user_id:
                     return _user_id
@@ -49,7 +50,7 @@ def init_from_env(service_account_path: Optional[str] = None) -> bool:
     try:
         import firebase_admin
         from firebase_admin import credentials, firestore
-    except Exception as e:
+    except Exception:
         # firebase-admin not installed; bail out
         return False
 
@@ -70,6 +71,7 @@ def init_from_env(service_account_path: Optional[str] = None) -> bool:
 
     try:
         import firebase_admin as _fa
+
         if found:
             # If we found a service account, initialise with it and the
             # requested project id so Firestore uses the correct project.
@@ -114,10 +116,8 @@ def sign_in_anonymous():
     """
     global _db
     if _db is None:
-        try:
+        with contextlib.suppress(Exception):
             init_from_env()
-        except Exception:
-            pass
 
     local_id = get_or_create_local_user_id()
 
@@ -150,7 +150,14 @@ def sign_in_anonymous():
     return None, local_id
 
 
-def send_score(name: str, score: int, time_played_seconds: Optional[int] = None, time_played: Optional[str] = None, version: Optional[str] = None, avg_ppm: Optional[float] = None) -> Optional[Dict[str, Any]]:
+def send_score(
+    name: str,
+    score: int,
+    time_played_seconds: Optional[int] = None,
+    time_played: Optional[str] = None,
+    version: Optional[str] = None,
+    avg_ppm: Optional[float] = None,
+) -> Optional[dict[str, Any]]:
     global _db
     if _db is None:
         # best-effort: do nothing if Firestore client not available
@@ -201,14 +208,18 @@ def get_leaderboard(limit: int = 10):
         entries = []
         for d in docs:
             data = d.to_dict() or {}
-            entries.append({
-                'id': d.id,
-                'name': data.get('name'),
-                'score': int(data.get('score', 0)),
-                'ts': data.get('ts'),
-                'time_played_seconds': int(data.get('time_played_seconds')) if data.get('time_played_seconds') is not None else None,
-                'time_played': data.get('time_played')
-            })
+            entries.append(
+                {
+                    'id': d.id,
+                    'name': data.get('name'),
+                    'score': int(data.get('score', 0)),
+                    'ts': data.get('ts'),
+                    'time_played_seconds': int(data.get('time_played_seconds'))
+                    if data.get('time_played_seconds') is not None
+                    else None,
+                    'time_played': data.get('time_played'),
+                }
+            )
         return entries
     except Exception:
         return []
@@ -233,6 +244,7 @@ def unlock_achievement(achievement_id: str) -> bool:
             # If the error is an AlreadyExists from the API, treat as already unlocked
             try:
                 from google.api_core.exceptions import AlreadyExists
+
                 if isinstance(e, AlreadyExists):
                     return False
             except Exception:
@@ -259,24 +271,27 @@ def unlock_achievement(achievement_id: str) -> bool:
         return False
 
 
-def sync_achievements(achievements: Dict[str, Any]):
+def sync_achievements(achievements: dict[str, Any]):
     for aid, a in (achievements or {}).items():
         try:
             if a.get('unlocked'):
-                try:
+                with contextlib.suppress(Exception):
                     unlock_achievement(aid)
-                except Exception:
-                    pass
         except Exception:
             continue
 
 
-def log_event(name: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+def log_event(name: str, params: Optional[dict[str, Any]] = None) -> Optional[dict[str, Any]]:
     global _db
     if _db is None:
         return None
     try:
-        payload = {'name': name, 'params': params or {}, 'ts': int(time.time()), 'userId': get_or_create_local_user_id()}
+        payload = {
+            'name': name,
+            'params': params or {},
+            'ts': int(time.time()),
+            'userId': get_or_create_local_user_id(),
+        }
         doc_ref = _db.collection('events').document()
         doc_ref.set(payload)
         return {'id': doc_ref.id, **payload}
@@ -294,4 +309,3 @@ def report_crash(stack_text: str) -> None:
         doc_ref.set(payload)
     except Exception:
         return
-

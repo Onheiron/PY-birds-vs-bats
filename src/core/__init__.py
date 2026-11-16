@@ -1,3 +1,1 @@
-# Core modules: state, constants, initialization
-from .state import *
-from .constants import *
+"""Core: configuration, constants and mutable game state."""

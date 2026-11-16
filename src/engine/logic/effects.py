@@ -1,12 +1,12 @@
 """Timed effects: power-ups, bird states, spells and enemy debuffs."""
 
-from src.core import constants
-from src.core import state
 import time
-from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
-from src.engine.logic.damage import _handle_bat_death
-from src.services.sound import play_sfx
+
+from src.core import constants, state
 from src.engine.birds import reset_bird_power
+from src.engine.logic.damage import _handle_bat_death
+from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
+from src.services.sound import play_sfx
 
 
 def update_powerup_timers():
@@ -112,6 +112,7 @@ def update_special_bird_states():
                 state.game.lives -= 1
                 # Check if a pending bird can now transform
                 from src.engine.birds import check_pending_transforms
+
                 check_pending_transforms(dead_color)
                 if state.game.lives <= 0:
                     state.game.game_over = True
@@ -200,6 +201,7 @@ def update_special_bird_states():
                 play_sfx('bird_lost')
                 # Check pending transforms
                 from src.engine.birds import check_pending_transforms
+
                 check_pending_transforms(dead_color)
                 if state.game.lives <= 0:
                     state.game.game_over = True
@@ -358,16 +360,18 @@ def _fire_purple_projectile(bird_idx, charge_seconds):
     damage = int(pow(4, charge_tier))
     lane = state.birds.random_lanes[bird_idx]
 
-    state.special.red_projectiles.append({
-        'x_pos': constants.layout.lane_positions[lane],
-        'y_pos': state.birds.y[bird_idx],
-        'lane': lane,
-        'damage': damage,
-        'powered': damage > 1,
-        'owner': bird_idx,
-        'speed': 4,
-        'color': PURPLE
-    })
+    state.special.red_projectiles.append(
+        {
+            'x_pos': constants.layout.lane_positions[lane],
+            'y_pos': state.birds.y[bird_idx],
+            'lane': lane,
+            'damage': damage,
+            'powered': damage > 1,
+            'owner': bird_idx,
+            'speed': 4,
+            'color': PURPLE,
+        }
+    )
 
     state.special.purple_just_fired_frames[bird_idx] = 3
     state.special.purple_state[bird_idx] = 0

@@ -1,10 +1,35 @@
 """Birds and their status indicators."""
 
-from src.core import constants
-from src.core import state
 import random
 import time
-from src.entities.sprites import BIRD_DOWN_1, BIRD_DOWN_2, BIRD_UP_1, BIRD_UP_2, BLUE, CLOCKWORK, CYAN, DARK_GRAY, DINOSAUR, DINOSAUR_DOWN_1, DINOSAUR_DOWN_2, DINOSAUR_UP_1, DINOSAUR_UP_2, GREEN, ORANGE, PATCHWORK, PURPLE, RAINBOW, RED, RESET, STEALTH, TWISTER, WHITE, YELLOW
+
+from src.core import constants, state
+from src.entities.sprites import (
+    BIRD_DOWN_1,
+    BIRD_DOWN_2,
+    BIRD_UP_1,
+    BIRD_UP_2,
+    BLUE,
+    CLOCKWORK,
+    CYAN,
+    DARK_GRAY,
+    DINOSAUR,
+    DINOSAUR_DOWN_1,
+    DINOSAUR_DOWN_2,
+    DINOSAUR_UP_1,
+    DINOSAUR_UP_2,
+    GREEN,
+    ORANGE,
+    PATCHWORK,
+    PURPLE,
+    RAINBOW,
+    RED,
+    RESET,
+    STEALTH,
+    TWISTER,
+    WHITE,
+    YELLOW,
+)
 from src.ui.colors import apply_bold, get_render_color
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
@@ -54,8 +79,9 @@ def _fb_render_bird_status_indicators(fb):
 
     This is extracted from Tree Boss rendering so it can be reused by Owl Boss and other bosses.
     """
-    import time as time_module
     import math
+    import time as time_module
+
     now = time_module.time()
 
     # Stunned birds get a lightning indicator with countdown
@@ -219,9 +245,9 @@ def _fb_render_birds(fb):
             '\033[38;5;196m',  # Bright red
             '\033[38;5;208m',  # Bright orange
             '\033[38;5;226m',  # Bright yellow
-            '\033[38;5;46m',   # Bright green
-            '\033[38;5;51m',   # Bright cyan
-            '\033[38;5;21m',   # Bright blue
+            '\033[38;5;46m',  # Bright green
+            '\033[38;5;51m',  # Bright cyan
+            '\033[38;5;21m',  # Bright blue
             '\033[38;5;201m',  # Bright magenta/pink
         ]
         rainbow_charge = state.special.rainbow_charge.get(i, 100) if is_rainbow else 100

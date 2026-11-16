@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
 """
 Bird type definitions for BVB.
 Centralizes all bird-related data: colors, stats, limits, eggs, etc.
 """
+
 # Import theme from src (not src.core to avoid circular imports)
 import src.theme as theme
 
@@ -10,8 +10,10 @@ import src.theme as theme
 # BIRD TYPE ENUM
 # ============================================================================
 
+
 class BirdType:
     """Enum-like class for bird types."""
+
     YELLOW = 'YELLOW'
     RED = 'RED'
     BLUE = 'BLUE'
@@ -51,7 +53,6 @@ BIRD_TYPES = {
         'spawn_limit': None,  # Unlimited
         'egg_type': 'yellow_egg',
     },
-
     BirdType.RED: {
         'name': 'Red',
         'display_name': 'Red',
@@ -64,7 +65,6 @@ BIRD_TYPES = {
         'spawn_limit': None,
         'egg_type': 'red_egg',
     },
-
     BirdType.BLUE: {
         'name': 'Blue',
         'display_name': 'Blue',
@@ -77,7 +77,6 @@ BIRD_TYPES = {
         'spawn_limit': None,
         'egg_type': 'blue_egg',
     },
-
     BirdType.PATCHWORK: {
         'name': 'Patchwork',
         'display_name': 'Patchwork',
@@ -90,7 +89,6 @@ BIRD_TYPES = {
         'spawn_limit': 2,
         'egg_type': 'patchwork_egg',
     },
-
     BirdType.PURPLE: {
         'name': 'Purple',
         'display_name': 'Purple',
@@ -103,7 +101,6 @@ BIRD_TYPES = {
         'spawn_limit': 2,
         'egg_type': 'purple_egg',
     },
-
     BirdType.CLOCKWORK: {
         'name': 'Clockwork',
         'display_name': 'Clockwork',
@@ -116,7 +113,6 @@ BIRD_TYPES = {
         'spawn_limit': 2,
         'egg_type': 'clockwork_egg',
     },
-
     BirdType.WHITE: {
         'name': 'White',
         'display_name': 'Templar',
@@ -129,7 +125,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'white_egg',
     },
-
     BirdType.ORANGE: {
         'name': 'Orange',
         'display_name': 'Phoenix',
@@ -142,7 +137,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'orange_egg',
     },
-
     BirdType.GOLD: {
         'name': 'Gold',
         'display_name': 'Gold',
@@ -155,7 +149,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'gold_egg',
     },
-
     BirdType.COOKIE: {
         'name': 'Cookie',
         'display_name': 'Cookie',
@@ -168,7 +161,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'cookie_egg',
     },
-
     BirdType.STEALTH: {
         'name': 'Stealth',
         'display_name': 'Stealth',
@@ -181,7 +173,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'stealth_egg',
     },
-
     BirdType.DINOSAUR: {
         'name': 'Dinosaur',
         'display_name': 'Dinosaur',
@@ -194,7 +185,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'dinosaur_egg',
     },
-
     BirdType.GLITCH: {
         'name': 'Glitch',
         'display_name': 'Glitch',
@@ -207,7 +197,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'glitch_egg',
     },
-
     # New birds
     BirdType.RAINBOW: {
         'name': 'Rainbow',
@@ -221,7 +210,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'rainbow_egg',
     },
-
     BirdType.TWISTER: {
         'name': 'Twister',
         'display_name': 'Twister',
@@ -234,7 +222,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'twister_egg',
     },
-
     BirdType.FROSTY: {
         'name': 'Frosty',
         'display_name': 'Frosty',
@@ -247,7 +234,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'frosty_egg',
     },
-
     BirdType.POISON: {
         'name': 'Poison',
         'display_name': 'Poison',
@@ -260,7 +246,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'poison_egg',
     },
-
     BirdType.BERSERK: {
         'name': 'Berserk',
         'display_name': 'Berserk',
@@ -273,7 +258,6 @@ BIRD_TYPES = {
         'spawn_limit': 1,
         'egg_type': 'berserk_egg',
     },
-
     BirdType.ROCK: {
         'name': 'Rock',
         'display_name': 'Rock',

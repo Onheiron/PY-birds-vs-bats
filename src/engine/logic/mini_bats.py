@@ -1,14 +1,13 @@
 """Mini bats and jumpscare bats hiding inside obstacles."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import award_xp
-from src.engine.birds import get_scared_frames
 import random
-from src.entities.sprites import DINOSAUR, ORANGE, STEALTH
+
+from src.core import constants, state
+from src.engine.birds import get_scared_frames, set_ball_vy
 from src.engine.logic.damage import _calculate_bird_damage, _handle_mini_bat_death
+from src.engine.progression import award_xp
+from src.entities.sprites import DINOSAUR, ORANGE, STEALTH
 from src.services.sound import play_sfx
-from src.engine.birds import set_ball_vy
 
 
 def _get_mini_bat_config():
@@ -220,8 +219,7 @@ def handle_obstacle_destroyed(obstacle):
 
     # Find mini bats that came from this obstacle and are still active
     affected_mini_bats = [
-        mb for mb in state.enemies.mini_bats
-        if mb.get('source_obstacle_id') == obs_id and mb['state'] == 'active'
+        mb for mb in state.enemies.mini_bats if mb.get('source_obstacle_id') == obs_id and mb['state'] == 'active'
     ]
 
     if not affected_mini_bats:
@@ -274,10 +272,7 @@ def update_mini_bats():
                     target_id = mb.get('target_obstacle_id')
                     if target_id is not None:
                         # Check if target obstacle still exists
-                        target_exists = any(
-                            obs.get('id') == target_id
-                            for obs in state.enemies.obstacles
-                        )
+                        target_exists = any(obs.get('id') == target_id for obs in state.enemies.obstacles)
                         if target_exists:
                             # Add to visited obstacles before hiding
                             if 'visited_obstacles' not in mb:
@@ -307,20 +302,19 @@ def update_mini_bats():
             # Jumpscare bat: track visible time and hide after duration
             if mb.get('is_jumpscare') and mb.get('scary_face_done'):
                 mb['visible_timer'] = mb.get('visible_timer', 0) + 1
-                
+
                 # Random chance to do another scary face while active
                 if mb.get('scary_face_timer', 0) <= 0:
                     jumpscare_cfg = getattr(constants.bat_enemy, 'jumpscare_bat', None)
-                    random_scream_chance = getattr(jumpscare_cfg, 'random_scream_chance', 0.01) if jumpscare_cfg else 0.01
+                    random_scream_chance = (
+                        getattr(jumpscare_cfg, 'random_scream_chance', 0.01) if jumpscare_cfg else 0.01
+                    )
                     if random.random() < random_scream_chance:
                         activate_jumpscare_scary_face(mb)
-                
+
                 if mb['visible_timer'] >= mb.get('visible_duration_frames', 100):
                     # Time to hide in another tier 3+ obstacle
-                    available_obstacles = [
-                        obs for obs in tier3_obstacles
-                        if obs.get('id') not in visited
-                    ]
+                    available_obstacles = [obs for obs in tier3_obstacles if obs.get('id') not in visited]
                     if available_obstacles:
                         mb['state'] = 'hiding'
                         mb['anim_frame'] = 3
@@ -330,18 +324,14 @@ def update_mini_bats():
                         continue
 
             # Check if source obstacle still exists
-            source_exists = any(
-                obs.get('id') == source_id
-                for obs in state.enemies.obstacles
-            ) if source_id is not None else False
+            source_exists = (
+                any(obs.get('id') == source_id for obs in state.enemies.obstacles) if source_id is not None else False
+            )
 
             if not source_exists:
                 # Source destroyed! Try to find a new tier 3+ obstacle to hide in
                 # Exclude already visited obstacles
-                available_obstacles = [
-                    obs for obs in tier3_obstacles
-                    if obs.get('id') not in visited
-                ]
+                available_obstacles = [obs for obs in tier3_obstacles if obs.get('id') not in visited]
                 if available_obstacles:
                     mb['state'] = 'hiding'
                     mb['anim_frame'] = 3

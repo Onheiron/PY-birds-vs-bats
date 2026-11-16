@@ -1,10 +1,9 @@
 """Default end-of-biome boss (scream attack)."""
 
-from src.core import constants
-from src.core import state
+from src.core import constants, state
+from src.engine.birds import set_ball_vy
 from src.engine.logic.bosses.common import _get_boss_config
 from src.services.sound import play_sfx
-from src.engine.birds import set_ball_vy
 
 
 def _boss_start_scream(boss):

@@ -3,6 +3,8 @@ Achievements system for Birds vs Bats game.
 Handles achievement definitions, tracking, unlocking, and combo detection.
 """
 
+import contextlib
+
 from src.core import constants as v
 
 # Global state
@@ -156,17 +158,13 @@ def unlock_achievement(aid, frame_count, notifications_list, firebase_client=Non
         return False
     a['unlocked'] = True
     add_notification(a['name'], frame_count, notifications_list, title="Achievement:")
-    
+
     # Try to sync/unlock achievement for remote user
     if firebase_client and background_call:
-        try:
+        with contextlib.suppress(Exception):
             background_call(firebase_client.unlock_achievement, aid)
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             background_call(firebase_client.log_event, 'achievement_unlocked', {'id': aid, 'name': a.get('name')})
-        except Exception:
-            pass
     return True
 
 
@@ -181,9 +179,9 @@ def on_synergy_triggered(combo, recent_powers, frame_count, random_lanes, NUM_BA
                 if not entry:
                     continue
                 if len(entry) >= 3:
-                    p, f, l = entry[0], entry[1], entry[2]
+                    p, _f, l = entry[0], entry[1], entry[2]
                 else:
-                    p, f = entry[0], entry[1]
+                    p, _f = entry[0], entry[1]
                     l = None
                 if p in combo and l is not None:
                     try:
@@ -239,7 +237,7 @@ def on_synergy_triggered(combo, recent_powers, frame_count, random_lanes, NUM_BA
 def check_achievements_event(event, frame_count, notifications_list, firebase_client=None, background_call=None, **kwargs):
     """Handle simple achievement triggers."""
     global achievements, bat_destroy_counters, recent_powers
-    
+
     if event == 'score':
         sc = kwargs.get('score', 0)
         for aid, a in achievements.items():
@@ -303,7 +301,7 @@ def check_achievements_event(event, frame_count, notifications_list, firebase_cl
         recent_powers.append((power, frame_count, lane))
         recent_powers[:] = [(p, f, l) for (p, f, l) in recent_powers if frame_count - f <= 300]
 
-        distinct = set(p for (p, f, l) in recent_powers)
+        distinct = {p for (p, f, l) in recent_powers}
         if len(distinct) >= 2:
             check_achievements_event('synergy', frame_count, notifications_list, firebase_client, background_call, combo=distinct)
         if len(distinct) >= 3:
@@ -312,10 +310,8 @@ def check_achievements_event(event, frame_count, notifications_list, firebase_cl
         if power in ('red', 'purple'):
             append_recent_action_fn = kwargs.get('append_recent_action')
             if append_recent_action_fn:
-                try:
+                with contextlib.suppress(Exception):
                     append_recent_action_fn('fire', lane=lane, color=power.upper())
-                except Exception:
-                    pass
 
     elif event == 'synergy':
         combo = kwargs.get('combo', set())
@@ -333,10 +329,8 @@ def check_achievements_event(event, frame_count, notifications_list, firebase_cl
             if explicit and isinstance(combo, (set, list)) and len(combo) >= 2:
                 on_synergy_fn = kwargs.get('on_synergy_triggered')
                 if on_synergy_fn:
-                    try:
+                    with contextlib.suppress(Exception):
                         on_synergy_fn(combo)
-                    except Exception:
-                        pass
         except Exception:
             pass
 
@@ -385,17 +379,17 @@ def detect_combos(frame_count, notifications_list, firebase_client=None, backgro
     """Look for configured combos in recent_actions and unlock achievements."""
     global recent_actions, combo_cooldowns, achievements
     now = frame_count
-    
+
     # Prune expired cooldowns
     expired = [cid for cid, exp in combo_cooldowns.items() if now >= exp]
     for cid in expired:
         del combo_cooldowns[cid]
-    
+
     # Fire → Suction → Bounce → Fire combo detection
     fire_actions = [a for a in recent_actions if a['action'] == 'fire']
     suction_actions = [a for a in recent_actions if a['action'] == 'suction']
     bounce_actions = [a for a in recent_actions if a['action'] == 'bounce']
-    
+
     if len(fire_actions) >= 2 and suction_actions and bounce_actions:
         combo_id = 'combo_fire_suction_bounce_fire'
         if combo_id not in combo_cooldowns:
@@ -404,11 +398,11 @@ def detect_combos(frame_count, notifications_list, firebase_client=None, backgro
                     unlock_achievement(aid, frame_count, notifications_list, firebase_client, background_call)
                     combo_cooldowns[combo_id] = now + 300
                     break
-    
+
     # Yellow→Blue bounce chain combo
     yellow_bounces = [a for a in recent_actions if a['action'] == 'bounce' and a.get('color') == 'YELLOW']
     blue_speed_boosts = [a for a in recent_actions if a['action'] == 'speed_boost' and a.get('color') == 'BLUE']
-    
+
     if yellow_bounces and blue_speed_boosts:
         combo_id = 'combo_yellow_blue_bounce_chain'
         if combo_id not in combo_cooldowns:

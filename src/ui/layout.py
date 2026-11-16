@@ -25,6 +25,7 @@ def _parse_aspect_ratio():
     except (ValueError, AttributeError):
         return 16.0 / 9.0  # Default to 16:9
 
+
 TARGET_ASPECT_RATIO = _parse_aspect_ratio()
 
 # Calculate required total width for the target aspect ratio

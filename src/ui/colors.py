@@ -1,12 +1,41 @@
 """Colour helpers: theme palette, dynamic colours, HP tinting and modifiers."""
 
 import functools
-import re
-from src.core import constants
-from src.entities.sprites import get_dynamic_color
 import os
+import re
+
 import src.theme as theme
-from src.entities.sprites import BAT_TIER1, BAT_TIER2, BAT_TIER3, BAT_TIER4, BLUE, CLOCKWORK, COOKIE, CYAN, DARK_GRAY, DINOSAUR, GLITCH, GOLD, GREEN, OBSTACLE_TIER1, OBSTACLE_TIER2, OBSTACLE_TIER3, OBSTACLE_TIER4, ORANGE, PATCHWORK, PURPLE, RAINBOW, RED, RESET, STEALTH, TWISTER, WHITE, YELLOW
+from src.core import constants
+from src.entities.sprites import (
+    BAT_TIER1,
+    BAT_TIER2,
+    BAT_TIER3,
+    BAT_TIER4,
+    BLUE,
+    CLOCKWORK,
+    COOKIE,
+    CYAN,
+    DARK_GRAY,
+    DINOSAUR,
+    GLITCH,
+    GOLD,
+    GREEN,
+    OBSTACLE_TIER1,
+    OBSTACLE_TIER2,
+    OBSTACLE_TIER3,
+    OBSTACLE_TIER4,
+    ORANGE,
+    PATCHWORK,
+    PURPLE,
+    RAINBOW,
+    RED,
+    RESET,
+    STEALTH,
+    TWISTER,
+    WHITE,
+    YELLOW,
+    get_dynamic_color,
+)
 
 _STATIC_TO_DYNAMIC_NAME = {}
 
@@ -39,6 +68,7 @@ def _build_color_map():
         BAT_TIER3: 'BAT_TIER3',
         BAT_TIER4: 'BAT_TIER4',
     }
+
 
 # Build the map at import time
 _build_color_map()
@@ -74,9 +104,10 @@ def get_render_color(static_color):
     # Not in map - return as-is
     return static_color
 
-MOD_FAINT = "\033[2m"   # Dim/faint text for background layers
 
-MOD_BOLD = "\033[1m"    # Bold text for foreground (obstacles, birds, bats)
+MOD_FAINT = "\033[2m"  # Dim/faint text for background layers
+
+MOD_BOLD = "\033[1m"  # Bold text for foreground (obstacles, birds, bats)
 
 MOD_NORMAL = "\033[0m"  # Normal text for everything else
 
@@ -106,6 +137,7 @@ def get_shimmer_color(brightness):
     gray_index = int(232 + brightness * 23)
     gray_index = max(232, min(255, gray_index))
     return f"\033[38;5;{gray_index}m"
+
 
 # Colors for parallax layers (loaded from theme)
 TREE_BG_COLOR = theme.get_color('background', 'layer1', 234)
@@ -190,23 +222,34 @@ def _256_to_rgb(code):
     if code < 16:
         # Standard colors - approximate values
         standard = [
-            (0, 0, 0), (128, 0, 0), (0, 128, 0), (128, 128, 0),
-            (0, 0, 128), (128, 0, 128), (0, 128, 128), (192, 192, 192),
-            (128, 128, 128), (255, 0, 0), (0, 255, 0), (255, 255, 0),
-            (0, 0, 255), (255, 0, 255), (0, 255, 255), (255, 255, 255)
+            (0, 0, 0),
+            (128, 0, 0),
+            (0, 128, 0),
+            (128, 128, 0),
+            (0, 0, 128),
+            (128, 0, 128),
+            (0, 128, 128),
+            (192, 192, 192),
+            (128, 128, 128),
+            (255, 0, 0),
+            (0, 255, 0),
+            (255, 255, 0),
+            (0, 0, 255),
+            (255, 0, 255),
+            (0, 255, 255),
+            (255, 255, 255),
         ]
         return standard[code]
-    elif code < 232:
+    if code < 232:
         # 6x6x6 color cube
         code -= 16
         r = (code // 36) * 51
         g = ((code // 6) % 6) * 51
         b = (code % 6) * 51
         return (r, g, b)
-    else:
-        # Grayscale (232-255)
-        gray = (code - 232) * 10 + 8
-        return (gray, gray, gray)
+    # Grayscale (232-255)
+    gray = (code - 232) * 10 + 8
+    return (gray, gray, gray)
 
 
 _ANSI_256_COLOR = re.compile(r'\033\[38;5;(\d+)m')
@@ -227,6 +270,7 @@ def dim_ansi_color(ansi_color: str, hp: int, max_hp: int) -> str:
     r, g, b = _256_to_rgb(int(match.group(1)))
     return _rgb_escape(int(r * hp_percentage), int(g * hp_percentage), int(b * hp_percentage))
 
+
 # Side panel colors (loaded from theme)
 PANEL_BORDER_COLOR = theme.get_color('panels', 'border', 238)
 
@@ -240,9 +284,9 @@ MOMENTUM_GRADIENT = theme.get_gradient('momentum', 'gradient')
 
 GAUGE_OFF = theme.get_color('gauge', 'off', 238)
 
-GAUGE_BLOCK_ON = "██████"       # Solid block for active segments
+GAUGE_BLOCK_ON = "██████"  # Solid block for active segments
 
-GAUGE_BLOCK_OFF = "------"      # Dashes for inactive segments (clearly different)
+GAUGE_BLOCK_OFF = "------"  # Dashes for inactive segments (clearly different)
 
 # Text colors for left panel (loaded from theme)
 PANEL_LABEL_COLOR = theme.get_color('left_panel', 'label', 245)

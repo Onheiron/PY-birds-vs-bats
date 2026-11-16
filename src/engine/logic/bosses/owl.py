@@ -1,14 +1,11 @@
 """Owl Boss (Haunted Woods)."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import add_score
-from src.engine.loot_tables import adjust_rarity_weights
-from src.engine.progression import award_xp
-from src.engine.loot_tables import choose_loot_type
-from src.engine.progression import compute_prestige
 import random
 import time
+
+from src.core import constants, state
+from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
+from src.engine.progression import add_score, award_xp, compute_prestige
 
 
 def spawn_owl_boss():
@@ -215,13 +212,14 @@ def _owl_cast_overgrowth(boss, spells_cfg):
     boss_y = boss['y_pos'] + 5  # Below the boss
 
     # Import swamp obstacles T2 (smaller, tree-like)
-    from src.entities.sprites import SWAMP_OBSTACLE_T2
     import math
+
+    from src.entities.sprites import SWAMP_OBSTACLE_T2
 
     # 5 positions in a circle around the boss
     # Angle offsets for 5 points: 0°, 72°, 144°, 216°, 288°
     radius_x = 12  # Horizontal radius in characters
-    radius_y = 6   # Vertical radius in rows
+    radius_y = 6  # Vertical radius in rows
 
     flower_types = ['red', 'yellow', 'blue', 'green']
 
@@ -239,8 +237,9 @@ def _owl_cast_overgrowth(boss, spells_cfg):
         y_pos = max(2, min(constants.layout.starting_line - 4, y_pos))
 
         # Find closest lane
-        closest_lane = min(range(constants.layout.num_lanes),
-                          key=lambda l: abs(constants.layout.lane_positions[l] - x_pos))
+        closest_lane = min(
+            range(constants.layout.num_lanes), key=lambda lane: abs(constants.layout.lane_positions[lane] - x_pos)
+        )
 
         obstacle_id = state.enemies.obstacle_id_counter
         state.enemies.obstacle_id_counter += 1
@@ -395,6 +394,7 @@ def _owl_cast_bend_space(boss, spells_cfg):
 
     # Use same portal structure as spawn_portal_pair() in biome 5
     from src.entities.sprites import PORTAL_FRAME_1
+
     portal_width = max(len(line) for line in PORTAL_FRAME_1)
     portal_height = len(PORTAL_FRAME_1)
 
@@ -410,7 +410,7 @@ def _owl_cast_bend_space(boss, spells_cfg):
     used_lanes = set()
     for _ in range(portal_pairs_count):
         # Pick two different lanes
-        available = [l for l in range(num_lanes) if l not in used_lanes]
+        available = [lane for lane in range(num_lanes) if lane not in used_lanes]
         if len(available) < 2:
             available = list(range(num_lanes))  # Reuse if needed
 
@@ -494,31 +494,35 @@ def _owl_cast_meteor_shower(boss, spells_cfg):
 
     # Spawn LEFT meteor (left side of screen)
     left_x = 2  # Near left edge
-    boss['owl_meteors'].append({
-        'x_pos': left_x,
-        'y_pos': -len(METEOR_LEFT),  # Start above screen
-        'hp': meteor_hp,
-        'max_hp': meteor_hp,
-        'width': left_width,
-        'height': len(METEOR_LEFT),
-        'speed_mult': speed_mult,
-        'move_timer': 0,
-        'side': 'left',
-    })
+    boss['owl_meteors'].append(
+        {
+            'x_pos': left_x,
+            'y_pos': -len(METEOR_LEFT),  # Start above screen
+            'hp': meteor_hp,
+            'max_hp': meteor_hp,
+            'width': left_width,
+            'height': len(METEOR_LEFT),
+            'speed_mult': speed_mult,
+            'move_timer': 0,
+            'side': 'left',
+        }
+    )
 
     # Spawn RIGHT meteor (right side of screen)
     right_x = constants.layout.width - right_width - 2  # Near right edge
-    boss['owl_meteors'].append({
-        'x_pos': right_x,
-        'y_pos': -len(METEOR_RIGHT),  # Start above screen
-        'hp': meteor_hp,
-        'max_hp': meteor_hp,
-        'width': right_width,
-        'height': len(METEOR_RIGHT),
-        'speed_mult': speed_mult,
-        'move_timer': 0,
-        'side': 'right',
-    })
+    boss['owl_meteors'].append(
+        {
+            'x_pos': right_x,
+            'y_pos': -len(METEOR_RIGHT),  # Start above screen
+            'hp': meteor_hp,
+            'max_hp': meteor_hp,
+            'width': right_width,
+            'height': len(METEOR_RIGHT),
+            'speed_mult': speed_mult,
+            'move_timer': 0,
+            'side': 'right',
+        }
+    )
 
 
 def _update_owl_meteors(boss):
@@ -589,13 +593,15 @@ def _owl_boss_defeated(boss):
         loot_type = choose_loot_type(rarity)
 
         lane = (i * 2) % constants.layout.num_lanes
-        state.items.loot_items.append({
-            'x_pos': constants.layout.lane_positions[lane],
-            'y_pos': boss['y_pos'] + 2 + i,
-            'type': loot_type,
-            'rarity': rarity,
-            'spawn_ts': time.time()
-        })
+        state.items.loot_items.append(
+            {
+                'x_pos': constants.layout.lane_positions[lane],
+                'y_pos': boss['y_pos'] + 2 + i,
+                'type': loot_type,
+                'rarity': rarity,
+                'spawn_ts': time.time(),
+            }
+        )
 
     boss['state'] = 'dying'
 
@@ -607,20 +613,23 @@ def _convert_owl_boss_to_obstacle(boss):
     hp = getattr(corpse_cfg, 'hp', 100) if corpse_cfg else 100
 
     boss_center_x = boss['x_pos'] + 5
-    closest_lane = min(range(constants.layout.num_lanes),
-                       key=lambda l: abs(constants.layout.lane_positions[l] - boss_center_x))
+    closest_lane = min(
+        range(constants.layout.num_lanes), key=lambda lane: abs(constants.layout.lane_positions[lane] - boss_center_x)
+    )
 
     obstacle_id = state.enemies.obstacle_id_counter
     state.enemies.obstacle_id_counter += 1
 
-    state.enemies.obstacles.append({
-        'id': obstacle_id,
-        'lane': closest_lane,
-        'x_pos': boss['x_pos'],
-        'y_pos': boss['y_pos'],
-        'tier': 5,  # Special tier for boss corpse
-        'hp': hp,
-        'max_hp': hp,
-        'sprite_width': 11,
-        'is_owl_boss_corpse': True,
-    })
+    state.enemies.obstacles.append(
+        {
+            'id': obstacle_id,
+            'lane': closest_lane,
+            'x_pos': boss['x_pos'],
+            'y_pos': boss['y_pos'],
+            'tier': 5,  # Special tier for boss corpse
+            'hp': hp,
+            'max_hp': hp,
+            'sprite_width': 11,
+            'is_owl_boss_corpse': True,
+        }
+    )

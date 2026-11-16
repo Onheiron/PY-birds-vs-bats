@@ -1,12 +1,10 @@
 """Boss lifecycle: spawn conditions, dispatch and collisions."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import add_score
-from src.engine.progression import award_xp
 import random
 import time
-from src.entities.sprites import BLUE, DINOSAUR, ORANGE, STEALTH
+
+from src.core import constants, state
+from src.engine.birds import reset_bird_power, set_ball_vy
 from src.engine.logic.bosses.basic import _boss_start_scream
 from src.engine.logic.bosses.common import _convert_boss_to_obstacle, _get_boss_config
 from src.engine.logic.bosses.jelly import spawn_jelly_boss, update_jelly_boss
@@ -14,8 +12,9 @@ from src.engine.logic.bosses.owl import spawn_owl_boss, update_owl_boss
 from src.engine.logic.bosses.tree import _check_bird_tree_branch_collision, spawn_tree_boss, update_tree_boss
 from src.engine.logic.bosses.wind import spawn_wind_boss, update_wind_boss
 from src.engine.logic.damage import _calculate_bird_damage
+from src.engine.progression import add_score, award_xp
+from src.entities.sprites import BLUE, DINOSAUR, ORANGE, STEALTH
 from src.services.sound import play_sfx
-from src.engine.birds import reset_bird_power, set_ball_vy
 
 
 def should_spawn_boss():
@@ -37,10 +36,12 @@ def should_spawn_boss():
     owl_boss_cfg = getattr(constants, 'owl_boss', None)
     owl_boss_level = getattr(owl_boss_cfg, 'level', 15) if owl_boss_cfg else 15
 
-    is_special_boss_level = (state.game.level == wind_boss_level or
-                             state.game.level == jelly_boss_level or
-                             state.game.level == tree_boss_level or
-                             state.game.level == owl_boss_level)
+    is_special_boss_level = (
+        state.game.level == wind_boss_level
+        or state.game.level == jelly_boss_level
+        or state.game.level == tree_boss_level
+        or state.game.level == owl_boss_level
+    )
 
     # Get normal boss config
     boss_cfg = _get_boss_config()
@@ -58,6 +59,7 @@ def should_spawn_boss():
 
     # Get milestones to calculate level progress
     from src.engine.progression import get_level_milestones
+
     milestones = get_level_milestones()
     current_level = state.game.level
 
@@ -69,7 +71,7 @@ def should_spawn_boss():
     # Miles traveled within THIS level
     miles_in_level = state.game.miles - level_start_miles
     # Total miles in this level
-    level_length = level_end_miles - level_start_miles
+    level_end_miles - level_start_miles
     # Miles remaining in this level
     miles_remaining = level_end_miles - state.game.miles
 

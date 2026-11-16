@@ -1,7 +1,6 @@
 """Pause overlay, settings menus and Birdpedia."""
 
-from src.core import constants
-from src.core import state
+from src.core import constants, state
 from src.entities.sprites import YELLOW
 from src.ui.colors import MENU_ARROW_COLOR, MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
@@ -39,15 +38,7 @@ def _fb_render_pause_overlay(fb):
 
 def _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     """Render the main pause menu."""
-    PAUSE_MENU_OPTIONS = [
-        "RESUME",
-        "RESTART",
-        "SAVE",
-        "LOAD",
-        "BIRDPEDIA",
-        "SETTINGS",
-        "MAIN MENU"
-    ]
+    PAUSE_MENU_OPTIONS = ["RESUME", "RESTART", "SAVE", "LOAD", "BIRDPEDIA", "SETTINGS", "MAIN MENU"]
 
     top_border = "╔" + "═" * (menu_width - 2) + "╗"
     separator_border = "╠" + "═" * (menu_width - 2) + "╣"
@@ -151,6 +142,7 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
         title = "SAVE GAME"
         # Get save slot info
         from src.services import save_manager
+
         slots = save_manager.list_save_slots()
 
         def get_slot_info(slot_num):
@@ -172,6 +164,7 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
         title = "LOAD GAME"
         # Get save slot info
         from src.services import save_manager
+
         slots = save_manager.list_save_slots()
 
         def get_slot_info(slot_num):
@@ -254,13 +247,17 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     selected_idx = state.ui.settings_index
     option_text_width = inner_width - 2
 
-    for i, (option_text, option_type) in enumerate(options):
+    for i, (option_text, _option_type) in enumerate(options):
         fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
         if i == selected_idx:
             fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
-            fb.put_string(menu_x + 2, y, f" {option_text:<{option_text_width}}"[:option_text_width+1], MENU_SELECTED_COLOR)
+            fb.put_string(
+                menu_x + 2, y, f" {option_text:<{option_text_width}}"[: option_text_width + 1], MENU_SELECTED_COLOR
+            )
         else:
-            fb.put_string(menu_x + 1, y, f"  {option_text:<{option_text_width}}"[:option_text_width+2], MENU_NORMAL_COLOR)
+            fb.put_string(
+                menu_x + 1, y, f"  {option_text:<{option_text_width}}"[: option_text_width + 2], MENU_NORMAL_COLOR
+            )
         fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
         y += 1
 
@@ -273,9 +270,7 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
             hint = "Press new key...  ESC Cancel"
         else:
             hint = "↑↓ Navigate  ⏎ Rebind  ESC Back"
-    elif state.ui.settings_menu in ('save', 'load'):
-        hint = "↑↓ Navigate  ⏎ Select  ESC Back"
-    elif state.ui.settings_menu in ('birdpedia', 'guide'):
+    elif state.ui.settings_menu in ('save', 'load') or state.ui.settings_menu in ('birdpedia', 'guide'):
         hint = "↑↓ Navigate  ⏎ Select  ESC Back"
     else:
         hint = "↑↓ Navigate  ←→ Change  ⏎ Select"
@@ -284,9 +279,9 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
 
 def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, content_type):
     """Render birdpedia content pages."""
-    from src.entities.sprites import (YELLOW, RED, BLUE, WHITE, PURPLE, ORANGE,
-                                      STEALTH, CLOCKWORK, GOLD, PATCHWORK,
-                                      COOKIE, DINOSAUR, GLITCH)
+    from src.entities.sprites import (
+        YELLOW,
+    )
 
     # Get discovery state
     discovered_birds = state.discovery.birds
@@ -367,7 +362,7 @@ def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_wid
                 "",
                 "Don't let birds fall off the",
                 "bottom - you'll lose a life!",
-            ]
+            ],
         },
         'commands': {
             'title': 'COMMANDS',
@@ -388,7 +383,7 @@ def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_wid
                 "",
                 "Controls can be rebound in",
                 "the SETTINGS > CONTROLS menu.",
-            ]
+            ],
         },
         'obstacles': {
             'title': 'OBSTACLES',
@@ -406,7 +401,7 @@ def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_wid
                 "  Destroys loot on contact." if 'BARRIER' in discovered_obstacles else "",
                 "",
                 f"Discovered: {len(discovered_obstacles)}/4",
-            ]
+            ],
         },
         'enemies': {
             'title': 'ENEMIES',
@@ -425,16 +420,10 @@ def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_wid
                 "",
                 "More enemies appear at higher",
                 "speed levels.",
-            ]
+            ],
         },
-        'birds': {
-            'title': 'BIRD-DEX',
-            'lines': get_bird_lines()
-        },
-        'bats': {
-            'title': 'BAT-DEX',
-            'lines': get_bat_lines()
-        },
+        'birds': {'title': 'BIRD-DEX', 'lines': get_bird_lines()},
+        'bats': {'title': 'BAT-DEX', 'lines': get_bat_lines()},
         'biomes': {
             'title': 'BIOMES',
             'lines': [
@@ -461,8 +450,8 @@ def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_wid
                 "MOUNTAIN RANGE (6-1 to 6-3)",
                 "  High peaks, thin air.",
                 "  Cloud banks obscure vision!",
-            ]
-        }
+            ],
+        },
     }
 
     content = CONTENT.get(content_type, {'title': 'UNKNOWN', 'lines': []})
@@ -514,7 +503,7 @@ def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_wid
             fb.put_string(expanded_x + 1, y, display_line, MENU_NORMAL_COLOR)
         else:
             # Pad plain lines
-            fb.put_string(expanded_x + 1, y, f" {line:<{content_width}}"[:content_width+1], MENU_NORMAL_COLOR)
+            fb.put_string(expanded_x + 1, y, f" {line:<{content_width}}"[: content_width + 1], MENU_NORMAL_COLOR)
         fb.put(expanded_x + expanded_width - 1, y, '║', MENU_BORDER_COLOR)
         y += 1
 
@@ -526,7 +515,7 @@ def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_wid
     fb.put(expanded_x, y, '║', MENU_BORDER_COLOR)
     back_text = "< BACK"
     fb.put(expanded_x + 1, y, '>', MENU_ARROW_COLOR)
-    fb.put_string(expanded_x + 2, y, f" {back_text:<{content_width}}"[:content_width+1], MENU_SELECTED_COLOR)
+    fb.put_string(expanded_x + 2, y, f" {back_text:<{content_width}}"[: content_width + 1], MENU_SELECTED_COLOR)
     fb.put(expanded_x + expanded_width - 1, y, '║', MENU_BORDER_COLOR)
     y += 1
 

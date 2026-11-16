@@ -1,16 +1,42 @@
 """Per-tick orchestration of all game logic."""
 
 from src.core import state
-from src.engine.logic.bosses.director import check_bird_boss_collision, check_bird_meteor_collision, should_spawn_boss, spawn_boss, update_boss
-from src.engine.logic.collisions import check_bat_obstacle_collision, check_bird_bat_collision, check_bird_ceiling_bounce, check_bird_floor_collision, check_bird_obstacle_collision, check_projectile_collision
-from src.engine.logic.effects import update_enemy_debuffs, update_powerup_timers, update_purple_charging, update_special_bird_states, update_spell_effects
+from src.engine.logic.bosses.director import (
+    check_bird_boss_collision,
+    check_bird_meteor_collision,
+    should_spawn_boss,
+    spawn_boss,
+    update_boss,
+)
+from src.engine.logic.collisions import (
+    check_bat_obstacle_collision,
+    check_bird_bat_collision,
+    check_bird_ceiling_bounce,
+    check_bird_floor_collision,
+    check_bird_obstacle_collision,
+    check_projectile_collision,
+)
+from src.engine.logic.effects import (
+    update_enemy_debuffs,
+    update_powerup_timers,
+    update_purple_charging,
+    update_special_bird_states,
+    update_spell_effects,
+)
 from src.engine.logic.flowers import update_obstacle_flowers
 from src.engine.logic.loot import check_loot_collection
 from src.engine.logic.mini_bats import check_bird_mini_bat_collision, update_mini_bats
 from src.engine.logic.portals import update_portals
 from src.engine.logic.scoring import update_score_tick
+from src.engine.logic.spawning import (
+    despawn_old_entities,
+    process_spawn_queue,
+    spawn_bat,
+    spawn_cloud_bank,
+    spawn_obstacle,
+    update_cloud_banks,
+)
 from src.services.sound import sync_active_birds
-from src.engine.logic.spawning import despawn_old_entities, process_spawn_queue, spawn_bat, spawn_cloud_bank, spawn_obstacle, update_cloud_banks
 
 
 def update_all():

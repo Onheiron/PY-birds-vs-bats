@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Game state module - contains all mutable game state organized in namespaces.
 This module centralizes all variables that change during gameplay.
@@ -7,9 +6,10 @@ Access as: state.birds.colors, state.game.score, etc.
 """
 
 import time
-from src.core import constants
-from src.entities.bird_types import BirdType, get_default_speed, get_color_for_bird_type
 from types import SimpleNamespace
+
+from src.core import constants
+from src.entities.bird_types import BirdType, get_color_for_bird_type, get_default_speed
 
 # Default yellow color (avoid circular import from sprites)
 _YELLOW_DEFAULT = get_color_for_bird_type(BirdType.YELLOW)
@@ -29,8 +29,8 @@ birds = SimpleNamespace(
     lost=[],
     power_used=[],
     power_uses=[],
-    random_lanes=[],      # Current physical lane
-    home_lanes=[],        # "Home" lane - where bird would end up following portals down
+    random_lanes=[],  # Current physical lane
+    home_lanes=[],  # "Home" lane - where bird would end up following portals down
     per_bird_xp=[],
     transformed=[],
     pending_transform=[],  # Bird wants to transform but can't (limit reached) - stores target color
@@ -44,45 +44,33 @@ birds = SimpleNamespace(
 special = SimpleNamespace(
     # Red bird projectiles
     red_projectiles=[],
-    
     # Speed boosts
     speed_boosts={},
-
     # Dive fall boosts (from diver bats in diving state)
     dive_fall_boosts={},
-
     # Dinosaur
     dinosaur_up_presses={},
-
     # Scared birds
     scared_birds={},
-
     # Stunned birds (from obstacle collision - short duration, no speed boost)
     stunned_birds={},
-
     # Frozen birds (from Tree Boss blue flower)
     # {bird_idx: {'thaw_attempts_needed': int, 'thaw_attempts_done': int}}
     frozen_birds={},
-
     # Poisoned birds (from Tree Boss green flower)
     # {bird_idx: {'death_time': float, 'cure_attempts_needed': int, 'cure_attempts_done': int}}
     poisoned_birds={},
-
     # Bleeding birds (from Tree Boss red flower)
     # {bird_idx: {'end_time': float}} - press UP = instant death
     bleeding_birds={},
-
     # Stealth
     stealth_timers={},
     stealth_prev_speeds={},
-    
     # Clockwork
-    clockwork_charge={},       # bird_idx -> current charge (0-3)
-    clockwork_last_decay={},   # bird_idx -> timestamp of last decay
-    
+    clockwork_charge={},  # bird_idx -> current charge (0-3)
+    clockwork_last_decay={},  # bird_idx -> timestamp of last decay
     # Cookie
     cookie_crumbs_made={},
-    
     # Purple bird charging state
     purple_state=[],
     purple_primed_frame=[],
@@ -91,32 +79,26 @@ special = SimpleNamespace(
     purple_miss_count=[],
     purple_just_fired_frames=[],
     purple_hold_counter=[],
-    
     # Global UP counters
     up_hold_counter=0,
     up_miss_counter=0,
-
     # Track last UP press time (for Purple hold-to-charge)
     last_up_time=0.0,
-
     # Rainbow bird state
-    rainbow_charge={},          # bird_idx -> charge level (0-100)
-    rainbow_last_decay={},      # bird_idx -> timestamp of last decay
-
+    rainbow_charge={},  # bird_idx -> charge level (0-100)
+    rainbow_last_decay={},  # bird_idx -> timestamp of last decay
     # Twister bird state
-    twister_tailwind={},        # bird_idx -> {'end_time': float, 'lanes': [int]}
-
+    twister_tailwind={},  # bird_idx -> {'end_time': float, 'lanes': [int]}
     # Status effect birds (power boost mode)
-    frosty_boosted={},          # bird_idx -> end_time (60% freeze mode)
-    poison_boosted={},          # bird_idx -> end_time (60% poison mode)
-    berserk_boosted={},         # bird_idx -> end_time (60% bleed mode)
-    rock_boosted={},            # bird_idx -> end_time (boosted push mode)
-    rock_prev_speeds={},        # bird_idx -> original speed before ROCK boost
-
+    frosty_boosted={},  # bird_idx -> end_time (60% freeze mode)
+    poison_boosted={},  # bird_idx -> end_time (60% poison mode)
+    berserk_boosted={},  # bird_idx -> end_time (60% bleed mode)
+    rock_boosted={},  # bird_idx -> end_time (boosted push mode)
+    rock_prev_speeds={},  # bird_idx -> original speed before ROCK boost
     # Enemy debuffs (NEW - applied by birds to enemies)
-    frozen_enemies={},          # enemy_id -> {'end_time': float, 'type': 'bat'|'obstacle'}
-    poisoned_enemies={},        # enemy_id -> {'end_time': float, 'last_tick': float}
-    bleeding_enemies={},        # enemy_id -> {'end_time': float, 'last_tick': float}
+    frozen_enemies={},  # enemy_id -> {'end_time': float, 'type': 'bat'|'obstacle'}
+    poisoned_enemies={},  # enemy_id -> {'end_time': float, 'last_tick': float}
+    bleeding_enemies={},  # enemy_id -> {'end_time': float, 'last_tick': float}
 )
 
 # ============================================================================
@@ -152,9 +134,7 @@ enemies = SimpleNamespace(
 # ============================================================================
 # ITEMS STATE (organized as namespace)
 # ============================================================================
-items = SimpleNamespace(
-    loot_items=[]
-)
+items = SimpleNamespace(loot_items=[])
 
 # ============================================================================
 # SPELL EFFECTS STATE (from spellcaster bats)
@@ -163,11 +143,9 @@ spells = SimpleNamespace(
     # Silence spell - lanes where bird powers are disabled
     # {lane_index: {'end_time': float, 'caster_tier': int}}
     silenced_lanes={},
-
     # Repugnant wind spell - reverse tailwind effect on lanes
     # {lane_index: {'end_time': float, 'speed_boost': int, 'speed_nerf': int}}
     repugnant_wind_lanes={},
-
     # Exile spell - pending swaps
     # [{'swap_time': float, 'bird_a_idx': int, 'bird_b_idx': int or None}]
     pending_exiles=[],
@@ -203,13 +181,13 @@ powerups = SimpleNamespace(
 # GAME STATE (organized as namespace)
 # ============================================================================
 game = SimpleNamespace(
-    score=0,              # Total score (never decreases)
+    score=0,  # Total score (never decreases)
     momentum=getattr(constants.speed, 'starting_momentum', 100),  # Momentum (from config)
-    level=1,              # Level as milestone (1-18, displayed as 1-1 to 6-3)
-    level_group=1,        # Group number (1-6)
-    level_sub=1,          # Sub-level within group (1-3)
-    speed=1,              # Speed level (1-10) - controls game pace
-    miles=0.0,            # Miles traveled (accumulated over time based on speed)
+    level=1,  # Level as milestone (1-18, displayed as 1-1 to 6-3)
+    level_group=1,  # Group number (1-6)
+    level_sub=1,  # Sub-level within group (1-3)
+    speed=1,  # Speed level (1-10) - controls game pace
+    miles=0.0,  # Miles traveled (accumulated over time based on speed)
     lives=5,
     game_over=False,
     quit_requested=False,  # True quando l'utente esce con Q/CTRL+C
@@ -217,18 +195,13 @@ game = SimpleNamespace(
     paused=False,
     frame_count=0,
     start_time=None,
-    last_mile_update=None  # Timestamp for mile calculation
+    last_mile_update=None,  # Timestamp for mile calculation
 )
 
 # ============================================================================
 # PLAYER STATE (organized as namespace)
 # ============================================================================
-player = SimpleNamespace(
-    lane=2,
-    selected_lane=None,
-    last_space_state=False,
-    last_up_state=False
-)
+player = SimpleNamespace(lane=2, selected_lane=None, last_space_state=False, last_up_state=False)
 
 # ============================================================================
 # UI STATE (organized as namespace)
@@ -236,8 +209,8 @@ player = SimpleNamespace(
 ui = SimpleNamespace(
     show_xp_overlay=False,
     # Parallax background layers (3 layers with different speeds)
-    bg_offset=0,         # Slowest layer (original tree pattern)
-    bg_mid_offset=0,     # Middle layer (∧ symbols, intermediate speed)
+    bg_offset=0,  # Slowest layer (original tree pattern)
+    bg_mid_offset=0,  # Middle layer (∧ symbols, intermediate speed)
     # Cave shimmer effect - particles that fade in/out from darkness
     # Dict of {(x, y): brightness} where brightness is 0.0 (dark) to 1.0 (bright)
     cave_shimmer={},
@@ -251,12 +224,12 @@ ui = SimpleNamespace(
     pause_menu_index=0,  # 0=RESUME, 1=RESTART, 2=SAVE & EXIT, etc.
     # Settings menu state
     settings_menu=None,  # None=not in settings, 'main'/'sound'/'graphics'/'controls'/'save'/'load'
-    settings_index=0,    # Current selection index in settings submenu
+    settings_index=0,  # Current selection index in settings submenu
     # Key rebinding state
     rebinding_control=None,  # None or control name being rebound (e.g., 'MOVE_LEFT')
     # Title screen state
     title_menu_index=0,  # 0=CONTINUE, 1=NEW GAME, 2=LOAD, 3=QUIT
-    show_title=True,     # True when on title screen
+    show_title=True,  # True when on title screen
 )
 
 # ============================================================================
@@ -317,7 +290,7 @@ def init(seed=None):
 
     # Initialize bird colors from default formation (configurable via constants.birds.default_formation)
     birds.colors = []
-    for bird_type in constants.birds.default_formation[:constants.layout.num_balls]:
+    for bird_type in constants.birds.default_formation[: constants.layout.num_balls]:
         color = get_color_for_bird_type(bird_type)
         birds.colors.append(color)
 
@@ -340,7 +313,7 @@ def init(seed=None):
     birds.lost = [False] * constants.layout.num_balls
     birds.power_used = [False] * constants.layout.num_balls
     birds.power_uses = [0] * constants.layout.num_balls
-    
+
     birds.per_bird_xp = [0] * constants.layout.num_balls
     birds.transformed = [False] * constants.layout.num_balls
     birds.pending_transform = [None] * constants.layout.num_balls  # None or target color
@@ -353,10 +326,10 @@ def init(seed=None):
     special.purple_miss_count = [0] * constants.layout.num_balls
     special.purple_just_fired_frames = [0] * constants.layout.num_balls
     special.purple_hold_counter = [0] * constants.layout.num_balls
-    
+
     # Red bird projectiles
     special.red_projectiles = []
-    
+
     # Special bird state
     special.speed_boosts = {}
     special.dive_fall_boosts = {}
@@ -408,7 +381,7 @@ def init(seed=None):
     ui.settings_index = 0
 
     # Note: settings state is NOT reset on init() - persists across restarts
-    
+
     # Enemies
     enemies.obstacles = []
     enemies.obstacle_spawn_timer = 0
@@ -429,7 +402,7 @@ def init(seed=None):
 
     # Items
     items.loot_items = []
-    
+
     # Power-ups (reset to default values)
     powerups.wide_cursor_active = False
     powerups.wide_cursor_frames = 0
@@ -449,7 +422,7 @@ def init(seed=None):
     powerups.timelapse_slowdown = 1.0
     powerups.wind_boss_up_bonus = 0
     powerups.wind_boss_down_penalty = 0
-    
+
     # Game state
     game.score = 0
     game.miles = 0.0
@@ -464,7 +437,7 @@ def init(seed=None):
     game.paused = False
     game.frame_count = 0
     game.last_mile_update = None
-    
+
     # Player state
     player.lane = 2
     player.selected_lane = None
@@ -474,12 +447,14 @@ def init(seed=None):
     # Track original bird indices
     birds.original_indices = list(range(constants.layout.num_balls))
     birds.portal_cooldown = {}
-    
+
     # Assign speeds based on bird formation
     birds.speeds = []
     for i in range(constants.layout.num_balls):
         try:
-            bird_type = constants.birds.default_formation[i] if i < len(constants.birds.default_formation) else BirdType.YELLOW
+            bird_type = (
+                constants.birds.default_formation[i] if i < len(constants.birds.default_formation) else BirdType.YELLOW
+            )
             spd = get_default_speed(bird_type)
             birds.speeds.append(int(spd))
         except Exception:

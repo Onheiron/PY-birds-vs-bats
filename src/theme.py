@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Theme configuration loader for BVB game.
 Loads color definitions from theme.yml and provides ANSI escape codes.
@@ -6,6 +5,7 @@ Loads color definitions from theme.yml and provides ANSI escape codes.
 Usage:
     python game.py --theme custom_theme.yml
 """
+
 import os
 import sys
 
@@ -35,7 +35,7 @@ def _load_accessible_theme():
     for theme_path in possible_paths:
         if os.path.exists(theme_path):
             try:
-                with open(theme_path, 'r') as f:
+                with open(theme_path) as f:
                     return yaml.safe_load(f) or {}
             except Exception:
                 pass
@@ -61,6 +61,7 @@ def is_accessibility_enabled():
         # Imported lazily: src.core.state itself depends on the theme.
         try:
             from src.core import state
+
             _settings = state.settings
         except (ImportError, AttributeError):
             return False
@@ -91,15 +92,17 @@ def _load_theme_file():
             possible_paths.append(os.path.join(os.getcwd(), env_theme_path))
 
     # Default locations
-    possible_paths.extend([
-        os.path.join(os.getcwd(), 'theme.yml'),
-        os.path.join(os.path.dirname(__file__), '..', 'theme.yml'),
-    ])
+    possible_paths.extend(
+        [
+            os.path.join(os.getcwd(), 'theme.yml'),
+            os.path.join(os.path.dirname(__file__), '..', 'theme.yml'),
+        ]
+    )
 
     for theme_path in possible_paths:
         if os.path.exists(theme_path):
             try:
-                with open(theme_path, 'r') as f:
+                with open(theme_path) as f:
                     return yaml.safe_load(f) or {}
             except Exception as e:
                 print(f"Warning: Failed to load theme from {theme_path}: {e}", file=sys.stderr)
@@ -144,11 +147,11 @@ def _code_to_ansi(code):
     if code < 0:
         # Basic ANSI colors
         basic_codes = {
-            -1: "\033[31m",   # red
-            -2: "\033[32m",   # green
-            -3: "\033[34m",   # blue
-            -4: "\033[96m",   # cyan (light)
-            -5: "\033[97m",   # white (bright)
+            -1: "\033[31m",  # red
+            -2: "\033[32m",  # green
+            -3: "\033[34m",  # blue
+            -4: "\033[96m",  # cyan (light)
+            -5: "\033[97m",  # white (bright)
         }
         return basic_codes.get(code, "\033[0m")
 

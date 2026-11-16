@@ -1,16 +1,13 @@
 """Bird damage computation and enemy death handling."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import add_score
-from src.engine.loot_tables import adjust_rarity_weights
-from src.engine.progression import award_xp
-from src.engine.loot_tables import choose_loot_type
-from src.engine.progression import compute_prestige
-from src.services import achievements
 import random
 import time
+
+from src.core import constants, state
+from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
+from src.engine.progression import add_score, award_xp, compute_prestige
 from src.entities.sprites import BLUE, GLITCH, ORANGE, STEALTH
+from src.services import achievements
 from src.services.sound import play_sfx
 
 
@@ -119,8 +116,10 @@ def _handle_bat_death(bat, killer_bird_idx):
     if not bat.get('from_boss'):
         # Drop loot at closest lane
         bat_center_x = bat['x_pos'] + 4
-        closest_lane = min(range(constants.layout.num_lanes),
-                           key=lambda l: abs(constants.layout.lane_positions[l] - bat_center_x))
+        closest_lane = min(
+            range(constants.layout.num_lanes),
+            key=lambda lane: abs(constants.layout.lane_positions[lane] - bat_center_x),
+        )
 
         prestige = compute_prestige()
         base_weights = getattr(constants.loot, 'base_rarity_weights', [1, 0.1, 0.01, 0.001, 0.0001, 0.00001])
@@ -133,13 +132,15 @@ def _handle_bat_death(bat, killer_bird_idx):
         rarity = random.choices(['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical'], weights=adj_weights)[0]
         loot_type = choose_loot_type(rarity)
 
-        state.items.loot_items.append({
-            'x_pos': constants.layout.lane_positions[closest_lane],
-            'y_pos': bat['y_pos'],
-            'type': loot_type,
-            'rarity': rarity,
-            'spawn_ts': time.time()
-        })
+        state.items.loot_items.append(
+            {
+                'x_pos': constants.layout.lane_positions[closest_lane],
+                'y_pos': bat['y_pos'],
+                'type': loot_type,
+                'rarity': rarity,
+                'spawn_ts': time.time(),
+            }
+        )
 
     # Notify achievements
     bird_color = state.birds.colors[killer_bird_idx]
@@ -176,16 +177,19 @@ def _handle_mini_bat_death(mini_bat, killer_bird_idx):
 
         # Drop loot at mini bat position (find closest lane)
         mb_x = mini_bat['x_pos']
-        closest_lane = min(range(constants.layout.num_lanes),
-                           key=lambda l: abs(constants.layout.lane_positions[l] - mb_x))
+        closest_lane = min(
+            range(constants.layout.num_lanes), key=lambda lane: abs(constants.layout.lane_positions[lane] - mb_x)
+        )
 
-        state.items.loot_items.append({
-            'x_pos': constants.layout.lane_positions[closest_lane],
-            'y_pos': mini_bat['y_pos'],
-            'type': loot_type,
-            'rarity': rarity,
-            'spawn_ts': time.time()
-        })
+        state.items.loot_items.append(
+            {
+                'x_pos': constants.layout.lane_positions[closest_lane],
+                'y_pos': mini_bat['y_pos'],
+                'type': loot_type,
+                'rarity': rarity,
+                'spawn_ts': time.time(),
+            }
+        )
 
     # Notify achievements (tier 0 bat)
     achievements.check_achievements_event('destroy_bat', state.game.frame_count, state.ui.notifications, tier=0)

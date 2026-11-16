@@ -1,3 +1,1 @@
-# Entity modules: bird types, sprites
-from .sprites import *
-from .bird_types import *
+"""Entities: bird types and sprites."""

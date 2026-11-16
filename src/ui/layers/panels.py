@@ -1,12 +1,24 @@
 """Side panels: gauges, level signs, barriers and notification cards."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import calculate_gear_threshold
-from src.engine.progression import get_level_milestones
-from src.engine.progression import get_mph_for_speed
+from src.core import constants, state
+from src.engine.progression import calculate_gear_threshold, get_level_milestones, get_mph_for_speed
 from src.entities.sprites import OBSTACLE_SPRITE_T1
-from src.ui.colors import CARD_BORDER_COLOR, CARD_TEXT_COLOR, CARD_TITLE_COLOR, GAUGE_GRADIENT, GAUGE_OFF, LEVEL_LINE_COLOR, MOMENTUM_GRADIENT, PANEL_BORDER_COLOR, PANEL_LABEL_COLOR, PANEL_VALUE_COLOR, SIGN_ARROW_COLOR, SIGN_BORDER_COLOR, SIGN_TEXT_COLOR, get_biome_obstacle_color
+from src.ui.colors import (
+    CARD_BORDER_COLOR,
+    CARD_TEXT_COLOR,
+    CARD_TITLE_COLOR,
+    GAUGE_GRADIENT,
+    GAUGE_OFF,
+    LEVEL_LINE_COLOR,
+    MOMENTUM_GRADIENT,
+    PANEL_BORDER_COLOR,
+    PANEL_LABEL_COLOR,
+    PANEL_VALUE_COLOR,
+    SIGN_ARROW_COLOR,
+    SIGN_BORDER_COLOR,
+    SIGN_TEXT_COLOR,
+    get_biome_obstacle_color,
+)
 from src.ui.framebuffer import BLANK
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
 
@@ -257,14 +269,13 @@ def _calculate_level_line_y():
     if time_to_level >= time_for_full_travel:
         # Line hasn't entered screen yet
         return -1, False, 0
-    else:
-        # Line is on screen - calculate position
-        # Line goes from top (0) to bottom (panel_height)
-        line_progress = 1.0 - (time_to_level / time_for_full_travel)
-        line_progress = max(0, min(1, line_progress))
-        line_y = int(line_progress * full_travel_distance)
+    # Line is on screen - calculate position
+    # Line goes from top (0) to bottom (panel_height)
+    line_progress = 1.0 - (time_to_level / time_for_full_travel)
+    line_progress = max(0, min(1, line_progress))
+    line_y = int(line_progress * full_travel_distance)
 
-        return line_y, True, 0
+    return line_y, True, 0
 
 
 def _fb_render_level_line(fb):
@@ -284,7 +295,7 @@ def _fb_render_level_line(fb):
     # Draw dashed line across game width - darker than START line
     line_pattern = "· · · · · · · · · · · · · · · · · · · · · · · "
 
-    for i, char in enumerate(line_pattern[:constants.layout.width]):
+    for i, char in enumerate(line_pattern[: constants.layout.width]):
         if char != ' ':
             fb.put(GAME_X_OFFSET + i, screen_y, char, LEVEL_LINE_COLOR)
 
@@ -299,7 +310,7 @@ def _fb_render_right_panel_level_signs(fb):
     """
     panel_start_y = HEADER_HEIGHT
     panel_end_y = constants.layout.height + HEADER_HEIGHT
-    panel_height = panel_end_y - panel_start_y
+    panel_end_y - panel_start_y
     right_start = GAME_X_OFFSET + constants.layout.width
 
     # Get level info
@@ -314,7 +325,6 @@ def _fb_render_right_panel_level_signs(fb):
 
     # Sign dimensions: 16 chars wide
     # Signs stay at LEFT of panel (close to game area), padding goes to the right
-    sign_width = 16
     sign_x = inner_start_x  # No centering - stick to left edge
 
     # === Calculate thresholds ===
@@ -481,7 +491,7 @@ def _fb_render_right_panel_barriers(fb):
     for barrier in state.enemies.right_panel_barriers:
         tier = barrier.get('tier', 1)
         sprite = biome_obstacles.get(tier, biome_obstacles.get(1, OBSTACLE_SPRITE_T1))
-        sprite_width = max(len(line) for line in sprite)
+        max(len(line) for line in sprite)
 
         # Use stored x_offset for horizontal position variation
         x_offset = barrier.get('x_offset', 0)

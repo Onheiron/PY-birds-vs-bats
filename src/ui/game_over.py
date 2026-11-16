@@ -1,4 +1,5 @@
 """Game over screen: final stats, leaderboard name entry and retry/exit menu."""
+
 import time
 
 from src import __version__

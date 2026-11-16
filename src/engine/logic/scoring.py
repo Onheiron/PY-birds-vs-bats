@@ -1,12 +1,10 @@
 """Score, momentum and frame pacing."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import add_score
-from src.engine.progression import update_momentum
 import random
+
+from src.core import constants, state
+from src.engine.progression import add_score, compute_momentum_factor, update_momentum
 from src.entities.sprites import DINOSAUR, GLITCH, GOLD, ORANGE, STEALTH, WHITE
-from src.engine.progression import compute_momentum_factor
 
 
 def _compute_score_position_multiplier(y_pos):
@@ -26,14 +24,13 @@ def _compute_score_position_multiplier(y_pos):
 
     if y_pos >= starting_line:
         return 0.5
-    elif y_pos >= breakeven_point:
+    if y_pos >= breakeven_point:
         t = (starting_line - y_pos) / (starting_line - breakeven_point)
         return 0.5 + t * 0.5
-    elif y_pos > ceiling:
+    if y_pos > ceiling:
         t = (breakeven_point - y_pos) / (breakeven_point - ceiling)
         return 1.0 + t * 1.0
-    else:
-        return 2.0
+    return 2.0
 
 
 def _compute_center_of_mass():
@@ -87,19 +84,18 @@ def update_score_tick():
 
     # Type multipliers (some birds are worth more)
     type_multipliers = {
-        GOLD: 10.0,      # Gold birds are score machines
-        DINOSAUR: 2.0,   # Dinosaur is strong
-        WHITE: 1.5,      # White is fast
-        ORANGE: 0.5,     # Orange sacrifices for damage
-        STEALTH: 1.2,    # Stealth is sneaky
-        GLITCH: 1.0,     # Glitch is random (handled separately)
+        GOLD: 10.0,  # Gold birds are score machines
+        DINOSAUR: 2.0,  # Dinosaur is strong
+        WHITE: 1.5,  # White is fast
+        ORANGE: 0.5,  # Orange sacrifices for damage
+        STEALTH: 1.2,  # Stealth is sneaky
+        GLITCH: 1.0,  # Glitch is random (handled separately)
     }
 
     # Grade values
     grade_values = {'D': 1.0, 'C1': 1.1, 'C2': 1.2, 'B1': 1.3, 'B2': 1.4, 'A1': 1.5, 'A2': 1.6, 'S': 2.0}
 
     # Calculate total score from all active birds
-    total_base_score = 0.0
 
     for i in range(constants.layout.num_balls):
         if state.birds.lost[i]:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """BVB - Bird vs Bat. Entry point."""
+
 from src.engine import loop
 from src.services import optional, save_manager, sound
 from src.ui import terminal

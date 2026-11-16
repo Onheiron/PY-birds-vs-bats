@@ -1,7 +1,6 @@
 """On-screen notification cards."""
 
-from src.core import constants
-from src.core import state
+from src.core import constants, state
 
 
 def _add_notification(text, duration_frames=None, title=None):
@@ -22,11 +21,7 @@ def _add_notification(text, duration_frames=None, title=None):
     expire_frame = state.game.frame_count + duration_frames
 
     # New notification format: dict with title, text, expire_frame
-    notification = {
-        'title': title or '',
-        'text': text,
-        'expire_frame': expire_frame
-    }
+    notification = {'title': title or '', 'text': text, 'expire_frame': expire_frame}
 
     # Insert at beginning (top of stack)
     state.ui.notifications.insert(0, notification)

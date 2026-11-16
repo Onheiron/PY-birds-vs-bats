@@ -1,16 +1,17 @@
-#!/usr/bin/env python3
 """
 Global game constants loaded from configuration.
 All values are loaded from config.yml (or specified --config file).
 """
-from . import init
+
 from types import SimpleNamespace
 
-# Load configuration (required - will exit if not found)
+from . import init
+
+# Load configuration (required - will exit if not found).
+# This must happen before bird_types is imported: it selects the theme file.
 config, args = init.init_config()
 
-# Import necessary functions for transform limits
-from src.entities.bird_types import BirdType, get_color_for_bird_type
+from src.entities.bird_types import BirdType, get_color_for_bird_type  # noqa: E402
 
 # Create all namespace objects from config
 layout = init.dict_to_namespace(config.get('layout', {}))
@@ -127,7 +128,7 @@ for obj, attr_name in dict_attributes:
 # Map difficulty index to config file
 DIFFICULTY_CONFIG_FILES = {
     0: 'config_easy.yml',
-    1: 'config.yml',       # NORMAL = base config
+    1: 'config.yml',  # NORMAL = base config
     2: 'config_hard.yml',
     3: 'config_hell.yml',
 }

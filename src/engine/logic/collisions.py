@@ -1,19 +1,32 @@
 """Bird, bat, obstacle and projectile collisions."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import add_score
-from src.engine.progression import award_xp
-from src.engine.birds import get_scared_frames
 import random
 import time
-from src.entities.sprites import BERSERK, BLUE, CLOCKWORK, DINOSAUR, FROSTY, GLITCH, OBSTACLE_LANE_WIDTH, OBSTACLE_SPRITES, OBSTACLE_SPRITE_T1, ORANGE, POISON, RAINBOW, ROCK, STEALTH
+
+from src.core import constants, state
+from src.engine.birds import get_scared_frames, reset_bird_power, set_ball_vy
 from src.engine.logic.damage import _calculate_bird_damage, _handle_bat_death
 from src.engine.logic.flowers import _apply_flower_collision_effect
 from src.engine.logic.helpers import _get_obstacle_lanes
 from src.engine.logic.mini_bats import handle_obstacle_destroyed, try_spawn_mini_bat_on_hit
+from src.engine.progression import add_score, award_xp
+from src.entities.sprites import (
+    BERSERK,
+    BLUE,
+    CLOCKWORK,
+    DINOSAUR,
+    FROSTY,
+    GLITCH,
+    OBSTACLE_LANE_WIDTH,
+    OBSTACLE_SPRITE_T1,
+    OBSTACLE_SPRITES,
+    ORANGE,
+    POISON,
+    RAINBOW,
+    ROCK,
+    STEALTH,
+)
 from src.services.sound import play_sfx
-from src.engine.birds import reset_bird_power, set_ball_vy
 
 
 def check_bird_ceiling_bounce():
@@ -30,13 +43,15 @@ def check_bird_ceiling_bounce():
                 reset_bird_power(i)
                 state.birds.speeds[i] = 0
                 # Spawn orange egg loot (both native and transformed Orange birds)
-                state.items.loot_items.append({
-                    'x_pos': constants.layout.lane_positions[lane],
-                    'y_pos': constants.layout.starting_line,
-                    'type': 'orange_egg',
-                    'rarity': 'epic',
-                    'spawn_ts': time.time()
-                })
+                state.items.loot_items.append(
+                    {
+                        'x_pos': constants.layout.lane_positions[lane],
+                        'y_pos': constants.layout.starting_line,
+                        'type': 'orange_egg',
+                        'rarity': 'epic',
+                        'spawn_ts': time.time(),
+                    }
+                )
                 continue
 
             # RAINBOW special: warp to floor instead of bounce
@@ -108,6 +123,7 @@ def check_bird_floor_collision():
 
         # Check if a pending bird can now transform
         from src.engine.birds import check_pending_transforms
+
         check_pending_transforms(dead_color)
 
         if state.game.lives <= 0:
@@ -150,6 +166,7 @@ def check_bird_obstacle_collision():
             # Check if obstacle has a mature flower - apply effect before damage
             flower = obs.get('flower')
             from src.entities.sprites import FLOWER_MATURE_FRAME
+
             if flower and flower.get('active') and flower.get('frame', 0) >= FLOWER_MATURE_FRAME:
                 _apply_flower_collision_effect(flower, i)
 
@@ -291,14 +308,12 @@ def check_bird_bat_collision():
                     dive_boost_duration = getattr(diver_cfg, 'dive_boost_duration', 0.5)
                     dive_boost_frames = int(dive_boost_duration / constants.timing.base_sleep)
                     # Apply dive fall boost (separate from scared speed boost)
-                    state.special.dive_fall_boosts[i] = {
-                        'frames': dive_boost_frames,
-                        'speed': dive_boost_speed
-                    }
+                    state.special.dive_fall_boosts[i] = {'frames': dive_boost_frames, 'speed': dive_boost_speed}
 
             # ROCK bird pushes enemies up
             if bird_color == ROCK:
                 import time as time_module
+
                 now = time_module.time()
                 # Check if boosted (power active)
                 is_boosted = i in state.special.rock_boosted and now < state.special.rock_boosted[i]
@@ -313,6 +328,7 @@ def check_bird_bat_collision():
             # FROSTY bird applies FROZEN debuff to enemies
             if bird_color == FROSTY:
                 import time as time_module
+
                 now = time_module.time()
                 # Check if boosted
                 is_boosted = i in state.special.frosty_boosted and now < state.special.frosty_boosted[i]
@@ -330,12 +346,13 @@ def check_bird_bat_collision():
                     state.special.frozen_enemies[bat_id] = {
                         'end_time': now + freeze_duration,
                         'bat': bat,
-                        'armor_reduction': getattr(constants.frosty, 'armor_reduction', 2)
+                        'armor_reduction': getattr(constants.frosty, 'armor_reduction', 2),
                     }
 
             # POISON bird applies POISON debuff to bats/boss only
             if bird_color == POISON:
                 import time as time_module
+
                 now = time_module.time()
                 # Check if boosted
                 is_boosted = i in state.special.poison_boosted and now < state.special.poison_boosted[i]
@@ -350,12 +367,13 @@ def check_bird_bat_collision():
                         'end_time': now + effect_duration,
                         'last_tick': now,
                         'bat': bat,
-                        'damage_per_second': getattr(constants.poison, 'damage_per_second', 2)
+                        'damage_per_second': getattr(constants.poison, 'damage_per_second', 2),
                     }
 
             # BERSERK bird applies BLEED debuff
             if bird_color == BERSERK:
                 import time as time_module
+
                 now = time_module.time()
                 # Check if boosted
                 is_boosted = i in state.special.berserk_boosted and now < state.special.berserk_boosted[i]
@@ -371,7 +389,7 @@ def check_bird_bat_collision():
                         'last_tick': now,
                         'bat': bat,
                         'damage_per_second': getattr(constants.berserk, 'damage_per_second', 1),
-                        'armor_reduction': getattr(constants.berserk, 'armor_reduction', 1)
+                        'armor_reduction': getattr(constants.berserk, 'armor_reduction', 1),
                     }
 
             if bat['hp'] <= 0:
@@ -396,9 +414,7 @@ def check_projectile_collision():
             bat_top = bat['y_pos']
             bat_bottom = bat['y_pos'] + 1
 
-            if (bat_left <= proj['x_pos'] <= bat_right and
-                bat_top <= proj['y_pos'] <= bat_bottom):
-
+            if bat_left <= proj['x_pos'] <= bat_right and bat_top <= proj['y_pos'] <= bat_bottom:
                 damage = proj.get('damage', 1)
                 bat['hp'] -= damage
 
@@ -468,9 +484,7 @@ def check_projectile_collision():
                 branch_top = branch['y_pos']
                 branch_bottom = branch['y_pos'] + branch['sprite_height']
 
-                if (branch_left <= proj['x_pos'] <= branch_right and
-                    branch_top <= proj['y_pos'] <= branch_bottom):
-
+                if branch_left <= proj['x_pos'] <= branch_right and branch_top <= proj['y_pos'] <= branch_bottom:
                     damage = proj.get('damage', 1)
                     owner = proj.get('owner')
 
@@ -527,9 +541,7 @@ def check_projectile_collision():
             boss_bottom = boss['y_pos'] + boss_height
 
             # Check if projectile hits boss
-            if (boss_left <= proj['x_pos'] <= boss_right and
-                boss_top <= proj['y_pos'] <= boss_bottom):
-
+            if boss_left <= proj['x_pos'] <= boss_right and boss_top <= proj['y_pos'] <= boss_bottom:
                 damage = proj.get('damage', 1)
                 owner = proj.get('owner')
 

@@ -1,4 +1,5 @@
 """Frame pacing: a fixed-rate render clock and the physics tick divider."""
+
 import time
 
 from src.core import constants, state

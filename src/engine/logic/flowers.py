@@ -1,9 +1,9 @@
 """Swamp flowers growing on obstacles and Tree Boss branches."""
 
-from src.core import constants
-from src.core import state
 import random
 import time
+
+from src.core import constants, state
 
 
 def _maybe_add_flower_to_obstacle(obstacle_data):
@@ -78,7 +78,6 @@ def update_obstacle_flowers():
 def _apply_mature_flower_effect(branch, flower):
     """Apply the effect of a mature (frame 5) flower to its lanes."""
     # Yellow, blue, and green effects are applied on collision, not passively
-    pass
 
 
 def _apply_flower_collision_effect(flower, bird_idx):

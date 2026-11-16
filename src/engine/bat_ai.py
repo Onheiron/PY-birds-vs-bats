@@ -1,13 +1,12 @@
 """Bat movement and behaviours: divers, spellcasters and their spells."""
 
-from src.core import constants
-from src.core import state
 import random
+
+from src.core import constants, state
 
 
 def update_bat_positions():
     """Update positions of all bats (horizontal wave + vertical descent)."""
-    import time as time_module
 
     for bat in state.enemies.bats[:]:
         is_armored = bat.get('armored', False)
@@ -26,7 +25,7 @@ def update_bat_positions():
 
         # Get movement modifiers for armored bats
         horiz_interval = 3  # Normal: move every 3 frames
-        move_distance = 2   # Normal: 2 pixels per move
+        move_distance = 2  # Normal: 2 pixels per move
         if is_armored:
             armored_cfg = getattr(constants.bat_enemy, 'armored', None)
             if armored_cfg:
@@ -233,10 +232,7 @@ def _apply_spell_effect(bat):
             duration = 3.0
 
         for lane in affected_lanes:
-            state.spells.silenced_lanes[lane] = {
-                'end_time': now + duration,
-                'caster_tier': tier
-            }
+            state.spells.silenced_lanes[lane] = {'end_time': now + duration, 'caster_tier': tier}
 
     elif spell == 'repugnant_wind':
         # Reverse tailwind in affected lanes
@@ -257,7 +253,7 @@ def _apply_spell_effect(bat):
             state.spells.repugnant_wind_lanes[lane] = {
                 'end_time': now + duration,
                 'speed_boost': speed_boost,
-                'speed_nerf': speed_nerf
+                'speed_nerf': speed_nerf,
             }
 
     elif spell == 'exile':
@@ -288,7 +284,7 @@ def _calculate_bird_damage_potential(bird_idx):
         return -1  # Lost birds have no potential
 
     # Simple formula: speed * (1 if moving up else 0.5) + tier bonus
-    from src.entities.sprites import ORANGE, DINOSAUR, PURPLE
+    from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
     color = state.birds.colors[bird_idx]
     speed = state.birds.speeds[bird_idx]
@@ -362,12 +358,16 @@ def _cast_exile_spell(affected_lanes):
     swap_delay = getattr(exile_cfg, 'swap_delay', 0.3) if exile_cfg else 0.3
 
     now = time_module.time()
-    state.spells.pending_exiles.append({
-        'swap_time': now + swap_delay,
-        'bird_a_idx': best_bird_idx,
-        'bird_b_idx': worst_bird_idx,  # Can be None if swapping to empty lane
-        'empty_lane': empty_lane if worst_bird_idx is None or (empty_lane is not None and worst_potential > 0) else None
-    })
+    state.spells.pending_exiles.append(
+        {
+            'swap_time': now + swap_delay,
+            'bird_a_idx': best_bird_idx,
+            'bird_b_idx': worst_bird_idx,  # Can be None if swapping to empty lane
+            'empty_lane': empty_lane
+            if worst_bird_idx is None or (empty_lane is not None and worst_potential > 0)
+            else None,
+        }
+    )
 
 
 def _check_bat_can_move(bat, next_x):

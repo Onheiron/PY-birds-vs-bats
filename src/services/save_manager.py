@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Save/Load system for BVB game.
 Handles serialization of complete game state to JSON files.
@@ -7,8 +6,8 @@ Handles serialization of complete game state to JSON files.
 import json
 import random
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from types import SimpleNamespace
 
 # Constants
@@ -81,7 +80,7 @@ def save_discovery():
         with open(path, 'w') as f:
             json.dump(discovery_data, f, indent=2)
         return True
-    except (OSError, IOError):
+    except OSError:
         return False
 
 
@@ -94,7 +93,7 @@ def load_discovery():
         return False
 
     try:
-        with open(path, 'r') as f:
+        with open(path) as f:
             data = json.load(f)
 
         # Apply discovery data
@@ -108,13 +107,14 @@ def load_discovery():
             state.discovery.biomes = set(data['biomes'])
 
         return True
-    except (json.JSONDecodeError, OSError, IOError):
+    except (json.JSONDecodeError, OSError):
         return False
 
 
 def discover_bird(bird_type_name):
     """Mark a bird type as discovered."""
     from src.core import state
+
     if bird_type_name not in state.discovery.birds:
         state.discovery.birds.add(bird_type_name)
         save_discovery()
@@ -125,6 +125,7 @@ def discover_bird(bird_type_name):
 def discover_bat(bat_type_name):
     """Mark a bat type as discovered."""
     from src.core import state
+
     if bat_type_name not in state.discovery.bats:
         state.discovery.bats.add(bat_type_name)
         save_discovery()
@@ -135,6 +136,7 @@ def discover_bat(bat_type_name):
 def discover_obstacle(obstacle_type_name):
     """Mark an obstacle type as discovered."""
     from src.core import state
+
     if obstacle_type_name not in state.discovery.obstacles:
         state.discovery.obstacles.add(obstacle_type_name)
         save_discovery()
@@ -145,6 +147,7 @@ def discover_obstacle(obstacle_type_name):
 def discover_biome(biome_name):
     """Mark a biome as discovered."""
     from src.core import state
+
     if biome_name not in state.discovery.biomes:
         state.discovery.biomes.add(biome_name)
         save_discovery()
@@ -172,7 +175,7 @@ def save_default_settings():
         with open(path, 'w') as f:
             json.dump(settings_data, f, indent=2)
         return True
-    except (OSError, IOError):
+    except OSError:
         return False
 
 
@@ -185,7 +188,7 @@ def load_default_settings():
         return False
 
     try:
-        with open(path, 'r') as f:
+        with open(path) as f:
             data = json.load(f)
 
         # Apply settings
@@ -205,7 +208,7 @@ def load_default_settings():
             state.settings.key_bindings = data['key_bindings']
 
         return True
-    except (json.JSONDecodeError, OSError, IOError):
+    except (json.JSONDecodeError, OSError):
         return False
 
 
@@ -216,17 +219,13 @@ def list_save_slots():
         dict: {slot_number: {exists, timestamp, score, level, ...}}
     """
     slots = {}
-    for slot in range(0, MAX_SLOTS + 1):  # 0=autosave, 1-3=manual
+    for slot in range(MAX_SLOTS + 1):  # 0=autosave, 1-3=manual
         path = get_save_path(slot)
         if path.exists():
             try:
-                with open(path, 'r') as f:
+                with open(path) as f:
                     data = json.load(f)
-                slots[slot] = {
-                    'exists': True,
-                    'path': str(path),
-                    **data.get('metadata', {})
-                }
+                slots[slot] = {'exists': True, 'path': str(path), **data.get('metadata', {})}
             except (json.JSONDecodeError, KeyError):
                 slots[slot] = {'exists': False, 'corrupted': True}
         else:
@@ -308,7 +307,7 @@ def save_game(slot=0):
         with open(path, 'w') as f:
             json.dump(save_data, f, indent=2, default=_json_serializer)
         return True
-    except (OSError, IOError) as e:
+    except OSError as e:
         print(f"Save failed: {e}")
         return False
 
@@ -329,7 +328,7 @@ def load_game(slot):
         return False
 
     try:
-        with open(path, 'r') as f:
+        with open(path) as f:
             data = json.load(f)
 
         # Verify version compatibility
@@ -390,6 +389,7 @@ def delete_save(slot):
 # ============================================================================
 # SERIALIZATION HELPERS
 # ============================================================================
+
 
 def _namespace_to_dict(ns):
     """Convert a SimpleNamespace to a dict, handling nested structures."""
@@ -462,6 +462,7 @@ def _build_metadata():
 def _build_game_dict():
     """Build game state dict (excluding transient fields)."""
     from src.core import state
+
     return {
         'score': state.game.score,
         'momentum': state.game.momentum,
@@ -479,6 +480,7 @@ def _build_game_dict():
 def _build_player_dict():
     """Build player state dict (excluding input state)."""
     from src.core import state
+
     return {
         'lane': state.player.lane,
         'selected_lane': state.player.selected_lane,
@@ -488,6 +490,7 @@ def _build_player_dict():
 def _build_ui_dict():
     """Build UI state dict (excluding transient notifications)."""
     from src.core import state
+
     return {
         'bg_offset': state.ui.bg_offset,
         'bg_mid_offset': state.ui.bg_mid_offset,
@@ -522,11 +525,23 @@ def _is_version_compatible(version):
 # RESTORATION HELPERS
 # ============================================================================
 
+
 def _restore_birds(birds, data):
     """Restore birds namespace from dict."""
-    for key in ['colors', 'cols', 'y', 'vy', 'speeds', 'lost', 'power_used',
-                'power_uses', 'random_lanes', 'per_bird_xp', 'transformed',
-                'original_indices']:
+    for key in [
+        'colors',
+        'cols',
+        'y',
+        'vy',
+        'speeds',
+        'lost',
+        'power_used',
+        'power_uses',
+        'random_lanes',
+        'per_bird_xp',
+        'transformed',
+        'original_indices',
+    ]:
         if key in data:
             setattr(birds, key, data[key])
 
@@ -534,9 +549,15 @@ def _restore_birds(birds, data):
 def _restore_special(special, data):
     """Restore special namespace from dict."""
     # Lists
-    for key in ['purple_state', 'purple_primed_frame', 'purple_charge_started_frame',
-                'purple_saved_vy', 'purple_miss_count', 'purple_just_fired_frames',
-                'purple_hold_counter']:
+    for key in [
+        'purple_state',
+        'purple_primed_frame',
+        'purple_charge_started_frame',
+        'purple_saved_vy',
+        'purple_miss_count',
+        'purple_just_fired_frames',
+        'purple_hold_counter',
+    ]:
         if key in data:
             setattr(special, key, data[key])
 
@@ -546,9 +567,16 @@ def _restore_special(special, data):
             setattr(special, key, data[key])
 
     # Dicts with int keys (convert string keys back to int)
-    for key in ['speed_boosts', 'dinosaur_up_presses', 'scared_birds',
-                'stunned_birds', 'stealth_timers', 'stealth_prev_speeds',
-                'clockwork_charge', 'cookie_crumbs_made']:
+    for key in [
+        'speed_boosts',
+        'dinosaur_up_presses',
+        'scared_birds',
+        'stunned_birds',
+        'stealth_timers',
+        'stealth_prev_speeds',
+        'clockwork_charge',
+        'cookie_crumbs_made',
+    ]:
         if key in data:
             setattr(special, key, {int(k): v for k, v in data[key].items()})
 
@@ -588,11 +616,21 @@ def _restore_items(items, data):
 
 def _restore_powerups(powerups, data):
     """Restore powerups namespace from dict."""
-    for key in ['wide_cursor_active', 'wide_cursor_frames', 'wide_cursor_lanes',
-                'bounce_boost_active', 'bounce_boost_frames', 'bounce_boost_duration',
-                'suction_active', 'suction_frames', 'suction_boost_duration',
-                'tailwind_active', 'tailwind_frames', 'tailwind_up_bonus',
-                'tailwind_down_penalty']:
+    for key in [
+        'wide_cursor_active',
+        'wide_cursor_frames',
+        'wide_cursor_lanes',
+        'bounce_boost_active',
+        'bounce_boost_frames',
+        'bounce_boost_duration',
+        'suction_active',
+        'suction_frames',
+        'suction_boost_duration',
+        'tailwind_active',
+        'tailwind_frames',
+        'tailwind_up_bonus',
+        'tailwind_down_penalty',
+    ]:
         if key in data:
             setattr(powerups, key, data[key])
 
@@ -600,8 +638,19 @@ def _restore_powerups(powerups, data):
 def _restore_game_state(data):
     """Restore game namespace from dict."""
     from src.core import state
-    for key in ['score', 'momentum', 'level', 'level_group', 'level_sub', 'speed',
-                'miles', 'lives', 'swaps_used', 'frame_count']:
+
+    for key in [
+        'score',
+        'momentum',
+        'level',
+        'level_group',
+        'level_sub',
+        'speed',
+        'miles',
+        'lives',
+        'swaps_used',
+        'frame_count',
+    ]:
         if key in data:
             setattr(state.game, key, data[key])
     # For old saves without momentum, initialize it to score value
@@ -612,6 +661,7 @@ def _restore_game_state(data):
 def _restore_player_state(data):
     """Restore player namespace from dict."""
     from src.core import state
+
     state.player.lane = data.get('lane', 4)
     state.player.selected_lane = data.get('selected_lane')
 
@@ -619,6 +669,7 @@ def _restore_player_state(data):
 def _restore_ui_state(data):
     """Restore UI namespace from dict."""
     from src.core import state
+
     state.ui.bg_offset = data.get('bg_offset', 0)
     state.ui.bg_mid_offset = data.get('bg_mid_offset', 0)
     state.ui.show_xp_overlay = data.get('show_xp_overlay', False)
@@ -628,6 +679,7 @@ def _restore_ui_state(data):
 def _restore_settings(data):
     """Restore settings namespace from dict."""
     from src.core import state
+
     for key, value in data.items():
         if hasattr(state.settings, key) and not key.startswith('_'):
             setattr(state.settings, key, value)

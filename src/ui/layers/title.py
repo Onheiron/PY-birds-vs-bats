@@ -1,8 +1,8 @@
 """Title screen."""
 
 from src.core import state
-from src.ui import terminal
 from src.entities.sprites import YELLOW
+from src.ui import terminal
 from src.ui.colors import MENU_ARROW_COLOR, MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
 from src.ui.framebuffer import get_framebuffer
 from src.ui.layers.menus import _fb_render_birdpedia_content
@@ -99,6 +99,7 @@ def render_title_screen():
 def _fb_render_title_load_menu(fb, start_y):
     """Render load menu overlay on title screen."""
     from src.services import save_manager
+
     slots = save_manager.list_save_slots()
 
     menu_width = 30
@@ -127,7 +128,7 @@ def _fb_render_title_load_menu(fb, start_y):
     option_text_width = menu_width - 4
 
     # Slot options: autosave + 3 manual slots + back
-    for slot in range(0, 4):  # 0=autosave, 1-3=manual
+    for slot in range(4):  # 0=autosave, 1-3=manual
         slot_info = slots.get(slot, {})
         if slot == 0:
             label = "AUTO"
@@ -145,19 +146,23 @@ def _fb_render_title_load_menu(fb, start_y):
         fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
         if slot == selected_idx:
             fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
-            fb.put_string(menu_x + 2, y, f" {option_text:<{option_text_width}}"[:option_text_width+1], MENU_SELECTED_COLOR)
+            fb.put_string(
+                menu_x + 2, y, f" {option_text:<{option_text_width}}"[: option_text_width + 1], MENU_SELECTED_COLOR
+            )
         else:
-            fb.put_string(menu_x + 1, y, f"  {option_text:<{option_text_width}}"[:option_text_width+2], MENU_NORMAL_COLOR)
+            fb.put_string(
+                menu_x + 1, y, f"  {option_text:<{option_text_width}}"[: option_text_width + 2], MENU_NORMAL_COLOR
+            )
         fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
         y += 1
 
     # BACK option
     fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
-    if 4 == selected_idx:
+    if selected_idx == 4:
         fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
-        fb.put_string(menu_x + 2, y, f" {'< BACK':<{option_text_width}}"[:option_text_width+1], MENU_SELECTED_COLOR)
+        fb.put_string(menu_x + 2, y, f" {'< BACK':<{option_text_width}}"[: option_text_width + 1], MENU_SELECTED_COLOR)
     else:
-        fb.put_string(menu_x + 1, y, f"  {'< BACK':<{option_text_width}}"[:option_text_width+2], MENU_NORMAL_COLOR)
+        fb.put_string(menu_x + 1, y, f"  {'< BACK':<{option_text_width}}"[: option_text_width + 2], MENU_NORMAL_COLOR)
     fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
     y += 1
 
@@ -252,8 +257,15 @@ def _fb_render_title_settings_menu(fb, start_y):
             ("ENEMIES", "submenu"),
             ("< BACK", "back"),
         ]
-    elif state.ui.settings_menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies',
-                                     'birdpedia_list', 'batpedia_list', 'biomes_list'):
+    elif state.ui.settings_menu in (
+        'guide_howto',
+        'guide_commands',
+        'guide_obstacles',
+        'guide_enemies',
+        'birdpedia_list',
+        'batpedia_list',
+        'biomes_list',
+    ):
         # Render content view using the shared function
         content_map = {
             'guide_howto': 'howto',
@@ -264,8 +276,9 @@ def _fb_render_title_settings_menu(fb, start_y):
             'batpedia_list': 'bats',
             'biomes_list': 'biomes',
         }
-        _fb_render_birdpedia_content(fb, menu_x, start_y, menu_width, menu_width - 2,
-                                     content_map[state.ui.settings_menu])
+        _fb_render_birdpedia_content(
+            fb, menu_x, start_y, menu_width, menu_width - 2, content_map[state.ui.settings_menu]
+        )
         return
     else:
         return
@@ -286,13 +299,17 @@ def _fb_render_title_settings_menu(fb, start_y):
     selected_idx = state.ui.settings_index
     option_text_width = menu_width - 4
 
-    for i, (option_text, option_type) in enumerate(options):
+    for i, (option_text, _option_type) in enumerate(options):
         fb.put(menu_x, y, '║', MENU_BORDER_COLOR)
         if i == selected_idx:
             fb.put(menu_x + 1, y, '>', MENU_ARROW_COLOR)
-            fb.put_string(menu_x + 2, y, f" {option_text:<{option_text_width}}"[:option_text_width+1], MENU_SELECTED_COLOR)
+            fb.put_string(
+                menu_x + 2, y, f" {option_text:<{option_text_width}}"[: option_text_width + 1], MENU_SELECTED_COLOR
+            )
         else:
-            fb.put_string(menu_x + 1, y, f"  {option_text:<{option_text_width}}"[:option_text_width+2], MENU_NORMAL_COLOR)
+            fb.put_string(
+                menu_x + 1, y, f"  {option_text:<{option_text_width}}"[: option_text_width + 2], MENU_NORMAL_COLOR
+            )
         fb.put(menu_x + menu_width - 1, y, '║', MENU_BORDER_COLOR)
         y += 1
 

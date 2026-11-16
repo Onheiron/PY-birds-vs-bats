@@ -1,4 +1,6 @@
 """Terminal control: raw mode, alternate screen, cursor and frame output."""
+
+import contextlib
 import os
 import shutil
 import sys
@@ -23,6 +25,7 @@ def _enable_windows_ansi():
     """Turn on ANSI escape processing in the Windows console."""
     try:
         import ctypes
+
         kernel32 = ctypes.windll.kernel32
         handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
         mode = ctypes.c_uint32()
@@ -38,10 +41,8 @@ def setup():
     global _saved_termios
 
     # Sprites use box-drawing and block characters: make sure they can be encoded
-    try:
+    with contextlib.suppress(AttributeError, ValueError):
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-    except (AttributeError, ValueError):
-        pass
 
     if os.name == 'nt':
         _enable_windows_ansi()

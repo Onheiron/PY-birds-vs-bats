@@ -1,8 +1,12 @@
 """Small bird helpers shared by the logic modules."""
 
-from src.core import constants
-from src.core import state
-from src.entities.sprites import OBSTACLE_SPRITE_T1, get_biome_obstacles, get_obstacle_hitbox_lanes, get_obstacle_sprite_width
+from src.core import constants, state
+from src.entities.sprites import (
+    OBSTACLE_SPRITE_T1,
+    get_biome_obstacles,
+    get_obstacle_hitbox_lanes,
+    get_obstacle_sprite_width,
+)
 
 
 def _get_obstacle_lanes(obs):
@@ -17,10 +21,7 @@ def _get_obstacle_lanes(obs):
         sprite_width = get_obstacle_sprite_width(sprite)
 
     return get_obstacle_hitbox_lanes(
-        obs_lane,
-        sprite_width,
-        constants.layout.lane_positions,
-        constants.layout.num_lanes
+        obs_lane, sprite_width, constants.layout.lane_positions, constants.layout.num_lanes
     )
 
 

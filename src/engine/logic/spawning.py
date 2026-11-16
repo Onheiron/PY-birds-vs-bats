@@ -1,12 +1,19 @@
 """Enemy, obstacle, flower and cloud spawning plus despawn."""
 
-from src.core import constants
-from src.core import state
 import random
 import time
-from src.entities.sprites import OBSTACLE_SPRITE_T1, ORANGE, get_biome_obstacles, get_obstacle_hitbox_lanes, get_obstacle_sprite_width, get_random_obstacle_sprite
+
+from src.core import constants, state
 from src.engine.logic.flowers import _maybe_add_flower_to_obstacle
 from src.engine.logic.helpers import _get_obstacle_lanes
+from src.entities.sprites import (
+    OBSTACLE_SPRITE_T1,
+    ORANGE,
+    get_biome_obstacles,
+    get_obstacle_hitbox_lanes,
+    get_obstacle_sprite_width,
+    get_random_obstacle_sprite,
+)
 
 
 def spawn_obstacle():
@@ -18,7 +25,7 @@ def spawn_obstacle():
     # Use milestone level (1-18) for spawning, not speed
     level = state.game.level
     level_group = state.game.level_group  # 1-6
-    sub_level = ((level - 1) % 3) + 1     # 1, 2, or 3 within biome
+    sub_level = ((level - 1) % 3) + 1  # 1, 2, or 3 within biome
 
     # Get spawn rate parameters from config
     spawning = constants.obstacle.spawning
@@ -28,7 +35,9 @@ def spawn_obstacle():
     min_spawn_rate = getattr(spawning, 'min_spawn_rate', 6)
 
     # Spawn rate formula from config
-    base_spawn_rate = max(min_spawn_rate, int(biome_base * (biome_decay ** level_group) * (sublevel_decay ** (sub_level - 1))))
+    base_spawn_rate = max(
+        min_spawn_rate, int(biome_base * (biome_decay**level_group) * (sublevel_decay ** (sub_level - 1)))
+    )
     state.enemies.obstacle_spawn_timer = base_spawn_rate
 
     # Get tier weights from config
@@ -64,10 +73,7 @@ def spawn_obstacle():
     for start_lane in range(constants.layout.num_lanes):
         # Calcola quali lane occuperebbe il nuovo ostacolo in questa posizione
         lanes_needed = get_obstacle_hitbox_lanes(
-            start_lane,
-            new_sprite_width,
-            constants.layout.lane_positions,
-            constants.layout.num_lanes
+            start_lane, new_sprite_width, constants.layout.lane_positions, constants.layout.num_lanes
         )
         if not lanes_needed & occupied_lanes:
             valid_start_lanes.append(start_lane)
@@ -79,8 +85,9 @@ def spawn_obstacle():
     # Permetti più ostacoli consecutivi ai livelli alti (level 1-18)
     consecutive_limit = 2 + level // 4  # 2 at lv1, 3 at lv4, 4 at lv8, 5 at lv12, 6 at lv16
     if len(state.enemies.spawn_queue) >= consecutive_limit:
-        obstacle_count = sum(1 for item in state.enemies.spawn_queue[-consecutive_limit:]
-                            if item.get('type') == 'obstacle')
+        obstacle_count = sum(
+            1 for item in state.enemies.spawn_queue[-consecutive_limit:] if item.get('type') == 'obstacle'
+        )
         if obstacle_count >= consecutive_limit:
             state.enemies.obstacle_spawn_timer = max(5, base_spawn_rate // 4)
             return
@@ -110,19 +117,21 @@ def spawn_obstacle():
     obstacle_id = state.enemies.obstacle_id_counter
     state.enemies.obstacle_id_counter += 1
 
-    state.enemies.spawn_queue.append({
-        'type': 'obstacle',
-        'data': {
-            'id': obstacle_id,
-            'lane': lane,
-            'y_pos': start_y,
-            'tier': tier,
-            'hp': hp,
-            'sprite_width': sprite_width,
-            'sprite': sprite,  # Sprite specifica (variante + flip)
-            'flipped': flipped,
+    state.enemies.spawn_queue.append(
+        {
+            'type': 'obstacle',
+            'data': {
+                'id': obstacle_id,
+                'lane': lane,
+                'y_pos': start_y,
+                'tier': tier,
+                'hp': hp,
+                'sprite_width': sprite_width,
+                'sprite': sprite,  # Sprite specifica (variante + flip)
+                'flipped': flipped,
+            },
         }
-    })
+    )
 
 
 def spawn_bat():
@@ -196,24 +205,46 @@ def spawn_bat():
     target_y_cfg = getattr(constants.bat_enemy, 'target_y_by_level', None)
     if level <= 6:
         y_range = getattr(target_y_cfg, 'level_4_6', None) if target_y_cfg else None
-        target_y_min = y_range.get('min', 3) if isinstance(y_range, dict) else (getattr(y_range, 'min', 3) if y_range else 3)
-        target_y_max = y_range.get('max', 8) if isinstance(y_range, dict) else (getattr(y_range, 'max', 8) if y_range else 8)
+        target_y_min = (
+            y_range.get('min', 3) if isinstance(y_range, dict) else (getattr(y_range, 'min', 3) if y_range else 3)
+        )
+        target_y_max = (
+            y_range.get('max', 8) if isinstance(y_range, dict) else (getattr(y_range, 'max', 8) if y_range else 8)
+        )
     elif level <= 9:
         y_range = getattr(target_y_cfg, 'level_7_9', None) if target_y_cfg else None
-        target_y_min = y_range.get('min', 5) if isinstance(y_range, dict) else (getattr(y_range, 'min', 5) if y_range else 5)
-        target_y_max = y_range.get('max', 12) if isinstance(y_range, dict) else (getattr(y_range, 'max', 12) if y_range else 12)
+        target_y_min = (
+            y_range.get('min', 5) if isinstance(y_range, dict) else (getattr(y_range, 'min', 5) if y_range else 5)
+        )
+        target_y_max = (
+            y_range.get('max', 12) if isinstance(y_range, dict) else (getattr(y_range, 'max', 12) if y_range else 12)
+        )
     elif level <= 12:
         y_range = getattr(target_y_cfg, 'level_10_12', None) if target_y_cfg else None
-        target_y_min = y_range.get('min', 8) if isinstance(y_range, dict) else (getattr(y_range, 'min', 8) if y_range else 8)
-        target_y_max = y_range.get('max', 16) if isinstance(y_range, dict) else (getattr(y_range, 'max', 16) if y_range else 16)
+        target_y_min = (
+            y_range.get('min', 8) if isinstance(y_range, dict) else (getattr(y_range, 'min', 8) if y_range else 8)
+        )
+        target_y_max = (
+            y_range.get('max', 16) if isinstance(y_range, dict) else (getattr(y_range, 'max', 16) if y_range else 16)
+        )
     elif level <= 15:
         y_range = getattr(target_y_cfg, 'level_13_15', None) if target_y_cfg else None
-        target_y_min = y_range.get('min', 10) if isinstance(y_range, dict) else (getattr(y_range, 'min', 10) if y_range else 10)
-        target_y_max = y_range.get('max', 20) if isinstance(y_range, dict) else (getattr(y_range, 'max', 20) if y_range else 20)
+        target_y_min = (
+            y_range.get('min', 10) if isinstance(y_range, dict) else (getattr(y_range, 'min', 10) if y_range else 10)
+        )
+        target_y_max = (
+            y_range.get('max', 20) if isinstance(y_range, dict) else (getattr(y_range, 'max', 20) if y_range else 20)
+        )
     else:
         y_range = getattr(target_y_cfg, 'level_16_18', None) if target_y_cfg else None
-        target_y_min = y_range.get('min', 12) if isinstance(y_range, dict) else (getattr(y_range, 'min', 12) if y_range else 12)
-        target_y_max = y_range.get('max', 23) if isinstance(y_range, dict) else (getattr(y_range, 'max', 23) if y_range else constants.layout.starting_line - 5)
+        target_y_min = (
+            y_range.get('min', 12) if isinstance(y_range, dict) else (getattr(y_range, 'min', 12) if y_range else 12)
+        )
+        target_y_max = (
+            y_range.get('max', 23)
+            if isinstance(y_range, dict)
+            else (getattr(y_range, 'max', 23) if y_range else constants.layout.starting_line - 5)
+        )
 
     target_y = random.randint(target_y_min, min(target_y_max, constants.layout.starting_line - 3))
 
@@ -357,10 +388,7 @@ def spawn_bat():
         all_spells = ['silence', 'repugnant_wind', 'exile']
         bat_data['known_spells'] = all_spells[:num_spells]
 
-    state.enemies.spawn_queue.append({
-        'type': 'bat',
-        'data': bat_data
-    })
+    state.enemies.spawn_queue.append({'type': 'bat', 'data': bat_data})
 
 
 def process_spawn_queue():
@@ -417,13 +445,15 @@ def spawn_cloud_bank():
     # Start above screen
     y_pos = -height
 
-    state.enemies.cloud_banks.append({
-        'x_pos': x_pos,
-        'y_pos': y_pos,
-        'width': width,
-        'height': height,
-        'opacity': random.choice([0.3, 0.5, 0.7])  # Varying opacity
-    })
+    state.enemies.cloud_banks.append(
+        {
+            'x_pos': x_pos,
+            'y_pos': y_pos,
+            'width': width,
+            'height': height,
+            'opacity': random.choice([0.3, 0.5, 0.7]),  # Varying opacity
+        }
+    )
 
 
 def update_cloud_banks():
@@ -438,8 +468,7 @@ def update_cloud_banks():
 
     # Remove clouds that are off screen
     state.enemies.cloud_banks = [
-        cloud for cloud in state.enemies.cloud_banks
-        if cloud['y_pos'] < constants.layout.height + 5
+        cloud for cloud in state.enemies.cloud_banks if cloud['y_pos'] < constants.layout.height + 5
     ]
 
 
@@ -468,15 +497,18 @@ def despawn_old_entities():
                 for li in range(constants.layout.num_lanes):
                     if constants.layout.lane_positions[li] == lane_x:
                         for bi in range(constants.layout.num_balls):
-                            if (state.birds.random_lanes[bi] == li and
-                                state.birds.colors[bi] == ORANGE and
-                                state.birds.y[bi] == 999 and
-                                not state.birds.lost[bi]):
+                            if (
+                                state.birds.random_lanes[bi] == li
+                                and state.birds.colors[bi] == ORANGE
+                                and state.birds.y[bi] == 999
+                                and not state.birds.lost[bi]
+                            ):
                                 state.birds.lost[bi] = True
                                 state.birds.y[bi] = constants.layout.height - 1
                                 state.game.lives -= 1
                                 # Check if a pending bird can now transform
                                 from src.engine.birds import check_pending_transforms
+
                                 check_pending_transforms(ORANGE)
                                 if state.game.lives <= 0:
                                     state.game.game_over = True

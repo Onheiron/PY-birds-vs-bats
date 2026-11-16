@@ -7,6 +7,7 @@ frame output is fed to a tiny ANSI terminal emulator instead of stdout.
 Everything is deterministic for a given (seed, scenario), which makes the
 harness usable for replay tests, golden-master comparisons and benchmarks.
 """
+
 import hashlib
 import random
 import re
@@ -47,7 +48,7 @@ class Screen:
         data = _PRIVATE_MODE.sub('', data)
         pos = 0
         for match in _SGR_OR_CUP.finditer(data):
-            self._write(data[pos:match.start()])
+            self._write(data[pos : match.start()])
             pos = match.end()
             args, kind = match.group(1), match.group(2)
             if kind == 'm':
@@ -103,6 +104,7 @@ def _freeze(value):
 
 def state_digest():
     from src.core import state
+
     parts = []
     for name in ('birds', 'special', 'enemies', 'items', 'spells', 'powerups', 'game', 'player'):
         ns = getattr(state, name)
@@ -156,8 +158,8 @@ class Simulation:
         self._real_write = None
 
     def _use_all_bird_types(self):
-        from src.entities.bird_types import BirdType, get_color_for_bird_type, get_default_speed
-        from src.entities.bird_types import BIRD_TYPES
+        from src.entities.bird_types import BIRD_TYPES, get_color_for_bird_type, get_default_speed
+
         types = list(BIRD_TYPES)
         for i in range(len(self.state.birds.colors)):
             bird_type = types[i % len(types)]
@@ -167,7 +169,9 @@ class Simulation:
     def _patch_save_timestamps(self):
         """Make save files carry virtual-clock timestamps."""
         import datetime as _dt
+
         from src.services import save_manager
+
         clock = self.clock
         epoch = _dt.datetime(2024, 1, 1)
         start = clock.now
@@ -214,6 +218,7 @@ class Simulation:
     def render_frame(self, title=False):
         """Render the current frame and return what would be written to stdout."""
         import sys
+
         sink = _Sink()
         captured = sink.chunks
         real = sys.stdout
@@ -221,6 +226,7 @@ class Simulation:
         try:
             if title:
                 from src.ui.layers.title import render_title_screen
+
                 render_title_screen()
             else:
                 self.render.render_game()

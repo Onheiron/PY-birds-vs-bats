@@ -1,9 +1,9 @@
 """GLITCH bird chaos: random teleports and duplication."""
 
-from src.core import constants
-from src.core import state
-from src.entities.sprites import GLITCH
 import random
+
+from src.core import constants, state
+from src.entities.sprites import GLITCH
 
 
 def update_glitch_chaos():
@@ -25,8 +25,10 @@ def update_glitch_chaos():
             others = [j for j in range(constants.layout.num_balls) if j != i and not state.birds.lost[j]]
             if others:
                 j = random.choice(others)
-                state.birds.random_lanes[i], state.birds.random_lanes[j] = \
-                    state.birds.random_lanes[j], state.birds.random_lanes[i]
+                state.birds.random_lanes[i], state.birds.random_lanes[j] = (
+                    state.birds.random_lanes[j],
+                    state.birds.random_lanes[i],
+                )
                 state.birds.cols[i] = constants.layout.lane_positions[state.birds.random_lanes[i]]
                 state.birds.cols[j] = constants.layout.lane_positions[state.birds.random_lanes[j]]
 

@@ -1,12 +1,18 @@
 """Header, starting line, centre of mass, floor, cursor and footer."""
 
-from src.core import constants
-from src.core import state
+from src.core import constants, state
+from src.engine.birds import get_affected_lanes
 from src.engine.grades import compute_grade_from_xp
 from src.engine.progression import compute_prestige
-from src.engine.birds import get_affected_lanes
 from src.entities.sprites import BLUE, DARK_GRAY, GREEN, RED, YELLOW, get_biome_name
-from src.ui.colors import HEADER_ACCENT, HEADER_BORDER, HEADER_LABEL, HEADER_VALUE, _get_position_color, _grade_letter_color
+from src.ui.colors import (
+    HEADER_ACCENT,
+    HEADER_BORDER,
+    HEADER_LABEL,
+    HEADER_VALUE,
+    _get_position_color,
+    _grade_letter_color,
+)
 from src.ui.framebuffer import RegionCache
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, TOTAL_WIDTH
 
@@ -86,9 +92,9 @@ def _fb_render_header(fb):
 
     # Box 4: BIOME
     fb.put(box4_x, 1, '║', HEADER_BORDER)
-    biome_truncated = biome_name[:box_width - 3]  # Truncate if too long
+    biome_truncated = biome_name[: box_width - 3]  # Truncate if too long
     biome_centered = f" {biome_truncated:^{box_width - 3}}"
-    fb.put_string(box4_x + 1, 1, biome_centered[:box_width - 2], HEADER_VALUE)
+    fb.put_string(box4_x + 1, 1, biome_centered[: box_width - 2], HEADER_VALUE)
     fb.put(box4_x + box_width - 1, 1, '║', HEADER_BORDER)
 
     # Row 2: Bottom borders
@@ -111,12 +117,8 @@ def _fb_render_starting_line(fb):
 
     # Determine base character based on active wind effects
     wind_up = state.powerups.wind_boss_up_bonus
-    wind_down = state.powerups.wind_boss_down_penalty
 
-    if state.powerups.tailwind_active:
-        base_char = '^'
-        base_color = BLUE
-    elif wind_up > 0:  # Wind boss tailwind phase
+    if state.powerups.tailwind_active or wind_up > 0:
         base_char = '^'
         base_color = BLUE
     elif wind_up < 0:  # Wind boss headwind phase

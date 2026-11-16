@@ -1,14 +1,13 @@
-#!/usr/bin/env python3
 """
 8-bit Chiptune Audio Engine for BVB.
 Dynamic music system where each bird type plays a different instrument.
 6 unique themes for different level ranges with distinct musical modes.
 """
 
-import numpy as np
 import threading
 import time
-from collections import deque
+
+import numpy as np
 
 try:
     import sounddevice as sd
@@ -266,7 +265,7 @@ def glitch_wave(freq, duration, volume=0.5):
     if freq == 0:
         return np.zeros(int(SAMPLE_RATE * duration), dtype=np.float32)
     samples = int(SAMPLE_RATE * duration)
-    t = np.linspace(0, duration, samples, False)
+    np.linspace(0, duration, samples, False)
     # Random frequency modulation
     freq_mod = freq * (1 + 0.5 * np.random.random(samples))
     phase = np.cumsum(freq_mod) / SAMPLE_RATE

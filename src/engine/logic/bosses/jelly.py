@@ -1,15 +1,12 @@
 """Jelly Boss (Rotten Marshes)."""
 
-from src.core import constants
-from src.core import state
-from src.engine.progression import add_score
-from src.engine.loot_tables import adjust_rarity_weights
-from src.engine.progression import award_xp
-from src.engine.loot_tables import choose_loot_type
-from src.engine.progression import compute_prestige
 import random
 import time
+
+from src.core import constants, state
 from src.engine.logic.bosses.common import _get_boss_config
+from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
+from src.engine.progression import add_score, award_xp, compute_prestige
 
 
 def spawn_jelly_boss():
@@ -70,7 +67,7 @@ def update_jelly_boss():
 
         if boss['anim_timer'] >= anim_speed:
             boss['anim_timer'] = 0
-            prev_frame = boss['anim_frame']
+            boss['anim_frame']
             boss['anim_frame'] = (boss['anim_frame'] + 1) % 10  # 10 frames in sequence
 
             # Check if we just reached frame 8 (spawn frame, 1-indexed = frame index 7)
@@ -285,10 +282,7 @@ def _spawn_bat_from_jelly_boss(boss, anim):
         bat_data['known_spells'] = all_spells[:num_spells]
 
     # Add to spawn queue
-    state.enemies.spawn_queue.append({
-        'type': 'bat',
-        'data': bat_data
-    })
+    state.enemies.spawn_queue.append({'type': 'bat', 'data': bat_data})
 
 
 def _convert_jelly_boss_to_obstacle(boss):
@@ -300,24 +294,27 @@ def _convert_jelly_boss_to_obstacle(boss):
     hp = getattr(corpse_cfg, 'hp', 80) if corpse_cfg else 80
 
     boss_center_x = boss['x_pos'] + 11  # Jelly boss is ~23 chars wide
-    closest_lane = min(range(constants.layout.num_lanes),
-                       key=lambda l: abs(constants.layout.lane_positions[l] - boss_center_x))
+    closest_lane = min(
+        range(constants.layout.num_lanes), key=lambda lane: abs(constants.layout.lane_positions[lane] - boss_center_x)
+    )
 
     obstacle_id = state.enemies.obstacle_id_counter
     state.enemies.obstacle_id_counter += 1
 
-    state.enemies.obstacles.append({
-        'id': obstacle_id,
-        'lane': closest_lane,
-        'x_pos': boss['x_pos'],
-        'y_pos': boss['y_pos'],
-        'tier': 5,
-        'hp': hp,
-        'max_hp': hp,
-        'sprite_width': 23,
-        'is_boss_corpse': True,
-        'is_jelly_boss_corpse': True,
-    })
+    state.enemies.obstacles.append(
+        {
+            'id': obstacle_id,
+            'lane': closest_lane,
+            'x_pos': boss['x_pos'],
+            'y_pos': boss['y_pos'],
+            'tier': 5,
+            'hp': hp,
+            'max_hp': hp,
+            'sprite_width': 23,
+            'is_boss_corpse': True,
+            'is_jelly_boss_corpse': True,
+        }
+    )
 
     # Award score and XP
     score = getattr(jelly_boss_cfg, 'score', 1500) if jelly_boss_cfg else 1500
@@ -349,10 +346,12 @@ def _convert_jelly_boss_to_obstacle(boss):
         lane_offset = i - loot_count // 2
         loot_lane = max(0, min(constants.layout.num_lanes - 1, closest_lane + lane_offset))
 
-        state.items.loot_items.append({
-            'x_pos': constants.layout.lane_positions[loot_lane],
-            'y_pos': boss['y_pos'] + 3,
-            'type': loot_type,
-            'rarity': rarity,
-            'spawn_ts': time.time()
-        })
+        state.items.loot_items.append(
+            {
+                'x_pos': constants.layout.lane_positions[loot_lane],
+                'y_pos': boss['y_pos'] + 3,
+                'type': loot_type,
+                'rarity': rarity,
+                'spawn_ts': time.time(),
+            }
+        )

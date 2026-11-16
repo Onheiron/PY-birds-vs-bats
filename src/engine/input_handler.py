@@ -1,8 +1,23 @@
 """Input dispatcher: routes each key to menus or gameplay actions."""
 
 from src.core import state
-from src.engine.actions import handle_audio_toggle, handle_bounce, handle_movement, handle_pause, handle_suction, handle_swap, handle_xp_toggle
-from src.engine.menus import _execute_pause_menu_action, _get_settings_options_count, _handle_settings_back, _handle_settings_enter, _handle_settings_left_right, _handle_title_input
+from src.engine.actions import (
+    handle_audio_toggle,
+    handle_bounce,
+    handle_movement,
+    handle_pause,
+    handle_suction,
+    handle_swap,
+    handle_xp_toggle,
+)
+from src.engine.menus import (
+    _execute_pause_menu_action,
+    _get_settings_options_count,
+    _handle_settings_back,
+    _handle_settings_enter,
+    _handle_settings_left_right,
+    _handle_title_input,
+)
 
 
 def process_input(key):
@@ -19,7 +34,7 @@ def process_input(key):
     key_upper = key.upper() if isinstance(key, str) and len(key) == 1 else key
 
     # Detect swap key press (edge detection for any bound key)
-    swap_pressed = (key_upper == swap_key)
+    swap_pressed = key_upper == swap_key
     swap_just_pressed = swap_pressed and not state.player.last_space_state
     state.player.last_space_state = swap_pressed
 
@@ -37,14 +52,76 @@ def process_input(key):
                     state.ui.rebinding_control = None
                 else:
                     # Accept any valid key for rebinding
-                    valid_keys = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE', 'ENTER',
-                                  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-                                  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-                                  'U', 'V', 'W', 'X', 'Y', 'Z',
-                                  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-                                  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                                  'u', 'v', 'w', 'x', 'y', 'z',
-                                  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+                    valid_keys = [
+                        'LEFT',
+                        'RIGHT',
+                        'UP',
+                        'DOWN',
+                        'SPACE',
+                        'ENTER',
+                        'A',
+                        'B',
+                        'C',
+                        'D',
+                        'E',
+                        'F',
+                        'G',
+                        'H',
+                        'I',
+                        'J',
+                        'K',
+                        'L',
+                        'M',
+                        'N',
+                        'O',
+                        'P',
+                        'Q',
+                        'R',
+                        'S',
+                        'T',
+                        'U',
+                        'V',
+                        'W',
+                        'X',
+                        'Y',
+                        'Z',
+                        'a',
+                        'b',
+                        'c',
+                        'd',
+                        'e',
+                        'f',
+                        'g',
+                        'h',
+                        'i',
+                        'j',
+                        'k',
+                        'l',
+                        'm',
+                        'n',
+                        'o',
+                        'p',
+                        'q',
+                        'r',
+                        's',
+                        't',
+                        'u',
+                        'v',
+                        'w',
+                        'x',
+                        'y',
+                        'z',
+                        '0',
+                        '1',
+                        '2',
+                        '3',
+                        '4',
+                        '5',
+                        '6',
+                        '7',
+                        '8',
+                        '9',
+                    ]
                     if key in valid_keys:
                         # Assign the new key
                         state.settings.key_bindings[state.ui.rebinding_control] = key.upper() if len(key) == 1 else key
