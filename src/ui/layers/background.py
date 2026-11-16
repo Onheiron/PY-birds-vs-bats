@@ -6,6 +6,7 @@ from src.entities.sprites import WOODS_BG_LAYER1
 from src.entities.sprites import WOODS_BG_LAYER2
 from src.entities.sprites import get_biome_bg
 from src.ui.colors import apply_faint, get_biome_colors, get_shimmer_color
+from src.ui.framebuffer import BLANK
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
 
 # Default patterns (Windy Woods) - used as fallback
@@ -83,6 +84,58 @@ def _fb_render_tree_boss_background(fb):
                         fb.put(screen_x, y_pos + HEADER_HEIGHT, char, tree_outline_color)
 
 
+# Cave shimmer brightness is a pure function of a 0-99 pseudo-random seed.
+_SHIMMER_COLORS = [get_shimmer_color(seed / 100.0 * 0.4 + 0.05) for seed in range(100)]
+
+_sparse_rows = {}    # (pattern line, pattern width, span) -> [(x, char)] for non-space cells
+_static_rows = {}    # pattern lines + colours -> composed row of cells
+_frame_memo = [None, None]   # [key, rows] of the last composed background
+
+
+def _sparse_row(line, pattern_width, span):
+    """Non-space cells of a pattern line tiled horizontally over ``span`` columns."""
+    key = (line, pattern_width, span)
+    cells = _sparse_rows.get(key)
+    if cells is None:
+        line_len = len(line)
+        cells = []
+        for x in range(span):
+            pattern_x = x % pattern_width
+            if pattern_x < line_len and line[pattern_x] != ' ':
+                cells.append((x, line[pattern_x]))
+        _sparse_rows[key] = cells
+    return cells
+
+
+def _static_row(line1, width1, color1, line2, width2, color2, span):
+    """Compose both parallax layers of one row with flat colours (cached)."""
+    key = (line1, width1, color1, line2, width2, color2, span)
+    row = _static_rows.get(key)
+    if row is None:
+        row = [BLANK] * span
+        for x, char in _sparse_row(line1, width1, span):
+            row[x] = (char, color1)
+        if line2 is not None:
+            for x, char in _sparse_row(line2, width2, span):
+                row[x] = (char, color2)
+        _static_rows[key] = row
+    return row
+
+
+def _shimmer_row(line1, width1, line2, width2, screen_y, phase, span):
+    """Compose one row where every background char flickers (Void Cave)."""
+    colors = _SHIMMER_COLORS
+    row = [BLANK] * span
+    base = screen_y * 137 + phase * 31
+    for x, char in _sparse_row(line1, width1, span):
+        row[x] = (char, colors[(x * 73 + base) % 100])
+    if line2 is not None:
+        base = screen_y * 151 + phase * 47
+        for x, char in _sparse_row(line2, width2, span):
+            row[x] = (char, colors[(x * 97 + base) % 100])
+    return row
+
+
 def _fb_render_background(fb):
     """Render parallax scrolling background for game area and right panel.
 
@@ -91,112 +144,67 @@ def _fb_render_background(fb):
     - Layer 2: Sparse pattern - medium speed, slightly lighter (biome-specific)
     - Layer 3: Obstacles - fastest (rendered separately)
 
-    Can be disabled via config:
-    - background.enabled: false  -> disables all background layers
-    - background.parallax: false -> disables only the middle layer
-    """
-    # First, fill the entire game area with spaces to clear any artifacts
-    for screen_y in range(constants.layout.height):
-        for screen_x in range(constants.layout.width):
-            fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, ' ', '')
+    Can be disabled via settings:
+    - background off -> disables all background layers
+    - parallax off   -> disables only the middle layer
 
-    # Check if background is enabled (runtime settings override config)
-    bg_enabled = state.settings.background_enabled
-    if not bg_enabled:
+    The pattern continues seamlessly from the game area into the right panel.
+    Composed rows are cached: the background only changes when it scrolls.
+    """
+    width = constants.layout.width
+    height = constants.layout.height
+    rows = fb.current
+    game_end = GAME_X_OFFSET + width
+
+    if not state.settings.background_enabled:
+        blank = [BLANK] * width
+        for screen_y in range(height):
+            rows[screen_y + HEADER_HEIGHT][GAME_X_OFFSET:game_end] = blank
         return
 
+    level_group = state.game.level_group
+    layer1_pattern, layer2_pattern = get_current_biome_bg()
+    layer1_color, layer2_color = get_biome_colors(level_group)
+    parallax_enabled = state.settings.parallax_enabled
     bg_offset = state.ui.bg_offset
     mid_offset = state.ui.bg_mid_offset
 
-    # Check if parallax is enabled (runtime settings override config)
-    parallax_enabled = state.settings.parallax_enabled
+    # Cave shimmer (biome 5): colours depend on position and animation phase
+    shimmer = state.ui.cave_shimmer if level_group == 5 else None
+    phase = shimmer.get('phase', 0) if shimmer else None
 
-    # Get biome-specific background patterns and colors
-    layer1_pattern, layer2_pattern = get_current_biome_bg()
-    layer1_height = len(layer1_pattern)
-    layer1_width = len(layer1_pattern[0]) if layer1_pattern else 24
-    layer2_height = len(layer2_pattern)
-    layer2_width = len(layer2_pattern[0]) if layer2_pattern else 32
-
-    # Get biome-specific colors
-    layer1_color, layer2_color = get_biome_colors(state.game.level_group)
-
-    # Right panel start position
-    right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border
-    right_panel_inner_width = SIDE_PANEL_WIDTH - 2  # Exclude borders
-
-    # Check if cave shimmer is active (biome 5)
-    cave_shimmer_active = state.game.level_group == 5 and state.ui.cave_shimmer
-    shimmer_phase = state.ui.cave_shimmer.get('phase', 0) if cave_shimmer_active else 0
-
-    # Game area goes from row HEADER_HEIGHT to row height+HEADER_HEIGHT-1
-    for screen_y in range(constants.layout.height):
-        # === Layer 1: Slowest background (biome-specific pattern) ===
-        pattern_y = (screen_y - bg_offset) % layer1_height
-        pattern_line = layer1_pattern[pattern_y]
-        # Apply faint modifier for background depth effect
+    memo_key = (level_group, bg_offset, mid_offset, phase, parallax_enabled,
+                layer1_color, layer2_color, width, height)
+    if _frame_memo[0] == memo_key:
+        composed = _frame_memo[1]
+    else:
+        layer1_height = len(layer1_pattern)
+        layer1_width = len(layer1_pattern[0]) if layer1_pattern else 24
+        layer2_height = len(layer2_pattern)
+        layer2_width = len(layer2_pattern[0]) if layer2_pattern else 32
         layer1_faint = apply_faint(layer1_color)
+        layer2_faint = apply_faint(layer2_color)
+        # Game area plus the inner right panel (borders excluded)
+        span = width + SIDE_PANEL_WIDTH - 2
 
-        # Fill game area by repeating pattern horizontally
-        for screen_x in range(constants.layout.width):
-            pattern_x = screen_x % layer1_width
-            char = pattern_line[pattern_x] if pattern_x < len(pattern_line) else ' '
-            if char != ' ':
-                if cave_shimmer_active:
-                    # Compute pseudo-random brightness based on position and phase
-                    seed = (screen_x * 73 + screen_y * 137 + shimmer_phase * 31) % 100
-                    brightness = seed / 100.0 * 0.4 + 0.05  # Range 0.05 to 0.45 (darker)
-                    color = get_shimmer_color(brightness)
-                else:
-                    color = layer1_faint
-                fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, color)
+        composed = []
+        for screen_y in range(height):
+            line1 = layer1_pattern[(screen_y - bg_offset) % layer1_height]
+            line2 = layer2_pattern[(screen_y - mid_offset) % layer2_height] if parallax_enabled else None
+            if shimmer:
+                row = _shimmer_row(line1, layer1_width, line2, layer2_width, screen_y, phase, span)
+            else:
+                row = _static_row(line1, layer1_width, layer1_faint, line2, layer2_width, layer2_faint, span)
+            composed.append((row[:width], row[width:]))
+        _frame_memo[0] = memo_key
+        _frame_memo[1] = composed
 
-        # Also render in right panel (continuing the pattern)
-        for panel_x in range(right_panel_inner_width):
-            pattern_x = (constants.layout.width + panel_x) % layer1_width
-            char = pattern_line[pattern_x] if pattern_x < len(pattern_line) else ' '
-            if char != ' ':
-                if cave_shimmer_active:
-                    seed = ((constants.layout.width + panel_x) * 73 + screen_y * 137 + shimmer_phase * 31) % 100
-                    brightness = seed / 100.0 * 0.4 + 0.05
-                    color = get_shimmer_color(brightness)
-                else:
-                    color = layer1_faint
-                fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, color)
-
-        # === Layer 2: Medium speed (biome-specific pattern) - only if parallax enabled ===
-        if parallax_enabled:
-            mid_pattern_y = (screen_y - mid_offset) % layer2_height
-            mid_pattern_line = layer2_pattern[mid_pattern_y]
-            # Apply faint modifier for background depth effect
-            layer2_faint = apply_faint(layer2_color)
-
-            # Fill game area
-            for screen_x in range(constants.layout.width):
-                pattern_x = screen_x % layer2_width
-                char = mid_pattern_line[pattern_x] if pattern_x < len(mid_pattern_line) else ' '
-                if char != ' ':
-                    if cave_shimmer_active:
-                        # Different seed pattern for layer 2
-                        seed = (screen_x * 97 + screen_y * 151 + shimmer_phase * 47) % 100
-                        brightness = seed / 100.0 * 0.4 + 0.05  # Range 0.05 to 0.45 (darker)
-                        color = get_shimmer_color(brightness)
-                    else:
-                        color = layer2_faint
-                    fb.put(GAME_X_OFFSET + screen_x, screen_y + HEADER_HEIGHT, char, color)
-
-            # Also render in right panel
-            for panel_x in range(right_panel_inner_width):
-                pattern_x = (constants.layout.width + panel_x) % layer2_width
-                char = mid_pattern_line[pattern_x] if pattern_x < len(mid_pattern_line) else ' '
-                if char != ' ':
-                    if cave_shimmer_active:
-                        seed = ((constants.layout.width + panel_x) * 97 + screen_y * 151 + shimmer_phase * 47) % 100
-                        brightness = seed / 100.0 * 0.4 + 0.05
-                        color = get_shimmer_color(brightness)
-                    else:
-                        color = layer2_faint
-                    fb.put(right_panel_start + panel_x, screen_y + HEADER_HEIGHT, char, color)
+    right_panel_start = game_end + 1  # After game area + border
+    right_panel_end = right_panel_start + SIDE_PANEL_WIDTH - 2
+    for screen_y, (game_cells, panel_cells) in enumerate(composed):
+        row = rows[screen_y + HEADER_HEIGHT]
+        row[GAME_X_OFFSET:game_end] = game_cells
+        row[right_panel_start:right_panel_end] = panel_cells
 
 
 def _fb_render_cloud_banks(fb):

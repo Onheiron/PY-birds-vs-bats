@@ -117,6 +117,7 @@ class Simulation:
         self.clock = FakeClock()
         self._real_time = time.time
         time.time = self.clock
+        self._patch_save_timestamps()
 
         self.keys = random.Random(seed ^ 0xBEEF)
         self.key_rate = key_rate
@@ -153,8 +154,26 @@ class Simulation:
             self.state.birds.colors[i] = get_color_for_bird_type(bird_type)
             self.state.birds.speeds[i] = int(get_default_speed(bird_type))
 
+    def _patch_save_timestamps(self):
+        """Make save files carry virtual-clock timestamps."""
+        import datetime as _dt
+        from src.services import save_manager
+        clock = self.clock
+        epoch = _dt.datetime(2024, 1, 1)
+        start = clock.now
+
+        class _FakeDatetime(_dt.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return epoch + _dt.timedelta(seconds=clock.now - start)
+
+        self._save_manager = save_manager
+        self._real_datetime = save_manager.datetime
+        save_manager.datetime = _FakeDatetime
+
     def close(self):
         time.time = self._real_time
+        self._save_manager.datetime = self._real_datetime
 
     def __enter__(self):
         return self
@@ -193,7 +212,7 @@ class Simulation:
         self.frame += 1
         self.clock.advance(FRAME_DT)
 
-    def render_frame(self):
+    def render_frame(self, title=False):
         """Render the current frame and return what would be written to stdout."""
         import sys
         captured = []
@@ -208,10 +227,22 @@ class Simulation:
         real = sys.stdout
         sys.stdout = _Sink()
         try:
-            self.render.render_game()
+            if title:
+                from src.ui.layers.title import render_title_screen
+                render_title_screen()
+            else:
+                self.render.render_game()
         finally:
             sys.stdout = real
         return ''.join(captured)
+
+    def press(self, key, title=False):
+        """Send one key outside the simulation loop and redraw (menus, title)."""
+        self.input_handler.process_input(key)
+        out = self.render_frame(title=title)
+        self.output_bytes += len(out)
+        self.screen.feed(out)
+        self.clock.advance(FRAME_DT)
 
     def keep_alive(self):
         """Stop the session from ending so long scenarios can run."""

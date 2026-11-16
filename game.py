@@ -87,12 +87,8 @@ def show_game_over_screen():
     # Get the existing framebuffer (same one used by the game)
     fb = framebuffer.get_framebuffer()
 
-    # CRITICAL: Force full redraw by clearing BOTH buffers
-    fb.first_frame = True
-    for y in range(fb.height):
-        for x in range(fb.width):
-            fb.current[y][x] = (' ', '')
-            fb.previous[y][x] = ('\x00', '')  # Different char forces redraw
+    # Force a full redraw: the game-over screen replaces the whole frame
+    fb.invalidate()
 
     # Colors
     PANEL_BORDER = "\033[38;5;238m"

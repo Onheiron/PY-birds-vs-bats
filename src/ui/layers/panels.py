@@ -7,6 +7,7 @@ from src.functions import get_level_milestones
 from src.functions import get_mph_for_speed
 from src.entities.sprites import OBSTACLE_SPRITE_T1
 from src.ui.colors import CARD_BORDER_COLOR, CARD_TEXT_COLOR, CARD_TITLE_COLOR, GAUGE_GRADIENT, GAUGE_OFF, LEVEL_LINE_COLOR, MOMENTUM_GRADIENT, PANEL_BORDER_COLOR, PANEL_LABEL_COLOR, PANEL_VALUE_COLOR, SIGN_ARROW_COLOR, SIGN_BORDER_COLOR, SIGN_TEXT_COLOR, get_biome_obstacle_color
+from src.ui.framebuffer import BLANK
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
 
 
@@ -448,24 +449,21 @@ def _fb_render_side_panels(fb):
     right_start = GAME_X_OFFSET + constants.layout.width
 
     # Left panel - clear and draw borders
+    border = ('│', PANEL_BORDER_COLOR)
+    left_panel = [border] + [BLANK] * (SIDE_PANEL_WIDTH - 2) + [border]
     for y in range(panel_start_y, panel_end_y):
-        # Outer border
-        fb.put(0, y, '│', PANEL_BORDER_COLOR)
-        # Clear inner content
-        for x in range(1, SIDE_PANEL_WIDTH - 1):
-            fb.put(x, y, ' ', '')
-        # Inner border (separates panel from game)
-        fb.put(SIDE_PANEL_WIDTH - 1, y, '│', PANEL_BORDER_COLOR)
+        fb.put_cells(0, y, left_panel)
 
     # Render left panel content (speed info, gauge, momentum)
     _fb_render_left_panel_content(fb, panel_start_y, panel_end_y)
 
-    # Right panel - vertical border only (background rendered separately)
+    # Right panel - vertical borders only (background rendered separately)
+    rows = fb.current
+    outer_x = right_start + SIDE_PANEL_WIDTH - 1
     for y in range(panel_start_y, panel_end_y):
-        # Inner border (separates game from panel)
-        fb.put(right_start, y, '│', PANEL_BORDER_COLOR)
-        # Outer border
-        fb.put(right_start + SIDE_PANEL_WIDTH - 1, y, '│', PANEL_BORDER_COLOR)
+        row = rows[y]
+        row[right_start] = border
+        row[outer_x] = border
 
 
 def _fb_render_right_panel_barriers(fb):
