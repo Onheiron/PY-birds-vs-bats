@@ -12,7 +12,7 @@ from src.engine.logic.bosses.owl import spawn_owl_boss, update_owl_boss
 from src.engine.logic.bosses.tree import _check_bird_tree_branch_collision, spawn_tree_boss, update_tree_boss
 from src.engine.logic.bosses.wind import spawn_wind_boss, update_wind_boss
 from src.engine.logic.damage import _calculate_bird_damage
-from src.engine.progression import add_score, award_xp
+from src.engine.progression import add_score, award_xp, get_level_milestones
 from src.entities.sprites import BLUE, DINOSAUR, ORANGE, STEALTH
 from src.services.sound import play_sfx
 
@@ -58,7 +58,6 @@ def should_spawn_boss():
         return False
 
     # Get milestones to calculate level progress
-    from src.engine.progression import get_level_milestones
 
     milestones = get_level_milestones()
     current_level = state.game.level

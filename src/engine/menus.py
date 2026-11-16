@@ -1,8 +1,10 @@
 """Pause, settings and title menu navigation."""
 
-from src.core import state
+from src.core import constants, state
+from src.core import state as game_state
 from src.engine.actions import handle_pause
 from src.engine.notifications import _add_notification
+from src.services import save_manager
 from src.services.sound import apply_music_setting
 
 
@@ -45,7 +47,6 @@ def _execute_pause_menu_action():
 
 def _handle_restart():
     """Restart the game from the beginning."""
-    from src.core import state as game_state
 
     # Re-initialize game state
     game_state.init()
@@ -144,7 +145,6 @@ def _handle_settings_enter():
             state.ui.settings_index = 0
         elif idx < 3:  # Slot 1-3
             slot = idx + 1
-            from src.services import save_manager
 
             if save_manager.save_game(slot):
                 _add_notification(f"Saved to Slot {slot}", title="Save:")
@@ -158,7 +158,6 @@ def _handle_settings_enter():
             state.ui.settings_index = 0
         elif idx <= 3:  # Slot 0 (auto), 1, 2, 3
             slot = idx  # idx 0 = autosave, idx 1-3 = slots 1-3
-            from src.services import save_manager
 
             slots = save_manager.list_save_slots()
             if slots.get(slot, {}).get('exists'):
@@ -321,7 +320,6 @@ def _handle_title_input(key):
                 state.ui.settings_menu = None
             else:
                 # Load slot idx (0=autosave, 1-3=manual)
-                from src.services import save_manager
 
                 if save_manager.load_game(idx):
                     state.ui.show_title = False
@@ -351,22 +349,17 @@ def _handle_title_input(key):
         idx = state.ui.title_menu_index
         if idx == 0:  # CONTINUE
             # Try to load the most recent save (by timestamp)
-            from src.services import save_manager
 
             most_recent = save_manager.get_most_recent_save()
             if most_recent is not None and save_manager.load_game(most_recent):
                 state.ui.show_title = False
             else:
                 # No saves, start new game with default settings
-                from src.services import save_manager
 
                 state.init()
                 save_manager.load_default_settings()
                 state.ui.show_title = False
         elif idx == 1:  # NEW GAME
-            from src.core import constants
-            from src.services import save_manager
-
             # Save the difficulty selection before init (which doesn't reset settings)
             selected_difficulty = state.settings.difficulty
             # Load difficulty-specific configuration
@@ -395,7 +388,6 @@ def _handle_title_input(key):
 
 def _handle_title_settings_input(key):
     """Handle settings menu input on title screen. Returns True if handled."""
-    from src.services import save_manager
 
     # Rebinding mode
     if state.ui.rebinding_control is not None:
@@ -506,7 +498,6 @@ def _handle_title_settings_input(key):
 
 def _handle_title_settings_back():
     """Handle ESC or < BACK in title settings menu."""
-    from src.services import save_manager
 
     menu = state.ui.settings_menu
 
@@ -545,7 +536,6 @@ def _handle_title_settings_back():
 
 def _handle_title_settings_left_right(key):
     """Handle LEFT/RIGHT in title settings menu."""
-    from src.services import save_manager
 
     menu = state.ui.settings_menu
     idx = state.ui.settings_index
@@ -578,7 +568,6 @@ def _handle_title_settings_left_right(key):
 
 def _handle_title_settings_enter():
     """Handle ENTER in title settings menu."""
-    from src.services import save_manager
 
     menu = state.ui.settings_menu
     idx = state.ui.settings_index

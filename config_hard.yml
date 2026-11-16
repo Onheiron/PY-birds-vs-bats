@@ -1,6 +1,7 @@
 # BVB (Birds vs Bats) - SURVIVAL Difficulty Configuration
 # Like ADVENTURE but NO life recovery when spawning new birds
-# Use with: python -m src.game --config config_hard.yml
+# Selected from the title screen (NEW GAME < difficulty >), or directly with:
+#   python3 game.py --config config_hard.yml
 
 # Only override values that differ from config.yml (ADVENTURE)
 

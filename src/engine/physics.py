@@ -1,6 +1,7 @@
 """Movement of birds, projectiles, obstacles, loot and scenery."""
 
 import random
+import time as time
 
 from src.core import constants, state
 from src.engine.bat_ai import update_bat_positions
@@ -91,9 +92,8 @@ def update_bird_positions():
                 current_speed = max(1, current_speed - down_pen)
 
         # Apply TWISTER local tailwind (affects only birds in specific lanes)
-        import time as time_module
 
-        now = time_module.time()
+        now = time.time()
         for twister_idx, tw_info in list(state.special.twister_tailwind.items()):
             if now >= tw_info['end_time']:
                 # Expired, clean up

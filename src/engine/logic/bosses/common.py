@@ -5,7 +5,7 @@ import time
 
 from src.core import constants, state
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
-from src.engine.progression import add_score, award_xp, compute_prestige
+from src.engine.progression import add_score, award_xp, compute_prestige, get_level_milestones
 
 
 def _get_boss_config():
@@ -15,7 +15,6 @@ def _get_boss_config():
 
 def _get_miles_to_next_level():
     """Calculate miles remaining until next level transition."""
-    from src.engine.progression import get_level_milestones
 
     milestones = get_level_milestones()
     current_level = state.game.level

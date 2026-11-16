@@ -4,7 +4,15 @@ import random
 import time
 
 from src.core import constants, state
-from src.engine.birds import allow_consume_power, find_bird_in_lane, get_color_name, reset_bird_power, set_ball_vy
+from src.engine.birds import (
+    allow_consume_power,
+    check_pending_transforms,
+    find_bird_in_lane,
+    get_color_name,
+    reset_bird_power,
+    set_ball_vy,
+)
+from src.engine.grades import compute_grade_from_xp
 from src.entities.sprites import (
     BERSERK,
     BLUE,
@@ -27,7 +35,6 @@ from src.services import achievements
 
 def _activate_bird_power(bird_idx):
     """Activate a bird's special power."""
-    from src.engine.grades import compute_grade_from_xp
 
     # POISONED BIRDS: power is blocked while poisoned (cure handled in main input handler)
     if bird_idx in state.special.poisoned_birds:
@@ -193,7 +200,6 @@ def _power_cookie(bird_idx, bird_lane):
             state.birds.per_bird_xp[bird_idx] = 0
             state.game.lives -= 1
             # Check if a pending bird can now transform
-            from src.engine.birds import check_pending_transforms
 
             check_pending_transforms(dead_color)
             if state.game.lives <= 0:
@@ -208,7 +214,6 @@ def _power_blue(bird_idx):
 
 def _power_white(bird_idx, bird_lane):
     """White power: affect 4 adjacent lanes."""
-    from src.engine.grades import compute_grade_from_xp
 
     for adj_offset in [-2, -1, 1, 2]:
         adj_lane = bird_lane + adj_offset

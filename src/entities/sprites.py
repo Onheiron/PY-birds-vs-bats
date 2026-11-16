@@ -4,6 +4,8 @@ Contains all ASCII art sprites for birds, bats, obstacles, and related rendering
 """
 
 # Import theme from src (not src.core to avoid circular imports)
+import random
+
 import src.theme as theme
 
 # ============================================================================
@@ -1185,7 +1187,6 @@ def get_random_obstacle_sprite(level_group, tier, allow_flip=True):
     Returns:
         tuple: (sprite, flipped) dove sprite è la lista di stringhe e flipped è bool
     """
-    import random
 
     # Controlla se ci sono varianti per questo bioma
     variants = BIOME_OBSTACLE_VARIANTS.get(level_group, {})

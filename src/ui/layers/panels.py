@@ -2,7 +2,7 @@
 
 from src.core import constants, state
 from src.engine.progression import calculate_gear_threshold, get_level_milestones, get_mph_for_speed
-from src.entities.sprites import OBSTACLE_SPRITE_T1
+from src.entities.sprites import OBSTACLE_SPRITE_T1, get_biome_obstacles
 from src.ui.colors import (
     CARD_BORDER_COLOR,
     CARD_TEXT_COLOR,
@@ -478,7 +478,6 @@ def _fb_render_side_panels(fb):
 
 def _fb_render_right_panel_barriers(fb):
     """Render decorative barriers in right panel using biome-specific sprites and colors."""
-    from src.entities.sprites import get_biome_obstacles
 
     # Right panel position
     right_panel_start = GAME_X_OFFSET + constants.layout.width + 1  # After game area + border

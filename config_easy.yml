@@ -1,6 +1,7 @@
 # BVB (Birds vs Bats) - PEACEFUL Difficulty Configuration
 # Very relaxed settings for casual play - rare birds are extremely rare
-# Use with: python -m src.game --config config_easy.yml
+# Selected from the title screen (NEW GAME < difficulty >), or directly with:
+#   python3 game.py --config config_easy.yml
 
 # Only override values that differ from config.yml (ADVENTURE)
 
@@ -52,6 +53,10 @@ obstacle:
     min_spawn_rate: 12       # ADVENTURE: 6
 
 # Eggs - rare birds are MUCH rarer in PEACEFUL
+# NOTE: the egg (and loot) tables below are NOT applied when the difficulty is
+# picked from the title screen: they were written for the old four-rarity loot
+# system and do not match the six rarities of config.yml. See DIFFICULTY_SECTIONS
+# in src/core/constants.py.
 eggs:
   rarity_candidates:
     common:

@@ -4,7 +4,7 @@ import random
 import time
 
 from src.core import constants, state
-from src.engine.birds import get_scared_frames, reset_bird_power, set_ball_vy
+from src.engine.birds import check_pending_transforms, get_scared_frames, reset_bird_power, set_ball_vy
 from src.engine.logic.damage import _calculate_bird_damage, _handle_bat_death
 from src.engine.logic.flowers import _apply_flower_collision_effect
 from src.engine.logic.helpers import _get_obstacle_lanes
@@ -15,6 +15,7 @@ from src.entities.sprites import (
     BLUE,
     CLOCKWORK,
     DINOSAUR,
+    FLOWER_MATURE_FRAME,
     FROSTY,
     GLITCH,
     OBSTACLE_LANE_WIDTH,
@@ -122,7 +123,6 @@ def check_bird_floor_collision():
         play_sfx('bird_lost')
 
         # Check if a pending bird can now transform
-        from src.engine.birds import check_pending_transforms
 
         check_pending_transforms(dead_color)
 
@@ -165,7 +165,6 @@ def check_bird_obstacle_collision():
 
             # Check if obstacle has a mature flower - apply effect before damage
             flower = obs.get('flower')
-            from src.entities.sprites import FLOWER_MATURE_FRAME
 
             if flower and flower.get('active') and flower.get('frame', 0) >= FLOWER_MATURE_FRAME:
                 _apply_flower_collision_effect(flower, i)
@@ -312,9 +311,7 @@ def check_bird_bat_collision():
 
             # ROCK bird pushes enemies up
             if bird_color == ROCK:
-                import time as time_module
-
-                now = time_module.time()
+                now = time.time()
                 # Check if boosted (power active)
                 is_boosted = i in state.special.rock_boosted and now < state.special.rock_boosted[i]
                 if is_boosted:
@@ -327,9 +324,7 @@ def check_bird_bat_collision():
 
             # FROSTY bird applies FROZEN debuff to enemies
             if bird_color == FROSTY:
-                import time as time_module
-
-                now = time_module.time()
+                now = time.time()
                 # Check if boosted
                 is_boosted = i in state.special.frosty_boosted and now < state.special.frosty_boosted[i]
                 # Boss has lower chance
@@ -351,9 +346,7 @@ def check_bird_bat_collision():
 
             # POISON bird applies POISON debuff to bats/boss only
             if bird_color == POISON:
-                import time as time_module
-
-                now = time_module.time()
+                now = time.time()
                 # Check if boosted
                 is_boosted = i in state.special.poison_boosted and now < state.special.poison_boosted[i]
                 if is_boosted:
@@ -372,9 +365,7 @@ def check_bird_bat_collision():
 
             # BERSERK bird applies BLEED debuff
             if bird_color == BERSERK:
-                import time as time_module
-
-                now = time_module.time()
+                now = time.time()
                 # Check if boosted
                 is_boosted = i in state.special.berserk_boosted and now < state.special.berserk_boosted[i]
                 if is_boosted:

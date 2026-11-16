@@ -1,6 +1,7 @@
 # BVB (Birds vs Bats) - LEGENDARY Difficulty Configuration
 # Brutal difficulty but with better chances for rare/legendary birds
-# Use with: python -m src.game --config config_hell.yml
+# Selected from the title screen (NEW GAME < difficulty >), or directly with:
+#   python3 game.py --config config_hell.yml
 
 # Only override values that differ from config.yml (ADVENTURE)
 
@@ -61,6 +62,10 @@ obstacle:
     min_spawn_rate: 2        # ADVENTURE: 6
 
 # Eggs - rare/legendary birds are MORE common in LEGENDARY
+# NOTE: the egg (and loot) tables below are NOT applied when the difficulty is
+# picked from the title screen: they were written for the old four-rarity loot
+# system and do not match the six rarities of config.yml. See DIFFICULTY_SECTIONS
+# in src/core/constants.py.
 eggs:
   rarity_candidates:
     common:

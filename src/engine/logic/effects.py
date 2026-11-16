@@ -3,7 +3,7 @@
 import time
 
 from src.core import constants, state
-from src.engine.birds import reset_bird_power
+from src.engine.birds import check_pending_transforms, reset_bird_power
 from src.engine.logic.damage import _handle_bat_death
 from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
 from src.services.sound import play_sfx
@@ -111,7 +111,6 @@ def update_special_bird_states():
                 state.birds.y[bird_idx] = constants.layout.height - 1
                 state.game.lives -= 1
                 # Check if a pending bird can now transform
-                from src.engine.birds import check_pending_transforms
 
                 check_pending_transforms(dead_color)
                 if state.game.lives <= 0:
@@ -200,7 +199,6 @@ def update_special_bird_states():
                 state.game.lives -= 1
                 play_sfx('bird_lost')
                 # Check pending transforms
-                from src.engine.birds import check_pending_transforms
 
                 check_pending_transforms(dead_color)
                 if state.game.lives <= 0:

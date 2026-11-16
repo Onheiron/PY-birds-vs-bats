@@ -1,8 +1,10 @@
 """Bat movement and behaviours: divers, spellcasters and their spells."""
 
 import random
+import time as time
 
 from src.core import constants, state
+from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
 
 def update_bat_positions():
@@ -62,7 +64,6 @@ def update_bat_positions():
 
 def _update_diver_bat(bat):
     """Update diver bat behavior: flying, diving, stunned, returning."""
-    import time as time_module
 
     diver_cfg = getattr(constants.bat_enemy, 'diver', None)
     if diver_cfg is None:
@@ -119,12 +120,12 @@ def _update_diver_bat(bat):
             # End dive, become stunned
             bat['diver_state'] = 'stunned'
             stun_duration = getattr(diver_cfg, 'stun_duration', 1.5)
-            bat['stun_end_time'] = time_module.time() + stun_duration
+            bat['stun_end_time'] = time.time() + stun_duration
 
     elif diver_state == 'stunned':
         # Wait for stun to end
         stun_end = bat.get('stun_end_time', 0)
-        if time_module.time() >= stun_end:
+        if time.time() >= stun_end:
             bat['diver_state'] = 'returning'
 
     elif diver_state == 'returning':
@@ -143,14 +144,13 @@ def _update_diver_bat(bat):
 
 def _update_spellcaster_bat(bat):
     """Update spellcaster bat behavior: casting spells."""
-    import time as time_module
 
     spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
     if spellcaster_cfg is None:
         return
 
     spell_state = bat.get('spell_state', 'idle')
-    now = time_module.time()
+    now = time.time()
 
     # Check if currently casting
     if spell_state == 'casting':
@@ -207,7 +207,6 @@ def _update_spellcaster_bat(bat):
 
 def _apply_spell_effect(bat):
     """Apply the effect of the spell the bat just cast."""
-    import time as time_module
 
     spell = bat.get('current_spell', 'silence')
     tier = bat.get('tier', 2)
@@ -217,7 +216,7 @@ def _apply_spell_effect(bat):
 
     # Get lanes affected by this spell (based on bat position)
     affected_lanes = _get_bat_affected_lanes(bat)
-    now = time_module.time()
+    now = time.time()
 
     if spell == 'silence':
         # Disable powers in affected lanes
@@ -284,7 +283,6 @@ def _calculate_bird_damage_potential(bird_idx):
         return -1  # Lost birds have no potential
 
     # Simple formula: speed * (1 if moving up else 0.5) + tier bonus
-    from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
     color = state.birds.colors[bird_idx]
     speed = state.birds.speeds[bird_idx]
@@ -307,7 +305,6 @@ def _calculate_bird_damage_potential(bird_idx):
 
 def _cast_exile_spell(affected_lanes):
     """Cast exile spell: swap highest damage bird in lanes with lowest outside."""
-    import time as time_module
 
     # Find bird with highest damage potential in affected lanes
     best_bird_idx = None
@@ -357,7 +354,7 @@ def _cast_exile_spell(affected_lanes):
     exile_cfg = getattr(spellcaster_cfg, 'exile', None) if spellcaster_cfg else None
     swap_delay = getattr(exile_cfg, 'swap_delay', 0.3) if exile_cfg else 0.3
 
-    now = time_module.time()
+    now = time.time()
     state.spells.pending_exiles.append(
         {
             'swap_time': now + swap_delay,

@@ -3,6 +3,7 @@
 import random
 
 from src.core import constants, state
+from src.engine.grades import compute_grade_from_xp
 from src.engine.progression import add_score, compute_momentum_factor, update_momentum
 from src.entities.sprites import DINOSAUR, GLITCH, GOLD, ORANGE, STEALTH, WHITE
 
@@ -65,7 +66,6 @@ def update_score_tick():
     SCORE = sum of (speed × type × grade) × score_mult × level_mult × prestige
     MOMENTUM = momentum_factor only (from center of mass)
     """
-    from src.engine.grades import compute_grade_from_xp
 
     # Calculate center of mass once
     center_y = _compute_center_of_mass()

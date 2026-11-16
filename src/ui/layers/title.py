@@ -2,6 +2,7 @@
 
 from src.core import state
 from src.entities.sprites import YELLOW
+from src.services import save_manager
 from src.ui import terminal
 from src.ui.colors import MENU_ARROW_COLOR, MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
 from src.ui.framebuffer import get_framebuffer
@@ -98,7 +99,6 @@ def render_title_screen():
 
 def _fb_render_title_load_menu(fb, start_y):
     """Render load menu overlay on title screen."""
-    from src.services import save_manager
 
     slots = save_manager.list_save_slots()
 

@@ -9,6 +9,8 @@ Usage:
 import os
 import sys
 
+from src.core import paths
+
 try:
     import yaml
 except ImportError:
@@ -21,26 +23,24 @@ _accessible_theme_cache = None
 _color_cache = {}
 
 
-def _load_accessible_theme():
-    """Load the accessible theme file."""
+def _load_yaml_theme(name):
+    """Load a theme file (user copy first, bundled one otherwise)."""
     if yaml is None:
         return {}
+    path = paths.find(name)
+    if path is None:
+        return {}
+    try:
+        with open(path, encoding='utf-8') as handle:
+            return yaml.safe_load(handle) or {}
+    except (OSError, yaml.YAMLError) as error:
+        print(f"Warning: Failed to load theme from {path}: {error}", file=sys.stderr)
+        return {}
 
-    # Look for theme_accessible.yml
-    possible_paths = [
-        os.path.join(os.getcwd(), 'theme_accessible.yml'),
-        os.path.join(os.path.dirname(__file__), '..', 'theme_accessible.yml'),
-    ]
 
-    for theme_path in possible_paths:
-        if os.path.exists(theme_path):
-            try:
-                with open(theme_path) as f:
-                    return yaml.safe_load(f) or {}
-            except Exception:
-                pass
-
-    return {}
+def _load_accessible_theme():
+    """Load the accessible theme file."""
+    return _load_yaml_theme('theme_accessible.yml')
 
 
 def _get_accessible_theme():
@@ -69,45 +69,16 @@ def is_accessibility_enabled():
 
 
 def _load_theme_file():
-    """Load theme file and return as dict.
-
-    Theme path is determined by (in order of priority):
-    1. BVB_THEME_PATH environment variable (set by --theme CLI arg)
-    2. theme.yml in current working directory
-    3. theme.yml in project root (relative to this file)
-    """
+    """Load the theme selected with --theme (BVB_THEME_PATH), or theme.yml."""
     if yaml is None:
         print("Warning: PyYAML not installed; using default theme", file=sys.stderr)
         return {}
-
-    # Check for theme path from CLI argument (via environment variable)
-    env_theme_path = os.environ.get('BVB_THEME_PATH')
-
-    # Build list of paths to try
-    possible_paths = []
-    if env_theme_path:
-        possible_paths.append(env_theme_path)
-        # Also try relative to cwd if not absolute
-        if not os.path.isabs(env_theme_path):
-            possible_paths.append(os.path.join(os.getcwd(), env_theme_path))
-
-    # Default locations
-    possible_paths.extend(
-        [
-            os.path.join(os.getcwd(), 'theme.yml'),
-            os.path.join(os.path.dirname(__file__), '..', 'theme.yml'),
-        ]
-    )
-
-    for theme_path in possible_paths:
-        if os.path.exists(theme_path):
-            try:
-                with open(theme_path) as f:
-                    return yaml.safe_load(f) or {}
-            except Exception as e:
-                print(f"Warning: Failed to load theme from {theme_path}: {e}", file=sys.stderr)
-
-    return {}
+    selected = os.environ.get('BVB_THEME_PATH')
+    if selected:
+        theme = _load_yaml_theme(selected)
+        if theme:
+            return theme
+    return _load_yaml_theme('theme.yml')
 
 
 def _get_theme():

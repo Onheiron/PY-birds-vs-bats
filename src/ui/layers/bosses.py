@@ -1,6 +1,34 @@
 """Boss sprites."""
 
 from src.core import constants, state
+from src.entities.sprites import (
+    BAT_ARMOR,
+    BOSS_DEAD,
+    BOSS_FRAME_1,
+    BOSS_FRAME_2,
+    BOSS_SCREAM,
+    FLOWER_COLORS,
+    FLOWER_GROWTH_FRAMES,
+    JELLY_BOSS_DEAD,
+    JELLY_BOSS_FRAMES,
+    METEOR_LEFT,
+    METEOR_RIGHT,
+    METEOR_TRAIL,
+    OWL_BOSS_DEAD,
+    OWL_BOSS_FRAMES,
+    TREE_BOSS_BRANCHES,
+    WIND_BOSS_DEAD,
+    WIND_BOSS_MAX_DOWN,
+    WIND_BOSS_MAX_UP,
+    WIND_BOSS_PULL_1,
+    WIND_BOSS_PULL_2,
+    WIND_BOSS_PULL_3,
+    WIND_BOSS_PULL_4,
+    WIND_BOSS_PUSH_1,
+    WIND_BOSS_PUSH_2,
+    WIND_BOSS_PUSH_3,
+    WIND_BOSS_PUSH_4,
+)
 from src.ui.colors import apply_bold, color_from_hp_to_red
 from src.ui.layers.background import TREE_HIDDEN_CHARS
 from src.ui.layers.birds import _fb_render_bird_status_indicators
@@ -27,8 +55,6 @@ def _fb_render_boss(fb):
     if boss_type == 'owl':
         _fb_render_owl_boss(fb)
         return
-
-    from src.entities.sprites import BAT_ARMOR, BOSS_DEAD, BOSS_FRAME_1, BOSS_FRAME_2, BOSS_SCREAM
 
     boss_hp = boss.get('hp', 0)
     boss_max = boss.get('max_hp', boss_hp if boss_hp > 0 else 1)
@@ -74,20 +100,6 @@ def _fb_render_wind_boss(fb):
     if boss is None:
         return
 
-    from src.entities.sprites import (
-        WIND_BOSS_DEAD,
-        WIND_BOSS_MAX_DOWN,
-        WIND_BOSS_MAX_UP,
-        WIND_BOSS_PULL_1,
-        WIND_BOSS_PULL_2,
-        WIND_BOSS_PULL_3,
-        WIND_BOSS_PULL_4,
-        WIND_BOSS_PUSH_1,
-        WIND_BOSS_PUSH_2,
-        WIND_BOSS_PUSH_3,
-        WIND_BOSS_PUSH_4,
-    )
-
     boss_hp = boss.get('hp', 0)
     boss_max = boss.get('max_hp', boss_hp if boss_hp > 0 else 1)
     boss_state = boss.get('state', 'active')
@@ -130,8 +142,6 @@ def _fb_render_jelly_boss(fb):
     boss = state.enemies.boss
     if boss is None:
         return
-
-    from src.entities.sprites import JELLY_BOSS_DEAD, JELLY_BOSS_FRAMES
 
     boss_hp = boss.get('hp', 0)
     boss_max = boss.get('max_hp', boss_hp if boss_hp > 0 else 1)
@@ -180,8 +190,6 @@ def _fb_render_tree_boss(fb):
     boss = state.enemies.boss
     if boss is None:
         return
-
-    from src.entities.sprites import FLOWER_COLORS, FLOWER_GROWTH_FRAMES, TREE_BOSS_BRANCHES
 
     # =========================================================================
     # 1. RENDER FOREGROUND BRANCHES (tangible, white bold, fades to red when damaged)
@@ -270,8 +278,6 @@ def _fb_render_owl_boss(fb):
     boss = state.enemies.boss
     if boss is None:
         return
-
-    from src.entities.sprites import METEOR_LEFT, METEOR_RIGHT, METEOR_TRAIL, OWL_BOSS_DEAD, OWL_BOSS_FRAMES
 
     boss_hp = boss.get('hp', 0)
     boss_max = boss.get('max_hp', boss_hp if boss_hp > 0 else 1)

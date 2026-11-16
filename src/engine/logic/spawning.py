@@ -4,6 +4,7 @@ import random
 import time
 
 from src.core import constants, state
+from src.engine.birds import check_pending_transforms
 from src.engine.logic.flowers import _maybe_add_flower_to_obstacle
 from src.engine.logic.helpers import _get_obstacle_lanes
 from src.entities.sprites import (
@@ -14,6 +15,7 @@ from src.entities.sprites import (
     get_obstacle_sprite_width,
     get_random_obstacle_sprite,
 )
+from src.services import save_manager
 
 
 def spawn_obstacle():
@@ -393,7 +395,6 @@ def spawn_bat():
 
 def process_spawn_queue():
     """Process the spawn queue to actually spawn entities."""
-    from src.services import save_manager
 
     while state.enemies.spawn_queue:
         item = state.enemies.spawn_queue.pop(0)
@@ -507,7 +508,6 @@ def despawn_old_entities():
                                 state.birds.y[bi] = constants.layout.height - 1
                                 state.game.lives -= 1
                                 # Check if a pending bird can now transform
-                                from src.engine.birds import check_pending_transforms
 
                                 check_pending_transforms(ORANGE)
                                 if state.game.lives <= 0:

@@ -2,15 +2,39 @@
 
 from src.core import constants, state
 from src.entities.sprites import (
+    ARMORED_BAT_FRAME_1,
+    ARMORED_BAT_FRAME_2,
+    BAT_ARMOR,
     BAT_FRAME_1,
     BAT_FRAME_2,
+    BOSS_DEAD,
     CYAN,
+    DIVER_BAT_DIVE,
+    DIVER_BAT_FRAME_1,
+    DIVER_BAT_FRAME_2,
+    DIVER_BAT_STUNNED,
+    FLOWER_COLORS,
+    FLOWER_GROWTH_FRAMES,
     GREEN,
+    JUMPSCARE_BAT_FRAME_1,
+    JUMPSCARE_BAT_FRAME_2,
+    JUMPSCARE_BAT_SCARY_FACE,
+    MINI_BAT_ANIM_FRAMES,
+    MINI_BAT_FRAME_1,
+    MINI_BAT_FRAME_2,
     OBSTACLE_SPRITE_T1,
+    PORTAL_COLOR,
+    PORTAL_FRAME_1,
+    PORTAL_FRAME_2,
     PURPLE,
     RED,
+    SPELLCASTER_BAT_CASTING,
+    SPELLCASTER_BAT_FRAME_1,
+    SPELLCASTER_BAT_FRAME_2,
     WHITE,
+    WIND_BOSS_DEAD,
     YELLOW,
+    get_biome_obstacles,
     get_dynamic_color,
 )
 from src.ui.colors import apply_bold, color_from_hp, color_from_hp_to_red, dim_ansi_color, get_biome_obstacle_color
@@ -19,7 +43,6 @@ from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
 def _fb_render_obstacles(fb):
     """Render obstacles to framebuffer using biome-specific sprites and colors."""
-    from src.entities.sprites import BOSS_DEAD, WIND_BOSS_DEAD, get_biome_obstacles
 
     # Get obstacle sprites for current biome (fallback)
     biome_obstacles = get_biome_obstacles(state.game.level_group)
@@ -87,7 +110,6 @@ def _fb_render_obstacles(fb):
 
 def _fb_render_obstacle_flower(fb, obs, flower, center_x, x_offset):
     """Render a flower on a swamp obstacle using the same FLOWER_GROWTH_FRAMES as Tree Boss."""
-    from src.entities.sprites import FLOWER_COLORS, FLOWER_GROWTH_FRAMES
 
     frame = flower.get('frame', 0)
     flower_type = flower.get('type', 'red')
@@ -127,8 +149,6 @@ def _fb_render_portals(fb):
     if state.game.level_group != 5 and not state.enemies.portals:
         return
 
-    from src.entities.sprites import PORTAL_COLOR, PORTAL_FRAME_1, PORTAL_FRAME_2
-
     for portal in state.enemies.portals:
         px = portal['x_pos']
         py = portal['y_pos']
@@ -153,18 +173,6 @@ def _fb_render_portals(fb):
 
 def _fb_render_bats(fb):
     """Render bats to framebuffer."""
-    from src.entities.sprites import (
-        ARMORED_BAT_FRAME_1,
-        ARMORED_BAT_FRAME_2,
-        BAT_ARMOR,
-        DIVER_BAT_DIVE,
-        DIVER_BAT_FRAME_1,
-        DIVER_BAT_FRAME_2,
-        DIVER_BAT_STUNNED,
-        SPELLCASTER_BAT_CASTING,
-        SPELLCASTER_BAT_FRAME_1,
-        SPELLCASTER_BAT_FRAME_2,
-    )
 
     for bat in state.enemies.bats:
         bat_hp = bat.get('hp', 0)
@@ -246,14 +254,6 @@ def _fb_render_bats(fb):
 
 def _fb_render_mini_bats(fb):
     """Render mini bats to framebuffer."""
-    from src.entities.sprites import (
-        JUMPSCARE_BAT_FRAME_1,
-        JUMPSCARE_BAT_FRAME_2,
-        JUMPSCARE_BAT_SCARY_FACE,
-        MINI_BAT_ANIM_FRAMES,
-        MINI_BAT_FRAME_1,
-        MINI_BAT_FRAME_2,
-    )
 
     for mb in state.enemies.mini_bats:
         mb_hp = mb.get('hp', 0)

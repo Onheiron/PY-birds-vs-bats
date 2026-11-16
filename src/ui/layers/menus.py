@@ -2,6 +2,7 @@
 
 from src.core import constants, state
 from src.entities.sprites import YELLOW
+from src.services import save_manager
 from src.ui.colors import MENU_ARROW_COLOR, MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
 
@@ -141,7 +142,6 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     elif state.ui.settings_menu == 'save':
         title = "SAVE GAME"
         # Get save slot info
-        from src.services import save_manager
 
         slots = save_manager.list_save_slots()
 
@@ -163,7 +163,6 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     elif state.ui.settings_menu == 'load':
         title = "LOAD GAME"
         # Get save slot info
-        from src.services import save_manager
 
         slots = save_manager.list_save_slots()
 
@@ -279,9 +278,6 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
 
 def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, content_type):
     """Render birdpedia content pages."""
-    from src.entities.sprites import (
-        YELLOW,
-    )
 
     # Get discovery state
     discovered_birds = state.discovery.birds

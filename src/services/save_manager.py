@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
+from src.core import state
+
 # Constants
 SAVE_VERSION = "2.0"
 MAX_SLOTS = 3
@@ -65,7 +67,6 @@ def get_discovery_path():
 
 def save_discovery():
     """Save discovery data (persists across all saves)."""
-    from src.core import state
 
     discovery_data = {
         'version': SAVE_VERSION,
@@ -86,7 +87,6 @@ def save_discovery():
 
 def load_discovery():
     """Load discovery data and apply to state.discovery."""
-    from src.core import state
 
     path = get_discovery_path()
     if not path.exists():
@@ -113,7 +113,6 @@ def load_discovery():
 
 def discover_bird(bird_type_name):
     """Mark a bird type as discovered."""
-    from src.core import state
 
     if bird_type_name not in state.discovery.birds:
         state.discovery.birds.add(bird_type_name)
@@ -124,7 +123,6 @@ def discover_bird(bird_type_name):
 
 def discover_bat(bat_type_name):
     """Mark a bat type as discovered."""
-    from src.core import state
 
     if bat_type_name not in state.discovery.bats:
         state.discovery.bats.add(bat_type_name)
@@ -135,7 +133,6 @@ def discover_bat(bat_type_name):
 
 def discover_obstacle(obstacle_type_name):
     """Mark an obstacle type as discovered."""
-    from src.core import state
 
     if obstacle_type_name not in state.discovery.obstacles:
         state.discovery.obstacles.add(obstacle_type_name)
@@ -146,7 +143,6 @@ def discover_obstacle(obstacle_type_name):
 
 def discover_biome(biome_name):
     """Mark a biome as discovered."""
-    from src.core import state
 
     if biome_name not in state.discovery.biomes:
         state.discovery.biomes.add(biome_name)
@@ -157,7 +153,6 @@ def discover_biome(biome_name):
 
 def save_default_settings():
     """Save current settings as defaults for new games."""
-    from src.core import state
 
     settings_data = {
         'version': SAVE_VERSION,
@@ -181,7 +176,6 @@ def save_default_settings():
 
 def load_default_settings():
     """Load default settings and apply to state.settings."""
-    from src.core import state
 
     path = get_default_settings_path()
     if not path.exists():
@@ -281,7 +275,6 @@ def save_game(slot=0):
     Returns:
         bool: True if save succeeded
     """
-    from src.core import state
 
     # Build save data
     save_data = {
@@ -321,7 +314,6 @@ def load_game(slot):
     Returns:
         bool: True if load succeeded
     """
-    from src.core import state
 
     path = get_save_path(slot)
     if not path.exists():
@@ -445,7 +437,6 @@ def _settings_to_dict(settings):
 
 def _build_metadata():
     """Build save metadata for display in load menu."""
-    from src.core import state
 
     level_display = f"{state.game.level_group}-{state.game.level_sub}"
 
@@ -461,7 +452,6 @@ def _build_metadata():
 
 def _build_game_dict():
     """Build game state dict (excluding transient fields)."""
-    from src.core import state
 
     return {
         'score': state.game.score,
@@ -479,7 +469,6 @@ def _build_game_dict():
 
 def _build_player_dict():
     """Build player state dict (excluding input state)."""
-    from src.core import state
 
     return {
         'lane': state.player.lane,
@@ -489,7 +478,6 @@ def _build_player_dict():
 
 def _build_ui_dict():
     """Build UI state dict (excluding transient notifications)."""
-    from src.core import state
 
     return {
         'bg_offset': state.ui.bg_offset,
@@ -637,7 +625,6 @@ def _restore_powerups(powerups, data):
 
 def _restore_game_state(data):
     """Restore game namespace from dict."""
-    from src.core import state
 
     for key in [
         'score',
@@ -660,7 +647,6 @@ def _restore_game_state(data):
 
 def _restore_player_state(data):
     """Restore player namespace from dict."""
-    from src.core import state
 
     state.player.lane = data.get('lane', 4)
     state.player.selected_lane = data.get('selected_lane')
@@ -668,7 +654,6 @@ def _restore_player_state(data):
 
 def _restore_ui_state(data):
     """Restore UI namespace from dict."""
-    from src.core import state
 
     state.ui.bg_offset = data.get('bg_offset', 0)
     state.ui.bg_mid_offset = data.get('bg_mid_offset', 0)
@@ -678,7 +663,6 @@ def _restore_ui_state(data):
 
 def _restore_settings(data):
     """Restore settings namespace from dict."""
-    from src.core import state
 
     for key, value in data.items():
         if hasattr(state.settings, key) and not key.startswith('_'):

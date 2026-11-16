@@ -4,6 +4,7 @@ import random
 
 from src.core import constants, state
 from src.entities.sprites import GLITCH
+from src.entities.sprites import GLITCH as GLITCH_COLOR
 
 
 def update_glitch_chaos():
@@ -54,8 +55,6 @@ def _glitch_duplicate(source_idx):
 
     if target_idx is None:
         return
-
-    from src.entities.sprites import GLITCH as GLITCH_COLOR
 
     if state.birds.lost[target_idx]:
         # Resurrect as GLITCH

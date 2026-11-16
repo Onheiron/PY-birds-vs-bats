@@ -1,11 +1,13 @@
 """Owl Boss (Haunted Woods)."""
 
+import math
 import random
 import time
 
 from src.core import constants, state
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
+from src.entities.sprites import METEOR_LEFT, METEOR_RIGHT, OWL_BOSS_SPELLS, PORTAL_FRAME_1, SWAMP_OBSTACLE_T2
 
 
 def spawn_owl_boss():
@@ -177,7 +179,6 @@ def update_owl_boss():
 
 def _owl_boss_cast_spell(boss):
     """Cast the current spell in the Owl Boss cycle."""
-    from src.entities.sprites import OWL_BOSS_SPELLS
 
     spell_index = boss.get('spell_index', 0)
     spells = OWL_BOSS_SPELLS
@@ -212,9 +213,6 @@ def _owl_cast_overgrowth(boss, spells_cfg):
     boss_y = boss['y_pos'] + 5  # Below the boss
 
     # Import swamp obstacles T2 (smaller, tree-like)
-    import math
-
-    from src.entities.sprites import SWAMP_OBSTACLE_T2
 
     # 5 positions in a circle around the boss
     # Angle offsets for 5 points: 0°, 72°, 144°, 216°, 288°
@@ -393,7 +391,6 @@ def _owl_cast_bend_space(boss, spells_cfg):
     portal_duration_sec = getattr(cfg, 'portal_duration', 15.0) if cfg else 15.0  # Read from config
 
     # Use same portal structure as spawn_portal_pair() in biome 5
-    from src.entities.sprites import PORTAL_FRAME_1
 
     portal_width = max(len(line) for line in PORTAL_FRAME_1)
     portal_height = len(PORTAL_FRAME_1)
@@ -477,7 +474,6 @@ def _owl_cast_bend_time(boss, spells_cfg):
 
 def _owl_cast_meteor_shower(boss, spells_cfg):
     """Summon 2 large meteors - one on left, one on right."""
-    from src.entities.sprites import METEOR_LEFT, METEOR_RIGHT
 
     cfg = getattr(spells_cfg, 'meteor_shower', None) if spells_cfg else None
     meteor_hp = getattr(cfg, 'meteor_hp', 80) if cfg else 80

@@ -5,6 +5,7 @@ Import as: from src.core import state
 Access as: state.birds.colors, state.game.score, etc.
 """
 
+import random
 import time
 from types import SimpleNamespace
 
@@ -279,7 +280,6 @@ def init(seed=None):
         seed: Optional seed for RNG. If None, generates a new one based on current time.
     """
     global game_seed
-    import random
 
     # Generate or use provided seed for deterministic gameplay
     if seed is None:

@@ -4,9 +4,17 @@ import random
 import time
 
 from src.core import constants, state
-from src.engine.birds import find_bird_in_lane, get_affected_lanes, is_orange_egg_state, reset_bird_power, set_ball_vy
+from src.engine.birds import (
+    check_pending_transforms,
+    find_bird_in_lane,
+    get_affected_lanes,
+    is_orange_egg_state,
+    reset_bird_power,
+    set_ball_vy,
+)
 from src.engine.notifications import _add_notification
 from src.engine.powers import _activate_bird_power
+from src.engine.progression import calculate_gear_threshold, compute_gear_from_momentum, deduct_momentum
 from src.entities import bird_types
 from src.entities.sprites import CLOCKWORK, DINOSAUR, GLITCH, ORANGE, PURPLE, RAINBOW
 from src.services import achievements
@@ -60,7 +68,6 @@ def _execute_swap():
     Uses home_lanes to determine which birds to swap - this ensures correct
     behavior when birds are temporarily in different lanes due to portals.
     """
-    from src.engine.progression import calculate_gear_threshold, compute_gear_from_momentum, deduct_momentum
 
     gear = compute_gear_from_momentum(state.game.momentum)
     gear_momentum_delta = calculate_gear_threshold(gear + 1) - calculate_gear_threshold(gear)
@@ -175,7 +182,6 @@ def handle_bounce():
                         state.game.lives -= 1
                         del state.special.bleeding_birds[bird_idx]
                         # Check if a pending bird can now transform
-                        from src.engine.birds import check_pending_transforms
 
                         check_pending_transforms(dead_color)
                         if state.game.lives <= 0:

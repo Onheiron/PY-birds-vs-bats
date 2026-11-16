@@ -6,6 +6,7 @@ import time
 from src.core import constants, state
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
+from src.entities.bird_types import get_bird_type_by_color
 from src.entities.sprites import BLUE, GLITCH, ORANGE, STEALTH
 from src.services import achievements
 from src.services.sound import play_sfx
@@ -22,7 +23,6 @@ def _calculate_bird_damage(bird_idx):
     - DMGBOOST/DMGNERF = damage modifiers
     - SPDBOOST/SPDNERF = speed modifiers
     """
-    from src.entities.bird_types import get_bird_type_by_color
 
     bird_color = state.birds.colors[bird_idx]
 

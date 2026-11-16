@@ -4,11 +4,11 @@ import random
 import time
 
 from src.core import constants, state
+from src.entities.sprites import FLOWER_MATURE_FRAME, SWAMP_OBSTACLE_FLOWER_POSITIONS
 
 
 def _maybe_add_flower_to_obstacle(obstacle_data):
     """Maybe add a flower to a swamp obstacle based on probability."""
-    from src.entities.sprites import SWAMP_OBSTACLE_FLOWER_POSITIONS
 
     tier = obstacle_data.get('tier', 1)
     flower_positions = SWAMP_OBSTACLE_FLOWER_POSITIONS.get(tier, [])
@@ -36,7 +36,6 @@ def _maybe_add_flower_to_obstacle(obstacle_data):
     flower_type = random.choice(flower_types)
 
     # Import mature frame constant
-    from src.entities.sprites import FLOWER_MATURE_FRAME
 
     # Add flower to obstacle - spawn already bloomed so they have effect immediately
     obstacle_data['flower'] = {
@@ -61,8 +60,6 @@ def update_obstacle_flowers():
     tree_boss_cfg = getattr(constants, 'tree_boss', None)
     flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
     grow_interval = getattr(flowers_cfg, 'grow_interval', 2.0) if flowers_cfg else 2.0
-
-    from src.entities.sprites import FLOWER_MATURE_FRAME
 
     for obs in state.enemies.obstacles:
         flower = obs.get('flower')

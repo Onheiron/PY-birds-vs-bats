@@ -1,5 +1,6 @@
 """Birds and their status indicators."""
 
+import math
 import random
 import time
 
@@ -79,10 +80,8 @@ def _fb_render_bird_status_indicators(fb):
 
     This is extracted from Tree Boss rendering so it can be reused by Owl Boss and other bosses.
     """
-    import math
-    import time as time_module
 
-    now = time_module.time()
+    now = time.time()
 
     # Stunned birds get a lightning indicator with countdown
     for bird_idx in state.special.stunned_birds:

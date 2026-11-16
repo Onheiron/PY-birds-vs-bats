@@ -8,7 +8,14 @@ from src.engine.logic.damage import _calculate_bird_damage
 from src.engine.logic.flowers import _apply_flower_collision_effect, _apply_mature_flower_effect
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
-from src.entities.sprites import DINOSAUR, STEALTH
+from src.entities.sprites import (
+    DINOSAUR,
+    FLOWER_MATURE_FRAME,
+    STEALTH,
+    TREE_BOSS_BACKGROUND,
+    TREE_BOSS_BRANCH_FLOWER_POSITIONS,
+    TREE_BOSS_BRANCHES,
+)
 from src.services.sound import play_sfx
 
 
@@ -45,7 +52,6 @@ def spawn_tree_boss():
     ]
 
     # Import branch sprites and background tree for size calculation
-    from src.entities.sprites import TREE_BOSS_BACKGROUND, TREE_BOSS_BRANCHES
 
     # Calculate background tree height (needed for branch positioning)
     bg_height = len(TREE_BOSS_BACKGROUND)
@@ -86,7 +92,6 @@ def spawn_tree_boss():
         flower_hp = getattr(flowers_cfg, 'hp', 10) if flowers_cfg else 10
 
         # Get flower spawn positions for this branch (use sprite_idx to match sprite)
-        from src.entities.sprites import TREE_BOSS_BRANCH_FLOWER_POSITIONS
 
         if sprite_idx < len(TREE_BOSS_BRANCH_FLOWER_POSITIONS):
             flower_positions = TREE_BOSS_BRANCH_FLOWER_POSITIONS[sprite_idx]
@@ -174,7 +179,6 @@ def update_tree_boss():
     # Move tree (background + branches) down together, solidly connected
     # bg_y_offset is the Y position of the TOP of the tree sprite
     # Tree stops when fully visible on screen (configurable offset from top)
-    from src.entities.sprites import TREE_BOSS_BACKGROUND
 
     len(TREE_BOSS_BACKGROUND)
     stop_offset = getattr(tree_boss_cfg, 'stop_offset', 0) if tree_boss_cfg else 0
@@ -193,7 +197,6 @@ def update_tree_boss():
 
     # Update each branch's flower
     # Import mature frame constant
-    from src.entities.sprites import FLOWER_MATURE_FRAME
 
     for branch in alive_branches:
         flower = branch.get('flower')
@@ -257,7 +260,6 @@ def _handle_tree_branch_hit(branch, bird_idx):
 
     flower = branch.get('flower')
     # Only apply effects if flower is active AND fully mature (frame 5)
-    from src.entities.sprites import FLOWER_MATURE_FRAME
 
     flower_was_mature = flower and flower.get('active') and flower.get('frame', 0) >= FLOWER_MATURE_FRAME
 
@@ -394,7 +396,6 @@ def _tree_boss_defeated(boss):
         return
 
     # Already scrolling down - continue scrolling
-    from src.entities.sprites import TREE_BOSS_BACKGROUND
 
     len(TREE_BOSS_BACKGROUND)
 

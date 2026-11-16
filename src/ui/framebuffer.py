@@ -2,6 +2,7 @@
 
 import re
 
+from src.core import constants
 from src.entities.sprites import RESET
 from src.ui.layout import TOTAL_WIDTH
 
@@ -192,8 +193,6 @@ def get_framebuffer():
     """Get or create the global framebuffer."""
     global _framebuffer
     if _framebuffer is None:
-        from src.core import constants
-
         # Height: header + game area + floor + cursor + notification + footer + extra
         total_height = constants.layout.height + 8
         # Width: game area + side panels for 16:9 widescreen
