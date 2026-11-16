@@ -14,7 +14,7 @@ from src.core import constants
 from src.ui import render
 from src.engine import input_handler
 from src.engine import physics
-from src.engine import game_logic
+from src.engine import logic as game_logic
 from src.services import achievements
 from src.services import save_manager
 from src.entities.sprites import RED, RESET
