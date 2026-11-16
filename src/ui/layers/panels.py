@@ -2,9 +2,9 @@
 
 from src.core import constants
 from src.core import state
-from src.functions import calculate_gear_threshold
-from src.functions import get_level_milestones
-from src.functions import get_mph_for_speed
+from src.engine.progression import calculate_gear_threshold
+from src.engine.progression import get_level_milestones
+from src.engine.progression import get_mph_for_speed
 from src.entities.sprites import OBSTACLE_SPRITE_T1
 from src.ui.colors import CARD_BORDER_COLOR, CARD_TEXT_COLOR, CARD_TITLE_COLOR, GAUGE_GRADIENT, GAUGE_OFF, LEVEL_LINE_COLOR, MOMENTUM_GRADIENT, PANEL_BORDER_COLOR, PANEL_LABEL_COLOR, PANEL_VALUE_COLOR, SIGN_ARROW_COLOR, SIGN_BORDER_COLOR, SIGN_TEXT_COLOR, get_biome_obstacle_color
 from src.ui.framebuffer import BLANK

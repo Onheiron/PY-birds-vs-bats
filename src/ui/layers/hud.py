@@ -2,9 +2,9 @@
 
 from src.core import constants
 from src.core import state
-from src.functions import compute_grade_from_xp
-from src.functions import compute_prestige
-from src.functions import get_affected_lanes
+from src.engine.grades import compute_grade_from_xp
+from src.engine.progression import compute_prestige
+from src.engine.birds import get_affected_lanes
 from src.entities.sprites import BLUE, DARK_GRAY, GREEN, RED, YELLOW, get_biome_name
 from src.ui.colors import HEADER_ACCENT, HEADER_BORDER, HEADER_LABEL, HEADER_VALUE, _get_position_color, _grade_letter_color
 from src.ui.framebuffer import RegionCache

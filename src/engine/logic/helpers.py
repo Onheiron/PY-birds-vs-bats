@@ -2,25 +2,7 @@
 
 from src.core import constants
 from src.core import state
-from src.functions import find_bird_in_lane
-from src.functions import reset_bird_power
-from src.functions import set_ball_vy
 from src.entities.sprites import OBSTACLE_SPRITE_T1, get_biome_obstacles, get_obstacle_hitbox_lanes, get_obstacle_sprite_width
-
-
-def _set_ball_vy(idx, val):
-    """Wrapper for functions.set_ball_vy."""
-    set_ball_vy(idx, val)
-
-
-def _reset_bird_power(idx):
-    """Wrapper for functions.reset_bird_power."""
-    reset_bird_power(idx)
-
-
-def _find_bird_in_lane(lane):
-    """Wrapper for functions.find_bird_in_lane."""
-    return find_bird_in_lane(lane)
 
 
 def _get_obstacle_lanes(obs):

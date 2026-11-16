@@ -476,7 +476,7 @@ def despawn_old_entities():
                                 state.birds.y[bi] = constants.layout.height - 1
                                 state.game.lives -= 1
                                 # Check if a pending bird can now transform
-                                from src.functions import check_pending_transforms
+                                from src.engine.birds import check_pending_transforms
                                 check_pending_transforms(ORANGE)
                                 if state.game.lives <= 0:
                                     state.game.game_over = True

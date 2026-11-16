@@ -2,13 +2,13 @@
 
 from src.core import constants
 from src.core import state
-from src.functions import award_xp
-from src.functions import get_scared_frames
+from src.engine.progression import award_xp
+from src.engine.birds import get_scared_frames
 import random
 from src.entities.sprites import DINOSAUR, ORANGE, STEALTH
 from src.engine.logic.damage import _calculate_bird_damage, _handle_mini_bat_death
-from src.engine.logic.helpers import _set_ball_vy
-from src.engine.logic.sfx import play_sfx
+from src.services.sound import play_sfx
+from src.engine.birds import set_ball_vy
 
 
 def _get_mini_bat_config():
@@ -403,7 +403,7 @@ def check_bird_mini_bat_collision():
                 # Mini bat destroyed - use same logic as regular bats
                 _handle_mini_bat_death(mb, i)
             else:
-                _set_ball_vy(i, 1)
+                set_ball_vy(i, 1)
                 stun_frames = int(0.5 / constants.timing.base_sleep)  # Shorter stun
                 state.special.stunned_birds[i] = stun_frames
                 state.special.scared_birds[i] = stun_frames

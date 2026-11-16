@@ -293,12 +293,14 @@ BIRD_TYPES = {
 # HELPER FUNCTIONS
 # ============================================================================
 
+_TYPE_BY_COLOR = {}
+for _bird_type, _data in BIRD_TYPES.items():
+    _TYPE_BY_COLOR.setdefault(_data['color'], _bird_type)
+
+
 def get_bird_type_by_color(ansi_color: str):
-    """Get bird type enum from ANSI color code."""
-    for bird_type, data in BIRD_TYPES.items():
-        if data['color'] == ansi_color:
-            return bird_type
-    return None
+    """Get bird type (e.g. 'YELLOW') from the colour stored in state.birds.colors."""
+    return _TYPE_BY_COLOR.get(ansi_color)
 
 
 def get_color_for_bird_type(bird_type: str, dynamic: bool = True) -> str:

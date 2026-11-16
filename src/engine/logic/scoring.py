@@ -2,10 +2,11 @@
 
 from src.core import constants
 from src.core import state
-from src.functions import add_score
-from src.functions import update_momentum
+from src.engine.progression import add_score
+from src.engine.progression import update_momentum
 import random
 from src.entities.sprites import DINOSAUR, GLITCH, GOLD, ORANGE, STEALTH, WHITE
+from src.engine.progression import compute_momentum_factor
 
 
 def _compute_score_position_multiplier(y_pos):
@@ -31,35 +32,6 @@ def _compute_score_position_multiplier(y_pos):
     elif y_pos > ceiling:
         t = (breakeven_point - y_pos) / (breakeven_point - ceiling)
         return 1.0 + t * 1.0
-    else:
-        return 2.0
-
-
-def _compute_momentum_factor(y_pos):
-    """Compute MOMENTUM factor based on Y position (center of mass).
-
-    Returns factor for momentum change:
-    - -1.0 at starting_line (bottom) → momentum decreases
-    -  0.0 at zero height (configurable, default 0.33)
-    - +2.0 at ceiling (top) → momentum increases fast
-    """
-    starting_line = constants.layout.starting_line
-    ceiling = 1
-
-    # Get zero height from config (0.0 = bottom, 1.0 = top)
-    zero_fraction = getattr(constants.speed, 'momentum_zero_height', 0.33)
-    zero_point = starting_line - (starting_line - ceiling) * zero_fraction
-
-    if y_pos >= starting_line:
-        return -1.0
-    elif y_pos >= zero_point:
-        # Between starting_line and zero point: -1.0 -> 0.0
-        t = (starting_line - y_pos) / (starting_line - zero_point)
-        return -1.0 + t * 1.0
-    elif y_pos > ceiling:
-        # Between zero point and ceiling: 0.0 -> +2.0
-        t = (zero_point - y_pos) / (zero_point - ceiling)
-        return t * 2.0
     else:
         return 2.0
 
@@ -96,7 +68,7 @@ def update_score_tick():
     SCORE = sum of (speed × type × grade) × score_mult × level_mult × prestige
     MOMENTUM = momentum_factor only (from center of mass)
     """
-    from src.functions import compute_grade_from_xp
+    from src.engine.grades import compute_grade_from_xp
 
     # Calculate center of mass once
     center_y = _compute_center_of_mass()
@@ -107,7 +79,7 @@ def update_score_tick():
     score_mult = _compute_score_position_multiplier(center_y)
 
     # Momentum factor: -1.0 (bottom) to +2.0 (top), 0 at 1/3 height
-    momentum_factor = _compute_momentum_factor(center_y)
+    momentum_factor = compute_momentum_factor(center_y)
 
     # Level multiplier (higher levels = more points)
     level = state.game.level

@@ -15,6 +15,8 @@ import time
 FRAME_DT = 1.0 / 60.0
 _KEYS = ['LEFT', 'RIGHT', 'UP', 'UP', 'UP', 'DOWN', 'SPACE', None, None, None]
 _SGR_OR_CUP = re.compile(r'\033\[([0-9;]*)([Hm]|2J)')
+# Private modes (synchronized output, cursor, alternate screen) do not draw anything
+_PRIVATE_MODE = re.compile(r'\033\[\?[0-9;]*[hl]')
 
 
 class FakeClock:
@@ -42,6 +44,7 @@ class Screen:
         self.style = ()
 
     def feed(self, data):
+        data = _PRIVATE_MODE.sub('', data)
         pos = 0
         for match in _SGR_OR_CUP.finditer(data):
             self._write(data[pos:match.start()])
@@ -111,21 +114,15 @@ class Simulation:
     """One deterministic game session driven frame by frame."""
 
     def __init__(self, seed=1234, level=1, key_rate=0.35, all_birds=False, near_boss=False):
-        import game
         from src.core import constants, state
-        from src.engine import input_handler, physics
-        from src.engine import logic as game_logic
+        from src.engine import input_handler, loop, progression
         from src.ui import framebuffer, render
-        from src import functions
 
-        self.game = game
         self.state = state
         self.constants = constants
         self.render = render
-        self.physics = physics
-        self.game_logic = game_logic
         self.input_handler = input_handler
-        self.functions = functions
+        self.session = loop.Session()
 
         self.clock = FakeClock()
         self._real_time = time.time
@@ -142,13 +139,13 @@ class Simulation:
         state.game.last_mile_update = self.clock.now
         if all_birds:
             self._use_all_bird_types()
-        milestones = functions.get_level_milestones()
+        milestones = progression.get_level_milestones()
         if near_boss:
             # Just before the end of the level, where end-of-biome bosses spawn.
             state.game.miles = float(milestones[level - 1]) - 0.5
         elif level > 1:
             state.game.miles = float(milestones[level - 2]) + 0.01
-        functions.update_miles(1e-9)
+        progression.update_miles(1e-9)
 
         framebuffer.reset_framebuffer()
         self.fb = framebuffer.get_framebuffer()
@@ -201,21 +198,10 @@ class Simulation:
 
     def step(self, key='auto', render=True):
         """Advance one 60 FPS frame, mirroring game.run_game()."""
-        state = self.state
         if key == 'auto':
             key = self.next_key()
         self.input_handler.process_input(key)
-
-        if not state.game.paused:
-            now = self.clock.now
-            if state.game.last_mile_update is not None:
-                self.functions.update_miles(now - state.game.last_mile_update)
-            state.game.last_mile_update = now
-
-            if self.frame % self.game.calculate_frames_per_update(state.game.speed) == 0:
-                self.physics.update_all()
-                self.game_logic.update_all()
-                state.game.frame_count += 1
+        self.session.step()
 
         if render:
             out = self.render_frame()

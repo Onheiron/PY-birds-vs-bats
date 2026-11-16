@@ -3,8 +3,8 @@
 from src.core import constants
 from src.core import state
 from src.engine.logic.bosses.common import _get_boss_config
-from src.engine.logic.helpers import _set_ball_vy
-from src.engine.logic.sfx import play_sfx
+from src.services.sound import play_sfx
+from src.engine.birds import set_ball_vy
 
 
 def _boss_start_scream(boss):
@@ -33,7 +33,7 @@ def _boss_start_scream(boss):
         if bird_y > boss_bottom:
             # Bounce bird down
             if state.birds.vy[i] == -1:
-                _set_ball_vy(i, 1)
+                set_ball_vy(i, 1)
 
             # Apply scare effect (like tier 1 bat)
             state.special.scared_birds[i] = scare_frames

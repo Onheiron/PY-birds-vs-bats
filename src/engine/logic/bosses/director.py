@@ -2,8 +2,8 @@
 
 from src.core import constants
 from src.core import state
-from src.functions import add_score
-from src.functions import award_xp
+from src.engine.progression import add_score
+from src.engine.progression import award_xp
 import random
 import time
 from src.entities.sprites import BLUE, DINOSAUR, ORANGE, STEALTH
@@ -14,8 +14,8 @@ from src.engine.logic.bosses.owl import spawn_owl_boss, update_owl_boss
 from src.engine.logic.bosses.tree import _check_bird_tree_branch_collision, spawn_tree_boss, update_tree_boss
 from src.engine.logic.bosses.wind import spawn_wind_boss, update_wind_boss
 from src.engine.logic.damage import _calculate_bird_damage
-from src.engine.logic.helpers import _reset_bird_power, _set_ball_vy
-from src.engine.logic.sfx import play_sfx
+from src.services.sound import play_sfx
+from src.engine.birds import reset_bird_power, set_ball_vy
 
 
 def should_spawn_boss():
@@ -57,7 +57,7 @@ def should_spawn_boss():
         return False
 
     # Get milestones to calculate level progress
-    from src.functions import get_level_milestones
+    from src.engine.progression import get_level_milestones
     milestones = get_level_milestones()
     current_level = state.game.level
 
@@ -340,10 +340,10 @@ def check_bird_boss_collision():
             boss['state'] = 'dying'
             play_sfx('boss_death')
         else:
-            _set_ball_vy(i, 1)
+            set_ball_vy(i, 1)
             state.birds.y[i] = boss_bottom + 1
             if bird_color == BLUE:
-                _reset_bird_power(i)
+                reset_bird_power(i)
             play_sfx('hit')
         break
 
@@ -412,13 +412,13 @@ def check_bird_meteor_collision():
                 play_sfx('destroy')
             else:
                 # Bounce bird down
-                _set_ball_vy(i, 1)
+                set_ball_vy(i, 1)
                 state.birds.y[i] = meteor_bottom + 1
                 # Stun bird briefly
                 stun_frames = int(0.5 / constants.timing.base_sleep)
                 state.special.stunned_birds[i] = stun_frames
                 state.special.scared_birds[i] = stun_frames
                 if bird_color == BLUE:
-                    _reset_bird_power(i)
+                    reset_bird_power(i)
                 play_sfx('hit')
             break

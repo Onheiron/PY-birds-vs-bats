@@ -9,7 +9,7 @@ from src.engine.logic.loot import check_loot_collection
 from src.engine.logic.mini_bats import check_bird_mini_bat_collision, update_mini_bats
 from src.engine.logic.portals import update_portals
 from src.engine.logic.scoring import update_score_tick
-from src.engine.logic.sfx import sync_active_birds_audio
+from src.services.sound import sync_active_birds
 from src.engine.logic.spawning import despawn_old_entities, process_spawn_queue, spawn_bat, spawn_cloud_bank, spawn_obstacle, update_cloud_banks
 
 
@@ -65,4 +65,4 @@ def update_all():
     despawn_old_entities()
 
     # Sync bird types with audio (dynamic music)
-    sync_active_birds_audio()
+    sync_active_birds()

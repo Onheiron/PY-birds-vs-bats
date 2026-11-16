@@ -5,8 +5,8 @@ from src.core import state
 import time
 from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
 from src.engine.logic.damage import _handle_bat_death
-from src.engine.logic.helpers import _reset_bird_power
-from src.engine.logic.sfx import play_sfx
+from src.services.sound import play_sfx
+from src.engine.birds import reset_bird_power
 
 
 def update_powerup_timers():
@@ -52,7 +52,7 @@ def update_special_bird_states():
             if state.special.speed_boosts[bird_idx] <= 0:
                 del state.special.speed_boosts[bird_idx]
                 if state.birds.colors[bird_idx] == BLUE:
-                    _reset_bird_power(bird_idx)
+                    reset_bird_power(bird_idx)
         else:
             state.special.speed_boosts[bird_idx] += 1
             if state.special.speed_boosts[bird_idx] >= 0:
@@ -111,7 +111,7 @@ def update_special_bird_states():
                 state.birds.y[bird_idx] = constants.layout.height - 1
                 state.game.lives -= 1
                 # Check if a pending bird can now transform
-                from src.functions import check_pending_transforms
+                from src.engine.birds import check_pending_transforms
                 check_pending_transforms(dead_color)
                 if state.game.lives <= 0:
                     state.game.game_over = True
@@ -199,7 +199,7 @@ def update_special_bird_states():
                 state.game.lives -= 1
                 play_sfx('bird_lost')
                 # Check pending transforms
-                from src.functions import check_pending_transforms
+                from src.engine.birds import check_pending_transforms
                 check_pending_transforms(dead_color)
                 if state.game.lives <= 0:
                     state.game.game_over = True

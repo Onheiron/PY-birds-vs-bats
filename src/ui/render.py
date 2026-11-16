@@ -1,6 +1,6 @@
 """Frame compositor: draws every layer and flushes the framebuffer."""
 
-import sys
+from src.ui import terminal
 from src.ui.framebuffer import get_framebuffer
 from src.ui.layers.background import _fb_render_background, _fb_render_cloud_banks, _fb_render_tree_boss_background
 from src.ui.layers.birds import _fb_render_birds
@@ -42,9 +42,4 @@ def render_game():
     _fb_render_pause_overlay(fb)
 
     # Generate differential output and write to screen
-    output = fb.render()
-    try:
-        sys.stdout.write(output)
-        sys.stdout.flush()
-    except BlockingIOError:
-        pass
+    terminal.write_frame(fb.render())

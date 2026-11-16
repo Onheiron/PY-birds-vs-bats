@@ -2,17 +2,17 @@
 
 from src.core import constants
 from src.core import state
-from src.functions import add_score
-from src.functions import adjust_rarity_weights
-from src.functions import award_xp
-from src.functions import choose_loot_type
-from src.functions import compute_prestige
+from src.engine.progression import add_score
+from src.engine.loot_tables import adjust_rarity_weights
+from src.engine.progression import award_xp
+from src.engine.loot_tables import choose_loot_type
+from src.engine.progression import compute_prestige
 import random
 import time
 from src.entities.sprites import DINOSAUR, STEALTH
 from src.engine.logic.damage import _calculate_bird_damage
 from src.engine.logic.flowers import _apply_flower_collision_effect, _apply_mature_flower_effect
-from src.engine.logic.sfx import play_sfx
+from src.services.sound import play_sfx
 
 
 def spawn_tree_boss():

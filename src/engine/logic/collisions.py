@@ -2,17 +2,18 @@
 
 from src.core import constants
 from src.core import state
-from src.functions import add_score
-from src.functions import award_xp
-from src.functions import get_scared_frames
+from src.engine.progression import add_score
+from src.engine.progression import award_xp
+from src.engine.birds import get_scared_frames
 import random
 import time
 from src.entities.sprites import BERSERK, BLUE, CLOCKWORK, DINOSAUR, FROSTY, GLITCH, OBSTACLE_LANE_WIDTH, OBSTACLE_SPRITES, OBSTACLE_SPRITE_T1, ORANGE, POISON, RAINBOW, ROCK, STEALTH
 from src.engine.logic.damage import _calculate_bird_damage, _handle_bat_death
 from src.engine.logic.flowers import _apply_flower_collision_effect
-from src.engine.logic.helpers import _get_obstacle_lanes, _reset_bird_power, _set_ball_vy
+from src.engine.logic.helpers import _get_obstacle_lanes
 from src.engine.logic.mini_bats import handle_obstacle_destroyed, try_spawn_mini_bat_on_hit
-from src.engine.logic.sfx import play_sfx
+from src.services.sound import play_sfx
+from src.engine.birds import reset_bird_power, set_ball_vy
 
 
 def check_bird_ceiling_bounce():
@@ -25,8 +26,8 @@ def check_bird_ceiling_bounce():
             if state.birds.colors[i] == ORANGE:
                 lane = state.birds.random_lanes[i]
                 state.birds.y[i] = 999  # Out of play
-                _set_ball_vy(i, 0)
-                _reset_bird_power(i)
+                set_ball_vy(i, 0)
+                reset_bird_power(i)
                 state.birds.speeds[i] = 0
                 # Spawn orange egg loot (both native and transformed Orange birds)
                 state.items.loot_items.append({
@@ -50,8 +51,8 @@ def check_bird_ceiling_bounce():
 
             # Normal bounce
             state.birds.y[i] = 1
-            _set_ball_vy(i, 1)
-            _reset_bird_power(i)
+            set_ball_vy(i, 1)
+            reset_bird_power(i)
 
 
 def check_bird_floor_collision():
@@ -72,8 +73,8 @@ def check_bird_floor_collision():
                 state.special.clockwork_charge[i] = charge
             if charge > 0:
                 state.birds.y[i] = constants.layout.starting_line
-                _set_ball_vy(i, -1)
-                _reset_bird_power(i)
+                set_ball_vy(i, -1)
+                reset_bird_power(i)
                 continue
 
         # RAINBOW warp to ceiling if has charge
@@ -93,8 +94,8 @@ def check_bird_floor_collision():
         # GLITCH survival chance
         if bird_color == GLITCH and random.random() < constants.glitch.survive_on_floor_chance:
             state.birds.y[i] = constants.layout.starting_line
-            _set_ball_vy(i, -1)
-            _reset_bird_power(i)
+            set_ball_vy(i, -1)
+            reset_bird_power(i)
             continue
 
         # Bird dies
@@ -106,7 +107,7 @@ def check_bird_floor_collision():
         play_sfx('bird_lost')
 
         # Check if a pending bird can now transform
-        from src.functions import check_pending_transforms
+        from src.engine.birds import check_pending_transforms
         check_pending_transforms(dead_color)
 
         if state.game.lives <= 0:
@@ -177,14 +178,14 @@ def check_bird_obstacle_collision():
                 state.enemies.obstacles.remove(obs)
                 play_sfx('destroy')
             else:
-                _set_ball_vy(i, 1)
+                set_ball_vy(i, 1)
                 # Applica stun (1 secondo) - impedisce bounce
                 stun_frames = int(1.0 / constants.timing.base_sleep)
                 state.special.stunned_birds[i] = stun_frames
                 # Aggiungi a scared_birds per speed boost in caduta (1 secondo)
                 state.special.scared_birds[i] = stun_frames
                 if bird_color == BLUE:
-                    _reset_bird_power(i)
+                    reset_bird_power(i)
                 play_sfx('hit')
             break
 
@@ -376,10 +377,10 @@ def check_bird_bat_collision():
             if bat['hp'] <= 0:
                 _handle_bat_death(bat, i)
             else:
-                _set_ball_vy(i, 1)
+                set_ball_vy(i, 1)
                 state.birds.y[i] = bat_bottom + 1
                 if bird_color == BLUE:
-                    _reset_bird_power(i)
+                    reset_bird_power(i)
             break
 
 

@@ -1,7 +1,7 @@
 """Title screen."""
 
 from src.core import state
-import sys
+from src.ui import terminal
 from src.entities.sprites import YELLOW
 from src.ui.colors import MENU_ARROW_COLOR, MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
 from src.ui.framebuffer import get_framebuffer
@@ -93,12 +93,7 @@ def render_title_screen():
         _fb_render_title_settings_menu(fb, logo_y + len(TITLE_LOGO) + 2)
 
     # Generate output and display
-    output = fb.render()
-    try:
-        sys.stdout.write(output)
-        sys.stdout.flush()
-    except BlockingIOError:
-        pass
+    terminal.write_frame(fb.render())
 
 
 def _fb_render_title_load_menu(fb, start_y):

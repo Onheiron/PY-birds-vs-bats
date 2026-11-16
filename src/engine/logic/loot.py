@@ -2,12 +2,12 @@
 
 from src.core import constants
 from src.core import state
-from src.functions import award_xp
+from src.engine.progression import award_xp
 from src.services import achievements
 import random
 import time
 from src.entities.sprites import BERSERK, BLUE, CLOCKWORK, COOKIE, DINOSAUR, FROSTY, GLITCH, GOLD, ORANGE, PATCHWORK, POISON, PURPLE, RAINBOW, RED, ROCK, STEALTH, TWISTER, WHITE, YELLOW
-from src.engine.logic.sfx import play_sfx
+from src.services.sound import play_sfx
 
 
 def check_loot_collection():

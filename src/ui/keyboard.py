@@ -1,83 +1,97 @@
-"""Non-blocking keyboard input."""
+"""Non-blocking keyboard input for Unix terminals and the Windows console.
 
+Raw input is turned into key names: 'LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE',
+'ENTER', 'ESC', 'BACKSPACE', 'QUIT' or a single printable character.
+"""
 import os
 import sys
 
 if os.name == 'nt':
     import msvcrt
+else:
+    import select
+
+_ARROWS = {'A': 'UP', 'B': 'DOWN', 'C': 'RIGHT', 'D': 'LEFT'}
+# Windows console scan codes that follow a '\x00' or '\xe0' prefix
+_WINDOWS_ARROWS = {'H': 'A', 'P': 'B', 'M': 'C', 'K': 'D'}
+_CONTROL_KEYS = {
+    ' ': 'SPACE',
+    '\x03': 'QUIT',       # Ctrl+C
+    '\r': 'ENTER',
+    '\n': 'ENTER',
+    '\x7f': 'BACKSPACE',
+    '\x08': 'BACKSPACE',
+    '\x1b': 'ESC',        # Lone ESC (not part of an arrow sequence)
+}
+
+
+def parse_keys(buffer, text=False):
+    """Turn raw terminal input into a list of key names, in typing order.
+
+    In game mode (``text=False``) 'q' means QUIT and consecutive repeats of
+    the same key are collapsed, so OS key auto-repeat cannot pile up actions.
+    In text mode every character is kept as typed.
+    """
+    keys = []
+    i = 0
+    length = len(buffer)
+    while i < length:
+        char = buffer[i]
+        # Arrow keys: ESC [ A..D (normal mode) or ESC O A..D (application mode)
+        if char == '\x1b' and i + 2 < length and buffer[i + 1] in '[O' and buffer[i + 2] in _ARROWS:
+            key = _ARROWS[buffer[i + 2]]
+            i += 3
+        else:
+            i += 1
+            if char == 'q' and not text:
+                key = 'QUIT'
+            elif char in _CONTROL_KEYS:
+                key = _CONTROL_KEYS[char]
+            elif char.isprintable():
+                key = char
+            else:
+                continue
+        if text or not keys or keys[-1] != key:
+            keys.append(key)
+    return keys
+
+
+def _read_pending_unix():
+    """Read every byte waiting on stdin without blocking."""
+    try:
+        fd = sys.stdin.fileno()
+        if not select.select([fd], [], [], 0)[0]:
+            return ''
+        return os.read(fd, 4096).decode('utf-8', errors='ignore')
+    except (OSError, ValueError):
+        return ''
+
+
+def _read_pending_windows():
+    """Drain the console input queue, translating arrows to ANSI sequences."""
+    chars = []
+    while msvcrt.kbhit():
+        char = msvcrt.getwch()
+        if char in ('\x00', '\xe0'):
+            # Extended key: the next code identifies it
+            arrow = _WINDOWS_ARROWS.get(msvcrt.getwch())
+            if arrow:
+                chars.append('\x1b[' + arrow)
+        else:
+            chars.append(char)
+    return ''.join(chars)
+
+
+_read_pending = _read_pending_windows if os.name == 'nt' else _read_pending_unix
+
+
+def read_keys(text=False):
+    """Return the keys pressed since the last call (possibly empty)."""
+    buffer = _read_pending()
+    return parse_keys(buffer, text) if buffer else []
 
 
 def get_key():
-    """Non-blocking key read for Windows and Unix"""
-    if os.name == 'nt':
-        if msvcrt.kbhit():
-            key = msvcrt.getch()
-            if key == b'\xe0':  # Arrow key prefix
-                key = msvcrt.getch()
-                if key == b'K':  # Left
-                    return 'LEFT'
-                elif key == b'M':  # Right
-                    return 'RIGHT'
-                elif key == b'H':  # Up
-                    return 'UP'
-                elif key == b'P':  # Down
-                    return 'DOWN'
-            elif key == b' ':  # Space
-                return 'SPACE'
-            elif key == b'\x03':  # Ctrl+C
-                return 'QUIT'
-            return None
-        return None
-    else:
-        # Unix/macOS version - truly non-blocking with fcntl
-        # Read all available input to avoid buffer buildup of repeated keys.
-        # Non-blocking read will return available bytes or '' if none.
-        buf = sys.stdin.read(4096)
-
-        if not buf:
-            return None
-
-        # Parse the buffer and pick the last meaningful key event.
-        last = None
-        i = 0
-        L = len(buf)
-        while i < L:
-            ch = buf[i]
-            # Escape sequences (arrows) are 3 chars: \x1b[A etc.
-            if ch == '\x1b' and i + 2 < L:
-                seq = buf[i:i+3]
-                if seq == '\x1b[D':
-                    last = 'LEFT'
-                    i += 3
-                    continue
-                elif seq == '\x1b[C':
-                    last = 'RIGHT'
-                    i += 3
-                    continue
-                elif seq == '\x1b[A':
-                    last = 'UP'
-                    i += 3
-                    continue
-                elif seq == '\x1b[B':
-                    last = 'DOWN'
-                    i += 3
-                    continue
-            # Single-char controls
-            if ch == ' ':
-                last = 'SPACE'
-            elif ch == '\x03' or ch == 'q':
-                last = 'QUIT'
-            elif ch == '\r' or ch == '\n':
-                last = 'ENTER'
-            elif ch == '\x7f' or ch == '\x08':
-                last = 'BACKSPACE'
-            elif ch == '\x1b':
-                # Lone ESC (not part of arrow sequence)
-                last = 'ESC'
-            else:
-                # printable char
-                if len(ch) == 1 and ch.isprintable():
-                    last = ch
-            i += 1
-
-        return last
+    """Return the most recent key pressed since the last call, or None."""
+    keys = read_keys()
+    return keys[-1] if keys else None
