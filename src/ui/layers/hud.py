@@ -7,7 +7,10 @@ from src.functions import compute_prestige
 from src.functions import get_affected_lanes
 from src.entities.sprites import BLUE, DARK_GRAY, GREEN, RED, YELLOW, get_biome_name
 from src.ui.colors import HEADER_ACCENT, HEADER_BORDER, HEADER_LABEL, HEADER_VALUE, _get_position_color, _grade_letter_color
+from src.ui.framebuffer import RegionCache
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, TOTAL_WIDTH
+
+_header_cache = RegionCache()
 
 
 def _fb_render_header(fb):
@@ -30,6 +33,11 @@ def _fb_render_header(fb):
 
     # Biome name
     biome_name = get_biome_name(state.game.level_group)
+
+    # The header owns rows 0-3: reuse them while the displayed values are unchanged
+    cache_key = (prestige_display, score_display, state.game.lives, biome_name)
+    if _header_cache.restore(fb, cache_key, 0, 0):
+        return
 
     # Calculate box positions - 4 boxes evenly spaced
     box_width = 18
@@ -91,6 +99,8 @@ def _fb_render_header(fb):
 
     # Row 3: Separator line (this is where game area starts at row 4)
     fb.put_string(0, 3, "═" * TOTAL_WIDTH, HEADER_BORDER)
+
+    _header_cache.store(fb, cache_key, 0, 0, TOTAL_WIDTH, HEADER_HEIGHT)
 
 
 def _fb_render_starting_line(fb):

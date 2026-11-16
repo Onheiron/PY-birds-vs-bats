@@ -153,6 +153,36 @@ class FrameBuffer:
         return ''.join(output)
 
 
+class RegionCache:
+    """Remembers what a layer drew in a rectangle, keyed by the layer's inputs.
+
+    A layer that owns its region can skip redrawing when its inputs did not
+    change: ``restore()`` blits the remembered cells, ``store()`` records them.
+    """
+
+    __slots__ = ('key', 'rows')
+
+    def __init__(self):
+        self.key = None
+        self.rows = None
+
+    def restore(self, fb, key, x, y):
+        """Blit the cached region if it was drawn with the same key."""
+        if self.rows is None or key != self.key:
+            return False
+        current = fb.current
+        end = x + len(self.rows[0])
+        for offset, cells in enumerate(self.rows):
+            current[y + offset][x:end] = cells
+        return True
+
+    def store(self, fb, key, x, y, width, height):
+        """Remember the region as it is currently drawn."""
+        current = fb.current
+        self.rows = [current[y + offset][x:x + width] for offset in range(height)]
+        self.key = key
+
+
 # Global framebuffer instance
 _framebuffer = None
 

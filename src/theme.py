@@ -17,6 +17,8 @@ except ImportError:
 # Cache for loaded themes
 _theme_cache = None
 _accessible_theme_cache = None
+# Resolved colours, keyed by the theme they came from (themes are loaded once)
+_color_cache = {}
 
 
 def _load_accessible_theme():
@@ -49,13 +51,20 @@ def _get_accessible_theme():
     return _accessible_theme_cache
 
 
+_settings = None
+
+
 def is_accessibility_enabled():
     """Check if accessibility mode is enabled in runtime settings."""
-    try:
-        from src.core import state
-        return getattr(state.settings, 'accessibility_enabled', False)
-    except (ImportError, AttributeError):
-        return False
+    global _settings
+    if _settings is None:
+        # Imported lazily: src.core.state itself depends on the theme.
+        try:
+            from src.core import state
+            _settings = state.settings
+        except (ImportError, AttributeError):
+            return False
+    return getattr(_settings, 'accessibility_enabled', False)
 
 
 def _load_theme_file():
@@ -159,17 +168,14 @@ def get_color(category, name, default=None):
         ANSI escape sequence string
     """
     theme = _get_theme()
-    cat = theme.get(category, {})
-
-    if isinstance(cat, dict):
-        code = cat.get(name, default)
-    else:
-        code = default
-
-    if code is None:
-        return "\033[0m"  # Reset/default
-
-    return _code_to_ansi(code)
+    key = (id(theme), category, name, default)
+    color = _color_cache.get(key)
+    if color is None:
+        cat = theme.get(category, {})
+        code = cat.get(name, default) if isinstance(cat, dict) else default
+        color = "\033[0m" if code is None else _code_to_ansi(code)
+        _color_cache[key] = color
+    return color
 
 
 def get_gradient(category, name='gradient'):
@@ -221,21 +227,15 @@ def get_biome_color(biome_name, color_type, default=None):
         ANSI escape sequence string
     """
     theme = _get_theme()
-    biomes = theme.get('biomes', {})
-
-    if isinstance(biomes, dict):
-        biome = biomes.get(biome_name, {})
-        if isinstance(biome, dict):
-            code = biome.get(color_type, default)
-        else:
-            code = default
-    else:
-        code = default
-
-    if code is None:
-        return "\033[0m"
-
-    return _code_to_ansi(code)
+    key = (id(theme), 'biomes', biome_name, color_type, default)
+    color = _color_cache.get(key)
+    if color is None:
+        biomes = theme.get('biomes', {})
+        biome = biomes.get(biome_name, {}) if isinstance(biomes, dict) else {}
+        code = biome.get(color_type, default) if isinstance(biome, dict) else default
+        color = "\033[0m" if code is None else _code_to_ansi(code)
+        _color_cache[key] = color
+    return color
 
 
 # Pre-load common colors for easy import

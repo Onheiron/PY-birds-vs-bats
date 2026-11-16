@@ -72,6 +72,19 @@ class Screen:
         return hashlib.sha256(repr(self.cells).encode()).hexdigest()
 
 
+class _Sink:
+    """Stand-in for sys.stdout that records what the renderer writes."""
+
+    def __init__(self):
+        self.chunks = []
+
+    def write(self, data):
+        self.chunks.append(data)
+
+    def flush(self):
+        pass
+
+
 def _freeze(value):
     """Order-independent, repr-stable view of a state value."""
     if isinstance(value, dict):
@@ -215,17 +228,10 @@ class Simulation:
     def render_frame(self, title=False):
         """Render the current frame and return what would be written to stdout."""
         import sys
-        captured = []
-
-        class _Sink:
-            def write(self, data):
-                captured.append(data)
-
-            def flush(self):
-                pass
-
+        sink = _Sink()
+        captured = sink.chunks
         real = sys.stdout
-        sys.stdout = _Sink()
+        sys.stdout = sink
         try:
             if title:
                 from src.ui.layers.title import render_title_screen

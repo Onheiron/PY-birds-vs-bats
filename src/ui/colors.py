@@ -1,5 +1,7 @@
 """Colour helpers: theme palette, dynamic colours, HP tinting and modifiers."""
 
+import functools
+import re
 from src.core import constants
 from src.entities.sprites import get_dynamic_color
 import os
@@ -135,32 +137,24 @@ def get_biome_obstacle_color(level_group):
     return theme.get_biome_color(biome_key, 'obstacles', 94)
 
 
-# Color helpers: map HP ratio to RGB truecolor escape
-def _rgb_escape(r: int, g: int, b: int) -> str:
-    # Decide if terminal likely supports truecolor (COLORTERM hint).
-    try:
-        ct = os.environ.get('COLORTERM', '').lower()
-    except Exception:
-        ct = ''
-    truecolor = ct in ('truecolor', '24bit')
+@functools.lru_cache(maxsize=1)
+def _truecolor_supported():
+    """Whether the terminal advertises 24-bit colour (COLORTERM hint)."""
+    return os.environ.get('COLORTERM', '').lower() in ('truecolor', '24bit')
 
-    # Clamp values
+
+@functools.lru_cache(maxsize=4096)
+def _rgb_escape(r: int, g: int, b: int) -> str:
+    """Foreground escape for an RGB colour (truecolor or 256-colour fallback)."""
     r = max(0, min(255, int(r)))
     g = max(0, min(255, int(g)))
     b = max(0, min(255, int(b)))
 
-    if truecolor:
+    if _truecolor_supported():
         return f"\033[38;2;{r};{g};{b}m"
 
-    # Fallback to 256-color approximation: map RGB -> 6x6x6 cube index
-    def _rgb_to_256(rr, gg, bb):
-        # map 0-255 -> 0-5
-        r6 = int(rr * 5 / 255)
-        g6 = int(gg * 5 / 255)
-        b6 = int(bb * 5 / 255)
-        return 16 + (36 * r6) + (6 * g6) + b6
-
-    code = _rgb_to_256(r, g, b)
+    # Fallback: map 0-255 per channel onto the 6x6x6 colour cube
+    code = 16 + 36 * int(r * 5 / 255) + 6 * int(g * 5 / 255) + int(b * 5 / 255)
     return f"\033[38;5;{code}m"
 
 
@@ -215,33 +209,23 @@ def _256_to_rgb(code):
         return (gray, gray, gray)
 
 
+_ANSI_256_COLOR = re.compile(r'\033\[38;5;(\d+)m')
+
+
+@functools.lru_cache(maxsize=4096)
 def dim_ansi_color(ansi_color: str, hp: int, max_hp: int) -> str:
-    """Dim an ANSI 256-color code based on HP percentage.
-    
-    Takes a color like '\033[38;5;36m' and dims it based on hp/max_hp ratio.
+    """Dim an ANSI 256-color code (like ``ESC[38;5;36m``) by the hp/max_hp ratio.
+
     Returns an RGB escape code with the dimmed color.
     """
-    hp_percentage = hp / max_hp if max_hp > 0 else 0
-    
-    # Extract the color code from the ANSI sequence
-    # Format: \033[38;5;XXXm
-    import re
-    match = re.search(r'\033\[38;5;(\d+)m', ansi_color)
+    match = _ANSI_256_COLOR.search(ansi_color)
     if not match:
         # Fallback: return original if can't parse
         return ansi_color
-    
-    color_code = int(match.group(1))
-    
-    # Convert to RGB
-    r, g, b = _256_to_rgb(color_code)
-    
-    # Apply HP-based dimming
-    r = int(r * hp_percentage)
-    g = int(g * hp_percentage)
-    b = int(b * hp_percentage)
-    
-    return _rgb_escape(r, g, b)
+
+    hp_percentage = hp / max_hp if max_hp > 0 else 0
+    r, g, b = _256_to_rgb(int(match.group(1)))
+    return _rgb_escape(int(r * hp_percentage), int(g * hp_percentage), int(b * hp_percentage))
 
 # Side panel colors (loaded from theme)
 PANEL_BORDER_COLOR = theme.get_color('panels', 'border', 238)

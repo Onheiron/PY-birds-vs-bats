@@ -4,6 +4,7 @@ Core utility functions for BVB game.
 Contains essential game functions used across modules.
 """
 
+import functools
 import sys
 import os
 import random
@@ -189,6 +190,17 @@ def calculate_gear_threshold(gear):
     return int(base ** (factor ** (gear + 1)))
 
 
+_GRADE_LABELS = ('C1', 'C2', 'B1', 'B2', 'A1', 'A2', 'S')
+_GRADE_COLORS = {'D': GREEN, 'C': ORANGE, 'B': WHITE, 'A': GOLD, 'S': RED}
+
+
+@functools.lru_cache(maxsize=8)
+def _grade_thresholds(base, factor):
+    """XP needed for each grade, highest grade first: ((label, threshold), ...)."""
+    pairs = [(label, int(round(base ** (factor ** n)))) for n, label in enumerate(_GRADE_LABELS)]
+    return tuple(reversed(pairs))
+
+
 def compute_grade_from_xp(xp):
     """Return (grade_label, color) tuple for given XP value."""
     xp = int(float(xp))
@@ -199,15 +211,9 @@ def compute_grade_from_xp(xp):
     if xp < int(base):
         return ('D', GREEN)
 
-    labels = ['C1', 'C2', 'B1', 'B2', 'A1', 'A2', 'S']
-    exps = [factor ** n for n in range(len(labels))]
-    thresholds = [int(round(base ** e)) for e in exps]
-
-    for lbl, thr in reversed(list(zip(labels, thresholds))):
-        if xp >= thr:
-            prefix = lbl[0]
-            color_map = {'D': GREEN, 'C': ORANGE, 'B': WHITE, 'A': GOLD, 'S': RED}
-            return (lbl, color_map.get(prefix, DARK_GRAY))
+    for label, threshold in _grade_thresholds(base, factor):
+        if xp >= threshold:
+            return (label, _GRADE_COLORS.get(label[0], DARK_GRAY))
 
     return ('C1', ORANGE)
 
@@ -249,18 +255,20 @@ def get_level_milestones():
     """
     total_levels = getattr(constants.levels, 'total_levels', 18)
     starting_distance = getattr(constants.levels, 'starting_distance', 3)
-    increment_start = getattr(constants.levels, 'distance_increment_start', 4)
+    return _level_milestones(total_levels, starting_distance)
 
+
+@functools.lru_cache(maxsize=8)
+def _level_milestones(total_levels, starting_distance):
+    """Cumulative level distances; every level is one mile longer than the last."""
     milestones = []
     current = 0
     increment = starting_distance
-
     for _ in range(total_levels):
         current += increment
         milestones.append(current)
         increment += 1
-
-    return milestones
+    return tuple(milestones)
 
 
 def compute_level_from_miles(miles):

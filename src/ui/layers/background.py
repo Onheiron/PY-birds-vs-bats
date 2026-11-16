@@ -2,6 +2,7 @@
 
 from src.core import constants
 from src.core import state
+from src.entities.sprites import TREE_BOSS_BACKGROUND
 from src.entities.sprites import WOODS_BG_LAYER1
 from src.entities.sprites import WOODS_BG_LAYER2
 from src.entities.sprites import get_biome_bg
@@ -55,33 +56,41 @@ def _fb_render_tree_boss_background(fb):
     if boss.get('boss_type') != 'tree':
         return
 
-    from src.entities.sprites import TREE_BOSS_BACKGROUND
-
-    # Use WHITE color BUT faint for tree outline
-    tree_outline_color = apply_faint("\033[1;37m")  # White faint
-
-    # Start from left edge (x=0)
-    tree_x_offset = 0
-
     # Get vertical offset for scrolling (background comes from above)
     bg_y_offset = boss.get('bg_y_offset', 0)
 
-    # Tree is exactly 45 chars wide (same as game panel), so no overflow
-    max_tree_x = constants.layout.width
-
-    for line_idx, line in enumerate(TREE_BOSS_BACKGROUND):
+    height = constants.layout.height
+    rows = fb.current
+    for line_idx, cells in enumerate(_tree_boss_background_cells()):
         y_pos = line_idx + bg_y_offset  # Apply scroll offset
-        if 0 <= y_pos < constants.layout.height:
-            for i, char in enumerate(line):
-                x_pos = tree_x_offset + i
-                if 0 <= x_pos < max_tree_x:
-                    screen_x = GAME_X_OFFSET + x_pos
-                    if char == 'x' or char in TREE_HIDDEN_CHARS:
-                        # Solid fill - render space to overwrite biome background
-                        fb.put(screen_x, y_pos + HEADER_HEIGHT, ' ', '')
-                    elif char != ' ':
-                        # Tree outline character - render with white faint color
-                        fb.put(screen_x, y_pos + HEADER_HEIGHT, char, tree_outline_color)
+        if 0 <= y_pos < height:
+            row = rows[y_pos + HEADER_HEIGHT]
+            for screen_x, cell in cells:
+                row[screen_x] = cell
+
+
+_tree_boss_cells = {}
+
+
+def _tree_boss_background_cells():
+    """Per-line [(screen_x, cell)] for the Tree Boss background (cached per width)."""
+    width = constants.layout.width  # Tree is as wide as the game panel
+    lines = _tree_boss_cells.get(width)
+    if lines is None:
+        # WHITE but faint for the tree outline
+        outline_color = apply_faint("\033[1;37m")
+        lines = []
+        for line in TREE_BOSS_BACKGROUND:
+            cells = []
+            for x_pos, char in enumerate(line[:width]):
+                if char == 'x' or char in TREE_HIDDEN_CHARS:
+                    # Solid fill - a space that overwrites the biome background
+                    cells.append((GAME_X_OFFSET + x_pos, BLANK))
+                elif char != ' ':
+                    cells.append((GAME_X_OFFSET + x_pos, (char, outline_color)))
+            lines.append(cells)
+        _tree_boss_cells[width] = lines
+    return lines
 
 
 # Cave shimmer brightness is a pure function of a 0-99 pseudo-random seed.
