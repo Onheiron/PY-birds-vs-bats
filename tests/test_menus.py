@@ -205,25 +205,33 @@ def test_cursor_assists_are_off_by_default_and_work():
     with Simulation(seed=1, key_rate=0) as sim:
         state = sim.state
         assert not state.settings.bounce_on_enter and not state.settings.trigger_on_enter
-        sim.run(5)
-        state.player.lane = 3
-        bird = next(i for i in range(9) if state.birds.random_lanes[i] == 4)
-        state.birds.vy[bird] = 1
-        state.special.scared_birds.pop(bird, None)
-        state.special.stunned_birds.pop(bird, None)
-        handle_movement('RIGHT')
-        assert state.birds.vy[bird] == 1, 'no assist by default'
-
-        state.settings.bounce_on_enter = True
-        handle_movement('LEFT')
-        handle_movement('RIGHT')
-        assert state.birds.vy[bird] == -1, 'bounce on enter bounced the falling bird'
-        assert not state.birds.power_used[bird], 'but did not fire its power'
-
-        state.settings.bounce_on_enter = False
-        state.settings.trigger_on_enter = True
-        state.birds.power_used[bird] = False
-        handle_movement('LEFT')
-        handle_movement('RIGHT')
-        assert state.birds.power_used[bird] or state.birds.power_uses[bird] > 0, 'trigger on enter fired the power'
+        try:
+            _check_assists(sim, state, handle_movement)
+        finally:
+            # Settings outlive a game: leave them as found
+            state.settings.bounce_on_enter = state.settings.trigger_on_enter = False
         assert constants.layout.num_lanes == 9
+
+
+def _check_assists(sim, state, handle_movement):
+    sim.run(5)
+    state.player.lane = 3
+    bird = next(i for i in range(9) if state.birds.random_lanes[i] == 4)
+    state.birds.vy[bird] = 1
+    state.special.scared_birds.pop(bird, None)
+    state.special.stunned_birds.pop(bird, None)
+    handle_movement('RIGHT')
+    assert state.birds.vy[bird] == 1, 'no assist by default'
+
+    state.settings.bounce_on_enter = True
+    handle_movement('LEFT')
+    handle_movement('RIGHT')
+    assert state.birds.vy[bird] == -1, 'bounce on enter bounced the falling bird'
+    assert not state.birds.power_used[bird], 'but did not fire its power'
+
+    state.settings.bounce_on_enter = False
+    state.settings.trigger_on_enter = True
+    state.birds.power_used[bird] = False
+    handle_movement('LEFT')
+    handle_movement('RIGHT')
+    assert state.birds.power_used[bird] or state.birds.power_uses[bird] > 0, 'trigger on enter fired the power'

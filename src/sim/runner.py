@@ -73,6 +73,8 @@ def start_game(config, now):
 
     state.init(config.seed)
     state.settings.difficulty = config.difficulty
+    # Settings outlive a game: start every simulated game with the cursor assists off
+    state.settings.bounce_on_enter = state.settings.trigger_on_enter = False
     state.ui.show_title = False
     state.ui.menu_stack = []
     state.game.start_time = now
