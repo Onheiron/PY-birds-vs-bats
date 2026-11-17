@@ -1,7 +1,6 @@
 """Movement of birds, projectiles, obstacles, loot and scenery."""
 
 import random
-import time
 
 from src.core import constants, state
 from src.engine import clock
