@@ -45,7 +45,7 @@ combat:
   # Every boss's HP is multiplied by this (one knob for all of them)
   boss_hp_mult: 1.0
   # ...and grows by this share per world after the first (0.5: ×3.5 in the last world)
-  boss_hp_per_world: 0.0
+  boss_hp_per_world: 0.5
   # Afflictions (freeze, poison, bleed) land this much less often on bosses
   boss_affliction_factor: 0.33
   # Score/XP multipliers for destroying enemies
@@ -109,7 +109,7 @@ eggs:
       rainbow_egg: 100
 bat_enemy:
   # Bat HP grows by this share per level above 1 (0.08: +80% at level 11)
-  level_hp_multiplier: 0.0
+  level_hp_multiplier: 0.05
   hp_by_tier:
     0: 160      # Mini bat (tier 0) - hides in obstacles
     1: 240
@@ -293,7 +293,7 @@ boss:
 wind_boss:
   level: 6                          # Which level this boss appears (2-3 = level 6)
   spawn_miles_before_transition: 1  # Spawn 1 mile before level end
-  hp: 3000                           # Slightly more HP than regular boss
+  hp: 4500                           # Slightly more HP than regular boss
   armor_reduction: 10
   # Animation timing
   anim_frames_per_step: 8           # Frames between animation steps
@@ -605,7 +605,7 @@ timelapse:
     max: 2.0
 progression:
   # XP a bird earns by moving, as a share of the score it makes (hits and kills earn their own)
-  move_xp_factor: 1.0
+  move_xp_factor: 0.3
   grade_exp_factor: 1.07
   level_score_base: 500.0
   level_score_factor: 1.08
@@ -792,9 +792,9 @@ elites:
 # POWER DAMAGE (× combat.hp_scale)
 # =============================================================================
 power_damage:
-  red_shot: 1            # Red projectile
-  red_per_neighbour: 1   # + per rising Red / Purple / Patchwork beside it
-  purple_tiers: [1, 4, 16, 64]   # Purple shot after 0 / 1 / 2 / 3 s of charge
+  red_shot: 3            # Red projectile
+  red_per_neighbour: 2   # + per rising Red / Purple / Patchwork beside it
+  purple_tiers: [3, 10, 30, 90]   # Purple shot after 0 / 1 / 2 / 3 s of charge
 
 # =============================================================================
 # CARDS (eggs)

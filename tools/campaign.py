@@ -140,11 +140,11 @@ def main(argv=None):
     parser.add_argument('--json', metavar='FILE')
     args = parser.parse_args(argv)
     os.chdir(ROOT)
-    from src.sim.options import parse_assignments
+    from src.sim.options import merge, parse_assignments
 
     overrides = {}
     for item in args.set:
-        overrides.update(parse_assignments(item))
+        overrides = merge(overrides, parse_assignments(item))
     jobs = args.jobs or os.cpu_count() or 1
     tasks = [(args.seed + c, args.runs, args.bot, args.buy, args.max_minutes, overrides) for c in range(args.campaigns)]
     print(f'Playing {args.campaigns} campaigns of {args.runs} runs ({args.bot} bot) on {jobs} processes...', flush=True)
