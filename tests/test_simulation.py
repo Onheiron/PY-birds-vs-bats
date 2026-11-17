@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from tests.harness import Simulation, state_digest
+from tests.harness import Screen, Simulation
 
 BOSS_BY_LEVEL = {3: 'normal', 6: 'wind', 9: 'jelly', 12: 'tree', 15: 'owl', 18: 'normal'}
 
@@ -79,44 +79,46 @@ def test_losing_every_bird_ends_the_game():
         assert state.game.lives <= 0 or all(state.birds.lost)
 
 
+def _world_snapshot(state):
+    return repr((state.birds.y, state.birds.vy, state.enemies.obstacles, state.enemies.bats, state.game.frame_count))
+
+
 def test_pause_freezes_the_simulation():
     with Simulation(seed=9) as sim:
+        state = sim.state
         sim.run(120)
         sim.step(key='p')
-        assert sim.state.game.paused
-        frozen = state_digest()
-        miles = sim.state.game.miles
+        assert state.game.paused
+        frozen = _world_snapshot(state)
+        miles = state.game.miles
         for _ in range(60):
             sim.step(key=None)
-        assert state_digest() == frozen
-        assert sim.state.game.miles == miles
+        assert _world_snapshot(state) == frozen
+        assert state.game.miles == miles
         sim.step(key='p')
-        assert not sim.state.game.paused
+        assert not state.game.paused
         sim.run(60)
-        assert sim.state.game.miles > miles
+        assert state.game.miles > miles
+        assert _world_snapshot(state) != frozen
 
 
 def test_frame_output_reproduces_a_full_redraw():
-    """What the terminal shows after thousands of diffs equals a clean repaint."""
-    with Simulation(seed=11, level=13, all_birds=True) as sim:
-        sim.state.settings.parallax_enabled = True
-        for _ in range(8):
-            sim.run(150)
-            # Repaint the same frame from scratch into a second terminal
-            from tests.harness import Screen
+    """After thousands of differential updates the terminal shows exactly what a
+    clean repaint of the same frame would show."""
+    # Default flock only: PATCHWORK and RAINBOW birds pick random colours per frame
+    with Simulation(seed=11, level=13) as sim:
+        state = sim.state
+        state.settings.parallax_enabled = True
+        sim.run(900)
+        state.game.paused = True  # freeze the world; the pause overlay is drawn too
+        for _ in range(3):
+            sim.screen.feed(sim.render_frame())  # differential update
 
-            sim.fb.first_frame = True
-            repaint = Screen(sim.fb.width, sim.fb.height)
-            sim.session.frame -= 0  # no simulation step: only redraw
-            repaint.feed(sim.render_frame())
-            current = Screen(sim.fb.width, sim.fb.height)
-            current.cells = [row[:] for row in sim.screen.cells]
-            # Bring the long-lived screen to the same frame, then compare
-            sim.screen.feed(sim.render_frame())
-            fresh = Screen(sim.fb.width, sim.fb.height)
-            sim.fb.first_frame = True
-            fresh.feed(sim.render_frame())
-            assert sim.screen.text() == fresh.text()
+        sim.fb.first_frame = True
+        repaint = Screen(sim.fb.width, sim.fb.height)
+        repaint.feed(sim.render_frame())  # full repaint
+        assert sim.screen.text() == repaint.text()
+        assert sim.screen.cells == repaint.cells
 
 
 def test_rendering_fits_comfortably_in_the_frame_budget():
