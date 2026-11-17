@@ -4,6 +4,7 @@ import random
 
 from src.core import constants, state
 from src.engine import clock
+from src.engine.notifications import notify
 from src.entities.sprites import FLOWER_MATURE_FRAME, SWAMP_OBSTACLE_FLOWER_POSITIONS
 
 
@@ -96,6 +97,7 @@ def apply_flower_collision_effect(flower, bird_idx):
                 'lives_needed': lives,
                 'lives_lost': 0,
             }
+            notify(f'{lives} UP presses kill it; wait {bleed_duration:g} s', title='Bleeding!')
 
     elif flower_type == 'yellow':
         # Yellow flower: chance to stun bird
@@ -108,6 +110,7 @@ def apply_flower_collision_effect(flower, bird_idx):
                 'end_time': clock.now() + stun_duration,
                 'type': 'flower',  # Mark as flower stun (different from obstacle stun)
             }
+            notify(f'Cannot bounce for {stun_duration:g} s', title='Stunned!')
 
     elif flower_type == 'blue':
         # Blue flower: chance to freeze bird
@@ -122,6 +125,7 @@ def apply_flower_collision_effect(flower, bird_idx):
                 'thaw_attempts_needed': thaw_attempts,
                 'thaw_attempts_done': 0,
             }
+            notify(f'Press UP {thaw_attempts} times on it to thaw', title='Frozen!')
 
     elif flower_type == 'green':
         # Green flower: chance to poison bird
@@ -138,3 +142,4 @@ def apply_flower_collision_effect(flower, bird_idx):
                 'cure_attempts_needed': cure_attempts,
                 'cure_attempts_done': 0,
             }
+            notify(f'UP {cure_attempts}× on it within {poison_duration:g} s or it dies', title='Poisoned!')

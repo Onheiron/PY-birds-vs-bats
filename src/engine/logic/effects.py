@@ -4,6 +4,7 @@ from src.core import constants, state
 from src.engine import clock, events, stats
 from src.engine.birds import check_pending_transforms, reset_bird_power
 from src.engine.logic.damage import handle_bat_death
+from src.engine.notifications import notify
 from src.engine.progression import hp_scale
 from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
 
@@ -97,6 +98,7 @@ def update_special_bird_states():
                 state.birds.y[bird_idx] = constants.layout.height - 1
                 state.game.lives -= 1
                 events.emit('bird_lost', bird=bird_idx, color=dead_color, cause='poison')
+                notify('A bird died of poison', title='Lost!')
                 # Check if a pending bird can now transform
 
                 check_pending_transforms(dead_color)

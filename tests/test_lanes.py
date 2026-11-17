@@ -59,3 +59,16 @@ def test_exile_into_an_empty_lane_keeps_one_slot_per_lane():
         assert sorted(state.birds.random_lanes) == list(range(constants.layout.num_lanes))
         assert sorted(state.birds.home_lanes) == list(range(constants.layout.num_lanes))
         assert state.birds.random_lanes[empty] == 6
+
+
+def test_a_poisoned_bird_is_marked_outside_boss_fights():
+    from src.engine.logic.flowers import apply_flower_collision_effect
+
+    with Simulation(seed=1, key_rate=0, level=10) as sim:
+        sim.run(40)
+        while 3 not in sim.state.special.poisoned_birds:
+            apply_flower_collision_effect({'type': 'green'}, 3)
+        sim.run(4)
+        assert sim.state.enemies.boss is None
+        assert '☠' in sim.screen.text()
+        assert 'Poisoned!' in sim.screen.text()

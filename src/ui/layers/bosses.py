@@ -31,7 +31,6 @@ from src.entities.sprites import (
 )
 from src.ui.colors import apply_bold, color_from_hp_to_red
 from src.ui.layers.background import TREE_HIDDEN_CHARS
-from src.ui.layers.birds import draw_bird_status_indicators
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
 
@@ -257,11 +256,6 @@ def _draw_tree_boss(fb):
                         if char != ' ' and 0 <= x_pos < constants.layout.width:
                             fb.put(GAME_X_OFFSET + x_pos, flower_y + HEADER_HEIGHT, char, flower_color)
 
-    # =========================================================================
-    # 4. RENDER STATUS INDICATORS for stunned/frozen/poisoned birds
-    # =========================================================================
-    draw_bird_status_indicators(fb)
-
 
 def _draw_owl_boss(fb):
     """Render Owl Boss and its spell effects."""
@@ -355,9 +349,6 @@ def _draw_owl_boss(fb):
                         x_pos = meteor_x + i
                         if 0 <= x_pos < constants.layout.width:
                             fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, m_color)
-
-    # Render status indicators for affected birds (same as Tree Boss)
-    draw_bird_status_indicators(fb)
 
 
 _BOSS_RENDERERS = {

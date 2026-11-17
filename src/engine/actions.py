@@ -178,6 +178,7 @@ def handle_bounce():
                         state.game.lives -= 1
                         del state.special.bleeding_birds[bird_idx]
                         events.emit('bird_lost', bird=bird_idx, color=dead_color, cause='bleeding')
+                        notify('A bird bled to death', title='Lost!')
                         # Check if a pending bird can now transform
 
                         check_pending_transforms(dead_color)

@@ -31,11 +31,16 @@ from src.entities.sprites import (
 from src.ui.colors import apply_bold, get_render_color
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
+# Flash colours of afflicted birds (the indicator above them uses the same)
+POISONED_COLOR = '\033[38;5;46m'
+BLEEDING_COLOR = '\033[38;5;196m'
+
 
 def draw_bird_status_indicators(fb):
     """Render status indicators (stunned/frozen/poisoned/bleeding) above affected birds.
 
-    This is extracted from Tree Boss rendering so it can be reused by Owl Boss and other bosses.
+    Drawn every frame, after the birds: flowers in the Dark Swamp poison,
+    bleed, freeze and stun birds outside the boss fights too.
     """
 
     now = clock.now()
@@ -57,9 +62,10 @@ def draw_bird_status_indicators(fb):
                     # Use * instead of ⚡ (unicode width issues) + digit
                     indicator = f"*{remaining_secs}"
                     stun_color = "\033[1;33m"  # Bright yellow
+                    start = bird_x - len(indicator) // 2  # centred over the bird
                     for i, c in enumerate(indicator):
-                        if bird_x + i < constants.layout.width:
-                            fb.put(GAME_X_OFFSET + bird_x + i, bird_y - 1 + HEADER_HEIGHT, c, stun_color)
+                        if 0 <= start + i < constants.layout.width:
+                            fb.put(GAME_X_OFFSET + start + i, bird_y - 1 + HEADER_HEIGHT, c, stun_color)
 
     # Frozen birds get a snowflake indicator
     for bird_idx in state.special.frozen_birds:
@@ -74,9 +80,10 @@ def draw_bird_status_indicators(fb):
                 # Show remaining thaw attempts as number
                 indicator = f"❄{remaining}"
                 ice_color = "\033[1;36m"  # Bright cyan
+                start = bird_x - len(indicator) // 2  # centred over the bird
                 for i, c in enumerate(indicator):
-                    if bird_x + i < constants.layout.width:
-                        fb.put(GAME_X_OFFSET + bird_x + i, bird_y - 1 + HEADER_HEIGHT, c, ice_color)
+                    if 0 <= start + i < constants.layout.width:
+                        fb.put(GAME_X_OFFSET + start + i, bird_y - 1 + HEADER_HEIGHT, c, ice_color)
 
     # Poisoned birds get a skull indicator with countdown
     for bird_idx in state.special.poisoned_birds:
@@ -93,9 +100,10 @@ def draw_bird_status_indicators(fb):
             if 0 <= bird_y - 1 < constants.layout.height and 0 <= bird_x < constants.layout.width:
                 indicator = f"☠{remaining_secs}s♥{cure_remaining}"
                 poison_color = "\033[1;32m"  # Bright green (poison)
+                start = bird_x - len(indicator) // 2  # centred over the bird
                 for i, c in enumerate(indicator):
-                    if bird_x + i < constants.layout.width:
-                        fb.put(GAME_X_OFFSET + bird_x + i, bird_y - 1 + HEADER_HEIGHT, c, poison_color)
+                    if 0 <= start + i < constants.layout.width:
+                        fb.put(GAME_X_OFFSET + start + i, bird_y - 1 + HEADER_HEIGHT, c, poison_color)
 
     # Bleeding birds get a blood drop indicator with countdown (DON'T PRESS UP!)
     for bird_idx in state.special.bleeding_birds:
@@ -113,9 +121,10 @@ def draw_bird_status_indicators(fb):
             if 0 <= bird_y - 1 < constants.layout.height and 0 <= bird_x < constants.layout.width:
                 indicator = f"!{remaining_secs}s♥{lives_remaining}"
                 bleed_color = "\033[1;31m"  # Bright red (blood)
+                start = bird_x - len(indicator) // 2  # centred over the bird
                 for i, c in enumerate(indicator):
-                    if bird_x + i < constants.layout.width:
-                        fb.put(GAME_X_OFFSET + bird_x + i, bird_y - 1 + HEADER_HEIGHT, c, bleed_color)
+                    if 0 <= start + i < constants.layout.width:
+                        fb.put(GAME_X_OFFSET + start + i, bird_y - 1 + HEADER_HEIGHT, c, bleed_color)
 
 
 def draw_birds(fb):
@@ -181,21 +190,27 @@ def draw_birds(fb):
         elif state.birds.colors[i] == BLUE and state.birds.power_used[i]:
             bird_color = get_render_color(CYAN)
 
+        # Poisoned birds flash green and bleeding ones red, whatever their kind
+        afflicted = i in state.special.poisoned_birds or i in state.special.bleeding_birds
+        flash = afflicted and not is_frozen and (state.game.frame_count // 4) % 2 == 0
+        if flash:
+            bird_color = POISONED_COLOR if i in state.special.poisoned_birds else BLEEDING_COLOR
+
         # Apply bold modifier for foreground game elements
         bird_color = apply_bold(bird_color)
 
         # Patchwork uses multicolor rendering (fixed colors by position)
-        is_patchwork = state.birds.colors[i] == PATCHWORK and not is_frozen
+        is_patchwork = state.birds.colors[i] == PATCHWORK and not is_frozen and not flash
         # Fixed color pattern: left=YELLOW, center=RED, right=BLUE
         patchwork_colors = [YELLOW, RED, BLUE]
 
         # Clockwork uses special beak coloring based on charge
-        is_clockwork = state.birds.colors[i] == CLOCKWORK and not is_frozen
+        is_clockwork = state.birds.colors[i] == CLOCKWORK and not is_frozen and not flash
         clockwork_charge = state.special.clockwork_charge.get(i, 2) if is_clockwork else 0
         clockwork_blink = (state.game.frame_count // 5) % 2 == 0  # Blink every 5 frames
 
         # RAINBOW uses animated multicolor that fades based on charge
-        is_rainbow = state.birds.colors[i] == RAINBOW and not is_frozen
+        is_rainbow = state.birds.colors[i] == RAINBOW and not is_frozen and not flash
         # Bright vivid rainbow colors (256-color ANSI)
         rainbow_colors = [
             '\033[38;5;196m',  # Bright red
@@ -211,7 +226,7 @@ def draw_birds(fb):
         rainbow_brightness = max(0.2, rainbow_charge / 100.0)
 
         # TWISTER uses gray body with cyan wings
-        is_twister = state.birds.colors[i] == TWISTER and not is_frozen
+        is_twister = state.birds.colors[i] == TWISTER and not is_frozen and not flash
 
         # Render bird sprite
         for line_idx, line in enumerate(sprite):
