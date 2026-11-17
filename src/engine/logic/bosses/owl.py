@@ -4,7 +4,7 @@ import math
 import random
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, enemy_stats
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
@@ -374,7 +374,7 @@ def _owl_cast_evocation(boss, spells_cfg):
             all_spells = ['silence', 'repugnant_wind', 'exile']
             bat['known_spells'] = all_spells[:num_spells]
 
-        state.enemies.bats.append(bat)
+        state.enemies.bats.append(enemy_stats.equip_bat(bat))
 
 
 def _owl_cast_bend_space(boss, spells_cfg):

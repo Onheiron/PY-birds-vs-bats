@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, events, stats
+from src.engine import bird_kinds, clock, enemy_stats, events, stats
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
@@ -113,8 +113,8 @@ def handle_bat_death(bat, killer_bird_idx):
     """Handle bat death: score, loot drop, achievements."""
     tier = bat.get('tier', 1)
     bat_xp_per_tier = getattr(constants.combat, 'bat_destroy_xp_per_tier', 5)
-    award_xp(killer_bird_idx, bat_xp_per_tier * tier)
-    add_score(bat.get('max_hp', 0))
+    award_xp(killer_bird_idx, bat_xp_per_tier * tier * enemy_stats.get(bat, 'xp_mult'))
+    add_score(bat.get('max_hp', 0) * enemy_stats.get(bat, 'score_mult'))
 
     # Bats spawned by bosses NEVER drop loot (general rule)
     if not bat.get('from_boss'):
@@ -134,6 +134,7 @@ def handle_bat_death(bat, killer_bird_idx):
         adj_weights = adjust_rarity_weights(base_weights, prestige)
         # 6 rarity tiers: common, uncommon, rare, epic, legendary, mythical
         rarity = random.choices(['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical'], weights=adj_weights)[0]
+        rarity = enemy_stats.upgrade_rarity(rarity, enemy_stats.get(bat, 'loot_rarity_bonus'))
         loot_type = choose_loot_type(rarity)
 
         drop_loot(

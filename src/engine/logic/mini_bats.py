@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds
+from src.engine import bird_kinds, enemy_stats
 from src.engine.birds import scare_bird, set_ball_vy, stun_bird
 from src.engine.logic.damage import calculate_bird_damage, handle_mini_bat_death
 from src.engine.progression import award_xp
@@ -387,6 +387,7 @@ def check_bird_mini_bat_collision():
             if bird_color == ORANGE:
                 mb['hp'] = 0
             else:
+                damage = enemy_stats.mitigate(mb, damage, 'contact', bird=i)
                 mb['hp'] -= damage
                 award_xp(i, damage)
 

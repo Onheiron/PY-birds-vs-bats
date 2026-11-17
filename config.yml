@@ -192,7 +192,6 @@ bat_enemy:
   armored:
     min_tier: 2                    # Only tier 2+ bats can be armored
     despawn_time: 150              # 2.5 minutes (normal is 60s)
-    movement_speed_mult: 0.6       # Move 40% slower than normal
     movement_range_mult: 0.7       # Move 30% less distance
     # Damage reduction per tier (subtracted from damage)
     damage_reduction_by_tier:
@@ -764,3 +763,40 @@ bird_stats:
     A2: {prestige: 1.0,     score_grade_bonus: 0.6}
     S:  {prestige: 5.0,     score_grade_bonus: 1.0}
   type_growth: {}
+
+# =============================================================================
+# ENEMY STATS (see docs/stats.md)
+# =============================================================================
+# Resolved when an enemy spawns: defaults, then per tier, then per kind
+# (armored / diver / spellcaster), then elite stats and affixes. Flat stats
+# add up; hp_mult, damage_taken, fear_strength, speed, xp_mult and
+# score_mult multiply. Armored bats also get bat_enemy.armored
+# .damage_reduction_by_tier as armor.
+enemy_stats:
+  bats:
+    defaults: {}
+    tiers: {}
+    kinds:
+      armored: {speed: 0.6, descent_interval: 1}   # slower, descends every 6 ticks
+  obstacles:
+    defaults: {}
+    tiers: {}
+
+# =============================================================================
+# ELITE BATS
+# =============================================================================
+# A spawning bat becomes an elite with chance_by_biome[biome - 1]; it gets
+# the stats below plus affix_count_by_biome random affixes. Birds' vs_elites
+# bonus applies against elites and bosses.
+elites:
+  chance_by_biome: [0, 0.03, 0.06, 0.09, 0.12, 0.15]
+  affix_count_by_biome: [1, 1, 1, 2, 2, 2]
+  stats: {hp_mult: 2.0, xp_mult: 2.0, score_mult: 2.0, loot_rarity_bonus: 1}
+  affixes:
+    ironclad:     {name: Ironclad,     stats: {armor: 2}}
+    regenerating: {name: Regenerating, stats: {regen: 2}}
+    terrifying:   {name: Terrifying,   stats: {fear_strength: 1.5, fear_radius: 1}}
+    swift:        {name: Swift,        stats: {speed: 1.5}}
+    warded:       {name: Warded,       stats: {projectile_defense: 3}}
+    hulking:      {name: Hulking,      stats: {hp_mult: 1.5, damage_taken: 0.8}}
+    bountiful:    {name: Bountiful,    stats: {xp_mult: 1.5, loot_rarity_bonus: 1}}

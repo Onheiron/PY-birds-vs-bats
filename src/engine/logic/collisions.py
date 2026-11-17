@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, events, stats
+from src.engine import bird_kinds, clock, enemy_stats, events, stats
 from src.engine.birds import check_pending_transforms, reset_bird_power, scare_bird, set_ball_vy, stun_bird
 from src.engine.logic.damage import calculate_bird_damage, handle_bat_death
 from src.engine.logic.drops import drop_loot
@@ -172,7 +172,7 @@ def check_bird_obstacle_collision():
             if bird_color == ORANGE:
                 obs['hp'] = 0
             else:
-                obs['hp'] -= damage
+                obs['hp'] -= enemy_stats.mitigate(obs, damage, 'contact', bird=i)
                 award_xp(i, damage)
                 # Also damage flower if present
                 if flower and flower.get('active') and flower.get('hp', 0) > 0:
@@ -241,28 +241,9 @@ def check_bird_bat_collision():
             # Hit bat
             damage = calculate_bird_damage(i, 'elite' if bat.get('elite') else 'bat')
 
-            # Apply armor damage reduction for armored bats
-            is_armored = bat.get('armored', False)
-            if is_armored and bird_color != ORANGE:
-                armored_cfg = getattr(constants.bat_enemy, 'armored', None)
-                if armored_cfg:
-                    bat_tier = bat.get('tier', 1)
-                    dmg_reduction_cfg = getattr(armored_cfg, 'damage_reduction_by_tier', None)
-                    if dmg_reduction_cfg:
-                        if isinstance(dmg_reduction_cfg, dict):
-                            reduction = dmg_reduction_cfg.get(bat_tier, dmg_reduction_cfg.get(str(bat_tier), 0))
-                        else:
-                            reduction = getattr(dmg_reduction_cfg, str(bat_tier), 0)
-                        # Reduce armor by FROZEN/BLEEDING debuffs
-                        bat_id = id(bat)
-                        if bat_id in state.special.frozen_enemies:
-                            frozen_reduction = state.special.frozen_enemies[bat_id].get('armor_reduction', 2)
-                            reduction = max(0, reduction - frozen_reduction)
-                        if bat_id in state.special.bleeding_enemies:
-                            bleed_reduction = state.special.bleeding_enemies[bat_id].get('armor_reduction', 1)
-                            reduction = max(0, reduction - bleed_reduction)
-                        reduction = max(0, reduction - stats.bird(i, 'armor_pierce'))
-                        damage = max(1, damage - reduction)  # Minimum 1 damage
+            # Defences and armor (armor is lowered by FROZEN/BLEEDING debuffs)
+            if bird_color != ORANGE:
+                damage = enemy_stats.mitigate(bat, damage, 'contact', bird=i, armor_cut=_armor_cut(bat))
 
             if bird_color == ORANGE:
                 bat['hp'] = 0
@@ -280,14 +261,15 @@ def check_bird_bat_collision():
             if not is_stealth_tangible and not diver_no_scare:
                 bat_tier = bat.get('tier', 1)
                 scared_duration = getattr(constants.combat, 'scared_duration', 2.0)
-                scared = scare_bird(i, scared_duration)
+                scared = scare_bird(i, scared_duration * enemy_stats.get(bat, 'fear_strength'))
+                _scare_neighbours(i, bat, scared_duration)
                 speed_boost_min_tier = getattr(constants.combat, 'speed_boost_min_tier', 3)
                 if scared and bat_tier >= speed_boost_min_tier:
                     speed_boost_duration = getattr(constants.combat, 'speed_boost_duration', 2.0)
                     state.special.speed_boosts[i] = int(speed_boost_duration / constants.timing.base_sleep)
 
                 # Armored bats give additional scare speed boost
-                if is_armored:
+                if bat.get('armored', False):
                     armored_cfg = getattr(constants.bat_enemy, 'armored', None)
                     if armored_cfg:
                         armor_scare_bonus = getattr(armored_cfg, 'scare_speed_bonus', 1)
@@ -389,6 +371,30 @@ def check_bird_bat_collision():
             break
 
 
+def _armor_cut(bat):
+    """Armor removed from a bat by its FROZEN / BLEEDING debuffs."""
+    bat_id = id(bat)
+    cut = 0
+    if bat_id in state.special.frozen_enemies:
+        cut += state.special.frozen_enemies[bat_id].get('armor_reduction', 2)
+    if bat_id in state.special.bleeding_enemies:
+        cut += state.special.bleeding_enemies[bat_id].get('armor_reduction', 1)
+    return cut
+
+
+def _scare_neighbours(bird_idx, bat, seconds):
+    """A bat with fear_radius also scares the birds in the lanes around the one it hit."""
+    radius = int(enemy_stats.get(bat, 'fear_radius'))
+    if radius <= 0:
+        return
+    lane = state.birds.random_lanes[bird_idx]
+    for j in range(constants.layout.num_balls):
+        if j == bird_idx or state.birds.lost[j]:
+            continue
+        if 0 < abs(state.birds.random_lanes[j] - lane) <= radius:
+            scare_bird(j, seconds * enemy_stats.get(bat, 'fear_strength'))
+
+
 def check_projectile_collision():
     """Check projectile-enemy collisions."""
     for proj in state.special.red_projectiles[:]:
@@ -402,7 +408,7 @@ def check_projectile_collision():
             bat_bottom = bat['y_pos'] + 1
 
             if bat_left <= proj['x_pos'] <= bat_right and bat_top <= proj['y_pos'] <= bat_bottom:
-                damage = proj.get('damage', 1)
+                damage = enemy_stats.mitigate(bat, proj.get('damage', 1), 'projectile')
                 bat['hp'] -= damage
 
                 owner = proj.get('owner')
@@ -433,7 +439,7 @@ def check_projectile_collision():
             if proj['y_pos'] < obs['y_pos'] - 1 or proj['y_pos'] > obs['y_pos'] + sprite_height:
                 continue
 
-            damage = proj.get('damage', 1)
+            damage = enemy_stats.mitigate(obs, proj.get('damage', 1), 'projectile')
             obs['hp'] -= damage
 
             owner = proj.get('owner')

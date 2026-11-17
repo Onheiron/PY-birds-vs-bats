@@ -4,7 +4,7 @@ import random
 import time as time
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, enemy_stats
 from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
 
@@ -27,17 +27,15 @@ def update_bat_positions():
             # Continue with normal movement below
 
         # Get movement modifiers for armored bats
-        horiz_interval = 3  # Normal: move every 3 frames
-        move_distance = 2  # Normal: 2 pixels per move
+        # Normal: 2 columns every 3 ticks; the speed stat changes how often it moves
+        speed = enemy_stats.get(bat, 'speed')
+        horiz_interval = 3 if speed == 1 else max(1, int(3 / speed + 1e-9))
+        move_distance = 2
         if is_armored:
             armored_cfg = getattr(constants.bat_enemy, 'armored', None)
             if armored_cfg:
-                speed_mult = getattr(armored_cfg, 'movement_speed_mult', 0.6)
-                range_mult = getattr(armored_cfg, 'movement_range_mult', 0.7)
-                # Slower = higher interval (move less often)
-                horiz_interval = max(3, int(3 / speed_mult))
                 # Less distance per move
-                move_distance = max(1, int(2 * range_mult))
+                move_distance = max(1, int(2 * getattr(armored_cfg, 'movement_range_mult', 0.7)))
 
         # Horizontal movement
         if state.game.frame_count % horiz_interval == 0:
@@ -56,8 +54,8 @@ def update_bat_positions():
             else:
                 bat['direction'] *= -1
 
-        # Vertical descent (same speed as obstacles, armored slightly slower)
-        vert_interval = 6 if is_armored else 5
+        # Vertical descent (same speed as obstacles; armored bats are slower)
+        vert_interval = max(1, int(enemy_stats.get(bat, 'descent_interval')))
         if state.game.frame_count % vert_interval == 0:
             if bat['y_pos'] < bat['target_y']:
                 bat['y_pos'] += 1

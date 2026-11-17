@@ -62,6 +62,8 @@ class RunStats:
 
     def _on_bat_killed(self, bat, tier, killer):
         self.kills[f'bat tier {tier}'] += 1
+        if bat.get('elite'):
+            self.kills['elite bat'] += 1
 
     def _on_mini_bat_killed(self, bat, killer):
         self.kills['mini bat'] += 1

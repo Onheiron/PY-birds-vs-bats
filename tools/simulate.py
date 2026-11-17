@@ -162,6 +162,11 @@ def report(results):
     for cause in causes:
         row(f'  {cause}', lambda r, c=cause: mean([x['birds_lost'].get(c, 0) for x in r]), '{:.2f}')
 
+    section('Enemies killed per game')
+    kinds = sorted({k for n in names for x in results[n]['runs'] for k in x.get('kills', {})})
+    for kind in kinds:
+        row(f'  {kind}', lambda r, k=kind: mean([x.get('kills', {}).get(k, 0) for x in r]), '{:.2f}')
+
     section('Loot dropped per game')
     sources = sorted({s for n in names for x in results[n]['runs'] for s in x['drops_by_source']})
     for source in sources:

@@ -3,10 +3,11 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, events
+from src.engine import clock, enemy_stats, events
 from src.engine.birds import check_pending_transforms
 from src.engine.logic.flowers import maybe_add_flower_to_obstacle
 from src.engine.logic.helpers import get_obstacle_lanes
+from src.engine.notifications import notify
 from src.entities.sprites import (
     OBSTACLE_SPRITE_T1,
     ORANGE,
@@ -119,21 +120,17 @@ def spawn_obstacle():
     obstacle_id = state.enemies.obstacle_id_counter
     state.enemies.obstacle_id_counter += 1
 
-    state.enemies.spawn_queue.append(
-        {
-            'type': 'obstacle',
-            'data': {
-                'id': obstacle_id,
-                'lane': lane,
-                'y_pos': start_y,
-                'tier': tier,
-                'hp': hp,
-                'sprite_width': sprite_width,
-                'sprite': sprite,  # Sprite specifica (variante + flip)
-                'flipped': flipped,
-            },
-        }
-    )
+    obstacle = {
+        'id': obstacle_id,
+        'lane': lane,
+        'y_pos': start_y,
+        'tier': tier,
+        'hp': hp,
+        'sprite_width': sprite_width,
+        'sprite': sprite,  # Sprite specifica (variante + flip)
+        'flipped': flipped,
+    }
+    state.enemies.spawn_queue.append({'type': 'obstacle', 'data': enemy_stats.equip_obstacle(obstacle)})
 
 
 def spawn_bat():
@@ -390,6 +387,7 @@ def spawn_bat():
         all_spells = ['silence', 'repugnant_wind', 'exile']
         bat_data['known_spells'] = all_spells[:num_spells]
 
+    enemy_stats.equip_bat(bat_data, enemy_stats.roll_elite())
     state.enemies.spawn_queue.append({'type': 'bat', 'data': bat_data})
 
 
@@ -412,6 +410,8 @@ def process_spawn_queue():
             save_manager.discover_obstacle(tier_names.get(tier, 'TREE'))
         elif item['type'] == 'bat':
             state.enemies.bats.append(item['data'])
+            if item['data'].get('elite'):
+                notify(enemy_stats.affix_names(item['data']['affixes']) + ' bat', title='Elite!')
             # Track bat discovery by tier
             tier = item['data'].get('tier', 1)
             tier_names = {1: 'BASIC', 2: 'FAST', 3: 'DIVE', 4: 'BOSS'}

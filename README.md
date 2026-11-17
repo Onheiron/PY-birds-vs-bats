@@ -104,6 +104,9 @@ Distance does not advance while a boss is alive.
 - **Obstacles** scroll down in four tiers; tier 3+ obstacles can hide mini bats
   and jumpscare bats, swamp obstacles grow flowers, cave portals teleport birds.
 - **Bats** come in tiers with special kinds: armored, divers, spellcasters.
+  From the second biome some are **elites** (gold, marked ♦): tougher, with
+  one or two affixes (Swift, Regenerating, Terrifying...) and better drops.
+  Enemy stats and affixes are listed in `docs/stats.md`.
 - **Loot** falls from defeated enemies in six rarities: eggs, plus the
   power-ups Wide Cursor, Tailwind and Timelapse, each in up to four strengths.
 

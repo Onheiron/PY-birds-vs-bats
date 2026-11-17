@@ -15,6 +15,7 @@ from src.entities.sprites import (
     DIVER_BAT_STUNNED,
     FLOWER_COLORS,
     FLOWER_GROWTH_FRAMES,
+    GOLD,
     GREEN,
     JUMPSCARE_BAT_FRAME_1,
     JUMPSCARE_BAT_FRAME_2,
@@ -39,6 +40,9 @@ from src.entities.sprites import (
 )
 from src.ui.colors import apply_bold, color_from_hp, color_from_hp_to_red, dim_ansi_color, get_biome_obstacle_color
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
+
+# Elite bats: a golden body that reddens with damage, and a diamond above them
+ELITE_RGB = (255, 190, 40)
 
 
 def draw_obstacles(fb):
@@ -184,7 +188,8 @@ def draw_bats(fb):
         spell_state = bat.get('spell_state', 'idle')
 
         # Apply bold modifier for foreground game elements
-        bat_color = apply_bold(color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max))
+        base_rgb = ELITE_RGB if bat.get('elite') else constants.colors.bats_base_rgb
+        bat_color = apply_bold(color_from_hp(base_rgb, bat_hp, bat_max))
 
         # Choose sprite based on bat type and state
         if is_spellcaster:
@@ -238,6 +243,9 @@ def draw_bats(fb):
         if 0 <= indicator_y < constants.layout.height:
             indicator_x = bat['x_pos'] + 3  # Center above bat
             indicators = []
+            # ELITE: a diamond (gold)
+            if bat.get('elite'):
+                indicators.append(('♦', GOLD))
             # FROZEN: snowflake (cyan) - ❄ or *
             if bat_id in state.special.frozen_enemies:
                 indicators.append(('*', CYAN))

@@ -33,9 +33,6 @@
             "movement_range_mult": {
               "type": "number"
             },
-            "movement_speed_mult": {
-              "type": "number"
-            },
             "scare_bonus_duration": {
               "type": "number"
             },
@@ -1252,6 +1249,213 @@
                   "type": "number"
                 }
               },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "elites": {
+      "properties": {
+        "affix_count_by_biome": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "affixes": {
+          "properties": {
+            "bountiful": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "stats": {
+                  "properties": {
+                    "loot_rarity_bonus": {
+                      "type": "number"
+                    },
+                    "xp_mult": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "hulking": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "stats": {
+                  "properties": {
+                    "damage_taken": {
+                      "type": "number"
+                    },
+                    "hp_mult": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "ironclad": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "stats": {
+                  "properties": {
+                    "armor": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "regenerating": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "stats": {
+                  "properties": {
+                    "regen": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "swift": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "stats": {
+                  "properties": {
+                    "speed": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "terrifying": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "stats": {
+                  "properties": {
+                    "fear_radius": {
+                      "type": "number"
+                    },
+                    "fear_strength": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "warded": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "stats": {
+                  "properties": {
+                    "projectile_defense": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "chance_by_biome": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "stats": {
+          "properties": {
+            "hp_mult": {
+              "type": "number"
+            },
+            "loot_rarity_bonus": {
+              "type": "number"
+            },
+            "score_mult": {
+              "type": "number"
+            },
+            "xp_mult": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "enemy_stats": {
+      "properties": {
+        "bats": {
+          "properties": {
+            "defaults": {
+              "properties": {},
+              "type": "object"
+            },
+            "kinds": {
+              "properties": {
+                "armored": {
+                  "properties": {
+                    "descent_interval": {
+                      "type": "number"
+                    },
+                    "speed": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "tiers": {
+              "properties": {},
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "obstacles": {
+          "properties": {
+            "defaults": {
+              "properties": {},
+              "type": "object"
+            },
+            "tiers": {
+              "properties": {},
               "type": "object"
             }
           },
