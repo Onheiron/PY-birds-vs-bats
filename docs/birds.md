@@ -10,10 +10,11 @@ What every bird does, read from the code (not from the descriptions in
   floor is lost (one life). Birds only collide with enemies while rising.
 - **Power:** UP on a rising bird fires its power, once per ascent; birds at
   grade A1 and above can fire it twice.
-- **Damage on contact:** `round(((gear − 3) × 0.1 + DMG) × SPD)`, with DMG and
-  SPD from `birds.damage` / `birds.speed`, then scaled by the bird's attack
-  stats (all neutral today, see `docs/stats.md`).
-- **Score:** every time a bird moves it scores `speed × type multiplier ×
+- **Damage on contact:** `round(((gear − 3) + damage) × speed/10)`, then scaled
+  by the bird's attack stats (crit, bonus against bats / obstacles / elites,
+  armor pierce...). Speed and damage are on a ×10 scale, like enemy HP. Every
+  bird's full sheet is in `docs/stats.md`.
+- **Score:** every time a bird moves it scores `speed points × type multiplier ×
   grade multiplier (1.0 D … 2.0 S)`, then × the flock-height multiplier
   (0.5–2.0), × the level multiplier (1.0 at 1-1 … 2.7 at 6-3), × prestige.
 - **Grades:** XP from hits and kills raises the grade D → C1 → C2 → B1 → B2 →
@@ -28,25 +29,25 @@ What every bird does, read from the code (not from the descriptions in
 
 | Bird | Speed | DMG | Power (UP while rising) | Always | Prestige | Egg drops today |
 |---|:-:|:-:|---|---|:-:|:-:|
-| **Yellow** | 2 | 1 | Neighbours (±1 lane) that are falling: Yellow and Patchwork are bounced, any other bird is slowed for 3 s | — | 0 | yes |
-| **Red** | 3 | 1 | Fires a projectile up its lane: damage 1, +1 for every neighbour that is a rising Red, Purple or Patchwork | — | 0 | yes |
-| **Blue** | 4 | 1 | Sprint for 3 s: +1 speed while rising and +1 speed in its damage | — | 0 | yes |
-| **Patchwork** | 3 | 1 | none of its own | Counts as Yellow for the Yellow chain and as Red for the Red bonus; drawn in random colours | 0 | yes |
-| **Purple** | 3 | 1 | Charged shot: the bird stops and charges while UP keeps being pressed, then fires on release; 1 / 4 / 16 / 64 damage after 0 / 1 / 2 / 3 s (fires by itself at 3 s) | Can be bounced while scared | +1 | yes |
-| **Clockwork** | 2 | 1 | +1 charge (max 3); its speed equals its charge | Bounces by itself at the starting line while charged; starts with 2, loses 1 every 30 s; at 0 it drops at top speed (a bounce gives 1 back) | +2 | no |
-| **White** ("Templar") | 4 | 2 | Within ±2 lanes: bounces falling birds (not scared or stunned ones) and fires the powers of rising Yellow, Red and Blue birds | ×1.5 score; unique | +3 | yes |
-| **Orange** ("Phoenix") | 5 | 999 | none | Kills any enemy in one hit; at the ceiling it turns into a dormant egg in its lane (and drops an orange egg); UP on its lane has a 10% chance to wake it; an obstacle crushes the dormant egg (bird lost); never dies at the floor; ×0.5 score; unique | +3 | yes |
-| **Gold** | 5–6 | 0 | none | Scores a flat 100 per move instead of the usual formula; DMG 0, so it barely hurts enemies; unique | +3 | yes |
-| **Cookie** | 3 | 1 | Drops a crumb worth 75% of its XP for another bird to pick up; dies after its 5th crumb | Earns 1.5× XP; cannot pick crumbs up itself | +2 | no |
-| **Stealth** | 3 | 8 | Turns solid for 3 s: speed 6, +4 damage, bats cannot scare it | Otherwise passes through enemies, obstacles and loot (and cannot collect loot); ×1.2 score | +2 | no |
-| **Dinosaur** | 4 | 5 | none | Needs 15 presses to bounce (every 3rd press slows its fall); 3 rows tall, so a bigger target; ×2 score | +4 | yes |
-| **Glitch** | 3 | 1 | none | Random speed 1–6 every tick and damage ×1–8; random prestige 1–7; each tick small chances to flip direction (0.3%), swap lanes with another bird (0.3%), nudge your cursor (0.2%) or copy itself into a random lane (0.2%, replacing that bird or reviving an empty slot); ignores 2% of bounces; survives the floor 10% of the time; ignores 5% of loot and upgrades 10% of what it collects | random | yes |
-| **Rainbow** | 6 | 3 | none | Wraps from the floor to the ceiling instead of dying while it has charge; charge 100, −5 per second; every UP on its lane has a 25% chance of +25; dies at 0 | +5 | no |
-| **Twister** | 4 | 5 | Tailwind for 2 s on its lane and both neighbours: +2 speed rising, −1 falling | — | +2 | no |
-| **Frosty** | 3 | 3 | For 2 s its freeze chance becomes 60% | Hitting a bat: 30% chance to freeze it for 3 s (−2 armor); 10% on bosses | +1 | no |
-| **Poison** | 3 | 3 | For 2 s its poison chance becomes 60% | Hitting a bat: 30% chance to poison it, 2 HP/s for 5 s | +1 | no |
-| **Berserk** | 3 | 4 | For 2 s its bleed chance becomes 60% | Hitting a bat: 30% chance to make it bleed, 1 HP/s for 10 s (−1 armor) | +1 | no |
-| **Rock** | 2 | 3 | For 3 s: pushes 2 rows and speed 3 | Hitting a bat pushes it up 1 row | +1 | no |
+| **Yellow** | 21 | 9 | Neighbours (±1 lane) that are falling: Yellow and Patchwork are bounced, any other bird is slowed for 3 s | — | 0 | yes |
+| **Red** | 30 | 11 | Fires a projectile up its lane: damage 10, +10 for every neighbour that is a rising Red, Purple or Patchwork | — | 0 | yes |
+| **Blue** | 42 | 10 | Sprint for 3 s: +10 speed while rising and +10 speed in its damage | — | 0 | yes |
+| **Patchwork** | 30 | 10 | none of its own | Counts as Yellow for the Yellow chain and as Red for the Red bonus; drawn in random colours | 0 | yes |
+| **Purple** | 28 | 10 | Charged shot: the bird stops and charges while UP keeps being pressed, then fires on release; 10 / 40 / 160 / 640 damage after 0 / 1 / 2 / 3 s (fires by itself at 3 s) | Can be bounced while scared | +1 | yes |
+| **Clockwork** | 20 | 11 | +1 charge (max 3); its speed equals its charge | Bounces by itself at the starting line while charged; starts with 2, loses 1 every 30 s; at 0 it drops at top speed (a bounce gives 1 back) | +2 | no |
+| **White** ("Templar") | 40 | 20 | Within ±2 lanes: bounces falling birds (not scared or stunned ones) and fires the powers of rising Yellow, Red and Blue birds | ×1.5 score; unique | +3 | yes |
+| **Orange** ("Phoenix") | 50 | 999 | none | Kills any enemy in one hit; at the ceiling it turns into a dormant egg in its lane (and drops an orange egg); UP on its lane has a 10% chance to wake it; an obstacle crushes the dormant egg (bird lost); never dies at the floor; ×0.5 score; unique | +3 | yes |
+| **Gold** | 58 | 2 | none | Scores a flat 100 per move instead of the usual formula; damage 2, so it barely hurts enemies; unique | +3 | yes |
+| **Cookie** | 29 | 9 | Drops a crumb worth 75% of its XP for another bird to pick up; dies after its 5th crumb | Earns 1.5× XP; cannot pick crumbs up itself | +2 | no |
+| **Stealth** | 31 | 75 | Turns solid for 3 s: speed 60, +40 damage, bats cannot scare it | Otherwise passes through enemies, obstacles and loot (and cannot collect loot); ×1.2 score | +2 | no |
+| **Dinosaur** | 38 | 50 | none | Needs 15 presses to bounce (every 3rd press slows its fall); 3 rows tall, so a bigger target; ×2 score | +4 | yes |
+| **Glitch** | 30 | 10 | none | Random speed 10–60 every tick and damage ×1–8; random prestige 1–7; each tick small chances to flip direction (0.3%), swap lanes with another bird (0.3%), nudge your cursor (0.2%) or copy itself into a random lane (0.2%, replacing that bird or reviving an empty slot); ignores 2% of bounces; survives the floor 10% of the time; ignores 5% of loot and upgrades 10% of what it collects | random | yes |
+| **Rainbow** | 60 | 30 | none | Wraps from the floor to the ceiling instead of dying while it has charge; charge 100, −5 per second; every UP on its lane has a 25% chance of +25; dies at 0 | +5 | no |
+| **Twister** | 40 | 45 | Tailwind for 2 s on its lane and both neighbours: +20 speed rising, −10 falling | — | +2 | no |
+| **Frosty** | 29 | 28 | For 2 s its freeze chance becomes 60% | Hitting a bat: 30% chance to freeze it for 3 s (−20 armor); 10% on bosses | +1 | no |
+| **Poison** | 31 | 27 | For 2 s its poison chance becomes 60% | Hitting a bat: 30% chance to poison it, 20 HP/s for 5 s | +1 | no |
+| **Berserk** | 32 | 40 | For 2 s its bleed chance becomes 60% | Hitting a bat: 30% chance to make it bleed, 10 HP/s for 10 s (−10 armor) | +1 | no |
+| **Rock** | 19 | 31 | For 3 s: pushes 2 rows and speed 30 | Hitting a bat pushes it up 1 row | +1 | no |
 
 "Egg drops today": nine eggs can never drop, because the game ignores the egg
 tables in `config.yml` (see `docs/unused-mechanics.md`). Those birds can only
@@ -72,8 +73,6 @@ appear by changing the starting flock (`birds.default_formation`).
 
 ## Inconsistencies spotted while writing this
 
-- Gold moves at speed 5 when it evolves from a Yellow or starts in the flock,
-  and at 6 when it hatches or evolves after waiting.
 - The Yellow power has a Glitch check that can never be true (it only looks
   at Yellow and Patchwork neighbours).
 - The in-game Bird-Dex lists 13 birds (no Rainbow, Twister, Frosty, Poison,

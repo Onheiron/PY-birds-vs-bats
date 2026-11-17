@@ -1,6 +1,7 @@
 """Header, starting line, centre of mass, floor, cursor and footer."""
 
 from src.core import constants, state
+from src.engine import stats
 from src.engine.birds import get_affected_lanes
 from src.engine.grades import compute_grade_from_xp
 from src.engine.progression import compute_prestige
@@ -186,8 +187,8 @@ def draw_center_of_mass(fb):
         if bird_y >= constants.layout.height:
             continue
 
-        bird_speed = state.birds.speeds[i]
-        weight = max(1, bird_speed)  # Minimum weight of 1
+        # Same weighting as the score's centre of mass
+        weight = max(1, state.birds.speeds[i]) * stats.bird(i, 'weight')
 
         weighted_sum += bird_y * weight
         total_weight += weight

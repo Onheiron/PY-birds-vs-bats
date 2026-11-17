@@ -5,7 +5,7 @@ import random
 from src.core import constants, state
 from src.engine import stats
 from src.engine.grades import compute_grade_from_xp
-from src.entities.bird_types import get_bird_type_by_color
+from src.entities.bird_types import get_bird_type_by_color, get_default_speed
 from src.entities.sprites import (
     BLUE,
     GOLD,
@@ -112,13 +112,13 @@ def transform_bird_to_s(bi):
 
     if old == BLUE:
         target_color = WHITE
-        target_speed = 4
+        target_speed = get_default_speed('WHITE')
     elif old == RED:
         target_color = ORANGE
-        target_speed = 5
+        target_speed = get_default_speed('ORANGE')
     elif old == YELLOW:
         target_color = GOLD
-        target_speed = 5
+        target_speed = get_default_speed('GOLD')
 
     if target_color is None:
         state.birds.transformed[bi] = True
@@ -159,14 +159,7 @@ def check_pending_transforms(dead_bird_color):
             continue
         if state.birds.pending_transform[bi] == dead_bird_color:
             # This bird was waiting - transform it now!
-            if dead_bird_color == WHITE:
-                target_speed = 4
-            elif dead_bird_color == ORANGE:
-                target_speed = 5
-            elif dead_bird_color == GOLD:
-                target_speed = 6
-            else:
-                target_speed = None
+            target_speed = get_default_speed(get_bird_type_by_color(dead_bird_color))
 
             state.birds.colors[bi] = dead_bird_color
             if target_speed:

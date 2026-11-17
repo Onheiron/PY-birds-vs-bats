@@ -369,7 +369,7 @@ def init(seed=None):
     formation += [BirdType.YELLOW] * (num_birds - len(formation))
 
     birds.colors = [get_color_for_bird_type(bird_type) for bird_type in formation]
-    birds.speeds = [int(get_default_speed(bird_type)) for bird_type in formation]
+    birds.speeds = [get_default_speed(bird_type) for bird_type in formation]
 
     # Randomize which bird goes to which lane
     birds.random_lanes = list(range(layout.num_lanes))

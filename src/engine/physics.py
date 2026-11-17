@@ -81,11 +81,11 @@ def update_bird_positions():
 
         # Stat bonuses: rising / falling speed, and the sprint after a bounce
         if state.birds.vy[i] == -1:
-            current_speed += stats.bird(i, 'rise_speed_bonus')
+            current_speed += stats.bird(i, 'rise_speed_bonus') / 10
             if state.special.sprint_until.get(i, 0) > clock.now():
-                current_speed += stats.bird(i, 'bounce_sprint')
+                current_speed += stats.bird(i, 'bounce_sprint') / 10
         else:
-            current_speed += stats.bird(i, 'fall_speed_bonus')
+            current_speed += stats.bird(i, 'fall_speed_bonus') / 10
 
         # Apply speed boosts
         if i in state.special.speed_boosts:

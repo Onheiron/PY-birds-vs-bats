@@ -6,7 +6,7 @@ from src.core import constants, state
 from src.engine import bird_kinds, enemy_stats
 from src.engine.birds import scare_bird, set_ball_vy, stun_bird
 from src.engine.logic.damage import calculate_bird_damage, handle_mini_bat_death
-from src.engine.progression import award_xp
+from src.engine.progression import award_damage_xp
 from src.entities.sprites import ORANGE
 from src.services.sound import play_sfx
 
@@ -55,7 +55,7 @@ def spawn_mini_bat_from_obstacle(obstacle):
         'visited_obstacles': {obs_id} if obs_id is not None else set(),  # Track visited obstacles
     }
 
-    state.enemies.mini_bats.append(mini_bat)
+    state.enemies.mini_bats.append(enemy_stats.equip_bat(mini_bat))
 
 
 def spawn_jumpscare_bat_from_obstacle(obstacle):
@@ -96,7 +96,7 @@ def spawn_jumpscare_bat_from_obstacle(obstacle):
     }
 
     # Add to mini_bats list (reuses existing system)
-    state.enemies.mini_bats.append(jumpscare_bat)
+    state.enemies.mini_bats.append(enemy_stats.equip_bat(jumpscare_bat))
 
 
 def activate_jumpscare_scary_face(jumpscare_bat):
@@ -121,7 +121,7 @@ def activate_jumpscare_scary_face(jumpscare_bat):
             continue
         bird_lane = state.birds.random_lanes[i]
         if min_lane <= bird_lane <= max_lane:
-            scare_bird(i, fear_duration)
+            scare_bird(i, fear_duration * enemy_stats.get(jumpscare_bat, 'fear_strength'))
 
     # Set scary face timer on bat
     scary_face_duration = getattr(jumpscare_cfg, 'scary_face_duration', 0.5) if jumpscare_cfg else 0.5
@@ -350,8 +350,6 @@ def check_bird_mini_bat_collision():
         if state.special.purple_state[i] == 2 or state.special.purple_just_fired_frames[i] > 0:
             continue
 
-        bird_lane = state.birds.random_lanes[i]
-        bird_lane_x = constants.layout.lane_positions[bird_lane]
         bird_color = state.birds.colors[i]
         bird_y = state.birds.y[i]
 
@@ -372,8 +370,7 @@ def check_bird_mini_bat_collision():
             mb_right = mb['x_pos'] + mb_width // 2
             mb_y = mb['y_pos']
 
-            lane_left = bird_lane_x - 2
-            lane_right = bird_lane_x + 2
+            lane_left, lane_right = bird_kinds.hit_span(i)
 
             horizontal_overlap = not (mb_right < lane_left or mb_left > lane_right)
             vertical_overlap = not (bird_y + bird_height < mb_y or bird_y > mb_y)
@@ -389,7 +386,7 @@ def check_bird_mini_bat_collision():
             else:
                 damage = enemy_stats.mitigate(mb, damage, 'contact', bird=i)
                 mb['hp'] -= damage
-                award_xp(i, damage)
+                award_damage_xp(i, damage)
 
             if mb['hp'] <= 0:
                 # Mini bat destroyed - use same logic as regular bats

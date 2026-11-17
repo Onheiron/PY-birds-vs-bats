@@ -10,7 +10,7 @@ from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect
 from src.engine.logic.helpers import get_obstacle_lanes
 from src.engine.logic.mini_bats import handle_obstacle_destroyed, try_spawn_mini_bat_on_hit
-from src.engine.progression import add_score, award_xp
+from src.engine.progression import add_score, award_damage_xp, award_xp
 from src.entities.sprites import (
     BERSERK,
     BLUE,
@@ -151,7 +151,7 @@ def check_bird_obstacle_collision():
         for obs in state.enemies.obstacles[:]:
             # Check if bird lane is within obstacle's lanes
             obs_lanes = get_obstacle_lanes(obs)
-            if bird_lane not in obs_lanes:
+            if bird_lane not in obs_lanes and not obs_lanes.intersection(bird_kinds.covered_lanes(i)):
                 continue
 
             # Check vertical proximity (consider sprite height)
@@ -173,7 +173,7 @@ def check_bird_obstacle_collision():
                 obs['hp'] = 0
             else:
                 obs['hp'] -= enemy_stats.mitigate(obs, damage, 'contact', bird=i)
-                award_xp(i, damage)
+                award_damage_xp(i, damage)
                 # Also damage flower if present
                 if flower and flower.get('active') and flower.get('hp', 0) > 0:
                     flower['hp'] -= damage
@@ -212,8 +212,6 @@ def check_bird_bat_collision():
         if state.special.purple_state[i] == 2 or state.special.purple_just_fired_frames[i] > 0:
             continue
 
-        bird_lane = state.birds.random_lanes[i]
-        bird_lane_x = constants.layout.lane_positions[bird_lane]
         bird_color = state.birds.colors[i]
         next_y = state.birds.y[i]
 
@@ -229,8 +227,7 @@ def check_bird_bat_collision():
             bat_top = bat['y_pos']
             bat_bottom = bat['y_pos'] + 1
 
-            lane_left = bird_lane_x - 2
-            lane_right = bird_lane_x + 2
+            lane_left, lane_right = bird_kinds.hit_span(i)
 
             horizontal_overlap = not (bat_right < lane_left or bat_left > lane_right)
             vertical_overlap = not (next_y + bird_height < bat_top or next_y > bat_bottom)
@@ -249,7 +246,7 @@ def check_bird_bat_collision():
                 bat['hp'] = 0
             else:
                 bat['hp'] -= damage
-                award_xp(i, damage)
+                award_damage_xp(i, damage)
 
             # Check if diver bat in stunned/returning state (no scare)
             is_diver = bat.get('diver', False)
@@ -413,7 +410,7 @@ def check_projectile_collision():
 
                 owner = proj.get('owner')
                 if owner is not None:
-                    award_xp(owner, damage)
+                    award_damage_xp(owner, damage)
 
                 if bat['hp'] <= 0:
                     handle_bat_death(bat, owner if owner is not None else 0)
@@ -444,7 +441,7 @@ def check_projectile_collision():
 
             owner = proj.get('owner')
             if owner is not None:
-                award_xp(owner, damage)
+                award_damage_xp(owner, damage)
 
             if obs['hp'] <= 0:
                 tier = obs.get('tier', 1)
@@ -486,7 +483,7 @@ def check_projectile_collision():
                     if flower and flower.get('active') and flower.get('hp', 0) > 0:
                         flower['hp'] -= damage
                         if owner is not None:
-                            award_xp(owner, damage)
+                            award_damage_xp(owner, damage)
                         if flower['hp'] <= 0:
                             flower['active'] = False
                             tree_boss_cfg = getattr(constants, 'tree_boss', None)
@@ -497,7 +494,7 @@ def check_projectile_collision():
                         # Damage branch
                         branch['hp'] -= damage
                         if owner is not None:
-                            award_xp(owner, damage)
+                            award_damage_xp(owner, damage)
                         if branch['hp'] <= 0:
                             branch['destroyed'] = True
                             add_score(100)
@@ -540,7 +537,7 @@ def check_projectile_collision():
 
                 boss['hp'] -= damage
                 if owner is not None:
-                    award_xp(owner, damage)
+                    award_damage_xp(owner, damage)
 
                 play_sfx('hit')
 

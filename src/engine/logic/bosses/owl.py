@@ -7,7 +7,7 @@ from src.core import constants, state
 from src.engine import clock, enemy_stats
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
-from src.engine.progression import add_score, award_xp, compute_prestige
+from src.engine.progression import add_score, award_xp, compute_prestige, hp_scale
 from src.entities.sprites import METEOR_LEFT, METEOR_RIGHT, OWL_BOSS_SPELLS, PORTAL_FRAME_1, SWAMP_OBSTACLE_T2
 
 
@@ -262,7 +262,7 @@ def _owl_cast_overgrowth(boss, spells_cfg):
             'type': flower_types[i % len(flower_types)],  # Cycle through colors
             'active': True,
             'frame': 5,  # Fully mature (frame 5 = bloomed)
-            'hp': 20,
+            'hp': 20 * hp_scale(),
             'rel_x': 5,  # Position on sprite
             'rel_y': 0,
         }

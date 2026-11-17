@@ -77,7 +77,8 @@ def test_stats_are_clamped():
 
 def test_damage_follows_attack_stats():
     with Simulation(seed=1, key_rate=0) as sim:
-        state = setup_bird(sim, RED)
+        # Yellow: no critical hits, so damage is deterministic
+        state = setup_bird(sim, YELLOW)
         state.special.scared_birds.pop(0, None)
         state.birds.power_used[0] = False
         plain = calculate_bird_damage(0)
@@ -106,10 +107,11 @@ def test_modifiers_survive_save_and_load(tmp_path, monkeypatch):
     monkeypatch.setattr(save_manager, 'get_save_path', lambda slot: tmp_path / f'slot{slot}.json')
     with Simulation(seed=1, key_rate=0) as sim:
         setup_bird(sim, RED)
+        before = stats.bird(2, 'luck')
         stats.add_modifier(2, 'luck', add=0.5, seconds=100, source='test')
         assert save_manager.save_game(1)
         sim.state.stats.modifiers.clear()
         assert save_manager.load_game(1)
-        assert stats.bird(2, 'luck') == 0.5
+        assert stats.bird(2, 'luck') == before + 0.5
         mod = sim.state.stats.modifiers[0]
         assert mod['target'] == 2 and mod['until'] > clock.now()

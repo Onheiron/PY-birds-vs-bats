@@ -32,48 +32,7 @@ background:
 birds:
   default_formation: [YELLOW, YELLOW, YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE]
   randomize_lanes: true
-  # Base damage (DMG) per bird type - used in damage formula
-  damage:
-    yellow: 1
-    red: 1
-    blue: 1
-    patchwork: 1
-    purple: 1
-    clockwork: 1
-    white: 2
-    orange: 999  # One-hit kill
-    gold: 0
-    cookie: 1
-    stealth: 8
-    dinosaur: 5
-    glitch: 1  # Glitch uses random multiplier
-    rainbow: 3
-    twister: 5
-    frosty: 3
-    poison: 3
-    berserk: 4
-    rock: 3
-  # Base speed (SPD) per bird type
-  speed:
-    yellow: 2
-    red: 3
-    blue: 4
-    patchwork: 3
-    purple: 3
-    clockwork: 2
-    white: 4
-    orange: 5
-    gold: 6
-    cookie: 3
-    stealth: 3
-    dinosaur: 4
-    glitch: 3
-    rainbow: 6
-    twister: 4
-    frosty: 3
-    poison: 3
-    berserk: 3
-    rock: 2
+  # Speed and damage of each bird: bird_stats.types (speed, damage)
 timing:
   base_sleep: 0.2
   # Audio sync interval (frames)
@@ -81,6 +40,8 @@ timing:
 
 # Combat and scoring parameters
 combat:
+  # HP and damage are on a ×10 scale: XP from damage and score from kills divide by this
+  hp_scale: 10
   # Score/XP multipliers for destroying enemies
   obstacle_destroy_xp_per_tier: 5    # XP = tier * this value
   obstacle_destroy_score_per_tier: 50  # Score = tier * this value
@@ -93,9 +54,9 @@ combat:
   # Damage formula: ((gear - gear_offset) * gear_coeff + dmg) * spd
   damage_formula:
     gear_offset: 3
-    gear_coefficient: 0.1
+    gear_coefficient: 1
   # Stealth bird tangible damage boost
-  stealth_tangible_dmg_boost: 4
+  stealth_tangible_dmg_boost: 40
   # Glitch bird random damage multiplier range
   glitch_dmg_multiplier_min: 1
   glitch_dmg_multiplier_max: 8
@@ -157,11 +118,11 @@ eggs:
       rainbow_egg: 100
 bat_enemy:
   hp_by_tier:
-    0: 16      # Mini bat (tier 0) - hides in obstacles
-    1: 24      # era 16 (+50%)
-    2: 48      # era 32 (+50%)
-    3: 96      # era 64 (+50%)
-    4: 192     # era 128 (+50%)
+    0: 160      # Mini bat (tier 0) - hides in obstacles
+    1: 240
+    2: 480
+    3: 960
+    4: 1920
   loot_base_weights:
     0: [80, 15, 5, 0]   # Mini bat - mostly common loot
     1: [60, 25, 10, 5]
@@ -195,9 +156,9 @@ bat_enemy:
     movement_range_mult: 0.7       # Move 30% less distance
     # Damage reduction per tier (subtracted from damage)
     damage_reduction_by_tier:
-      2: 1
-      3: 1
-      4: 2
+      2: 10
+      3: 10
+      4: 20
     # Additional scare effect when hit by armored bat
     scare_speed_bonus: 1           # +1 speed boost
     scare_bonus_duration: 1.0      # 1 second extra
@@ -315,9 +276,9 @@ bat_enemy:
 # Boss configuration - end of biome bosses
 boss:
   # HP for the boss (high HP, requires sustained effort)
-  hp: 100
+  hp: 1000
   # Armor reduction (subtracted from each hit)
-  armor_reduction: 1
+  armor_reduction: 10
   # Scream attack settings
   scream:
     probability_per_second: 0.15    # Chance per second to scream
@@ -336,7 +297,7 @@ boss:
   boss_levels: [3, 6, 9, 12, 15, 18]  # 1-3, 2-3, 3-3, 4-3, 5-3, 6-3
   # Boss corpse obstacle settings (after death, becomes falling obstacle)
   corpse:
-    hp: 64                          # HP for the falling dead boss
+    hp: 640                          # HP for the falling dead boss
   # Loot settings (drops when boss dies)
   loot:
     count: 3                        # Number of items to drop
@@ -346,8 +307,8 @@ boss:
 wind_boss:
   level: 6                          # Which level this boss appears (2-3 = level 6)
   spawn_miles_before_transition: 1  # Spawn 1 mile before level end
-  hp: 300                           # Slightly more HP than regular boss
-  armor_reduction: 1
+  hp: 3000                           # Slightly more HP than regular boss
+  armor_reduction: 10
   # Animation timing
   anim_frames_per_step: 8           # Frames between animation steps
   # Wind effects - intensity grows each frame
@@ -375,8 +336,8 @@ wind_boss:
 jelly_boss:
   level: 9                            # Which level this boss appears (3-3 = level 9)
   spawn_miles_before_transition: 1    # Spawn 1 mile before level end (like wind boss)
-  hp: 400                             # Higher HP
-  armor_reduction: -1                 # Less armor (takes more damage)
+  hp: 4000                             # Higher HP
+  armor_reduction: -10                 # Less armor (takes more damage)
   # Position - settles at 1/4 from top
   target_y_fraction: 0.25             # Fraction of screen height from top
   # Animation timing (10 frames, 1 fps = 10 seconds per cycle)
@@ -394,7 +355,7 @@ jelly_boss:
   xp: 150
   # Corpse settings
   corpse:
-    hp: 80
+    hp: 800
 
 # Tree Boss configuration - boss for level 4-3 (Dark Swamp)
 # Giant tree spanning entire screen with tangible branches
@@ -405,7 +366,7 @@ tree_boss:
 
   # Branch settings (5 foreground tangible branches)
   branches:
-    base_hp: 30                       # HP per branch
+    base_hp: 300                       # HP per branch
     # Positions as fractions of screen (x_frac, y_frac from top-left)
     # y_frac max 0.45 to keep branches in upper half of screen
     positions:
@@ -425,7 +386,7 @@ tree_boss:
   # Flower settings (grow on branches)
   flowers:
     grow_interval: 2.0                # Seconds per growth frame (6 frames = 12s to mature)
-    hp: 30                            # Flower HP (destroyed before branch takes damage)
+    hp: 300                            # Flower HP (destroyed before branch takes damage)
     respawn_delay: 2.0                # Seconds before new flower starts growing
 
     # Red flower: BLEED effect - countdown timer, each UP press costs a life
@@ -470,8 +431,8 @@ swamp_flowers:
 owl_boss:
   level: 15                           # Which level this boss appears (5-3 = level 15)
   spawn_miles_before_transition: 3    # Spawn 3 miles before level end
-  hp: 500                             # High HP
-  armor_reduction: 1                  # Standard armor
+  hp: 5000                             # High HP
+  armor_reduction: 10                  # Standard armor
 
   # Position - settles at 1/6 from top (very high on screen)
   target_y_fraction: 0.15             # Fraction of screen height from top
@@ -490,7 +451,7 @@ owl_boss:
   spells:
     overgrowth:
       tree_count: 5                   # Number of tree obstacles to conjure
-      tree_hp: 40                     # HP of conjured trees
+      tree_hp: 400                     # HP of conjured trees
 
     terror:
       # Swaps all birds, filling outer lanes first, center lanes last
@@ -521,7 +482,7 @@ owl_boss:
     meteor_shower:
       meteor_count: 4                 # Number of meteors (2 left, 2 right of boss)
       meteor_width: 6                 # Width in characters (2 lanes)
-      meteor_hp: 30                   # HP per meteor
+      meteor_hp: 300                   # HP per meteor
       speed_multiplier: 1.5           # 1.5x obstacle speed
       spawn_offset: 2                 # Lanes offset from boss center
 
@@ -531,23 +492,23 @@ owl_boss:
 
   # Corpse settings
   corpse:
-    hp: 100
+    hp: 1000
 
 obstacle:
   # Base HP per tier (before level scaling)
   hp_by_tier:
-    1: 5
-    2: 8
-    3: 16
-    4: 32
+    1: 50
+    2: 80
+    3: 160
+    4: 320
   # HP scaling with level: hp = base_hp * (1 + (level-1) * level_hp_multiplier)
   level_hp_multiplier: 0.1
   # Legacy max_hp_by_tier for render color calculation
   max_hp_by_tier:
-    1: 4
-    2: 6
-    3: 12
-    4: 27
+    1: 40
+    2: 60
+    3: 120
+    4: 270
   spawning:
     # Spawn rate formula: biome_base * (biome_decay ^ level_group) * (sublevel_decay ^ (sub_level-1))
     biome_base: 40           # Base spawn rate
@@ -624,20 +585,20 @@ frosty:
   boost_duration: 2.0         # Power boost lasts 2s
   freeze_duration: 3.0        # Frozen enemies stay frozen 3s
   boss_chance: 0.10           # 10% chance on bosses
-  armor_reduction: 2          # Frozen enemies take +2 damage
+  armor_reduction: 20          # Frozen enemies lose 20 armor
 
 poison:
   boosted_chance: 0.60
   boost_duration: 2.0
   effect_duration: 5.0        # Poison lasts 5s
-  damage_per_second: 2        # 2 HP per second
+  damage_per_second: 20        # HP per second
 
 berserk:
   boosted_chance: 0.60
   boost_duration: 2.0
   effect_duration: 10.0       # Bleed lasts 10s
-  damage_per_second: 1        # 1 HP per second
-  armor_reduction: 1          # -1 armor while bleeding
+  damage_per_second: 10        # HP per second
+  armor_reduction: 10          # armor lost while bleeding
 
 rock:
   boosted_push_rows: 2        # Push when power active
@@ -735,22 +696,46 @@ colors:
 bird_stats:
   # Override a default for every bird, e.g. pickup_radius: 3
   defaults: {}
+  # Every bird's sheet. Scale: speed 10 = 1 cell every 5 ticks, 50+ = every
+  # tick (old speed points × 10); damage and enemy HP are × combat.hp_scale.
+  # Speed bonuses (rise / fall / sprint) use the same ×10 scale.
   types:
-    PURPLE:    {prestige: 1}
-    CLOCKWORK: {prestige: 2}
-    WHITE:     {prestige: 3, score_mult: 1.5}
-    ORANGE:    {prestige: 3, score_mult: 0.5}
-    GOLD:      {prestige: 3, score_mult: 10.0}    # Gold scores a flat amount (loot.gold_bird_score_per_tick)
-    COOKIE:    {prestige: 2, xp_gain: 1.5}
-    STEALTH:   {prestige: 2, score_mult: 1.2}
-    DINOSAUR:  {prestige: 4, score_mult: 2.0, presses_to_bounce: 15, hitbox_height: 3}
-    GLITCH:    {floor_save: 0.1, luck: 0.1}       # Glitch prestige is random (1-7)
-    RAINBOW:   {prestige: 5}
-    TWISTER:   {prestige: 2}
-    FROSTY:    {prestige: 1, affliction_chance: 0.3}
-    POISON:    {prestige: 1, affliction_chance: 0.3}
-    BERSERK:   {prestige: 1, affliction_chance: 0.3}
-    ROCK:      {prestige: 1, knockback: 1}
+    YELLOW:    {speed: 21, damage: 9,  fall_speed_bonus: -2, fear_resist: 0.3, fear_duration_mult: 0.8,
+                pickup_radius: 3, luck: 0.05, xp_gain: 1.1, weight: 1.0}
+    RED:       {speed: 30, damage: 11, crit_chance: 0.12, crit_damage: 2.2, vs_obstacles: 0.25,
+                armor_pierce: 3, fear_duration_mult: 1.0, weight: 1.1}
+    BLUE:      {speed: 42, damage: 10, fall_speed_bonus: 5, bounce_sprint: 8, bounce_sprint_seconds: 0.6,
+                crit_chance: 0.05, vs_bats: 0.1, fear_duration_mult: 1.3, weight: 0.8}
+    PATCHWORK: {speed: 30, damage: 10, luck: 0.05, fear_resist: 0.1, xp_gain: 1.2, weight: 1.0}
+    PURPLE:    {speed: 28, damage: 10, power_potency: 1.1, crit_chance: 0.05, fear_resist: 0.2,
+                prestige: 1, weight: 1.1}
+    CLOCKWORK: {speed: 20, damage: 11, armor_pierce: 3, impact_stun: 0.7, fear_immunity: 0.15,
+                prestige: 2, weight: 1.3}
+    WHITE:     {speed: 40, damage: 20, power_duration: 1.2, fear_resist: 0.4, vs_elites: 0.2,
+                pickup_radius: 3, prestige: 3, score_mult: 1.5, weight: 1.2}
+    ORANGE:    {speed: 50, damage: 999, fear_immunity: 0.5, impact_stun: 0, prestige: 3, score_mult: 0.5}
+    GOLD:      {speed: 58, damage: 2, luck: 0.15, pickup_radius: 4, prestige: 3, score_mult: 10.0,
+                weight: 0.7}   # Gold scores a flat amount (loot.gold_bird_score_per_tick)
+    COOKIE:    {speed: 29, damage: 9, xp_gain: 1.5, pickup_radius: 3, fear_duration_mult: 1.1, prestige: 2}
+    STEALTH:   {speed: 31, damage: 75, crit_chance: 0.2, crit_damage: 2.5, armor_pierce: 5, vs_elites: 0.3,
+                prestige: 2, score_mult: 1.2, weight: 0.9}
+    DINOSAUR:  {speed: 38, damage: 50, fall_speed_bonus: 6, presses_to_bounce: 15, hitbox_height: 3,
+                hitbox_width: 9, weight: 2.5, impact_stun: 0.5, fear_immunity: 0.4, vs_obstacles: 0.4,
+                knockback: 1, prestige: 4, score_mult: 2.0}
+    GLITCH:    {speed: 30, damage: 10, crit_chance: 0.1, crit_damage: 3.0, floor_save: 0.1, luck: 0.1}
+               # Glitch speed (1-6 points), damage (×1-8) and prestige (1-7) are random
+    RAINBOW:   {speed: 60, damage: 30, fear_resist: 0.3, luck: 0.1, pickup_radius: 3, prestige: 5,
+                score_mult: 1.3}
+    TWISTER:   {speed: 40, damage: 45, rise_speed_bonus: 5, fall_speed_bonus: -5, knockback: 1,
+                fear_resist: 0.2, prestige: 2, weight: 0.9}
+    FROSTY:    {speed: 29, damage: 28, affliction_chance: 0.3, vs_elites: 0.1, fear_duration_mult: 0.9,
+                impact_stun: 0.8, prestige: 1}
+    POISON:    {speed: 31, damage: 27, affliction_chance: 0.3, crit_chance: 0.05, power_duration: 1.1,
+                prestige: 1}
+    BERSERK:   {speed: 32, damage: 40, affliction_chance: 0.3, crit_chance: 0.15, fear_immunity: 0.25,
+                impact_stun: 1.3, prestige: 1}
+    ROCK:      {speed: 19, damage: 31, fall_speed_bonus: 3, knockback: 1, armor_pierce: 4, weight: 2.0,
+                impact_stun: 0.6, fear_resist: 0.3, prestige: 1}
   # Bonus a bird has from each grade on (a higher grade replaces the value of a
   # lower one for the same stat). Per-type growth goes in type_growth, keyed
   # TYPE_GRADE, e.g. RED_A1: {damage_bonus: 1}.
@@ -775,12 +760,26 @@ bird_stats:
 enemy_stats:
   bats:
     defaults: {}
-    tiers: {}
+    # Tier 0 = mini bats (hidden in obstacles, jumpscares)
+    tiers:
+      0: {defense: 0, fear_strength: 1.2}             # jumpscares are scarier
+      1: {}
+      2: {defense: 1, fear_strength: 1.1}
+      3: {defense: 2, fear_strength: 1.2, regen: 5}
+      4: {defense: 4, fear_strength: 1.3, regen: 10, speed: 0.9}
     kinds:
-      armored: {speed: 0.6, descent_interval: 1}   # slower, descends every 6 ticks
+      armored:     {hp_mult: 1.3, projectile_defense: -5, speed: 0.6, descent_interval: 1,
+                    fear_strength: 1.2, xp_mult: 1.3, score_mult: 1.3}
+      diver:       {hp_mult: 0.8, contact_defense: -3, speed: 1.3, fear_strength: 1.3, xp_mult: 1.2}
+      spellcaster: {hp_mult: 0.7, projectile_defense: 5, contact_defense: -2, speed: 0.9,
+                    fear_strength: 1.5, fear_radius: 1, xp_mult: 1.4, score_mult: 1.4}
   obstacles:
     defaults: {}
-    tiers: {}
+    tiers:
+      1: {projectile_defense: -3}                     # tree: wood splinters
+      2: {defense: 3, projectile_defense: 3}          # rock
+      3: {damage_taken: 1.2, projectile_defense: 5}   # cloud: soft, but shots pass through
+      4: {armor: 8, defense: 2}                       # barrier
 
 # =============================================================================
 # ELITE BATS
@@ -793,10 +792,10 @@ elites:
   affix_count_by_biome: [1, 1, 1, 2, 2, 2]
   stats: {hp_mult: 2.0, xp_mult: 2.0, score_mult: 2.0, loot_rarity_bonus: 1}
   affixes:
-    ironclad:     {name: Ironclad,     stats: {armor: 2}}
-    regenerating: {name: Regenerating, stats: {regen: 2}}
+    ironclad:     {name: Ironclad,     stats: {armor: 20}}
+    regenerating: {name: Regenerating, stats: {regen: 20}}
     terrifying:   {name: Terrifying,   stats: {fear_strength: 1.5, fear_radius: 1}}
     swift:        {name: Swift,        stats: {speed: 1.5}}
-    warded:       {name: Warded,       stats: {projectile_defense: 3}}
+    warded:       {name: Warded,       stats: {projectile_defense: 30}}
     hulking:      {name: Hulking,      stats: {hp_mult: 1.5, damage_taken: 0.8}}
     bountiful:    {name: Bountiful,    stats: {xp_mult: 1.5, loot_rarity_bonus: 1}}

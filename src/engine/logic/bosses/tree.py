@@ -8,7 +8,7 @@ from src.engine.logic.damage import calculate_bird_damage
 from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect, apply_mature_flower_effect
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
-from src.engine.progression import add_score, award_xp, compute_prestige
+from src.engine.progression import add_score, award_xp, compute_prestige, hp_scale
 from src.entities.sprites import (
     FLOWER_MATURE_FRAME,
     TREE_BOSS_BACKGROUND,
@@ -328,8 +328,8 @@ def _spawn_jumpscare_bat_from_branch(branch):
         'y_pos': y_pos,
         'direction': random.choice([-1, 1]),
         'tier': 0,
-        'hp': 8,
-        'max_hp': 8,
+        'hp': 8 * hp_scale(),
+        'max_hp': 8 * hp_scale(),
         'target_y': y_pos + 5,
         'spawn_ts': clock.now(),
         'is_jumpscare': True,
@@ -429,8 +429,6 @@ def check_bird_tree_branch_collision():
         if state.special.purple_state[i] == 2 or state.special.purple_just_fired_frames[i] > 0:
             continue
 
-        bird_lane = state.birds.random_lanes[i]
-        bird_lane_x = constants.layout.lane_positions[bird_lane]
         state.birds.colors[i]
         bird_y = state.birds.y[i]
 
@@ -450,8 +448,7 @@ def check_bird_tree_branch_collision():
             branch_top = branch['y_pos']
             branch_bottom = branch['y_pos'] + branch['sprite_height']
 
-            lane_left = bird_lane_x - 2
-            lane_right = bird_lane_x + 2
+            lane_left, lane_right = bird_kinds.hit_span(i)
 
             horizontal_overlap = not (branch_right < lane_left or branch_left > lane_right)
             vertical_overlap = not (bird_y + bird_height < branch_top or bird_y > branch_bottom)

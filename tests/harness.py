@@ -169,7 +169,7 @@ class Simulation:
         for i in range(len(self.state.birds.colors)):
             bird_type = types[i % len(types)]
             self.state.birds.colors[i] = get_color_for_bird_type(bird_type)
-            self.state.birds.speeds[i] = int(get_default_speed(bird_type))
+            self.state.birds.speeds[i] = get_default_speed(bird_type)
 
     def _patch_save_timestamps(self):
         """Make save files carry virtual-clock timestamps."""

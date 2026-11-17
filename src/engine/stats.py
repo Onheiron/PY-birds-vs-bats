@@ -10,10 +10,10 @@ A stat's value for one bird is built in layers:
 - modifiers are added at runtime (cards, boosts, pacts) with an optional
   duration in game seconds, for one bird or for the whole flock.
 
-Speeds are in the game's speed points (1 = slowest, 5+ = one cell per tick);
-the bird's own base speed lives in ``state.birds.speeds`` and changes with
-some mechanics (Clockwork charge, Stealth power...), so the movement stats
-are bonuses on top of it.
+Speeds are on a ×10 scale (20 = the old speed 2). The bird's current speed in
+points lives in ``state.birds.speeds`` (``speed`` / 10 when it hatches) and
+changes with some mechanics (Clockwork charge, Stealth power...); the
+movement bonuses are added on top of it.
 """
 
 from dataclasses import dataclass
@@ -35,14 +35,18 @@ class StatDef:
 
 
 BIRD_STATS = {
+    # Base
+    'speed': StatDef(20, 0, 100, 'base speed (10 = 1 cell every 5 ticks, 50+ = 1 cell per tick)'),
+    'damage': StatDef(10, 0, 99999, 'base contact damage'),
     # Movement
-    'rise_speed_bonus': StatDef(0, -4, 4, 'speed points added while rising'),
-    'fall_speed_bonus': StatDef(0, -4, 4, 'speed points added while falling (negative: falls slower)'),
-    'bounce_sprint': StatDef(0, 0, 4, 'speed points added for a moment after each bounce'),
+    'rise_speed_bonus': StatDef(0, -40, 40, 'speed added while rising'),
+    'fall_speed_bonus': StatDef(0, -40, 40, 'speed added while falling (negative: falls slower)'),
+    'bounce_sprint': StatDef(0, 0, 40, 'speed added for a moment after each bounce'),
     'bounce_sprint_seconds': StatDef(1.0, 0, 10, 'how long the bounce sprint lasts'),
     'weight': StatDef(1.0, 0, 10, 'share of the flock centre of mass (drives momentum)'),
     'presses_to_bounce': StatDef(1, 1, 99, 'UP presses needed to bounce it'),
     'hitbox_height': StatDef(2, 1, 5, 'rows the bird occupies when colliding'),
+    'hitbox_width': StatDef(5, 1, 15, 'columns the bird occupies when colliding (centred on its lane)'),
     # Attack
     'damage_bonus': StatDef(0, 0, 999, 'flat damage added to the base damage'),
     'damage_mult': StatDef(1.0, 0, 100, 'multiplier on all damage dealt'),
@@ -189,6 +193,17 @@ def expire_modifiers():
     state.stats.modifiers[:] = [m for m in state.stats.modifiers if m['until'] is None or m['until'] > now]
     if len(state.stats.modifiers) != before:
         state.stats.version += 1
+
+
+def type_value(bird_type, name):
+    """Value of stat ``name`` for a kind of bird at grade D, before modifiers."""
+    value = _defaults().get(name, BIRD_STATS[name].default)
+    return _table('types', bird_type).get(name, value)
+
+
+def speed_points(bird_type):
+    """Starting speed of a kind of bird in the movement code's points (speed / 10)."""
+    return type_value(bird_type, 'speed') / 10
 
 
 def describe(i):

@@ -121,3 +121,12 @@ def test_difficulty_presets_leave_loot_tables_alone(normal_difficulty):
     constants.reload_for_difficulty(3)
     assert constants.eggs.rarity_candidates == eggs
     assert constants.loot.base_rarity_weights == loot_weights
+
+
+def test_stat_sheets_tool_prints_every_bird_and_enemy():
+    import subprocess
+    import sys
+
+    out = subprocess.run([sys.executable, 'tools/stat_sheets.py'], capture_output=True, text=True, check=True).stdout
+    for name in ('Yellow', 'Dinosaur', 'Rock', 'Armored T4', 'Spellcaster T2', 'Barrier T4'):
+        assert f'| {name} |' in out

@@ -4,7 +4,7 @@ import random
 import time as time
 
 from src.core import constants, state
-from src.engine import clock, enemy_stats
+from src.engine import bird_kinds, clock, enemy_stats
 from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
 
@@ -385,7 +385,6 @@ def _check_bat_can_move(bat, next_x):
         if state.birds.lost[i]:
             continue
 
-        bird_lane_x = constants.layout.lane_positions[state.birds.random_lanes[i]]
         bird_y = state.birds.y[i]
 
         # Bat horizontal range
@@ -393,8 +392,7 @@ def _check_bat_can_move(bat, next_x):
         bat_right = next_x + 8
 
         # Lane range
-        lane_left = bird_lane_x - 2
-        lane_right = bird_lane_x + 2
+        lane_left, lane_right = bird_kinds.hit_span(i)
 
         horizontal_overlap = not (bat_right < lane_left or bat_left > lane_right)
 

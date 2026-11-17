@@ -1,6 +1,7 @@
 """Obstacles, flowers, portals, bats, loot and projectiles."""
 
 from src.core import constants, state
+from src.engine.progression import hp_scale
 from src.entities.sprites import (
     ARMORED_BAT_FRAME_1,
     ARMORED_BAT_FRAME_2,
@@ -390,9 +391,9 @@ def draw_projectiles(fb):
         y_pos = proj['y_pos']
         if 0 <= y_pos < constants.layout.height:
             damage = proj.get('damage', 1)
-            if damage >= 64:
-                symbol = '●'  # Max charge (64 damage)
-            elif damage > 1:
+            if damage >= 64 * hp_scale():
+                symbol = '●'  # Max Purple charge
+            elif proj.get('powered'):
                 symbol = '•'  # Powered
             else:
                 symbol = '⋅'  # Basic

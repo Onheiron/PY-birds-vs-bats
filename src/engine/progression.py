@@ -263,6 +263,16 @@ def award_xp(bird_idx, xp_amount):
     transform_bird_to_s(bi)
 
 
+def hp_scale():
+    """HP and damage are on a ×hp_scale scale; XP and score derived from them divide by it."""
+    return getattr(constants.combat, 'hp_scale', 1) or 1
+
+
+def award_damage_xp(bird_idx, damage):
+    """XP for dealing ``damage`` (one XP per hp_scale points of damage)."""
+    award_xp(bird_idx, damage / hp_scale())
+
+
 def deduct_momentum(amount):
     """Deduct momentum safely (used for swaps). Score is NOT affected."""
     state.game.momentum = max(0, state.game.momentum - amount)

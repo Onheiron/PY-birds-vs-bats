@@ -12,10 +12,10 @@ game:
 bat_enemy:
   # Massive HP - bats are bullet sponges
   hp_by_tier:
-    1: 60      # ADVENTURE: 24
-    2: 120     # ADVENTURE: 48
-    3: 240     # ADVENTURE: 96
-    4: 480     # ADVENTURE: 192
+    1: 600      # ADVENTURE: 240
+    2: 1200     # ADVENTURE: 480
+    3: 2400     # ADVENTURE: 960
+    4: 4800     # ADVENTURE: 1920
   spawn_rate_by_level:
     level_4_6: 80     # ADVENTURE: 200
     level_7_9: 60     # ADVENTURE: 150
@@ -39,10 +39,10 @@ bat_enemy:
 obstacle:
   # Massive HP - obstacles are walls
   hp_by_tier:
-    1: 12      # ADVENTURE: 5
-    2: 24      # ADVENTURE: 8
-    3: 48      # ADVENTURE: 16
-    4: 96      # ADVENTURE: 32
+    1: 120      # ADVENTURE: 50
+    2: 240      # ADVENTURE: 80
+    3: 480      # ADVENTURE: 160
+    4: 960      # ADVENTURE: 320
   # HP scales faster with level
   level_hp_multiplier: 0.2   # ADVENTURE: 0.1
   # Relentless spawn rate

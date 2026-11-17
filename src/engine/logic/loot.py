@@ -94,14 +94,7 @@ def _spawn_bird_from_egg(egg_type, loot=None):
     if bird_type is None:
         return
     bird_color = get_color_for_bird_type(bird_type)
-    name = bird_type.lower()
-    # Speed from config (birds.speed), falling back to the bird type's default
-    speeds = getattr(constants.birds, 'speed', {})
-    default_speed = get_default_speed(bird_type)
-    if hasattr(speeds, '__getitem__'):
-        bird_speed = speeds.get(name, default_speed)
-    else:
-        bird_speed = getattr(speeds, name, default_speed)
+    bird_speed = get_default_speed(bird_type)
 
     for idx in range(constants.layout.num_balls):
         if state.birds.lost[idx]:

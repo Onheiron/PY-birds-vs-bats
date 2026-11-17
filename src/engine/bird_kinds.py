@@ -5,6 +5,7 @@ a kind behaved differently. Traits shared by several systems are answered
 here instead, so a kind's rules are written once:
 
   height(i)          rows the bird occupies when colliding (stat hitbox_height)
+  hit_span(i)        columns it covers (stat hitbox_width); covered_lanes(i) the lanes in them
   is_intangible(i)   passes through enemies, obstacles and loot
   is_phased_in(i)    a Stealth bird that made itself tangible (power active)
 
@@ -42,6 +43,24 @@ def height(i):
     from src.engine import stats
 
     return int(stats.bird(i, 'hitbox_height'))
+
+
+def hit_span(i):
+    """Columns (left, right) the bird covers when colliding: its lane ± hitbox_width // 2."""
+    from src.core import constants
+    from src.engine import stats
+
+    lane_x = constants.layout.lane_positions[state.birds.random_lanes[i]]
+    half = int(stats.bird(i, 'hitbox_width')) // 2
+    return lane_x - half, lane_x + half
+
+
+def covered_lanes(i):
+    """Lanes whose centre lies inside the bird's hit span (its own, plus neighbours for wide birds)."""
+    from src.core import constants
+
+    left, right = hit_span(i)
+    return [lane for lane, x in enumerate(constants.layout.lane_positions) if left <= x <= right]
 
 
 def is_phased_in(i):

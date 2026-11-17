@@ -634,7 +634,54 @@
                 "affliction_chance": {
                   "type": "number"
                 },
+                "crit_chance": {
+                  "type": "number"
+                },
+                "damage": {
+                  "type": "number"
+                },
+                "fear_immunity": {
+                  "type": "number"
+                },
+                "impact_stun": {
+                  "type": "number"
+                },
                 "prestige": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "BLUE": {
+              "properties": {
+                "bounce_sprint": {
+                  "type": "number"
+                },
+                "bounce_sprint_seconds": {
+                  "type": "number"
+                },
+                "crit_chance": {
+                  "type": "number"
+                },
+                "damage": {
+                  "type": "number"
+                },
+                "fall_speed_bonus": {
+                  "type": "number"
+                },
+                "fear_duration_mult": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "vs_bats": {
+                  "type": "number"
+                },
+                "weight": {
                   "type": "number"
                 }
               },
@@ -642,7 +689,25 @@
             },
             "CLOCKWORK": {
               "properties": {
+                "armor_pierce": {
+                  "type": "number"
+                },
+                "damage": {
+                  "type": "number"
+                },
+                "fear_immunity": {
+                  "type": "number"
+                },
+                "impact_stun": {
+                  "type": "number"
+                },
                 "prestige": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "weight": {
                   "type": "number"
                 }
               },
@@ -650,7 +715,19 @@
             },
             "COOKIE": {
               "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "fear_duration_mult": {
+                  "type": "number"
+                },
+                "pickup_radius": {
+                  "type": "number"
+                },
                 "prestige": {
+                  "type": "number"
+                },
+                "speed": {
                   "type": "number"
                 },
                 "xp_gain": {
@@ -661,7 +738,25 @@
             },
             "DINOSAUR": {
               "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "fall_speed_bonus": {
+                  "type": "number"
+                },
+                "fear_immunity": {
+                  "type": "number"
+                },
                 "hitbox_height": {
+                  "type": "number"
+                },
+                "hitbox_width": {
+                  "type": "number"
+                },
+                "impact_stun": {
+                  "type": "number"
+                },
+                "knockback": {
                   "type": "number"
                 },
                 "presses_to_bounce": {
@@ -672,6 +767,15 @@
                 },
                 "score_mult": {
                   "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "vs_obstacles": {
+                  "type": "number"
+                },
+                "weight": {
+                  "type": "number"
                 }
               },
               "type": "object"
@@ -681,7 +785,22 @@
                 "affliction_chance": {
                   "type": "number"
                 },
+                "damage": {
+                  "type": "number"
+                },
+                "fear_duration_mult": {
+                  "type": "number"
+                },
+                "impact_stun": {
+                  "type": "number"
+                },
                 "prestige": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "vs_elites": {
                   "type": "number"
                 }
               },
@@ -689,10 +808,22 @@
             },
             "GLITCH": {
               "properties": {
+                "crit_chance": {
+                  "type": "number"
+                },
+                "crit_damage": {
+                  "type": "number"
+                },
+                "damage": {
+                  "type": "number"
+                },
                 "floor_save": {
                   "type": "number"
                 },
                 "luck": {
+                  "type": "number"
+                },
+                "speed": {
                   "type": "number"
                 }
               },
@@ -700,10 +831,25 @@
             },
             "GOLD": {
               "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "luck": {
+                  "type": "number"
+                },
+                "pickup_radius": {
+                  "type": "number"
+                },
                 "prestige": {
                   "type": "number"
                 },
                 "score_mult": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "weight": {
                   "type": "number"
                 }
               },
@@ -711,10 +857,45 @@
             },
             "ORANGE": {
               "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "fear_immunity": {
+                  "type": "number"
+                },
+                "impact_stun": {
+                  "type": "number"
+                },
                 "prestige": {
                   "type": "number"
                 },
                 "score_mult": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "PATCHWORK": {
+              "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "fear_resist": {
+                  "type": "number"
+                },
+                "luck": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "weight": {
+                  "type": "number"
+                },
+                "xp_gain": {
                   "type": "number"
                 }
               },
@@ -725,7 +906,19 @@
                 "affliction_chance": {
                   "type": "number"
                 },
+                "crit_chance": {
+                  "type": "number"
+                },
+                "damage": {
+                  "type": "number"
+                },
+                "power_duration": {
+                  "type": "number"
+                },
                 "prestige": {
+                  "type": "number"
+                },
+                "speed": {
                   "type": "number"
                 }
               },
@@ -733,7 +926,25 @@
             },
             "PURPLE": {
               "properties": {
+                "crit_chance": {
+                  "type": "number"
+                },
+                "damage": {
+                  "type": "number"
+                },
+                "fear_resist": {
+                  "type": "number"
+                },
+                "power_potency": {
+                  "type": "number"
+                },
                 "prestige": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "weight": {
                   "type": "number"
                 }
               },
@@ -741,7 +952,54 @@
             },
             "RAINBOW": {
               "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "fear_resist": {
+                  "type": "number"
+                },
+                "luck": {
+                  "type": "number"
+                },
+                "pickup_radius": {
+                  "type": "number"
+                },
                 "prestige": {
+                  "type": "number"
+                },
+                "score_mult": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "RED": {
+              "properties": {
+                "armor_pierce": {
+                  "type": "number"
+                },
+                "crit_chance": {
+                  "type": "number"
+                },
+                "crit_damage": {
+                  "type": "number"
+                },
+                "damage": {
+                  "type": "number"
+                },
+                "fear_duration_mult": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "vs_obstacles": {
+                  "type": "number"
+                },
+                "weight": {
                   "type": "number"
                 }
               },
@@ -749,10 +1007,31 @@
             },
             "ROCK": {
               "properties": {
+                "armor_pierce": {
+                  "type": "number"
+                },
+                "damage": {
+                  "type": "number"
+                },
+                "fall_speed_bonus": {
+                  "type": "number"
+                },
+                "fear_resist": {
+                  "type": "number"
+                },
+                "impact_stun": {
+                  "type": "number"
+                },
                 "knockback": {
                   "type": "number"
                 },
                 "prestige": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "weight": {
                   "type": "number"
                 }
               },
@@ -760,10 +1039,31 @@
             },
             "STEALTH": {
               "properties": {
+                "armor_pierce": {
+                  "type": "number"
+                },
+                "crit_chance": {
+                  "type": "number"
+                },
+                "crit_damage": {
+                  "type": "number"
+                },
+                "damage": {
+                  "type": "number"
+                },
                 "prestige": {
                   "type": "number"
                 },
                 "score_mult": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "vs_elites": {
+                  "type": "number"
+                },
+                "weight": {
                   "type": "number"
                 }
               },
@@ -771,7 +1071,28 @@
             },
             "TWISTER": {
               "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "fall_speed_bonus": {
+                  "type": "number"
+                },
+                "fear_resist": {
+                  "type": "number"
+                },
+                "knockback": {
+                  "type": "number"
+                },
                 "prestige": {
+                  "type": "number"
+                },
+                "rise_speed_bonus": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "weight": {
                   "type": "number"
                 }
               },
@@ -779,10 +1100,63 @@
             },
             "WHITE": {
               "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "fear_resist": {
+                  "type": "number"
+                },
+                "pickup_radius": {
+                  "type": "number"
+                },
+                "power_duration": {
+                  "type": "number"
+                },
                 "prestige": {
                   "type": "number"
                 },
                 "score_mult": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "vs_elites": {
+                  "type": "number"
+                },
+                "weight": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "YELLOW": {
+              "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "fall_speed_bonus": {
+                  "type": "number"
+                },
+                "fear_duration_mult": {
+                  "type": "number"
+                },
+                "fear_resist": {
+                  "type": "number"
+                },
+                "luck": {
+                  "type": "number"
+                },
+                "pickup_radius": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "weight": {
+                  "type": "number"
+                },
+                "xp_gain": {
                   "type": "number"
                 }
               },
@@ -796,68 +1170,6 @@
     },
     "birds": {
       "properties": {
-        "damage": {
-          "properties": {
-            "berserk": {
-              "type": "number"
-            },
-            "blue": {
-              "type": "number"
-            },
-            "clockwork": {
-              "type": "number"
-            },
-            "cookie": {
-              "type": "number"
-            },
-            "dinosaur": {
-              "type": "number"
-            },
-            "frosty": {
-              "type": "number"
-            },
-            "glitch": {
-              "type": "number"
-            },
-            "gold": {
-              "type": "number"
-            },
-            "orange": {
-              "type": "number"
-            },
-            "patchwork": {
-              "type": "number"
-            },
-            "poison": {
-              "type": "number"
-            },
-            "purple": {
-              "type": "number"
-            },
-            "rainbow": {
-              "type": "number"
-            },
-            "red": {
-              "type": "number"
-            },
-            "rock": {
-              "type": "number"
-            },
-            "stealth": {
-              "type": "number"
-            },
-            "twister": {
-              "type": "number"
-            },
-            "white": {
-              "type": "number"
-            },
-            "yellow": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        },
         "default_formation": {
           "items": {
             "type": "string"
@@ -866,68 +1178,6 @@
         },
         "randomize_lanes": {
           "type": "boolean"
-        },
-        "speed": {
-          "properties": {
-            "berserk": {
-              "type": "number"
-            },
-            "blue": {
-              "type": "number"
-            },
-            "clockwork": {
-              "type": "number"
-            },
-            "cookie": {
-              "type": "number"
-            },
-            "dinosaur": {
-              "type": "number"
-            },
-            "frosty": {
-              "type": "number"
-            },
-            "glitch": {
-              "type": "number"
-            },
-            "gold": {
-              "type": "number"
-            },
-            "orange": {
-              "type": "number"
-            },
-            "patchwork": {
-              "type": "number"
-            },
-            "poison": {
-              "type": "number"
-            },
-            "purple": {
-              "type": "number"
-            },
-            "rainbow": {
-              "type": "number"
-            },
-            "red": {
-              "type": "number"
-            },
-            "rock": {
-              "type": "number"
-            },
-            "stealth": {
-              "type": "number"
-            },
-            "twister": {
-              "type": "number"
-            },
-            "white": {
-              "type": "number"
-            },
-            "yellow": {
-              "type": "number"
-            }
-          },
-          "type": "object"
         }
       },
       "type": "object"
@@ -1051,6 +1301,9 @@
           "type": "number"
         },
         "glitch_dmg_multiplier_min": {
+          "type": "number"
+        },
+        "hp_scale": {
           "type": "number"
         },
         "obstacle_destroy_score_per_tier": {
@@ -1432,7 +1685,71 @@
                     "descent_interval": {
                       "type": "number"
                     },
+                    "fear_strength": {
+                      "type": "number"
+                    },
+                    "hp_mult": {
+                      "type": "number"
+                    },
+                    "projectile_defense": {
+                      "type": "number"
+                    },
+                    "score_mult": {
+                      "type": "number"
+                    },
                     "speed": {
+                      "type": "number"
+                    },
+                    "xp_mult": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "diver": {
+                  "properties": {
+                    "contact_defense": {
+                      "type": "number"
+                    },
+                    "fear_strength": {
+                      "type": "number"
+                    },
+                    "hp_mult": {
+                      "type": "number"
+                    },
+                    "speed": {
+                      "type": "number"
+                    },
+                    "xp_mult": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "spellcaster": {
+                  "properties": {
+                    "contact_defense": {
+                      "type": "number"
+                    },
+                    "fear_radius": {
+                      "type": "number"
+                    },
+                    "fear_strength": {
+                      "type": "number"
+                    },
+                    "hp_mult": {
+                      "type": "number"
+                    },
+                    "projectile_defense": {
+                      "type": "number"
+                    },
+                    "score_mult": {
+                      "type": "number"
+                    },
+                    "speed": {
+                      "type": "number"
+                    },
+                    "xp_mult": {
                       "type": "number"
                     }
                   },
@@ -1442,7 +1759,9 @@
               "type": "object"
             },
             "tiers": {
-              "properties": {},
+              "additionalProperties": {
+                "type": "object"
+              },
               "type": "object"
             }
           },
@@ -1455,7 +1774,9 @@
               "type": "object"
             },
             "tiers": {
-              "properties": {},
+              "additionalProperties": {
+                "type": "object"
+              },
               "type": "object"
             }
           },

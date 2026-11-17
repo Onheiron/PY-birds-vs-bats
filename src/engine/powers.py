@@ -14,6 +14,7 @@ from src.engine.birds import (
 )
 from src.engine.grades import compute_grade_from_xp
 from src.engine.logic.drops import drop_loot
+from src.engine.progression import hp_scale
 from src.entities.bird_types import BirdType, get_bird_type_by_color
 from src.entities.sprites import (
     BLUE,
@@ -120,7 +121,7 @@ def _power_red(bird_idx, bird_lane):
             'x_pos': constants.layout.lane_positions[bird_lane],
             'y_pos': state.birds.y[bird_idx],
             'lane': bird_lane,
-            'damage': _potent(bird_idx, 1 + damage_bonus),
+            'damage': _potent(bird_idx, (1 + damage_bonus) * hp_scale()),
             'powered': damage_bonus > 0,
             'owner': bird_idx,
             'speed': 1,

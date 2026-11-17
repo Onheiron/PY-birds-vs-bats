@@ -6,8 +6,7 @@ from src.core import constants, state
 from src.engine import bird_kinds, clock, enemy_stats, events, stats
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
-from src.engine.progression import add_score, award_xp, compute_prestige
-from src.entities.bird_types import get_bird_type_by_color
+from src.engine.progression import add_score, award_xp, compute_prestige, hp_scale
 from src.entities.sprites import BLUE, GLITCH, ORANGE
 
 VS_STAT = {'bat': 'vs_bats', 'obstacle': 'vs_obstacles', 'elite': 'vs_elites'}
@@ -22,34 +21,17 @@ def calculate_bird_damage(bird_idx, target='bat'):
 
     Where:
     - GR = gear/speed (state.game.speed, 1-10)
-    - DMG = base damage from config (constants.birds.damage)
-    - SPD = base speed from config (constants.birds.speed)
+    - DMG = the bird's damage stat
+    - SPD = the bird's speed stat / 10
     - DMGBOOST/DMGNERF = damage modifiers
     - SPDBOOST/SPDNERF = speed modifiers
     """
 
     bird_color = state.birds.colors[bird_idx]
 
-    # Get bird type name for config lookup
-    bird_type = get_bird_type_by_color(bird_color) or 'YELLOW'
-
-    # Get type name in lowercase for config lookup
-    type_name = bird_type.lower()
-
-    # Get base stats from config
-    dmg_config = getattr(constants.birds, 'damage', {})
-    spd_config = getattr(constants.birds, 'speed', {})
-
-    # Handle both dict and namespace
-    if hasattr(dmg_config, '__getitem__'):
-        base_dmg = dmg_config.get(type_name, 1)
-    else:
-        base_dmg = getattr(dmg_config, type_name, 1)
-
-    if hasattr(spd_config, '__getitem__'):
-        base_spd = spd_config.get(type_name, 2)
-    else:
-        base_spd = getattr(spd_config, type_name, 2)
+    # Base damage and base speed (in speed points) from the bird's stats
+    base_dmg = stats.bird(bird_idx, 'damage')
+    base_spd = stats.bird(bird_idx, 'speed') / 10
 
     # Get gear (speed level 1-10)
     gear = state.game.speed
@@ -114,7 +96,7 @@ def handle_bat_death(bat, killer_bird_idx):
     tier = bat.get('tier', 1)
     bat_xp_per_tier = getattr(constants.combat, 'bat_destroy_xp_per_tier', 5)
     award_xp(killer_bird_idx, bat_xp_per_tier * tier * enemy_stats.get(bat, 'xp_mult'))
-    add_score(bat.get('max_hp', 0) * enemy_stats.get(bat, 'score_mult'))
+    add_score(bat.get('max_hp', 0) / hp_scale() * enemy_stats.get(bat, 'score_mult'))
 
     # Bats spawned by bosses NEVER drop loot (general rule)
     if not bat.get('from_boss'):
@@ -159,7 +141,7 @@ def handle_mini_bat_death(mini_bat, killer_bird_idx):
     bat_xp_per_tier = getattr(constants.combat, 'bat_destroy_xp_per_tier', 5)
     # Tier 0 gives less XP but still something
     award_xp(killer_bird_idx, max(1, bat_xp_per_tier * tier) if tier > 0 else 5)
-    add_score(mini_bat.get('max_hp', 8))
+    add_score(mini_bat.get('max_hp', 8 * hp_scale()) / hp_scale())
 
     # Bats spawned by bosses NEVER drop loot (general rule)
     if not mini_bat.get('from_boss'):

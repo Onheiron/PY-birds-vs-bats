@@ -285,9 +285,11 @@ def get_bird_type_from_egg(egg_type: str):
     return None
 
 
-def get_default_speed(bird_type: str) -> int:
-    """Get default speed for a bird type."""
-    return BIRD_TYPES.get(bird_type, {}).get('speed', 2)
+def get_default_speed(bird_type: str) -> float:
+    """Starting speed of a bird type, in movement points (its ``speed`` stat / 10)."""
+    from src.engine import stats
+
+    return stats.speed_points(bird_type)
 
 
 # ============================================================================

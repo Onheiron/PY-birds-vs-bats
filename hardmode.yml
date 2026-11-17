@@ -16,10 +16,10 @@ game:
 bat_enemy:
   # Tougher bats                    ADVENTURE / LEGENDARY
   hp_by_tier:
-    1: 36                         # 24  / 60
-    2: 72                         # 48  / 120
-    3: 144                        # 96  / 240
-    4: 288                        # 192 / 480
+    1: 360      # 240 / 600
+    2: 720      # 480 / 1200
+    3: 1440     # 960 / 2400
+    4: 2880     # 1920 / 4800
   # More bats at once, by level range   ADVENTURE / LEGENDARY
   max_bats_by_level:
     level_4_6: 2                  # 1 / 3

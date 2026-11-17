@@ -282,7 +282,7 @@ def _handle_dinosaur_bounce(bird_idx):
     if chunk > 0 and cnt % chunk == 0:
         if cnt >= stats.bird(bird_idx, 'presses_to_bounce'):
             set_ball_vy(bird_idx, -1)
-            state.birds.speeds[bird_idx] = bird_types.BIRD_TYPES.get('DINOSAUR', {}).get('speed', 4)
+            state.birds.speeds[bird_idx] = bird_types.get_default_speed('DINOSAUR')
             state.special.dinosaur_up_presses[bird_idx] = 0
             reset_bird_power(bird_idx)
         else:

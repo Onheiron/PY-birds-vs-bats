@@ -13,7 +13,7 @@ from src.engine.logic.bosses.owl import spawn_owl_boss, update_owl_boss
 from src.engine.logic.bosses.tree import check_bird_tree_branch_collision, spawn_tree_boss, update_tree_boss
 from src.engine.logic.bosses.wind import spawn_wind_boss, update_wind_boss
 from src.engine.logic.damage import calculate_bird_damage
-from src.engine.progression import add_score, award_xp, get_level_milestones
+from src.engine.progression import add_score, award_damage_xp, get_level_milestones, hp_scale
 from src.entities.sprites import BLUE, ORANGE
 from src.services.sound import play_sfx
 
@@ -154,8 +154,6 @@ def check_bird_boss_collision():
         if state.special.purple_state[i] == 2 or state.special.purple_just_fired_frames[i] > 0:
             continue
 
-        bird_lane = state.birds.random_lanes[i]
-        bird_lane_x = constants.layout.lane_positions[bird_lane]
         bird_color = state.birds.colors[i]
         bird_y = state.birds.y[i]
 
@@ -165,8 +163,7 @@ def check_bird_boss_collision():
 
         bird_height = bird_kinds.height(i)
 
-        lane_left = bird_lane_x - 2
-        lane_right = bird_lane_x + 2
+        lane_left, lane_right = bird_kinds.hit_span(i)
 
         horizontal_overlap = not (boss_right < lane_left or boss_left > lane_right)
         vertical_overlap = not (bird_y + bird_height < boss_top or bird_y > boss_bottom)
@@ -183,10 +180,10 @@ def check_bird_boss_collision():
             damage = max(1, damage - armor_reduction)
 
         if bird_color == ORANGE:
-            boss['hp'] -= 32  # Orange does fixed 32 damage to bosses
+            boss['hp'] -= 32 * hp_scale()  # Orange does a fixed 32 (×hp_scale) to bosses
         else:
             boss['hp'] -= damage
-            award_xp(i, damage)
+            award_damage_xp(i, damage)
 
         # Boss scream if hit causes scare
         scare_bird_ticks(i, int(1.0 / constants.timing.base_sleep))
@@ -221,8 +218,6 @@ def check_bird_meteor_collision():
         if state.special.purple_state[i] == 2 or state.special.purple_just_fired_frames[i] > 0:
             continue
 
-        bird_lane = state.birds.random_lanes[i]
-        bird_lane_x = constants.layout.lane_positions[bird_lane]
         bird_color = state.birds.colors[i]
         bird_y = state.birds.y[i]
 
@@ -243,8 +238,7 @@ def check_bird_meteor_collision():
             meteor_top = meteor_y
             meteor_bottom = meteor_y + 4  # Meteor is ~4 lines tall
 
-            lane_left = bird_lane_x - 2
-            lane_right = bird_lane_x + 2
+            lane_left, lane_right = bird_kinds.hit_span(i)
 
             horizontal_overlap = not (meteor_right < lane_left or meteor_left > lane_right)
             vertical_overlap = not (bird_y + bird_height < meteor_top or bird_y > meteor_bottom)
@@ -259,7 +253,7 @@ def check_bird_meteor_collision():
                 meteor['hp'] = 0  # Orange destroys meteor
             else:
                 meteor['hp'] = meteor.get('hp', 1) - damage
-                award_xp(i, damage)
+                award_damage_xp(i, damage)
 
             if meteor['hp'] <= 0:
                 # Meteor destroyed
