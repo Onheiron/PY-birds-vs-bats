@@ -589,11 +589,9 @@ tailwind:
     plus: 2
     plusplus: 3
 dinosaur:
-  damage: 16
   press_chunk: 3
   presses_to_bounce: 15
 stealth:
-  damage: 24
   speed_boost: 6
   tangible_seconds: 3.0
 clockwork:
@@ -615,7 +613,6 @@ orange:
 
 # New birds
 rainbow:
-  enabled: false              # Set to true to allow rainbow spawns
   max_charge: 100
   decay_per_second: 5         # Lose 5 charge per second
   recharge_chance: 0.25       # 25% chance to recharge on UP press

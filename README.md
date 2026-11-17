@@ -77,27 +77,10 @@ Every bird has a base speed and a power. New birds hatch from eggs dropped by
 enemies (only while a lane is free). Birds earn XP, climb grades from D to S,
 and raise your **prestige**, which multiplies score and improves loot.
 
-| Bird | Rarity | Speed | Power |
-|---|---|:---:|---|
-| Yellow | common | 2 | Standard bird, bounces adjacent yellow birds |
-| Red | common | 3 | Shoots projectiles, damage scales with adjacent reds |
-| Blue | common | 4 | Speed boost ability, cures adjacent scared birds |
-| Patchwork | uncommon | 3 | Can transform and use multiple bird abilities |
-| Purple | uncommon | 3 | Charges powerful shots, damage increases with charge time |
-| Clockwork | uncommon | 2 | Auto-bounces at floor, has charge system that decays |
-| Templar | rare | 4 | Activates abilities of adjacent birds |
-| Phoenix | rare | 5 | One-hit kills enemies, goes out of play after |
-| Gold | rare | 5 | Generates massive score per frame |
-| Cookie | uncommon | 3 | Drops XP crumbs, dies after 5 crumbs |
-| Stealth | uncommon | 3 | Can phase through enemies dealing massive damage |
-| Dinosaur | epic | 4 | Requires multiple presses to bounce, high damage |
-| Glitch | epic | 3 | Unpredictable: random speed, damage, can swap lanes, duplicate |
-| Rainbow | mythic | 6 | Warps between ceiling/floor, colors fade over time, recharge with UP |
-| Twister | rare | 4 | Creates tailwind in current lane and 2 adjacent lanes |
-| Frosty | rare | 3 | 30% chance to freeze enemies on hit, power boosts to 60% |
-| Poison | rare | 3 | 30% chance to poison bats (2HP/s), power boosts to 60% |
-| Berserk | rare | 3 | 30% chance to cause bleeding (1HP/s, -1 armor), power boosts to 60% |
-| Rock | rare | 2 | Pushes enemies up 1 row on hit, power boosts to 2 rows + speed 3 |
+There are 19 birds: Yellow, Red, Blue, Patchwork, Purple, Clockwork, White,
+Orange, Gold, Cookie, Stealth, Dinosaur, Glitch, Rainbow, Twister, Frosty,
+Poison, Berserk and Rock. `docs/birds.md` describes each one: speed, damage,
+power, passive behaviour, prestige and synergies.
 
 The in-game **Birdpedia** fills in as you discover birds, bats, obstacles and biomes.
 

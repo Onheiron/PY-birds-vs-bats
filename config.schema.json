@@ -856,9 +856,6 @@
     },
     "dinosaur": {
       "properties": {
-        "damage": {
-          "type": "number"
-        },
         "press_chunk": {
           "type": "number"
         },
@@ -1550,9 +1547,6 @@
         "decay_per_second": {
           "type": "number"
         },
-        "enabled": {
-          "type": "boolean"
-        },
         "max_charge": {
           "type": "number"
         },
@@ -1615,9 +1609,6 @@
     },
     "stealth": {
       "properties": {
-        "damage": {
-          "type": "number"
-        },
         "speed_boost": {
           "type": "number"
         },

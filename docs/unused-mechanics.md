@@ -142,6 +142,8 @@ schema was regenerated. Values are those of `config.yml` at `7b9d259`.
 | `despawn.*` | Despawn times are `loot.bat_despawn_time` / `loot.loot_despawn_time`. |
 | `glitch.damage`, `glitch.loot_ignore_chance`, `glitch.loot_promote_chance` | Duplicates of `combat.glitch_dmg_multiplier_*` and `loot.glitch_*`. |
 | `clockwork.lanes`, `clockwork.min_charge`, `dinosaur.recovery_on_egg`, `orange.out_of_play_y` | Never read (`out_of_play_y` is hard-coded as 999). |
+| `stealth.damage` (24), `dinosaur.damage` (16) | Damage comes from `birds.damage` (8 and 5). |
+| `rainbow.enabled` (false) | Nothing checks it: Rainbow behaves the same either way (and its egg cannot drop, see below). |
 | `combat.bat_center_offset`, `obstacle_score_multiplier`, `xp_bonus_per_tier` | Never read. |
 | `layout.min_lane_index`, `layout.max_lane_index`, `levels.distance_increment_start`, `game_over.separator_width` | Never read. |
 | `limits.*`, `physics.*`, `collision.*`, `rendering.*`, `controls.*` | Whole sections never read (key bindings live in the settings, not the config). |
