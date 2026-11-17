@@ -74,7 +74,6 @@ def save_discovery():
         'birds': list(state.discovery.birds),
         'bats': list(state.discovery.bats),
         'obstacles': list(state.discovery.obstacles),
-        'biomes': list(state.discovery.biomes),
     }
 
     path = get_discovery_path()
@@ -104,8 +103,6 @@ def load_discovery():
             state.discovery.bats = set(data['bats'])
         if 'obstacles' in data:
             state.discovery.obstacles = set(data['obstacles'])
-        if 'biomes' in data:
-            state.discovery.biomes = set(data['biomes'])
 
         return True
     except (json.JSONDecodeError, OSError):
@@ -137,16 +134,6 @@ def discover_obstacle(obstacle_type_name):
 
     if obstacle_type_name not in state.discovery.obstacles:
         state.discovery.obstacles.add(obstacle_type_name)
-        save_discovery()
-        return True
-    return False
-
-
-def discover_biome(biome_name):
-    """Mark a biome as discovered."""
-
-    if biome_name not in state.discovery.biomes:
-        state.discovery.biomes.add(biome_name)
         save_discovery()
         return True
     return False
@@ -363,7 +350,6 @@ def load_game(slot):
         state.game.start_time = time.time()
         state.game.last_mile_update = time.time()
         state.player.last_space_state = False
-        state.player.last_up_state = False
 
         # Clear UI transient state
         state.ui.notifications = []
@@ -536,7 +522,6 @@ def _restore_birds(birds, data):
         'random_lanes',
         'per_bird_xp',
         'transformed',
-        'original_indices',
     ]:
         if key in data:
             setattr(birds, key, data[key])

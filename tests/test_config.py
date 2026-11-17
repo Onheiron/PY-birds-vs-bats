@@ -84,7 +84,10 @@ def test_unknown_cli_options_are_ignored():
 
 
 def test_namespace_conversion_keeps_numeric_tables_as_dicts():
-    ns = config.to_namespace({'a': {'b': 1}, 'tiers': {1: 10, 2: 20}})
+    from types import SimpleNamespace
+
+    ns = SimpleNamespace()
+    config.apply_to_namespace(ns, {'a': {'b': 1}, 'tiers': {1: 10, 2: 20}})
     assert ns.a.b == 1
     assert ns.tiers == {1: 10, 2: 20}
 

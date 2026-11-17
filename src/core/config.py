@@ -140,13 +140,6 @@ def apply_to_namespace(namespace, config_dict):
             setattr(namespace, key, value)
 
 
-def to_namespace(config_dict):
-    """Convert a nested mapping to nested SimpleNamespace objects."""
-    namespace = SimpleNamespace()
-    apply_to_namespace(namespace, config_dict)
-    return namespace
-
-
 def reset_namespace(namespace, config_dict):
     """Replace the contents of ``namespace`` in place (references stay valid)."""
     for attr in list(vars(namespace)):

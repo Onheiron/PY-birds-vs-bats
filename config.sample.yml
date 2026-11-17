@@ -23,8 +23,13 @@ background:
   parallax: false                 # Second, faster scenery layer
 
 bat_enemy:
-  max_on_screen: 5                # Bats alive at the same time
-  spawn_interval_range: [80, 160] # Game frames between spawns (lower = more bats)
+  # Bats alive at the same time, by level range (no bats in levels 1-3)
+  max_bats_by_level:
+    level_4_6: 1
+    level_7_9: 2
+    level_10_12: 3
+    level_13_15: 4
+    level_16_18: 5
 
 speed:
   mph_per_level: 40               # Miles per hour gained with each gear

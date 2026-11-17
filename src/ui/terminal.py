@@ -2,7 +2,6 @@
 
 import contextlib
 import os
-import shutil
 import sys
 
 if os.name != 'nt':
@@ -84,9 +83,3 @@ def write_frame(output):
     else:
         stream.write(output)
     stream.flush()
-
-
-def size():
-    """Current terminal size as (columns, rows)."""
-    terminal_size = shutil.get_terminal_size(fallback=(80, 24))
-    return terminal_size.columns, terminal_size.lines

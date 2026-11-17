@@ -38,12 +38,6 @@ def test_put_string_clips_on_both_sides_and_strips_ansi():
     assert row_text(fb, 0) == 'cdef  '
 
 
-def test_put_colored_string_tracks_embedded_colours():
-    fb = FrameBuffer(5, 1)
-    fb.put_colored_string(-1, 0, f'x{RED}ab\033[0mc')
-    assert fb.current[0][:3] == [('a', RED), ('b', RED), ('c', '')]
-
-
 def test_fill_and_put_cells():
     fb = FrameBuffer(5, 2)
     fb.fill(-2, 0, 4, ('.', RED))

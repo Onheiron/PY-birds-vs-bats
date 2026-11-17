@@ -1,6 +1,5 @@
 # Minimal firebase-admin helper for BVB game
 # No triple-quoted module docstring to avoid parser issues.
-import contextlib
 import os
 import time
 import uuid
@@ -14,7 +13,6 @@ _service_account_path: str | None = None
 
 # Hard-coded Firebase project/app name as requested
 DEFAULT_PROJECT = 'birds-vs-bats'
-DEFAULT_DB = 'birds-vs-bats'
 
 
 def _id_file() -> str:
@@ -104,52 +102,6 @@ def init_from_env(service_account_path: str | None = None) -> bool:
         return False
 
 
-def sign_in_anonymous():
-    """Ensure a Firebase Auth user exists for this install and return (firebase_uid, local_id).
-
-    Behavior:
-    - Initializes the client if needed (best-effort).
-    - Uses the local stable id as the desired Firebase UID. If a user with that
-      UID exists, returns it. If not, attempts to create one via the admin SDK.
-    - Falls back to (None, local_id) if auth/admin SDK is not available or any
-      operation fails.
-    """
-    global _db
-    if _db is None:
-        with contextlib.suppress(Exception):
-            init_from_env()
-
-    local_id = get_or_create_local_user_id()
-
-    try:
-        # Import auth lazily so module-level import remains cheap when firebase-admin
-        # isn't installed.
-        from firebase_admin import auth
-    except Exception:
-        # Admin SDK auth not available
-        return None, local_id
-
-    try:
-        # Try to look up a user with the local id as UID; if not found, create one.
-        try:
-            user = auth.get_user(local_id)
-        except Exception:
-            # Create a minimal user record using the local id as UID so the user
-            # becomes visible in the Firebase Auth console.
-            try:
-                user = auth.create_user(uid=local_id)
-            except Exception:
-                user = None
-
-        if user:
-            return user.uid, local_id
-    except Exception:
-        # Any error - fall back to returning only the local id
-        pass
-
-    return None, local_id
-
-
 def send_score(
     name: str,
     score: int,
@@ -199,32 +151,6 @@ def send_score(
         return None
 
 
-def get_leaderboard(limit: int = 10):
-    global _db
-    if _db is None:
-        return []
-    try:
-        docs = _db.collection('leaderboard').order_by('score', direction='DESCENDING').limit(limit).stream()
-        entries = []
-        for d in docs:
-            data = d.to_dict() or {}
-            entries.append(
-                {
-                    'id': d.id,
-                    'name': data.get('name'),
-                    'score': int(data.get('score', 0)),
-                    'ts': data.get('ts'),
-                    'time_played_seconds': int(data.get('time_played_seconds'))
-                    if data.get('time_played_seconds') is not None
-                    else None,
-                    'time_played': data.get('time_played'),
-                }
-            )
-        return entries
-    except Exception:
-        return []
-
-
 def unlock_achievement(achievement_id: str) -> bool:
     global _db
     if _db is None:
@@ -271,16 +197,6 @@ def unlock_achievement(achievement_id: str) -> bool:
         return False
 
 
-def sync_achievements(achievements: dict[str, Any]):
-    for aid, a in (achievements or {}).items():
-        try:
-            if a.get('unlocked'):
-                with contextlib.suppress(Exception):
-                    unlock_achievement(aid)
-        except Exception:
-            continue
-
-
 def log_event(name: str, params: dict[str, Any] | None = None) -> dict[str, Any] | None:
     global _db
     if _db is None:
@@ -297,15 +213,3 @@ def log_event(name: str, params: dict[str, Any] | None = None) -> dict[str, Any]
         return {'id': doc_ref.id, **payload}
     except Exception:
         return None
-
-
-def report_crash(stack_text: str) -> None:
-    global _db
-    try:
-        if _db is None:
-            return
-        payload = {'stack': stack_text, 'ts': int(time.time()), 'userId': get_or_create_local_user_id()}
-        doc_ref = _db.collection('crashes').document()
-        doc_ref.set(payload)
-    except Exception:
-        return

@@ -23,18 +23,3 @@ def get_obstacle_lanes(obs):
     return get_obstacle_hitbox_lanes(
         obs_lane, sprite_width, constants.layout.lane_positions, constants.layout.num_lanes
     )
-
-
-def _find_closest_lane(x_pos):
-    """Find the closest lane to an x position."""
-    lane_positions = constants.layout.lane_positions
-    min_dist = float('inf')
-    closest_lane = 0
-
-    for lane_idx, lane_x in enumerate(lane_positions):
-        dist = abs(x_pos - lane_x)
-        if dist < min_dist:
-            min_dist = dist
-            closest_lane = lane_idx
-
-    return closest_lane

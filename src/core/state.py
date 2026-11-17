@@ -38,7 +38,6 @@ def _new_birds():
         per_bird_xp=[],
         transformed=[],
         pending_transform=[],  # Bird wants to transform but can't (limit reached) - stores target color
-        original_indices=[],
         portal_cooldown={},  # {bird_idx: frame_until_can_teleport_again}
     )
 
@@ -214,7 +213,7 @@ def _new_game():
 # PLAYER STATE (organized as namespace)
 # ============================================================================
 def _new_player():
-    return SimpleNamespace(lane=2, selected_lane=None, last_space_state=False, last_up_state=False)
+    return SimpleNamespace(lane=2, selected_lane=None, last_space_state=False)
 
 
 # ============================================================================
@@ -232,9 +231,6 @@ def _new_ui():
         # Notifications: list of dicts with {title, text, expire_frame}
         # New notifications insert at index 0 (top), old ones at end (bottom)
         notifications=[],
-        # Level sign animation in right panel (legacy, not used)
-        level_sign_scroll_y=0,
-        level_sign_scrolling=False,
         # Menu navigation: [[screen_id, cursor], ...], root first ('title' or 'pause').
         # See src/engine/menus.py.
         menu_stack=[],
@@ -281,8 +277,6 @@ def _new_discovery():
         bats=set(),
         # Obstacle types discovered (set of obstacle type names)
         obstacles=set(),
-        # Biomes visited (set of biome names)
-        biomes=set(),
     )
 
 
@@ -383,7 +377,6 @@ def init(seed=None):
     birds.per_bird_xp = [0] * num_birds
     birds.transformed = [False] * num_birds
     birds.pending_transform = [None] * num_birds  # None or target color
-    birds.original_indices = list(range(num_birds))
 
     for name, initial in _PURPLE_BIRD_LISTS.items():
         setattr(special, name, [initial] * num_birds)

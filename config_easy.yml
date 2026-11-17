@@ -16,10 +16,6 @@ bat_enemy:
     2: 24      # ADVENTURE: 48
     3: 48      # ADVENTURE: 96
     4: 96      # ADVENTURE: 192
-  # Fewer bats on screen
-  max_on_screen: 3    # ADVENTURE: 5
-  # Slower spawn rate (higher = less frequent)
-  spawn_interval_range: [150, 280]  # ADVENTURE: [80, 160]
   spawn_rate_by_level:
     level_4_6: 300    # ADVENTURE: 200
     level_7_9: 220    # ADVENTURE: 150
@@ -32,11 +28,6 @@ bat_enemy:
     level_10_12: 2    # ADVENTURE: 3
     level_13_15: 3    # ADVENTURE: 4
     level_16_18: 4    # ADVENTURE: 5
-  tiers:
-    hp_tier_1: 12
-    hp_tier_2: 24
-    hp_tier_3: 48
-    hp_tier_4: 96
 
 obstacle:
   # Lower HP - obstacles break faster
@@ -87,6 +78,3 @@ progression:
 speed:
   # Lower momentum threshold - easier to gain momentum
   momentum_zero_height: 0.25  # ADVENTURE: 0.33 (lower = easier)
-  # Slower game at high speeds
-  frame_sleep_at_speed_1: 0.20    # ADVENTURE: 0.18
-  frame_sleep_at_speed_10: 0.05   # ADVENTURE: 0.02 (higher = slower at max speed)

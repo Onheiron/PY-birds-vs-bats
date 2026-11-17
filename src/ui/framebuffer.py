@@ -75,31 +75,6 @@ class FrameBuffer:
         if x < end:
             self.current[y][x:end] = [(char, color) for char in text]
 
-    def put_colored_string(self, x, y, text):
-        """Put string that may contain ANSI color codes."""
-        if not 0 <= y < self.height:
-            return
-        row = self.current[y]
-        width = self.width
-        current_color = ''
-        pos = x
-        i = 0
-        length = len(text)
-        while i < length:
-            char = text[i]
-            if char == '\033':
-                # Find end of ANSI sequence
-                end = text.find('m', i)
-                if end != -1:
-                    code = text[i : end + 1]
-                    current_color = '' if code == RESET else code
-                    i = end + 1
-                    continue
-            if 0 <= pos < width:
-                row[pos] = (char, current_color)
-            pos += 1
-            i += 1
-
     def render(self):
         """Generate output string with only changed cells and swap buffers."""
         output = []

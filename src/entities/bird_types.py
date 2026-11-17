@@ -47,10 +47,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'yellow', 220),
         'speed': 2,
         'damage': 2,
-        'ability': 'chain_bounce',
         'description': 'Standard bird, bounces adjacent yellow birds',
-        'rarity': 'common',
-        'spawn_limit': None,  # Unlimited
         'egg_type': 'yellow_egg',
     },
     BirdType.RED: {
@@ -59,10 +56,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'red', -1),
         'speed': 3,
         'damage': 3,
-        'ability': 'projectile',
         'description': 'Shoots projectiles, damage scales with adjacent reds',
-        'rarity': 'common',
-        'spawn_limit': None,
         'egg_type': 'red_egg',
     },
     BirdType.BLUE: {
@@ -71,10 +65,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'blue', -3),
         'speed': 4,
         'damage': 4,
-        'ability': 'speed_boost',
         'description': 'Speed boost ability, cures adjacent scared birds',
-        'rarity': 'common',
-        'spawn_limit': None,
         'egg_type': 'blue_egg',
     },
     BirdType.PATCHWORK: {
@@ -83,10 +74,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'patchwork', 202),
         'speed': 3,
         'damage': 3,
-        'ability': 'multicolor',
         'description': 'Can transform and use multiple bird abilities',
-        'rarity': 'uncommon',
-        'spawn_limit': 2,
         'egg_type': 'patchwork_egg',
     },
     BirdType.PURPLE: {
@@ -95,10 +83,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'purple', 201),
         'speed': 3,
         'damage': 3,
-        'ability': 'charged_shot',
         'description': 'Charges powerful shots, damage increases with charge time',
-        'rarity': 'uncommon',
-        'spawn_limit': 2,
         'egg_type': 'purple_egg',
     },
     BirdType.CLOCKWORK: {
@@ -107,10 +92,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'clockwork', 244),
         'speed': 2,
         'damage': 2,
-        'ability': 'auto_bounce',
         'description': 'Auto-bounces at floor, has charge system that decays',
-        'rarity': 'uncommon',
-        'spawn_limit': 2,
         'egg_type': 'clockwork_egg',
     },
     BirdType.WHITE: {
@@ -119,10 +101,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'white', -5),
         'speed': 4,
         'damage': 4,
-        'ability': 'battle_cry',
         'description': 'Activates abilities of adjacent birds',
-        'rarity': 'rare',
-        'spawn_limit': 1,
         'egg_type': 'white_egg',
     },
     BirdType.ORANGE: {
@@ -131,10 +110,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'orange', 208),
         'speed': 5,
         'damage': 5,
-        'ability': 'one_hit_kill',
         'description': 'One-hit kills enemies, goes out of play after',
-        'rarity': 'rare',
-        'spawn_limit': 1,
         'egg_type': 'orange_egg',
     },
     BirdType.GOLD: {
@@ -143,10 +119,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'gold', 228),
         'speed': 5,
         'damage': 1,
-        'ability': 'score_multiplier',
         'description': 'Generates massive score per frame',
-        'rarity': 'rare',
-        'spawn_limit': 1,
         'egg_type': 'gold_egg',
     },
     BirdType.COOKIE: {
@@ -155,10 +128,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'cookie', 180),
         'speed': 3,
         'damage': 3,
-        'ability': 'xp_crumb',
         'description': 'Drops XP crumbs, dies after 5 crumbs',
-        'rarity': 'uncommon',
-        'spawn_limit': 1,
         'egg_type': 'cookie_egg',
     },
     BirdType.STEALTH: {
@@ -167,10 +137,7 @@ BIRD_TYPES = {
         'color': 'STEALTH',  # Special rendering
         'speed': 3,
         'damage': 24,
-        'ability': 'phase_through',
         'description': 'Can phase through enemies dealing massive damage',
-        'rarity': 'uncommon',
-        'spawn_limit': 1,
         'egg_type': 'stealth_egg',
     },
     BirdType.DINOSAUR: {
@@ -179,10 +146,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'dinosaur', 46),
         'speed': 4,
         'damage': 16,
-        'ability': 'charge_bounce',
         'description': 'Requires multiple presses to bounce, high damage',
-        'rarity': 'epic',
-        'spawn_limit': 1,
         'egg_type': 'dinosaur_egg',
     },
     BirdType.GLITCH: {
@@ -191,10 +155,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'glitch', 205),
         'speed': 3,  # Varies randomly
         'damage': 16,  # Varies randomly
-        'ability': 'chaos',
         'description': 'Unpredictable: random speed, damage, can swap lanes, duplicate',
-        'rarity': 'epic',
-        'spawn_limit': 1,
         'egg_type': 'glitch_egg',
     },
     # New birds
@@ -204,10 +165,7 @@ BIRD_TYPES = {
         'color': 'RAINBOW',  # Special sentinel for animated multicolor
         'speed': 6,  # Decreases with charge
         'damage': 3,
-        'ability': 'warp_flight',
         'description': 'Warps between ceiling/floor, colors fade over time, recharge with UP',
-        'rarity': 'mythic',
-        'spawn_limit': 1,
         'egg_type': 'rainbow_egg',
     },
     BirdType.TWISTER: {
@@ -216,10 +174,7 @@ BIRD_TYPES = {
         'color': 'TWISTER',  # Special sentinel for gray body + cyan wings
         'speed': 4,
         'damage': 5,
-        'ability': 'local_tailwind',
         'description': 'Creates tailwind in current lane and 2 adjacent lanes',
-        'rarity': 'rare',
-        'spawn_limit': 1,
         'egg_type': 'twister_egg',
     },
     BirdType.FROSTY: {
@@ -228,10 +183,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'frosty', 159),
         'speed': 3,
         'damage': 3,
-        'ability': 'freeze',
         'description': '30% chance to freeze enemies on hit, power boosts to 60%',
-        'rarity': 'rare',
-        'spawn_limit': 1,
         'egg_type': 'frosty_egg',
     },
     BirdType.POISON: {
@@ -240,10 +192,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'poison', 118),
         'speed': 3,
         'damage': 3,
-        'ability': 'poison',
         'description': '30% chance to poison bats (2HP/s), power boosts to 60%',
-        'rarity': 'rare',
-        'spawn_limit': 1,
         'egg_type': 'poison_egg',
     },
     BirdType.BERSERK: {
@@ -252,10 +201,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'berserk', 124),
         'speed': 3,
         'damage': 4,
-        'ability': 'bleed',
         'description': '30% chance to cause bleeding (1HP/s, -1 armor), power boosts to 60%',
-        'rarity': 'rare',
-        'spawn_limit': 1,
         'egg_type': 'berserk_egg',
     },
     BirdType.ROCK: {
@@ -264,10 +210,7 @@ BIRD_TYPES = {
         'color': theme.get_color('birds', 'rock', 94),
         'speed': 2,
         'damage': 3,
-        'ability': 'push',
         'description': 'Pushes enemies up 1 row on hit, power boosts to 2 rows + speed 3',
-        'rarity': 'rare',
-        'spawn_limit': 1,
         'egg_type': 'rock_egg',
     },
 }
@@ -334,27 +277,12 @@ def get_color_for_bird_type(bird_type: str, dynamic: bool = True) -> str:
     return BIRD_TYPES.get(bird_type, {}).get('color', "\033[0m")
 
 
-def get_display_name(bird_type: str) -> str:
-    """Get display name for a bird type."""
-    return BIRD_TYPES.get(bird_type, {}).get('display_name', 'Unknown')
-
-
-def get_egg_type(bird_type: str) -> str:
-    """Get egg type for a bird type."""
-    return BIRD_TYPES.get(bird_type, {}).get('egg_type', '')
-
-
 def get_bird_type_from_egg(egg_type: str):
     """Get bird type from egg type."""
     for bird_type, data in BIRD_TYPES.items():
         if data['egg_type'] == egg_type:
             return bird_type
     return None
-
-
-def get_spawn_limit(bird_type: str) -> int:
-    """Get spawn limit for a bird type (None = unlimited)."""
-    return BIRD_TYPES.get(bird_type, {}).get('spawn_limit')
 
 
 def get_default_speed(bird_type: str) -> int:
@@ -365,15 +293,3 @@ def get_default_speed(bird_type: str) -> int:
 # ============================================================================
 # FORMATION HELPERS
 # ============================================================================
-
-DEFAULT_FORMATION = [
-    BirdType.YELLOW,
-    BirdType.YELLOW,
-    BirdType.YELLOW,
-    BirdType.YELLOW,
-    BirdType.RED,
-    BirdType.RED,
-    BirdType.RED,
-    BirdType.BLUE,
-    BirdType.BLUE,
-]

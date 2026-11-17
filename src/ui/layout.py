@@ -51,9 +51,6 @@ TOTAL_WIDTH = constants.layout.width + (SIDE_PANEL_WIDTH * 2)
 
 GAME_X_OFFSET = SIDE_PANEL_WIDTH  # X offset where game area starts
 
-# Content width inside panels (excluding borders)
-PANEL_CONTENT_WIDTH = 18  # Fixed content width for gauges, signs, etc.
-
 # Pre-build static parts (now with offset consideration)
 ceiling = "=" * constants.layout.width
 

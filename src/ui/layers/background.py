@@ -9,15 +9,7 @@ from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
 # Default patterns (Windy Woods) - used as fallback
 TREE_PATTERN = WOODS_BG_LAYER1
 
-TREE_PATTERN_HEIGHT = len(TREE_PATTERN)
-
-TREE_PATTERN_WIDTH = 24
-
 MID_TREE_PATTERN = WOODS_BG_LAYER2
-
-MID_TREE_PATTERN_HEIGHT = len(MID_TREE_PATTERN)
-
-MID_TREE_PATTERN_WIDTH = 32
 
 
 def get_current_biome_bg():

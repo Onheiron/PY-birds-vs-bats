@@ -180,6 +180,7 @@ pip install -r requirements-dev.txt
 | Format | `ruff format .` |
 | Regenerate the config schema after adding keys to `config.yml` | `python3 tools/gen_config_schema.py` |
 | Measure frame time | `python3 tools/benchmark.py` (add `--profile` for hot spots) |
+| List configuration keys the game never reads | `python3 tools/config_usage.py` |
 | Build a standalone binary | `pyinstaller --noconfirm packaging/BVB.spec` |
 
 ### Project layout
@@ -270,6 +271,12 @@ closest to being lost, bounces birds before they fall past an enemy (birds only
 collide while rising), fires powers when they help and waits under the next
 bird to fall. Its randomness is separate from the game's, so a seed always
 replays the same game.
+
+### Removed mechanics
+
+`docs/unused-mechanics.md` records the mechanics, achievements, art and
+configuration keys removed because nothing in the game used them, and the
+configuration the game ignores by mistake (still to be fixed).
 
 ### Adding a boss
 

@@ -48,11 +48,10 @@ def test_escape_followed_by_text_is_not_an_arrow():
     assert parse_keys('\x1b[Z') == ['ESC', '[', 'Z']
 
 
-def test_get_key_returns_the_latest_key(monkeypatch):
+def test_read_keys_parses_what_is_pending(monkeypatch):
     monkeypatch.setattr(keyboard, '_read_pending', lambda: '\x1b[D\x1b[A')
-    assert keyboard.get_key() == 'UP'
+    assert keyboard.read_keys() == ['LEFT', 'UP']
     monkeypatch.setattr(keyboard, '_read_pending', lambda: '')
-    assert keyboard.get_key() is None
     assert keyboard.read_keys() == []
 
 

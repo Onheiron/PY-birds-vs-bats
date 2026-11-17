@@ -236,6 +236,5 @@ BLUE = _colors.get('BLUE', "\033[34m")
 CYAN = _colors.get('CYAN', "\033[96m")
 WHITE = _colors.get('WHITE', "\033[97m")
 YELLOW = _colors.get('YELLOW', "\033[38;5;220m")
-BLACK = _colors.get('BLACK', "\033[38;5;16m")
 DARK_GRAY = _colors.get('DARK_GRAY', "\033[38;5;240m")
 RESET = "\033[0m"

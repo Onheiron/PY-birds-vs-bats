@@ -90,9 +90,3 @@ def read_keys(text=False):
     """Return the keys pressed since the last call (possibly empty)."""
     buffer = _read_pending()
     return parse_keys(buffer, text) if buffer else []
-
-
-def get_key():
-    """Return the most recent key pressed since the last call, or None."""
-    keys = read_keys()
-    return keys[-1] if keys else None

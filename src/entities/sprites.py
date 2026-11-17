@@ -20,7 +20,6 @@ STEALTH = "STEALTH"  # Sentinel for stealth bird type (rendered specially)
 # Base colors (non-bird colors used for UI, effects, etc.)
 GREEN = theme.get_base_color('green', -2)
 CYAN = theme.get_base_color('cyan', -4)
-BLACK = theme.get_base_color('black', 16)
 DARK_GRAY = theme.get_base_color('dark_gray', 240)
 
 # Bird colors - MUST match bird_types.py (use 'birds' category)
@@ -146,24 +145,6 @@ BIRD_DOWN_1 = [
 BIRD_DOWN_2 = [
     "_M_",
     " ' ",
-]
-
-# PATCHWORK bird sprites - mixes characters (. ' \ / M W) across frames
-BIRD_PATCH_UP_1 = [
-    " . ",
-    "\\M/",
-]
-BIRD_PATCH_UP_2 = [
-    " ' ",
-    "/W\\",
-]
-BIRD_PATCH_DOWN_1 = [
-    "\\M/",
-    " ' ",
-]
-BIRD_PATCH_DOWN_2 = [
-    "/W\\",
-    " . ",
 ]
 
 # DINOSAUR legendary bird sprites (3 lines × 5 chars)
@@ -367,20 +348,6 @@ WIND_BOSS_DEAD = [
     "/\\/\\/   W ‾‾‾ W   \\/\\/\\ ",
 ]
 
-# Animation sequence for wind boss (indices into sprite list)
-WIND_BOSS_ANIM_SEQUENCE = [
-    'max_up',  # 0 - wings fully up (tailwind)
-    'push_1',  # 1 - pushing down
-    'push_2',  # 2 - pushing down
-    'push_3',  # 3 - pushing down
-    'push_4',  # 4 - pushing down
-    'max_down',  # 5 - wings fully down (headwind starts)
-    'pull_1',  # 6 - pulling up
-    'pull_2',  # 7 - pulling up
-    'pull_3',  # 8 - pulling up
-    'pull_4',  # 9 - pulling up (back to max_up)
-]
-
 # =============================================================================
 # JELLY BOSS - Boss for level 3-3 (Rotten Marshes)
 # Oscillates and spawns bats from its head
@@ -498,9 +465,6 @@ JELLY_BOSS_FRAMES = [
     JELLY_BOSS_FRAME_9,
     JELLY_BOSS_FRAME_10,
 ]
-
-# Animation frames for bat spawning from jelly boss (o -> O -> () -> bat)
-JELLY_SPAWN_ANIM_FRAMES = ['o', 'O', '()', '/(@)\\', 'bat']
 
 # =============================================================================
 # TREE BOSS SPRITES - Giant tree spanning the entire game screen
@@ -738,9 +702,6 @@ OWL_BOSS_FRAMES = {
     'dead': [OWL_BOSS_DEAD],
 }
 
-# State cycle order
-OWL_BOSS_STATE_CYCLE = ['fly', 'conjure', 'cast', 'recharge']
-
 # Spell names for cycle
 OWL_BOSS_SPELLS = [
     'overgrowth',  # Conjures tree obstacles with flowers
@@ -782,21 +743,6 @@ METEOR_TRAIL = [
 # =============================================================================
 # PORTAL SPRITES FOR OWL BOSS - bend_space attack
 # =============================================================================
-
-OWL_PORTAL_FRAME_1 = [
-    " (O) ",
-    "((●))",
-    " (O) ",
-]
-
-OWL_PORTAL_FRAME_2 = [
-    " (●) ",
-    "((O))",
-    " (●) ",
-]
-
-# Background pattern
-BG_PATTERN = "/\\/\\/\\"
 
 # =============================================================================
 # BIOME SYSTEM - 6 biomes, one per level group
@@ -1124,13 +1070,6 @@ MOUNTAIN_OBSTACLE_T4 = [
     " /____\\/____\\ ",
 ]
 
-# Cloud/fog overlay for Mountain Range (rendered in foreground)
-MOUNTAIN_CLOUD_SPRITES = [
-    ["  ⌒⌢⌒  ", " ⌢⌒⌢⌒⌢ ", "⌒⌢⌒⌢⌒⌢⌒"],
-    [" ☁☁☁ ", "☁☁☁☁☁"],
-    ["  ~~~  ", " ~~~~~ ", "~~~~~~~"],
-]
-
 # =============================================================================
 # BIOME MAPPINGS
 # =============================================================================
@@ -1339,59 +1278,3 @@ def get_obstacle_hitbox_lanes(obs_lane, sprite_width, lane_positions, num_lanes)
             covered_lanes.add(lane_idx)
 
     return covered_lanes
-
-
-# Legacy: mantieni per compatibilità
-OBSTACLE_SPRITE = OBSTACLE_SPRITE_T1
-
-# Base colors (full HP) for color interpolation
-BATS_BASE_RGB = (255, 0, 255)  # magenta FF00FF
-OBST_BASE_RGB = (0, 255, 0)  # green 00FF00
-
-
-# Rendering helper functions
-def render_patchwork_line(line: str) -> str:
-    """Return a string where each character in `line` is colored in a repeating patchwork pattern.
-
-    The returned string does NOT include a cursor positioning escape; caller should place it.
-    A final RESET is appended.
-    """
-    try:
-        patch_colors = [RED, YELLOW, BLUE, GREEN, PURPLE, ORANGE, GOLD, CYAN, WHITE]
-        parts = []
-        for i, ch in enumerate(line):
-            # Color each character; keep spacing visible (coloring spaces is acceptable here)
-            parts.append(f"{patch_colors[i % len(patch_colors)]}{ch}")
-        return "".join(parts) + RESET
-    except Exception:
-        # Fallback: return unmodified line with default reset
-        return line + RESET
-
-
-def render_clockwork_line(line: str, charge: int, blink_on: bool) -> str:
-    """Render a single sprite line for CLOCKWORK birds.
-
-    Only the characters '.' and "'" are colored according to charge and blink state.
-    Other characters are rendered in the CLOCKWORK base color. A RESET is appended.
-    """
-    try:
-        # Determine the active highlight color based on charge
-        if charge is None:
-            charge = 2
-        if charge > 1:
-            hl = GREEN
-        elif charge == 1:
-            hl = YELLOW
-        else:
-            hl = RED
-
-        parts = []
-        for ch in line:
-            if ch in ('.', "'"):
-                # Blink: when blink_on is False render as dark gray, else use highlight
-                parts.append((hl if blink_on else DARK_GRAY) + ch)
-            else:
-                parts.append(CLOCKWORK + ch)
-        return "".join(parts) + RESET
-    except Exception:
-        return CLOCKWORK + line + RESET

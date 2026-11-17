@@ -6,25 +6,12 @@ from src.core import constants, state
 from src.engine import clock
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
-from src.engine.progression import add_score, award_xp, compute_prestige, get_level_milestones
+from src.engine.progression import add_score, award_xp, compute_prestige
 
 
 def get_boss_config():
     """Get boss configuration."""
     return getattr(constants, 'boss', None)
-
-
-def _get_miles_to_next_level():
-    """Calculate miles remaining until next level transition."""
-
-    milestones = get_level_milestones()
-    current_level = state.game.level
-
-    if current_level >= len(milestones):
-        return float('inf')  # Max level reached
-
-    next_threshold = milestones[current_level - 1] if current_level <= len(milestones) else milestones[-1]
-    return max(0, next_threshold - state.game.miles)
 
 
 def convert_boss_to_obstacle(boss):

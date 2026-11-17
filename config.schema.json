@@ -14,17 +14,6 @@
       },
       "type": "object"
     },
-    "bat": {
-      "properties": {
-        "scared_seconds": {
-          "type": "number"
-        },
-        "scared_speed_boost_seconds": {
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
     "bat_enemy": {
       "properties": {
         "armored": {
@@ -257,9 +246,6 @@
           },
           "type": "object"
         },
-        "max_on_screen": {
-          "type": "number"
-        },
         "mini_bat": {
           "properties": {
             "anim_frames_per_step": {
@@ -300,23 +286,6 @@
           },
           "type": "object"
         },
-        "scared": {
-          "properties": {
-            "base_seconds": {
-              "type": "number"
-            },
-            "speed_boost_seconds": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        },
-        "spawn_interval_range": {
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
-        },
         "spawn_rate_by_level": {
           "properties": {
             "level_10_12": {
@@ -332,71 +301,6 @@
               "type": "number"
             },
             "level_7_9": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        },
-        "spawning": {
-          "properties": {
-            "consecutive_retry_timer": {
-              "type": "number"
-            },
-            "consecutive_spawn_limit": {
-              "type": "number"
-            },
-            "fail_retry_timer": {
-              "type": "number"
-            },
-            "level_threshold": {
-              "type": "number"
-            },
-            "max_attempts": {
-              "type": "number"
-            },
-            "min_separation": {
-              "type": "number"
-            },
-            "target_y_high_level": {
-              "properties": {
-                "max": {
-                  "type": "number"
-                },
-                "min": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "target_y_low_level": {
-              "properties": {
-                "max": {
-                  "type": "number"
-                },
-                "min": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "wave_offset": {
-              "properties": {
-                "max": {
-                  "type": "number"
-                },
-                "min": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "x_margin": {
-              "type": "number"
-            },
-            "x_min": {
-              "type": "number"
-            },
-            "y_start": {
               "type": "number"
             }
           },
@@ -597,56 +501,6 @@
               "type": "array"
             },
             "level_7_9": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            }
-          },
-          "type": "object"
-        },
-        "tiers": {
-          "properties": {
-            "hp_tier_1": {
-              "type": "number"
-            },
-            "hp_tier_2": {
-              "type": "number"
-            },
-            "hp_tier_3": {
-              "type": "number"
-            },
-            "hp_tier_4": {
-              "type": "number"
-            },
-            "level_threshold_1": {
-              "type": "number"
-            },
-            "level_threshold_2": {
-              "type": "number"
-            },
-            "level_threshold_3": {
-              "type": "number"
-            },
-            "weights_level_0_2": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "weights_level_3_4": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "weights_level_5_7": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "weights_level_8_plus": {
               "items": {
                 "type": "number"
               },
@@ -887,45 +741,6 @@
       },
       "type": "object"
     },
-    "bounce_boost": {
-      "properties": {
-        "duration": {
-          "properties": {
-            "base": {
-              "type": "number"
-            },
-            "max": {
-              "type": "number"
-            },
-            "plus": {
-              "type": "number"
-            },
-            "plusplus": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        },
-        "seconds": {
-          "properties": {
-            "base": {
-              "type": "number"
-            },
-            "max": {
-              "type": "number"
-            },
-            "plus": {
-              "type": "number"
-            },
-            "plusplus": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object"
-    },
     "clockwork": {
       "properties": {
         "decay_seconds": {
@@ -934,35 +749,7 @@
         "initial_charge": {
           "type": "number"
         },
-        "lanes": {
-          "properties": {
-            "base": {
-              "type": "number"
-            },
-            "max": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        },
         "max_charge": {
-          "type": "number"
-        },
-        "min_charge": {
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "collision": {
-      "properties": {
-        "bat_sprite_width": {
-          "type": "number"
-        },
-        "lane_half_width": {
-          "type": "number"
-        },
-        "loot_collection_distance": {
           "type": "number"
         }
       },
@@ -987,9 +774,6 @@
     },
     "combat": {
       "properties": {
-        "bat_center_offset": {
-          "type": "number"
-        },
         "bat_destroy_xp_per_tier": {
           "type": "number"
         },
@@ -1016,9 +800,6 @@
         "obstacle_destroy_xp_per_tier": {
           "type": "number"
         },
-        "obstacle_score_multiplier": {
-          "type": "number"
-        },
         "scared_duration": {
           "type": "number"
         },
@@ -1029,72 +810,6 @@
           "type": "number"
         },
         "stealth_tangible_dmg_boost": {
-          "type": "number"
-        },
-        "xp_bonus_per_tier": {
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "combo": {
-      "properties": {
-        "window_frames": {
-          "type": "number"
-        },
-        "yellow_blue_chain_window": {
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "controls": {
-      "properties": {
-        "action": {
-          "type": "string"
-        },
-        "move_down": {
-          "type": "string"
-        },
-        "move_left": {
-          "type": "string"
-        },
-        "move_right": {
-          "type": "string"
-        },
-        "move_up": {
-          "type": "string"
-        },
-        "pause": {
-          "type": "string"
-        },
-        "pause_alt": {
-          "type": "string"
-        },
-        "quit": {
-          "type": "string"
-        },
-        "toggle_audio": {
-          "type": "string"
-        },
-        "toggle_audio_alt": {
-          "type": "string"
-        },
-        "toggle_xp": {
-          "type": "string"
-        },
-        "toggle_xp_alt": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "despawn": {
-      "properties": {
-        "bat_time": {
-          "type": "number"
-        },
-        "loot_time": {
           "type": "number"
         }
       },
@@ -1148,9 +863,6 @@
           "type": "number"
         },
         "presses_to_bounce": {
-          "type": "number"
-        },
-        "recovery_on_egg": {
           "type": "number"
         }
       },
@@ -1288,98 +1000,6 @@
             }
           },
           "type": "object"
-        },
-        "rarity_weights": {
-          "properties": {
-            "common": {
-              "properties": {
-                "blue_egg": {
-                  "type": "number"
-                },
-                "patchwork_egg": {
-                  "type": "number"
-                },
-                "red_egg": {
-                  "type": "number"
-                },
-                "yellow_egg": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "epic": {
-              "properties": {
-                "gold_egg": {
-                  "type": "number"
-                },
-                "orange_egg": {
-                  "type": "number"
-                },
-                "white_egg": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "legendary": {
-              "properties": {
-                "dinosaur_egg": {
-                  "type": "number"
-                },
-                "glitch_egg": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "mythical": {
-              "properties": {
-                "rainbow_egg": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "rare": {
-              "properties": {
-                "clockwork_egg": {
-                  "type": "number"
-                },
-                "cookie_egg": {
-                  "type": "number"
-                },
-                "stealth_egg": {
-                  "type": "number"
-                },
-                "twister_egg": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "uncommon": {
-              "properties": {
-                "berserk_egg": {
-                  "type": "number"
-                },
-                "frosty_egg": {
-                  "type": "number"
-                },
-                "poison_egg": {
-                  "type": "number"
-                },
-                "purple_egg": {
-                  "type": "number"
-                },
-                "rock_egg": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            }
-          },
-          "type": "object"
         }
       },
       "type": "object"
@@ -1429,9 +1049,6 @@
         "minutes_divider": {
           "type": "number"
         },
-        "separator_width": {
-          "type": "number"
-        },
         "time_divider": {
           "type": "number"
         },
@@ -1446,27 +1063,10 @@
         "bounce_ignore_chance": {
           "type": "number"
         },
-        "damage": {
-          "properties": {
-            "max": {
-              "type": "number"
-            },
-            "min": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        },
         "duplicate_chance": {
           "type": "number"
         },
         "flip_chance": {
-          "type": "number"
-        },
-        "loot_ignore_chance": {
-          "type": "number"
-        },
-        "loot_promote_chance": {
           "type": "number"
         },
         "nudge_chance": {
@@ -1487,17 +1087,6 @@
           "type": "number"
         },
         "swap_chance": {
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "gold": {
-      "properties": {
-        "damage": {
-          "type": "number"
-        },
-        "score_value": {
           "type": "number"
         }
       },
@@ -1572,12 +1161,6 @@
           },
           "type": "array"
         },
-        "max_lane_index": {
-          "type": "number"
-        },
-        "min_lane_index": {
-          "type": "number"
-        },
         "min_panel_width": {
           "type": "number"
         },
@@ -1598,9 +1181,6 @@
     },
     "levels": {
       "properties": {
-        "distance_increment_start": {
-          "type": "number"
-        },
         "levels_per_group": {
           "type": "number"
         },
@@ -1608,14 +1188,6 @@
           "type": "number"
         },
         "total_levels": {
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "limits": {
-      "properties": {
-        "max_entities": {
           "type": "number"
         }
       },
@@ -1683,16 +1255,7 @@
             "biome_decay": {
               "type": "number"
             },
-            "consecutive_spawn_limit": {
-              "type": "number"
-            },
             "min_spawn_rate": {
-              "type": "number"
-            },
-            "retry_timer_divisor": {
-              "type": "number"
-            },
-            "retry_timer_min": {
               "type": "number"
             },
             "sublevel_decay": {
@@ -1747,9 +1310,6 @@
     },
     "orange": {
       "properties": {
-        "out_of_play_y": {
-          "type": "number"
-        },
         "recover_chance": {
           "type": "number"
         }
@@ -1879,15 +1439,6 @@
             },
             "overgrowth": {
               "properties": {
-                "flower_probability": {
-                  "type": "number"
-                },
-                "spawn_radius_x": {
-                  "type": "number"
-                },
-                "spawn_radius_y": {
-                  "type": "number"
-                },
                 "tree_count": {
                   "type": "number"
                 },
@@ -1920,17 +1471,6 @@
       },
       "type": "object"
     },
-    "physics": {
-      "properties": {
-        "speed_max": {
-          "type": "number"
-        },
-        "speed_min": {
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
     "poison": {
       "properties": {
         "base_chance": {
@@ -1947,18 +1487,6 @@
         },
         "effect_duration": {
           "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "powers": {
-      "properties": {
-        "blue_adjacent_boost_seconds": {
-          "type": "number"
-        },
-        "default": {
-          "properties": {},
-          "type": "object"
         }
       },
       "type": "object"
@@ -2037,17 +1565,6 @@
       },
       "type": "object"
     },
-    "rendering": {
-      "properties": {
-        "dinosaur_sprite_height": {
-          "type": "number"
-        },
-        "normal_bird_sprite_height": {
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
     "rock": {
       "properties": {
         "boost_duration": {
@@ -2075,12 +1592,6 @@
     },
     "speed": {
       "properties": {
-        "frame_sleep_at_speed_1": {
-          "type": "number"
-        },
-        "frame_sleep_at_speed_10": {
-          "type": "number"
-        },
         "max_speed": {
           "type": "number"
         },
@@ -2116,56 +1627,9 @@
       },
       "type": "object"
     },
-    "suction": {
-      "properties": {
-        "boost_duration": {
-          "properties": {
-            "base": {
-              "type": "number"
-            },
-            "max": {
-              "type": "number"
-            },
-            "plus": {
-              "type": "number"
-            },
-            "plusplus": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        },
-        "seconds": {
-          "properties": {
-            "base": {
-              "type": "number"
-            },
-            "max": {
-              "type": "number"
-            },
-            "plus": {
-              "type": "number"
-            },
-            "plusplus": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object"
-    },
     "swamp_flowers": {
       "properties": {
         "bloom_probability": {
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "synergy": {
-      "properties": {
-        "transfer_ratio": {
           "type": "number"
         }
       },
@@ -2266,12 +1730,6 @@
           "type": "number"
         },
         "base_sleep": {
-          "type": "number"
-        },
-        "frame_sleep_level_multiplier": {
-          "type": "number"
-        },
-        "min_sleep": {
           "type": "number"
         }
       },

@@ -1,7 +1,5 @@
 """Bird helpers: velocity, powers, lanes, transformations and shuffling."""
 
-import random
-
 from src.core import constants, state
 from src.engine.grades import compute_grade_from_xp
 from src.entities.bird_types import get_bird_type_by_color
@@ -142,82 +140,6 @@ def check_pending_transforms(dead_bird_color):
             state.birds.transformed[bi] = True
             state.birds.pending_transform[bi] = None
             return  # Only transform one
-
-
-def perform_shuffle(count):
-    """Shuffle birds toward center lanes."""
-    center = 4
-    moved_indices = set()
-    used_lost_slots = set()
-
-    for _ in range(max(0, int(count))):
-        living = [i for i in range(constants.layout.num_balls) if not state.birds.lost[i]]
-        living_available = [i for i in living if i not in moved_indices]
-
-        if len(living_available) <= 1:
-            break
-
-        # Pick bird farthest from center
-        living_sorted = sorted(living_available, key=lambda i: abs(state.birds.random_lanes[i] - center), reverse=True)
-        src_idx = living_sorted[0]
-        src_lane = state.birds.random_lanes[src_idx]
-
-        # Try to find empty lane closest to center
-        lost_slots = [i for i in range(constants.layout.num_balls) if state.birds.lost[i] and i not in used_lost_slots]
-
-        if lost_slots:
-            empty_lanes = sorted([state.birds.random_lanes[i] for i in lost_slots], key=lambda lane: abs(lane - center))
-            target_lane = empty_lanes[0]
-            target_idx = next((li for li in lost_slots if state.birds.random_lanes[li] == target_lane), None)
-
-            if target_idx is not None:
-                _swap_lanes(src_idx, target_idx)
-                moved_indices.add(src_idx)
-                moved_indices.add(target_idx)
-                used_lost_slots.add(target_idx)
-                continue
-
-        # Try inner living bird
-        inner = [
-            i
-            for i in living
-            if i != src_idx
-            and i not in moved_indices
-            and abs(state.birds.random_lanes[i] - center) < abs(src_lane - center)
-        ]
-
-        if inner:
-            tgt_idx = sorted(inner, key=lambda i: abs(state.birds.random_lanes[i] - center))[0]
-            _swap_lanes(src_idx, tgt_idx)
-            moved_indices.add(src_idx)
-            moved_indices.add(tgt_idx)
-            continue
-
-        # Fallback: random swap
-        others = [i for i in living if i != src_idx and i not in moved_indices]
-        if not others:
-            break
-        other = random.choice(others)
-        _swap_lanes(src_idx, other)
-        moved_indices.add(src_idx)
-        moved_indices.add(other)
-
-
-def _swap_lanes(idx1, idx2):
-    """Helper to swap lane assignments and reset positions."""
-    state.birds.random_lanes[idx1], state.birds.random_lanes[idx2] = (
-        state.birds.random_lanes[idx2],
-        state.birds.random_lanes[idx1],
-    )
-
-    state.birds.cols[idx1] = constants.layout.lane_positions[state.birds.random_lanes[idx1]]
-    state.birds.cols[idx2] = constants.layout.lane_positions[state.birds.random_lanes[idx2]]
-
-    for idx in [idx1, idx2]:
-        if not state.birds.lost[idx]:
-            state.birds.y[idx] = constants.layout.starting_line
-            set_ball_vy(idx, -1)
-            reset_bird_power(idx)
 
 
 def find_bird_in_lane(lane):

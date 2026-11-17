@@ -1,7 +1,6 @@
 """Birds and their status indicators."""
 
 import math
-import random
 
 from src.core import constants, state
 from src.engine import clock
@@ -20,12 +19,10 @@ from src.entities.sprites import (
     DINOSAUR_UP_1,
     DINOSAUR_UP_2,
     GREEN,
-    ORANGE,
     PATCHWORK,
     PURPLE,
     RAINBOW,
     RED,
-    RESET,
     STEALTH,
     TWISTER,
     WHITE,
@@ -33,46 +30,6 @@ from src.entities.sprites import (
 )
 from src.ui.colors import apply_bold, get_render_color
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
-
-
-def render_clockwork_line(line, charge, blink_on):
-    """Render a CLOCKWORK bird line with special coloring.
-
-    Beak (') color based on charge:
-    - charge 3 (full): normal clockwork color
-    - charge 1-2 (discharging): yellow blinking
-    - charge 0 (empty): red blinking
-    """
-    colored = ""
-    for ch in line:
-        if ch == "'":
-            # Beak - shows charge status
-            if charge == 0:
-                # Empty: red blinking
-                beak_color = RED if blink_on else DARK_GRAY
-            elif charge < 3:
-                # Discharging: yellow blinking
-                beak_color = YELLOW if blink_on else DARK_GRAY
-            else:
-                # Full: normal
-                beak_color = CLOCKWORK
-            colored += f"{beak_color}{ch}{RESET}"
-        else:
-            colored += f"{CLOCKWORK}{ch}{RESET}"
-    return colored
-
-
-def render_patchwork_line(line):
-    """Render a PATCHWORK bird line with random colors."""
-    colors = [RED, YELLOW, BLUE, GREEN, PURPLE, ORANGE, CYAN]
-    colored = ""
-    for ch in line:
-        if ch != ' ':
-            color = random.choice(colors)
-            colored += f"{color}{ch}{RESET}"
-        else:
-            colored += ch
-    return colored
 
 
 def draw_bird_status_indicators(fb):

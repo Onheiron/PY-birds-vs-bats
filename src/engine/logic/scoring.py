@@ -140,27 +140,3 @@ def update_score_tick():
 
     # MOMENTUM: depends ONLY on center of mass (momentum_factor: -1 to +2)
     update_momentum(momentum_factor)
-
-
-def calculate_frame_sleep():
-    """Calculate the sleep duration for current frame.
-
-    Note: This is now a legacy function. The main game loop uses
-    calculate_frames_per_update() based on state.game.speed instead.
-    """
-    # Use speed-based calculation (interpolated between speed 1 and speed 10)
-    speed = state.game.speed
-    min_speed = getattr(constants.speed, 'min_speed', 1)
-    max_speed = getattr(constants.speed, 'max_speed', 10)
-    sleep_at_1 = getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18)
-    sleep_at_10 = getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
-
-    t = (speed - min_speed) / (max_speed - min_speed) if max_speed > min_speed else 0
-    t = max(0, min(1, t))
-    sleep_time = sleep_at_1 - t * (sleep_at_1 - sleep_at_10)
-
-    # Apply timelapse slowdown if active
-    if state.powerups.timelapse_active:
-        sleep_time *= state.powerups.timelapse_slowdown
-
-    return max(constants.timing.min_sleep, sleep_time)

@@ -109,8 +109,6 @@ MOD_FAINT = "\033[2m"  # Dim/faint text for background layers
 
 MOD_BOLD = "\033[1m"  # Bold text for foreground (obstacles, birds, bats)
 
-MOD_NORMAL = "\033[0m"  # Normal text for everything else
-
 
 def apply_faint(color):
     """Apply faint modifier to a color code for background layers."""
@@ -138,11 +136,6 @@ def get_shimmer_color(brightness):
     gray_index = max(232, min(255, gray_index))
     return f"\033[38;5;{gray_index}m"
 
-
-# Colors for parallax layers (loaded from theme)
-TREE_BG_COLOR = theme.get_color('background', 'layer1', 234)
-
-MID_TREE_COLOR = theme.get_color('background', 'layer2', 235)
 
 # Biome names for theme lookup (level_group -> theme key)
 BIOME_THEME_KEYS = {
@@ -274,8 +267,6 @@ def dim_ansi_color(ansi_color: str, hp: int, max_hp: int) -> str:
 # Side panel colors (loaded from theme)
 PANEL_BORDER_COLOR = theme.get_color('panels', 'border', 238)
 
-PANEL_BG_COLOR = theme.get_color('panels', 'background', 233)
-
 # Speed gauge gradient colors (level 1-10: green -> yellow -> red)
 GAUGE_GRADIENT = theme.get_gradient('gauge', 'gradient')
 
@@ -283,10 +274,6 @@ GAUGE_GRADIENT = theme.get_gradient('gauge', 'gradient')
 MOMENTUM_GRADIENT = theme.get_gradient('momentum', 'gradient')
 
 GAUGE_OFF = theme.get_color('gauge', 'off', 238)
-
-GAUGE_BLOCK_ON = "██████"  # Solid block for active segments
-
-GAUGE_BLOCK_OFF = "------"  # Dashes for inactive segments (clearly different)
 
 # Text colors for left panel (loaded from theme)
 PANEL_LABEL_COLOR = theme.get_color('left_panel', 'label', 245)
@@ -326,9 +313,6 @@ MENU_SELECTED_COLOR = theme.get_color('pause_menu', 'selected', 220)
 MENU_NORMAL_COLOR = theme.get_color('pause_menu', 'normal', 250)
 
 MENU_ARROW_COLOR = theme.get_color('pause_menu', 'arrow', 214)
-
-# Decorative barriers color (loaded from theme)
-DECO_COLOR = theme.get_color('decorative', 'barriers', 22)
 
 
 def get_position_color(y_pos):

@@ -270,8 +270,6 @@ def _bounce_bird_up(bird_idx):
             state.birds.speeds[bird_idx] = 1
 
 
-
-
 def _handle_dinosaur_bounce(bird_idx):
     """Handle dinosaur multi-press bounce."""
     cnt = state.special.dinosaur_up_presses.get(bird_idx, 0) + 1

@@ -112,11 +112,6 @@ def compute_level_from_miles(miles):
     return level, group, sub
 
 
-def format_level_display(level, group, sub):
-    """Format level for display as 'G-S' (e.g., '2-3')."""
-    return f"{group}-{sub}"
-
-
 def update_miles(delta_time):
     """Update miles traveled based on current speed and elapsed time.
 
@@ -176,24 +171,6 @@ def update_gear():
         return True
 
     return False
-
-
-def get_frame_sleep_for_speed(speed_level):
-    """Get frame sleep time for given speed level.
-
-    Interpolates between frame_sleep_at_speed_1 and frame_sleep_at_speed_10.
-    """
-    min_speed = getattr(constants.speed, 'min_speed', 1)
-    max_speed = getattr(constants.speed, 'max_speed', 10)
-    sleep_at_1 = getattr(constants.speed, 'frame_sleep_at_speed_1', 0.18)
-    sleep_at_10 = getattr(constants.speed, 'frame_sleep_at_speed_10', 0.02)
-
-    # Normalize speed to 0-1 range
-    t = (speed_level - min_speed) / (max_speed - min_speed) if max_speed > min_speed else 0
-    t = max(0, min(1, t))
-
-    # Linear interpolation
-    return sleep_at_1 + t * (sleep_at_10 - sleep_at_1)
 
 
 def compute_prestige():

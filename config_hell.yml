@@ -16,10 +16,6 @@ bat_enemy:
     2: 120     # ADVENTURE: 48
     3: 240     # ADVENTURE: 96
     4: 480     # ADVENTURE: 192
-  # Swarm mode
-  max_on_screen: 10   # ADVENTURE: 5
-  # Relentless spawn rate
-  spawn_interval_range: [30, 60]  # ADVENTURE: [80, 160]
   spawn_rate_by_level:
     level_4_6: 80     # ADVENTURE: 200
     level_7_9: 60     # ADVENTURE: 150
@@ -39,11 +35,6 @@ bat_enemy:
     level_10_12: [15, 30, 35, 20]  # ADVENTURE: [30, 40, 22, 8]
     level_13_15: [5, 20, 45, 30]   # ADVENTURE: [15, 35, 35, 15]
     level_16_18: [0, 10, 40, 50]   # ADVENTURE: [5, 25, 45, 25]
-  tiers:
-    hp_tier_1: 60
-    hp_tier_2: 120
-    hp_tier_3: 240
-    hp_tier_4: 480
 
 obstacle:
   # Massive HP - obstacles are walls
@@ -102,6 +93,3 @@ progression:
 speed:
   # Sky-high momentum threshold - need to be in top third of screen
   momentum_zero_height: 0.60  # ADVENTURE: 0.33 (much higher = much harder)
-  # Brutally fast at high speeds
-  frame_sleep_at_speed_1: 0.14    # ADVENTURE: 0.18
-  frame_sleep_at_speed_10: 0.008  # ADVENTURE: 0.02 (insanely fast)

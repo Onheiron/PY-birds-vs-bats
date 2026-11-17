@@ -44,30 +44,3 @@ def emit(event, **fields):
     """Announce ``event`` to its subscribers."""
     for handler in tuple(_handlers.get(event, ())):
         handler(**fields)
-
-
-class Recorder:
-    """Collects every emitted event while active (``with Recorder() as r:``)."""
-
-    def __init__(self, *events):
-        self.events = events
-        self.log = []
-
-    def _record(self, name):
-        def handler(**fields):
-            self.log.append((name, fields))
-
-        return handler
-
-    def __enter__(self):
-        self._subscriptions = [(name, self._record(name)) for name in self.events]
-        for name, handler in self._subscriptions:
-            on(name, handler)
-        return self
-
-    def __exit__(self, *exc):
-        for name, handler in self._subscriptions:
-            off(name, handler)
-
-    def of(self, name):
-        return [fields for event, fields in self.log if event == name]
