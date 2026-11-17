@@ -139,10 +139,12 @@ def formation_score(lanes, formation):
 
 def best_formation_swap(formation):
     """(lane_a, lane_b) of the single swap that improves the formation most, or None."""
-    lanes = _lane_kinds()
+    n = constants.layout.num_lanes
+    # Every lane, even one whose slot moved away through a portal
+    known = _lane_kinds()
+    lanes = {lane: known.get(lane) for lane in range(n)}
     current = formation_score(lanes, formation)
     best, best_gain = None, 0.0
-    n = constants.layout.num_lanes
     for a in range(n):
         for b in range(a + 1, n):
             if lanes.get(a) == lanes.get(b):
