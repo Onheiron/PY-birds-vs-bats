@@ -4,6 +4,7 @@ import functools
 import random
 
 from src.core import constants, state
+from src.engine import events
 from src.engine.birds import transform_bird_to_s
 from src.engine.grades import compute_grade_from_xp
 from src.entities.sprites import (
@@ -24,9 +25,6 @@ from src.entities.sprites import (
     TWISTER,
     WHITE,
 )
-from src.services import achievements
-from src.services.background import background_call
-from src.services.optional import firebase_client
 from src.services.sound import get_audio
 
 
@@ -273,14 +271,7 @@ def add_score(amount, by_bird=None):
         state.birds.per_bird_xp[int(by_bird)] += xp_award
         transform_bird_to_s(int(by_bird))
 
-    achievements.check_achievements_event(
-        'score',
-        state.game.frame_count,
-        state.ui.notifications,
-        firebase_client=firebase_client,
-        background_call=background_call,
-        score=state.game.score,
-    )
+    events.emit('score_changed', score=state.game.score)
 
 
 def compute_momentum_factor(y_pos):

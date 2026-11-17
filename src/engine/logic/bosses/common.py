@@ -4,6 +4,7 @@ import random
 
 from src.core import constants, state
 from src.engine import clock
+from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige, get_level_milestones
 
@@ -93,12 +94,13 @@ def convert_boss_to_obstacle(boss):
         lane_offset = i - loot_count // 2
         loot_lane = max(0, min(constants.layout.num_lanes - 1, closest_lane + lane_offset))
 
-        state.items.loot_items.append(
+        drop_loot(
             {
                 'x_pos': constants.layout.lane_positions[loot_lane],
                 'y_pos': boss['y_pos'] + 1,  # Just below boss
                 'type': loot_type,
                 'rarity': rarity,
                 'spawn_ts': clock.now(),
-            }
+            },
+            'boss',
         )

@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, events
 from src.engine.birds import check_pending_transforms
 from src.engine.logic.flowers import maybe_add_flower_to_obstacle
 from src.engine.logic.helpers import get_obstacle_lanes
@@ -507,6 +507,7 @@ def despawn_old_entities():
                                 state.birds.lost[bi] = True
                                 state.birds.y[bi] = constants.layout.height - 1
                                 state.game.lives -= 1
+                                events.emit('bird_lost', bird=bi, color=ORANGE, cause='crushed')
                                 # Check if a pending bird can now transform
 
                                 check_pending_transforms(ORANGE)

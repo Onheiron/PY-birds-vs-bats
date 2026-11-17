@@ -1,11 +1,10 @@
 """Timed effects: power-ups, bird states, spells and enemy debuffs."""
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, events
 from src.engine.birds import check_pending_transforms, reset_bird_power
 from src.engine.logic.damage import handle_bat_death
 from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
-from src.services.sound import play_sfx
 
 
 def update_powerup_timers():
@@ -109,6 +108,7 @@ def update_special_bird_states():
                 state.birds.lost[bird_idx] = True
                 state.birds.y[bird_idx] = constants.layout.height - 1
                 state.game.lives -= 1
+                events.emit('bird_lost', bird=bird_idx, color=dead_color, cause='poison')
                 # Check if a pending bird can now transform
 
                 check_pending_transforms(dead_color)
@@ -196,7 +196,7 @@ def update_special_bird_states():
                 state.birds.y[i] = constants.layout.height - 1  # Show X at bottom
                 state.birds.per_bird_xp[i] = 0
                 state.game.lives -= 1
-                play_sfx('bird_lost')
+                events.emit('bird_lost', bird=i, color=dead_color, cause='rainbow')
                 # Check pending transforms
 
                 check_pending_transforms(dead_color)

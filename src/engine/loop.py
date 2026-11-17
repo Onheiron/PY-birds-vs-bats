@@ -7,7 +7,7 @@ and game logic advance every N frames, N shrinking as the gear goes up.
 import time
 
 from src.core import state
-from src.engine import clock, input_handler, logic, menus, physics, progression
+from src.engine import clock, events, input_handler, menus, progression, systems
 from src.engine.timing import FrameClock, frames_per_update
 from src.entities.bird_types import get_bird_type_by_color
 from src.services import achievements, save_manager, sound
@@ -17,6 +17,10 @@ from src.ui.layers.title import render_title_screen
 
 # Seconds between automatic saves to slot 0
 AUTOSAVE_INTERVAL = 60
+
+# Side effects that react to game events
+achievements.subscribe()
+sound.subscribe()
 
 
 class Session:
@@ -40,12 +44,11 @@ class Session:
         # Miles depend on real time and current gear
         if game.last_mile_update is not None:
             if progression.update_miles(now - game.last_mile_update):
-                sound.play_sfx('level_up')
+                events.emit('level_up', level=game.level)
         game.last_mile_update = now
 
         if self.frame % frames_per_update(game.speed) == 0:
-            physics.update_all()  # movement
-            logic.update_all()  # collisions, spawning, power-ups
+            systems.run_tick()
             game.frame_count += 1  # game-time counter (spawn timing, effects)
 
         self.frame += 1

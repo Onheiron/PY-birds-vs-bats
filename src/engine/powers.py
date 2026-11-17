@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, events
 from src.engine.birds import (
     allow_consume_power,
     check_pending_transforms,
@@ -13,6 +13,7 @@ from src.engine.birds import (
     set_ball_vy,
 )
 from src.engine.grades import compute_grade_from_xp
+from src.engine.logic.drops import drop_loot
 from src.entities.sprites import (
     BERSERK,
     BLUE,
@@ -57,9 +58,7 @@ def activate_bird_power(bird_idx):
 
     # Notify achievements
     color_name = get_color_name(bird_color)
-    achievements.check_achievements_event(
-        'power_used', state.game.frame_count, state.ui.notifications, power=color_name, lane=bird_lane
-    )
+    events.emit('power_used', power=color_name, lane=bird_lane)
 
     # Execute power based on color
     if bird_color == YELLOW:
@@ -177,7 +176,7 @@ def _power_cookie(bird_idx, bird_lane):
     """Cookie power: drop a cookie crumb with XP."""
     crumb_xp = int(max(0, int(state.birds.per_bird_xp[bird_idx] * 0.75)))
 
-    state.items.loot_items.append(
+    drop_loot(
         {
             'x_pos': constants.layout.lane_positions[bird_lane],
             'y_pos': state.birds.y[bird_idx],
@@ -185,7 +184,8 @@ def _power_cookie(bird_idx, bird_lane):
             'rarity': 'rare',
             'xp': crumb_xp,
             'spawn_ts': clock.now(),
-        }
+        },
+        'cookie',
     )
 
     # Track crumbs made
@@ -199,6 +199,7 @@ def _power_cookie(bird_idx, bird_lane):
             state.birds.y[bird_idx] = constants.layout.height - 1
             state.birds.per_bird_xp[bird_idx] = 0
             state.game.lives -= 1
+            events.emit('bird_lost', bird=bird_idx, color=dead_color, cause='cookie')
             # Check if a pending bird can now transform
 
             check_pending_transforms(dead_color)

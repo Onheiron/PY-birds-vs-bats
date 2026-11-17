@@ -94,3 +94,33 @@ def sync_active_birds(force=False):
     if force or active_types != _last_bird_set:
         _last_bird_set = active_types
         _backend.update_active_birds(active_types)
+
+
+# =============================================================================
+# EVENT SUBSCRIPTIONS
+# =============================================================================
+
+_SOUND_FOR_EVENT = {
+    'bat_killed': 'bat_death',
+    'mini_bat_killed': 'bat_death',
+    'bird_lost': 'bird_lost',
+    'level_up': 'level_up',
+}
+
+
+def _sound_for(event):
+    name = _SOUND_FOR_EVENT[event]
+    return lambda **_fields: play_sfx(name)
+
+
+def _on_loot_collected(loot, bird):
+    play_sfx('egg' if '_egg' in loot['type'] else 'powerup')
+
+
+def subscribe():
+    """Play sound effects for game events."""
+    from src.engine import events
+
+    for event in _SOUND_FOR_EVENT:
+        events.on(event, _sound_for(event))
+    events.on('loot_collected', _on_loot_collected)

@@ -5,6 +5,7 @@ import random
 from src.core import constants, state
 from src.engine import clock
 from src.engine.logic.damage import calculate_bird_damage
+from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect, apply_mature_flower_effect
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
@@ -375,14 +376,15 @@ def _tree_boss_defeated(boss):
             loot_type = choose_loot_type(rarity)
 
             lane = i % constants.layout.num_lanes
-            state.items.loot_items.append(
+            drop_loot(
                 {
                     'x_pos': constants.layout.lane_positions[lane],
                     'y_pos': 5 + i * 3,
                     'type': loot_type,
                     'rarity': rarity,
                     'spawn_ts': clock.now(),
-                }
+                },
+                'boss',
             )
 
         # Clear frozen/poisoned/bleeding birds

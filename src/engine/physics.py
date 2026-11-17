@@ -1,13 +1,11 @@
 """Movement of birds, projectiles, obstacles, loot and scenery."""
 
 import random
-import time as time
+import time
 
 from src.core import constants, state
 from src.engine import clock
-from src.engine.bat_ai import update_bat_positions
 from src.engine.birds import reset_bird_power, set_ball_vy
-from src.engine.glitch import update_glitch_chaos
 from src.entities.sprites import CLOCKWORK, GLITCH
 
 
@@ -303,15 +301,3 @@ def update_mini_bat_positions():
             elif mb['x_pos'] >= constants.layout.width - 12:
                 mb['x_pos'] = constants.layout.width - 12
                 mb['direction'] = -1
-
-
-def update_all():
-    """Update all physics in the correct order."""
-    update_glitch_chaos()
-    update_bird_positions()
-    update_projectile_positions()
-    update_obstacle_positions()
-    update_bat_positions()
-    update_mini_bat_positions()
-    update_loot_positions()
-    update_right_panel_barriers()

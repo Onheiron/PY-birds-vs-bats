@@ -3,9 +3,10 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, events
 from src.engine.birds import check_pending_transforms, get_scared_frames, reset_bird_power, set_ball_vy
 from src.engine.logic.damage import calculate_bird_damage, handle_bat_death
+from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect
 from src.engine.logic.helpers import get_obstacle_lanes
 from src.engine.logic.mini_bats import handle_obstacle_destroyed, try_spawn_mini_bat_on_hit
@@ -44,14 +45,15 @@ def check_bird_ceiling_bounce():
                 reset_bird_power(i)
                 state.birds.speeds[i] = 0
                 # Spawn orange egg loot (both native and transformed Orange birds)
-                state.items.loot_items.append(
+                drop_loot(
                     {
                         'x_pos': constants.layout.lane_positions[lane],
                         'y_pos': constants.layout.starting_line,
                         'type': 'orange_egg',
                         'rarity': 'epic',
                         'spawn_ts': clock.now(),
-                    }
+                    },
+                    'orange',
                 )
                 continue
 
@@ -120,7 +122,7 @@ def check_bird_floor_collision():
         state.birds.y[i] = constants.layout.height - 1
         state.birds.per_bird_xp[i] = 0
         state.game.lives -= 1
-        play_sfx('bird_lost')
+        events.emit('bird_lost', bird=i, color=dead_color, cause='floor')
 
         # Check if a pending bird can now transform
 

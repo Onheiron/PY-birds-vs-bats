@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, events
 from src.engine.birds import (
     check_pending_transforms,
     find_bird_in_lane,
@@ -92,9 +92,7 @@ def _execute_swap():
     # Deduct momentum (not score - score never decreases)
     deduct_momentum(swap_cost)
     state.game.swaps_used += 1
-    achievements.check_achievements_event(
-        'swap', state.game.frame_count, state.ui.notifications, swaps=state.game.swaps_used
-    )
+    events.emit('swap', swaps=state.game.swaps_used)
 
     # Handle orange eggs before swap
     for idx, other_idx in [(bird_in_selected, bird_in_current), (bird_in_current, bird_in_selected)]:
@@ -181,6 +179,7 @@ def handle_bounce():
                         state.birds.y[bird_idx] = constants.layout.height - 1
                         state.game.lives -= 1
                         del state.special.bleeding_birds[bird_idx]
+                        events.emit('bird_lost', bird=bird_idx, color=dead_color, cause='bleeding')
                         # Check if a pending bird can now transform
 
                         check_pending_transforms(dead_color)

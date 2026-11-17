@@ -3,13 +3,12 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, events
+from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 from src.entities.bird_types import get_bird_type_by_color
 from src.entities.sprites import BLUE, GLITCH, ORANGE, STEALTH
-from src.services import achievements
-from src.services.sound import play_sfx
 
 
 def calculate_bird_damage(bird_idx):
@@ -132,24 +131,20 @@ def handle_bat_death(bat, killer_bird_idx):
         rarity = random.choices(['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical'], weights=adj_weights)[0]
         loot_type = choose_loot_type(rarity)
 
-        state.items.loot_items.append(
+        drop_loot(
             {
                 'x_pos': constants.layout.lane_positions[closest_lane],
                 'y_pos': bat['y_pos'],
                 'type': loot_type,
                 'rarity': rarity,
                 'spawn_ts': clock.now(),
-            }
+            },
+            'bat',
         )
 
     # Notify achievements
-    bird_color = state.birds.colors[killer_bird_idx]
-    if bird_color == ORANGE:
-        achievements.check_achievements_event('destroy_bat_with_orange', state.game.frame_count, state.ui.notifications)
-    achievements.check_achievements_event('destroy_bat', state.game.frame_count, state.ui.notifications, tier=tier)
-
+    events.emit('bat_killed', bat=bat, tier=tier, killer=killer_bird_idx)
     state.enemies.bats.remove(bat)
-    play_sfx('bat_death')  # Shrieking bat death sound!
 
 
 def handle_mini_bat_death(mini_bat, killer_bird_idx):
@@ -181,18 +176,16 @@ def handle_mini_bat_death(mini_bat, killer_bird_idx):
             range(constants.layout.num_lanes), key=lambda lane: abs(constants.layout.lane_positions[lane] - mb_x)
         )
 
-        state.items.loot_items.append(
+        drop_loot(
             {
                 'x_pos': constants.layout.lane_positions[closest_lane],
                 'y_pos': mini_bat['y_pos'],
                 'type': loot_type,
                 'rarity': rarity,
                 'spawn_ts': clock.now(),
-            }
+            },
+            'mini_bat',
         )
 
-    # Notify achievements (tier 0 bat)
-    achievements.check_achievements_event('destroy_bat', state.game.frame_count, state.ui.notifications, tier=0)
-
+    events.emit('mini_bat_killed', bat=mini_bat, killer=killer_bird_idx)
     state.enemies.mini_bats.remove(mini_bat)
-    play_sfx('bat_death')

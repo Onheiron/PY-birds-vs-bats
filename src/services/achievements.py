@@ -414,3 +414,42 @@ def detect_combos(frame_count, notifications_list, firebase_client=None, backgro
                                 unlock_achievement(aid, frame_count, notifications_list, firebase_client, background_call)
                                 combo_cooldowns[combo_id] = now + 300
                                 return
+
+
+# =============================================================================
+# EVENT SUBSCRIPTIONS
+# =============================================================================
+
+
+def _check(event, **fields):
+    from src.core import state
+
+    check_achievements_event(event, state.game.frame_count, state.ui.notifications, **fields)
+
+
+def _on_score_changed(score):
+    from src.services.background import background_call
+    from src.services.optional import firebase_client
+
+    _check('score', firebase_client=firebase_client, background_call=background_call, score=score)
+
+
+def _on_bat_killed(bat, tier, killer):
+    from src.core import state
+    from src.entities.sprites import ORANGE
+
+    if state.birds.colors[killer] == ORANGE:
+        _check('destroy_bat_with_orange')
+    _check('destroy_bat', tier=tier)
+
+
+def subscribe():
+    """Track achievements from game events."""
+    from src.engine import events
+
+    events.on('score_changed', _on_score_changed)
+    events.on('swap', lambda swaps: _check('swap', swaps=swaps))
+    events.on('power_used', lambda power, lane: _check('power_used', power=power, lane=lane))
+    events.on('bat_killed', _on_bat_killed)
+    events.on('mini_bat_killed', lambda bat, killer: _check('destroy_bat', tier=0))
+    events.on('loot_collected', lambda loot, bird: _check('collect', loot=loot['type']))

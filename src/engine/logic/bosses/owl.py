@@ -5,6 +5,7 @@ import random
 
 from src.core import constants, state
 from src.engine import clock
+from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 from src.entities.sprites import METEOR_LEFT, METEOR_RIGHT, OWL_BOSS_SPELLS, PORTAL_FRAME_1, SWAMP_OBSTACLE_T2
@@ -589,14 +590,15 @@ def _owl_boss_defeated(boss):
         loot_type = choose_loot_type(rarity)
 
         lane = (i * 2) % constants.layout.num_lanes
-        state.items.loot_items.append(
+        drop_loot(
             {
                 'x_pos': constants.layout.lane_positions[lane],
                 'y_pos': boss['y_pos'] + 2 + i,
                 'type': loot_type,
                 'rarity': rarity,
                 'spawn_ts': clock.now(),
-            }
+            },
+            'boss',
         )
 
     boss['state'] = 'dying'

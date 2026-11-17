@@ -3,31 +3,16 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, events
 from src.engine.progression import award_xp
+from src.entities.bird_types import get_bird_type_from_egg, get_color_for_bird_type, get_default_speed
 from src.entities.sprites import (
-    BERSERK,
-    BLUE,
     CLOCKWORK,
     COOKIE,
-    DINOSAUR,
-    FROSTY,
     GLITCH,
-    GOLD,
-    ORANGE,
-    PATCHWORK,
-    POISON,
-    PURPLE,
     RAINBOW,
-    RED,
-    ROCK,
     STEALTH,
-    TWISTER,
-    WHITE,
-    YELLOW,
 )
-from src.services import achievements
-from src.services.sound import play_sfx
 
 
 def check_loot_collection():
@@ -69,14 +54,7 @@ def check_loot_collection():
 
             state.items.loot_items.remove(loot)
             _apply_loot_effect(loot, i)
-            achievements.check_achievements_event(
-                'collect', state.game.frame_count, state.ui.notifications, loot=loot_type
-            )
-            # Play sound based on loot type
-            if '_egg' in loot_type:
-                play_sfx('egg')
-            else:
-                play_sfx('powerup')
+            events.emit('loot_collected', loot=loot, bird=i)
             break
 
 
@@ -112,88 +90,24 @@ def _apply_loot_effect(loot, collector_idx):
 
 
 def _spawn_bird_from_egg(egg_type):
-    """Spawn a new bird from an egg."""
-    color_map = {
-        'yellow_egg': YELLOW,
-        'red_egg': RED,
-        'blue_egg': BLUE,
-        'white_egg': WHITE,
-        'purple_egg': PURPLE,
-        'orange_egg': ORANGE,
-        'gold_egg': GOLD,
-        'patchwork_egg': PATCHWORK,
-        'cookie_egg': COOKIE,
-        'clockwork_egg': CLOCKWORK,
-        'stealth_egg': STEALTH,
-        'dinosaur_egg': DINOSAUR,
-        'glitch_egg': GLITCH,
-        'rainbow_egg': RAINBOW,
-        'twister_egg': TWISTER,
-        'frosty_egg': FROSTY,
-        'poison_egg': POISON,
-        'berserk_egg': BERSERK,
-        'rock_egg': ROCK,
-    }
-    # Get speeds from config
-    spd_config = getattr(constants.birds, 'speed', {})
-    egg_to_bird = {
-        'yellow_egg': 'yellow',
-        'red_egg': 'red',
-        'blue_egg': 'blue',
-        'white_egg': 'white',
-        'purple_egg': 'purple',
-        'orange_egg': 'orange',
-        'gold_egg': 'gold',
-        'patchwork_egg': 'patchwork',
-        'cookie_egg': 'cookie',
-        'clockwork_egg': 'clockwork',
-        'stealth_egg': 'stealth',
-        'dinosaur_egg': 'dinosaur',
-        'glitch_egg': 'glitch',
-        'rainbow_egg': 'rainbow',
-        'twister_egg': 'twister',
-        'frosty_egg': 'frosty',
-        'poison_egg': 'poison',
-        'berserk_egg': 'berserk',
-        'rock_egg': 'rock',
-    }
-    default_speeds = {
-        'yellow': 2,
-        'red': 3,
-        'blue': 4,
-        'white': 4,
-        'purple': 3,
-        'orange': 5,
-        'gold': 5,
-        'patchwork': 3,
-        'cookie': 3,
-        'clockwork': 2,
-        'stealth': 3,
-        'dinosaur': 4,
-        'glitch': 3,
-        'rainbow': 6,
-        'twister': 4,
-        'frosty': 3,
-        'poison': 3,
-        'berserk': 3,
-        'rock': 2,
-    }
-
-    bird_color = color_map.get(egg_type)
-    if bird_color is None:
+    """Hatch an egg into the first free bird slot."""
+    bird_type = get_bird_type_from_egg(egg_type)
+    if bird_type is None:
         return
+    bird_color = get_color_for_bird_type(bird_type)
+    name = bird_type.lower()
+    # Speed from config (birds.speed), falling back to the bird type's default
+    speeds = getattr(constants.birds, 'speed', {})
+    default_speed = get_default_speed(bird_type)
+    if hasattr(speeds, '__getitem__'):
+        bird_speed = speeds.get(name, default_speed)
+    else:
+        bird_speed = getattr(speeds, name, default_speed)
 
-    # Find first lost bird to revive
     for idx in range(constants.layout.num_balls):
         if state.birds.lost[idx]:
             state.birds.lost[idx] = False
             state.birds.colors[idx] = bird_color
-            # Get speed from config, fallback to default
-            bird_type = egg_to_bird.get(egg_type, 'yellow')
-            if hasattr(spd_config, '__getitem__'):
-                bird_speed = spd_config.get(bird_type, default_speeds.get(bird_type, 3))
-            else:
-                bird_speed = getattr(spd_config, bird_type, default_speeds.get(bird_type, 3))
             state.birds.speeds[idx] = bird_speed
             state.birds.y[idx] = constants.layout.starting_line
             state.birds.vy[idx] = -1
@@ -209,6 +123,7 @@ def _spawn_bird_from_egg(egg_type):
                 max_charge = getattr(constants.rainbow, 'max_charge', 100)
                 state.special.rainbow_charge[idx] = max_charge
                 state.special.rainbow_last_decay[idx] = clock.now()
+            events.emit('bird_hatched', bird=idx, egg=egg_type)
             break
 
 
@@ -280,7 +195,7 @@ def _apply_timed_power(name, loot_type):
     for attr, (table_name, keys, defaults, fallbacks) in spec['values'].items():
         setattr(powerups, attr, _tiered(section, table_name, tier, keys, defaults, fallbacks))
 
-    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power=name)
+    events.emit('power_used', power=name, lane=None)
 
 
 def _apply_timelapse_power(loot_type):
@@ -293,6 +208,4 @@ def _apply_timelapse_power(loot_type):
     state.powerups.timelapse_active = True
     state.powerups.timelapse_end_time = clock.now() + duration
     state.powerups.timelapse_slowdown = slowdown
-    achievements.check_achievements_event(
-        'power_used', state.game.frame_count, state.ui.notifications, power='timelapse'
-    )
+    events.emit('power_used', power='timelapse', lane=None)
