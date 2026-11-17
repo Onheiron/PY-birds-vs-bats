@@ -245,6 +245,10 @@ simulator plays for that seed and those options.
 
 ### Balance simulator
 
+Bot strategies (braking with swaps, formations, fewer birds, favourite
+birds, adaptive card choices) are described and compared in
+`docs/strategies.md`: `python3 tools/simulate.py --strategies default,brake,yellow_guard`.
+
 `tools/simulate.py` plays whole games headless with a bot and reports the
 numbers that matter for tuning: how far runs get, why birds are lost, gears
 and prestige, loot by source and rarity, eggs hatched, bosses beaten. A full

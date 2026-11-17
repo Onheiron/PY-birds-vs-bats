@@ -51,6 +51,12 @@ def add_game_options(parser, bot_default='expert'):
         metavar='FIELD=VALUE',
         help='change one skill field, e.g. key_interval=3 (repeatable)',
     )
+    parser.add_argument(
+        '--strategy',
+        metavar='NAME',
+        help='bot strategy from src/sim/strategy.py: brake, red_battery, yellow_guard, white_center, '
+        'few_birds, favorites, adaptive, cautious...',
+    )
     parser.add_argument('--seed', type=int, default=1, help='game seed (default 1)')
     parser.add_argument('--difficulty', default='adventure', choices=sorted(DIFFICULTIES))
     parser.add_argument(
@@ -69,9 +75,18 @@ def skill_from(args):
 
     if args.bot not in PROFILES:
         raise SystemExit(f'unknown bot profile {args.bot!r}; choose from {", ".join(PROFILES)}')
+    from src.sim.strategy import STRATEGIES
+
     changes = {}
+    strategy = getattr(args, 'strategy', None)
+    if strategy:
+        if strategy not in STRATEGIES:
+            raise SystemExit(f'unknown strategy {strategy!r}; choose from {", ".join(STRATEGIES)}')
+        changes.update(STRATEGIES[strategy])
     for item in args.bot_set:
         changes.update(parse_assignments(item))
+    if 'favorites' in changes:
+        changes['favorites'] = tuple(changes['favorites'])
     return profile(args.bot, **changes)
 
 

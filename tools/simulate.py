@@ -57,6 +57,12 @@ def build_parser():
         metavar='"NAME: KEY=VALUE; ..."',
         help='compare configurations (repeatable); every variant uses the same seeds',
     )
+    parser.add_argument(
+        '--strategies',
+        metavar='NAME,NAME',
+        help='compare bot strategies (src/sim/strategy.py STRATEGIES): '
+        'default, brake, red_battery, yellow_guard, white_center, few_birds, favorites, adaptive, cautious',
+    )
     parser.add_argument('--stop-at-level', type=int)
     parser.add_argument('--max-minutes', type=float, default=180.0, help='game-time limit per run')
     parser.add_argument('--json', metavar='FILE', help='write every run summary to this file')
@@ -80,21 +86,43 @@ def main(argv=None):
     base = load_config(args.base) if args.base else None
     common = overrides_from(args)
 
+    from dataclasses import replace
+
+    from src.sim.strategy import STRATEGIES
+
+    def split_bot(assignments):
+        """Config overrides and bot fields (keys starting with 'bot.') of a variant."""
+        values = parse_assignments(assignments)
+        bot_fields = values.pop('bot', {})
+        if 'strategy' in bot_fields:
+            bot_fields = {**STRATEGIES[bot_fields.pop('strategy')], **bot_fields}
+        for key in ('favorites',):
+            if key in bot_fields:
+                bot_fields[key] = tuple(bot_fields[key])
+        return values, bot_fields
+
     variants = []
-    for spec in args.variant or ['default:']:
+    specs = list(args.variant)
+    if args.strategies:
+        for name in args.strategies.split(','):
+            if name.strip() not in STRATEGIES:
+                raise SystemExit(f'unknown strategy {name!r}; choose from {", ".join(STRATEGIES)}')
+            specs.append(f'{name.strip()}: bot.strategy={name.strip()}')
+    for spec in specs or ['default:']:
         name, _, assignments = spec.partition(':')
-        variants.append((name.strip() or 'default', merge(common, parse_assignments(assignments))))
+        overrides, bot_fields = split_bot(assignments)
+        variants.append((name.strip() or 'default', merge(common, overrides), replace(skill, **bot_fields)))
 
     jobs = args.jobs or __import__('os').cpu_count() or 1
     formation = formation_from(args)
     configs = []
-    for _name, overrides in variants:
+    for _name, overrides, variant_skill in variants:
         for k in range(args.runs):
             configs.append(
                 RunConfig(
                     seed=args.seed + k,
                     difficulty=DIFFICULTIES[args.difficulty],
-                    skill=skill,
+                    skill=variant_skill,
                     overrides=overrides,
                     base_config=base,
                     formation=formation,
@@ -110,7 +138,7 @@ def main(argv=None):
     print(f'done in {time.time() - started:.0f} s\n')
 
     results = {}
-    for index, (name, overrides) in enumerate(variants):
+    for index, (name, overrides, _skill) in enumerate(variants):
         runs = summaries[index * args.runs : (index + 1) * args.runs]
         results[name] = {'overrides': overrides, 'runs': runs}
     print(report(results))
@@ -156,6 +184,12 @@ def report(results):
     row('prestige, mean over the run', lambda r: mean([x['prestige_mean'] for x in r]))
     row('prestige, best of the run (median)', lambda r: statistics.median(x['prestige_max'] for x in r))
     row('bot keys per second', lambda r: mean([x['keys_per_second'] for x in r]))
+
+    section('Strategy (per game)')
+    row('swaps', lambda r: mean([x.get('swaps', 0) for x in r]))
+    actions = sorted({a for n in names for x in results[n]['runs'] for a in x.get('strategy', {})})
+    for action in actions:
+        row(f'  {action}', lambda r, a=action: mean([x.get('strategy', {}).get(a, 0) for x in r]))
 
     section('Birds lost per game')
     causes = sorted({c for n in names for x in results[n]['runs'] for c in x['birds_lost']})

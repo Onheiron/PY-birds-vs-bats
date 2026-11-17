@@ -123,6 +123,7 @@ class RunStats:
         self.sample(seconds)
         self.end = end
         self.keys = bot.keys_pressed
+        self.strategy_counts = dict(getattr(bot, 'counts', {}))
         # The game state is global: keep the final values before the next run reuses it
         game = state.game
         self.final = {
@@ -130,6 +131,7 @@ class RunStats:
             'miles': round(game.miles, 2),
             'score': int(game.score),
             'lives_left': game.lives,
+            'swaps': game.swaps_used,
         }
 
     # ------------------------------------------------------------------ summary
@@ -163,6 +165,7 @@ class RunStats:
             'hatched': [egg for _t, egg, _r, _src in self.hatched],
             'hatched_from_orange': sum(1 for *_rest, src in self.hatched if src == 'orange'),
             'birds_lost': dict(self.lost),
+            'strategy': getattr(self, 'strategy_counts', {}),
             'eggs_opened': self.offers.get('egg', 0),
             'cards_by_kind': dict(Counter(kind for _o, kind, _r, _id in egg_picks)),
             'cards_by_rarity': {r: sum(1 for p in egg_picks if p[2] == r) for r in RARITIES},

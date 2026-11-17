@@ -24,6 +24,7 @@ game's seeded randomness.
 """
 
 import random
+from collections import Counter
 from dataclasses import dataclass, replace
 
 from src.core import constants, state
@@ -33,6 +34,7 @@ from src.engine.logic.helpers import get_obstacle_lanes
 from src.engine.timing import frames_per_update
 from src.entities.bird_types import BirdType, get_bird_type_by_color
 from src.entities.sprites import OBSTACLE_SPRITE_T1, OBSTACLE_SPRITES
+from src.sim import strategy
 
 
 @dataclass(frozen=True)
@@ -52,10 +54,21 @@ class Skill:
     # the bird in its lane, unless the bird cannot wait any longer
     dodge: bool = True
     dodge_margin: int = 60  # frames of slack below which a blocked bird is bounced anyway
-    # Egg cards: 'smart' (rarity, then kind), 'first', 'random'
+    # Egg cards: 'smart' (rarity, then kind), 'adaptive' (what the flock needs now), 'first', 'random'
     card_policy: str = 'smart'
-    # Boss pacts: 'smart' (the one with the fewest drawbacks), 'refuse', 'random'
+    # Boss pacts: 'smart' (the one with the fewest drawbacks), 'adaptive', 'refuse', 'random'
     pact_policy: str = 'smart'
+
+    # Strategy (see src/sim/strategy.py)
+    max_gear: int = 0  # swap to shed momentum above this gear (0 = never)
+    brake_when_falling: int = 0  # ...or when this many birds fall at once (0 = never)
+    formation: str = 'none'  # 'red_battery', 'yellow_guard', 'white_center' or 'none'
+    formation_every: int = 600  # frames between two formation swaps
+    keep_birds: int = 9  # look after at most this many birds, let the others fall
+    favorites: tuple = ()  # bird kinds to protect first and to hatch
+    cull_others: bool = False  # let non-favourite birds fall to free lanes for eggs
+    min_lives_to_cull: int = 3  # never let birds go on purpose with this many lives or fewer
+    swap_slack: int = 45  # frames of slack a strategic swap needs before the next bird is due
 
 
 PROFILES = {
@@ -104,6 +117,10 @@ class Bot:
         self.fall_seen = {}  # bird -> frame it was first seen falling
         self.frame = 0
         self.keys_pressed = 0
+        self.plan = None  # (lane_a, lane_b, reason) of a swap in progress
+        self.last_formation = -(10**9)
+        self.abandon = set()  # birds let go on purpose
+        self.counts = Counter()  # strategy actions: brakes, formation swaps, birds let go
 
     # ------------------------------------------------------------------ helpers
 
@@ -173,7 +190,7 @@ class Bot:
         frames_per_second = 60
         spans = self._enemy_spans() if self.skill.dodge else {}
         for i in range(constants.layout.num_balls):
-            if state.birds.lost[i]:
+            if state.birds.lost[i] or i in self.abandon:
                 continue
             bird_type = get_bird_type_by_color(state.birds.colors[i])
             falling = state.birds.vy[i] == 1
@@ -364,6 +381,8 @@ class Bot:
         policy = self.skill.pact_policy if offer['kind'] == 'pact' else self.skill.card_policy
         if policy == 'random':
             return self.rng.randrange(len(options))
+        if policy == 'adaptive':
+            return strategy.choose_card(offer, self.skill)
         if offer['kind'] == 'pact':
             if policy == 'refuse':
                 return len(options) - 1
@@ -375,7 +394,10 @@ class Bot:
         value = {'bird': 1.6, 'flock': 1.5, 'stat': 1.0, 'cursed': 0.9, 'training': 0.5, 'boost': 0.4, 'powerup': 0.3}
 
         def worth(i):
-            return (rank[options[i]['rarity']] + 1) * value.get(options[i]['kind'], 1)
+            card = options[i]
+            if card['kind'] == 'bird' and not strategy.wants_bird(card['bird'], self.skill):
+                return 0
+            return (rank[card['rarity']] + 1) * value.get(card['kind'], 1)
 
         return max(range(len(options)), key=worth)
 
@@ -387,11 +409,69 @@ class Bot:
             return 'UP'
         return 'ENTER'
 
+    # ------------------------------------------------------------------ strategy
+
+    def _update_abandon(self):
+        before = self.abandon
+        self.abandon = strategy.abandoned(self.skill)
+        self.counts['birds let go'] += len(self.abandon - before)
+
+    def _plan_swap(self, slack):
+        """Start a strategic swap (brake or formation) when there is time for it."""
+        if self.plan is not None or slack < 120 or not strategy.can_swap():
+            return
+        falling = sum(1 for i in strategy.alive() if state.birds.vy[i] == 1)
+        if strategy.wants_brake(self.skill, falling):
+            pair = strategy.brake_swap(state.player.lane)
+            if pair:
+                self.plan = (*pair, 'brakes')
+                return
+        if self.skill.formation != 'none' and self.frame - self.last_formation >= self.skill.formation_every:
+            self.last_formation = self.frame
+            pair = strategy.best_formation_swap(self.skill.formation)
+            if pair:
+                self.plan = (*pair, 'formation swaps')
+
+    def _plan_travel(self):
+        """Frames the rest of the swap in progress needs."""
+        a, b, _reason = self.plan
+        cursor = state.player.lane
+        steps = abs(b - cursor) if state.player.selected_lane is not None else abs(a - cursor) + abs(b - a)
+        return (steps + 2) * self.skill.key_interval
+
+    def _swap_key(self):
+        """Next key of the swap in progress (select lane a, then swap with lane b)."""
+        left, right, _up = self._bindings()
+        swap = state.settings.key_bindings.get('SWAP', 'SPACE')
+        a, b, reason = self.plan
+        cursor = state.player.lane
+        if state.player.selected_lane is None:
+            if cursor != a:
+                return left if a < cursor else right
+            return swap
+        if cursor != b:
+            return left if b < cursor else right
+        self.plan = None
+        if strategy.can_swap():
+            self.counts[reason] += 1
+        return swap
+
     def decide(self):
         """The key to press this frame, or None."""
         if state.choice.active is not None:
             return self._choice_key(state.choice.active)
+        if self.frame % 30 == 0:
+            self._update_abandon()
         targets = self._urgent_targets()
+        slack_min = min((t[0] for t in targets), default=float('inf'))
+        if self.plan is not None or slack_min > self.skill.swap_slack:
+            self._plan_swap(slack_min)
+        # A strategic swap goes on only while no bird will need the cursor before it ends
+        if self.plan is not None and slack_min > self.skill.swap_slack + self._plan_travel():
+            if state.player.selected_lane is None and not strategy.can_swap():
+                self.plan = None
+            else:
+                return self._swap_key()
         if targets:
             slack, lane, _bird, _ready = min(targets)
             if slack <= self.skill.safety_frames:
