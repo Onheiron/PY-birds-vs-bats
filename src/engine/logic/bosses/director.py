@@ -4,8 +4,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from src.core import constants, state
-from src.engine import bird_kinds
+from src.engine import bird_kinds, stats
 from src.engine.birds import reset_bird_power, scare_bird_ticks, set_ball_vy, stun_bird
+from src.engine.logic import afflictions
 from src.engine.logic.bosses.basic import spawn_basic_boss, update_basic_boss
 from src.engine.logic.bosses.common import get_boss_config
 from src.engine.logic.bosses.jelly import spawn_jelly_boss, update_jelly_boss
@@ -174,10 +175,13 @@ def check_bird_boss_collision():
         # Hit boss!
         damage = calculate_bird_damage(i, 'elite')
 
-        # Apply armor reduction
+        # Apply armor reduction (lowered by freezing, bleeding and armor pierce)
         armor_reduction = getattr(boss_cfg, 'armor_reduction', 1)
+        if armor_reduction > 0:
+            armor_reduction = max(0, armor_reduction - afflictions.armor_cut(boss) - stats.bird(i, 'armor_pierce'))
         if bird_color != ORANGE:
             damage = max(1, damage - armor_reduction)
+            afflictions.try_afflict(i, boss, is_boss=True)
 
         if bird_color == ORANGE:
             boss['hp'] -= 32 * hp_scale()  # Orange does a fixed 32 (×hp_scale) to bosses

@@ -3,7 +3,6 @@
 from src.core import constants, state
 from src.engine import clock, events, stats
 from src.engine.birds import check_pending_transforms, reset_bird_power
-from src.engine.logic.damage import handle_bat_death
 from src.engine.notifications import notify
 from src.engine.progression import hp_scale
 from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
@@ -252,62 +251,6 @@ def _execute_exile_swap(exile):
         state.birds.random_lanes[bird_b_idx] = lane_a
         state.birds.cols[bird_a_idx] = constants.layout.lane_positions[lane_b]
         state.birds.cols[bird_b_idx] = constants.layout.lane_positions[lane_a]
-
-
-def update_enemy_debuffs():
-    """Update enemy debuffs applied by FROSTY/POISON/BERSERK birds."""
-    now = clock.now()
-
-    # FROZEN enemies - cleanup expired, no damage tick
-    for enemy_id in list(state.special.frozen_enemies.keys()):
-        debuff = state.special.frozen_enemies[enemy_id]
-        if now >= debuff['end_time']:
-            del state.special.frozen_enemies[enemy_id]
-            continue
-        # Check if bat is still alive
-        bat = debuff.get('bat')
-        if bat and bat not in state.enemies.bats:
-            del state.special.frozen_enemies[enemy_id]
-
-    # POISONED enemies - damage tick every second
-    for enemy_id in list(state.special.poisoned_enemies.keys()):
-        debuff = state.special.poisoned_enemies[enemy_id]
-        if now >= debuff['end_time']:
-            del state.special.poisoned_enemies[enemy_id]
-            continue
-        bat = debuff.get('bat')
-        if bat and bat not in state.enemies.bats:
-            del state.special.poisoned_enemies[enemy_id]
-            continue
-        # Apply damage tick
-        if now - debuff['last_tick'] >= 1.0:
-            debuff['last_tick'] = now
-            damage = debuff.get('damage_per_second', 2)
-            if bat:
-                bat['hp'] -= damage
-                if bat['hp'] <= 0:
-                    handle_bat_death(bat, 0)  # No specific killer
-                    del state.special.poisoned_enemies[enemy_id]
-
-    # BLEEDING enemies - damage tick every second, armor reduction
-    for enemy_id in list(state.special.bleeding_enemies.keys()):
-        debuff = state.special.bleeding_enemies[enemy_id]
-        if now >= debuff['end_time']:
-            del state.special.bleeding_enemies[enemy_id]
-            continue
-        bat = debuff.get('bat')
-        if bat and bat not in state.enemies.bats:
-            del state.special.bleeding_enemies[enemy_id]
-            continue
-        # Apply damage tick
-        if now - debuff['last_tick'] >= 1.0:
-            debuff['last_tick'] = now
-            damage = debuff.get('damage_per_second', 1)
-            if bat:
-                bat['hp'] -= damage
-                if bat['hp'] <= 0:
-                    handle_bat_death(bat, 0)
-                    del state.special.bleeding_enemies[enemy_id]
 
 
 def update_purple_charging():

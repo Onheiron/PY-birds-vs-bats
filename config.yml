@@ -42,6 +42,8 @@ timing:
 combat:
   # HP and damage are on a ×10 scale: XP from damage and score from kills divide by this
   hp_scale: 10
+  # Afflictions (freeze, poison, bleed) land this much less often on bosses
+  boss_affliction_factor: 0.33
   # Score/XP multipliers for destroying enemies
   obstacle_destroy_xp_per_tier: 5    # XP = tier * this value
   obstacle_destroy_score_per_tier: 50  # Score = tier * this value
@@ -562,8 +564,8 @@ frosty:
   boosted_chance: 0.60        # 60% when power active
   boost_duration: 2.0         # Power boost lasts 2s
   freeze_duration: 3.0        # Frozen enemies stay frozen 3s
-  boss_chance: 0.10           # 10% chance on bosses
-  armor_reduction: 20          # Frozen enemies lose 20 armor
+  freeze_slow: 0.4            # Frozen enemies move at 40% of their speed
+  armor_reduction: 20         # Frozen enemies lose 20 armor
 
 poison:
   boosted_chance: 0.60

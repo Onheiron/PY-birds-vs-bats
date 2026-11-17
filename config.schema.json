@@ -2595,6 +2595,9 @@
         "bat_destroy_xp_per_tier": {
           "type": "number"
         },
+        "boss_affliction_factor": {
+          "type": "number"
+        },
         "damage_formula": {
           "properties": {
             "gear_coefficient": {
@@ -3099,10 +3102,10 @@
         "boosted_chance": {
           "type": "number"
         },
-        "boss_chance": {
+        "freeze_duration": {
           "type": "number"
         },
-        "freeze_duration": {
+        "freeze_slow": {
           "type": "number"
         }
       },

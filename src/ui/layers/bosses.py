@@ -40,6 +40,25 @@ def draw_boss(fb):
     if boss is None:
         return
     _BOSS_RENDERERS.get(boss.get('boss_type', 'normal'), _draw_basic_boss)(fb)
+    _draw_boss_afflictions(fb, boss)
+
+
+def _draw_boss_afflictions(fb, boss):
+    """Frozen / poisoned / bleeding marks above the boss, as above bats."""
+    marks = []
+    if id(boss) in state.special.frozen_enemies:
+        marks.append(('*', '\033[1;36m'))
+    if id(boss) in state.special.poisoned_enemies:
+        marks.append(('%', '\033[1;32m'))
+    if id(boss) in state.special.bleeding_enemies:
+        marks.append(('~', '\033[1;31m'))
+    y = boss.get('y_pos', 0) - 1
+    if not marks or not 0 <= y < constants.layout.height:
+        return
+    x = boss.get('x_pos', 0) + 2
+    for n, (symbol, color) in enumerate(marks):
+        if 0 <= x + n < constants.layout.width:
+            fb.put(GAME_X_OFFSET + x + n, y + HEADER_HEIGHT, symbol, color)
 
 
 def _draw_basic_boss(fb):

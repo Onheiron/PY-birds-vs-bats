@@ -44,13 +44,27 @@ What every bird does, read from the code (not from the descriptions in
 | **Glitch** | 30 | 10 | none | Random speed 10–60 every tick and damage ×1–8; random prestige 1–7; each tick small chances to flip direction (0.3%), swap lanes with another bird (0.3%), nudge your cursor (0.2%) or copy itself into a random lane (0.2%, replacing that bird or reviving an empty slot); ignores 2% of bounces; survives the floor 10% of the time; ignores 5% of loot and upgrades 10% of what it collects | random | legendary |
 | **Rainbow** | 60 | 30 | none | Wraps from the floor to the ceiling instead of dying while it has charge; charge 100, −5 per second; every UP on its lane has a 25% chance of +25; dies at 0 | +5 | mythical |
 | **Twister** | 40 | 45 | Tailwind for 2 s on its lane and both neighbours: +20 speed rising, −10 falling | — | +2 | rare |
-| **Frosty** | 29 | 28 | For 2 s its freeze chance becomes 60% | Hitting a bat: 30% chance to freeze it for 3 s (−20 armor); 10% on bosses | +1 | uncommon |
-| **Poison** | 31 | 27 | For 2 s its poison chance becomes 60% | Hitting a bat: 30% chance to poison it, 20 HP/s for 5 s | +1 | uncommon |
-| **Berserk** | 32 | 40 | For 2 s its bleed chance becomes 60% | Hitting a bat: 30% chance to make it bleed, 10 HP/s for 10 s (−10 armor) | +1 | uncommon |
+| **Frosty** | 29 | 28 | For 2 s its freeze chance becomes 60% | Hitting a bat or a boss: 30% chance (a third of that on bosses) to freeze it for 3 s: it moves at 40% speed and has 20 less armor | +1 | uncommon |
+| **Poison** | 31 | 27 | For 2 s its poison chance becomes 60% | Hitting a bat or a boss: 30% chance (a third on bosses) to poison it, 20 HP/s for 5 s | +1 | uncommon |
+| **Berserk** | 32 | 40 | For 2 s its bleed chance becomes 60% | Hitting a bat or a boss: 30% chance (a third on bosses) to make it bleed, 10 HP/s for 10 s and 10 less armor | +1 | uncommon |
 | **Rock** | 19 | 31 | For 3 s: pushes 2 rows and speed 30 | Hitting a bat pushes it up 1 row | +1 | uncommon |
 
 "Card rarity": new birds hatch from bird cards, offered by eggs of that
 rarity while a lane is free (see `docs/cards.md`).
+
+## Afflictions on enemies
+
+Frosty, Poison and Berserk afflict what they hit by contact (not mini bats,
+obstacles or projectiles); `src/engine/logic/afflictions.py`.
+
+- **Frozen:** moves at 40% speed, 20 less armor, for 3 s.
+- **Poisoned:** 20 HP per second for 5 s (100 in all).
+- **Bleeding:** 10 HP per second for 10 s (100 in all) and 10 less armor.
+
+Damage over time is scaled by the enemy's `damage_taken` (Hulking elites take
+less) but ignores defence and armor; its XP and the kill go to the bird that
+applied it. Hitting an afflicted enemy again restarts the affliction; different
+afflictions stack. Marks above the enemy: `*` frozen, `%` poisoned, `~` bleeding.
 
 ## Synergies
 

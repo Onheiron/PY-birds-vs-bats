@@ -5,6 +5,7 @@ import time as time
 
 from src.core import constants, state
 from src.engine import bird_kinds, clock, enemy_stats
+from src.engine.logic import afflictions
 from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
 
@@ -15,6 +16,11 @@ def update_bat_positions():
         is_armored = bat.get('armored', False)
         is_diver = bat.get('diver', False)
         is_spellcaster = bat.get('spellcaster', False)
+
+        # Frozen bats move at a fraction of their speed
+        slow = afflictions.slow_factor(bat)
+        if slow < 1 and state.game.frame_count % max(1, round(1 / slow)) != 0:
+            continue
 
         # Handle diver bat behavior
         if is_diver:

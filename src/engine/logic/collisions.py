@@ -5,6 +5,7 @@ import random
 from src.core import constants, state
 from src.engine import bird_kinds, clock, enemy_stats, events, stats
 from src.engine.birds import check_pending_transforms, reset_bird_power, scare_bird, set_ball_vy, stun_bird
+from src.engine.logic import afflictions
 from src.engine.logic.damage import calculate_bird_damage, handle_bat_death
 from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect
@@ -12,16 +13,13 @@ from src.engine.logic.helpers import get_obstacle_lanes
 from src.engine.logic.mini_bats import handle_obstacle_destroyed, try_spawn_mini_bat_on_hit
 from src.engine.progression import add_score, award_damage_xp, award_xp
 from src.entities.sprites import (
-    BERSERK,
     BLUE,
     CLOCKWORK,
     FLOWER_MATURE_FRAME,
-    FROSTY,
     OBSTACLE_LANE_WIDTH,
     OBSTACLE_SPRITE_T1,
     OBSTACLE_SPRITES,
     ORANGE,
-    POISON,
     RAINBOW,
     ROCK,
 )
@@ -240,7 +238,7 @@ def check_bird_bat_collision():
 
             # Defences and armor (armor is lowered by FROZEN/BLEEDING debuffs)
             if bird_color != ORANGE:
-                damage = enemy_stats.mitigate(bat, damage, 'contact', bird=i, armor_cut=_armor_cut(bat))
+                damage = enemy_stats.mitigate(bat, damage, 'contact', bird=i, armor_cut=afflictions.armor_cut(bat))
 
             if bird_color == ORANGE:
                 bat['hp'] = 0
@@ -297,66 +295,8 @@ def check_bird_bat_collision():
                 bat['y_pos'] = max(0, bat['y_pos'] - push_rows)
                 bat['target_y'] = max(0, bat['target_y'] - push_rows)
 
-            # FROSTY bird applies FROZEN debuff to enemies
-            if bird_color == FROSTY:
-                now = clock.now()
-                # Check if boosted
-                is_boosted = i in state.special.frosty_boosted and now < state.special.frosty_boosted[i]
-                # Boss has lower chance
-                is_boss = bat.get('is_boss', False)
-                if is_boss:
-                    chance = getattr(constants.frosty, 'boss_chance', 0.10)
-                elif is_boosted:
-                    chance = getattr(constants.frosty, 'boosted_chance', 0.60)
-                else:
-                    chance = stats.bird(i, 'affliction_chance')
-                if random.random() < chance:
-                    bat_id = id(bat)
-                    freeze_duration = getattr(constants.frosty, 'freeze_duration', 3.0)
-                    state.special.frozen_enemies[bat_id] = {
-                        'end_time': now + freeze_duration,
-                        'bat': bat,
-                        'armor_reduction': getattr(constants.frosty, 'armor_reduction', 2),
-                    }
-
-            # POISON bird applies POISON debuff to bats/boss only
-            if bird_color == POISON:
-                now = clock.now()
-                # Check if boosted
-                is_boosted = i in state.special.poison_boosted and now < state.special.poison_boosted[i]
-                if is_boosted:
-                    chance = getattr(constants.poison, 'boosted_chance', 0.60)
-                else:
-                    chance = stats.bird(i, 'affliction_chance')
-                if random.random() < chance:
-                    bat_id = id(bat)
-                    effect_duration = getattr(constants.poison, 'effect_duration', 5.0)
-                    state.special.poisoned_enemies[bat_id] = {
-                        'end_time': now + effect_duration,
-                        'last_tick': now,
-                        'bat': bat,
-                        'damage_per_second': getattr(constants.poison, 'damage_per_second', 2),
-                    }
-
-            # BERSERK bird applies BLEED debuff
-            if bird_color == BERSERK:
-                now = clock.now()
-                # Check if boosted
-                is_boosted = i in state.special.berserk_boosted and now < state.special.berserk_boosted[i]
-                if is_boosted:
-                    chance = getattr(constants.berserk, 'boosted_chance', 0.60)
-                else:
-                    chance = stats.bird(i, 'affliction_chance')
-                if random.random() < chance:
-                    bat_id = id(bat)
-                    effect_duration = getattr(constants.berserk, 'effect_duration', 10.0)
-                    state.special.bleeding_enemies[bat_id] = {
-                        'end_time': now + effect_duration,
-                        'last_tick': now,
-                        'bat': bat,
-                        'damage_per_second': getattr(constants.berserk, 'damage_per_second', 1),
-                        'armor_reduction': getattr(constants.berserk, 'armor_reduction', 1),
-                    }
+            # Frosty / Poison / Berserk: maybe freeze, poison or make the bat bleed
+            afflictions.try_afflict(i, bat)
 
             if bat['hp'] <= 0:
                 handle_bat_death(bat, i)
@@ -366,17 +306,6 @@ def check_bird_bat_collision():
                 if bird_color == BLUE:
                     reset_bird_power(i)
             break
-
-
-def _armor_cut(bat):
-    """Armor removed from a bat by its FROZEN / BLEEDING debuffs."""
-    bat_id = id(bat)
-    cut = 0
-    if bat_id in state.special.frozen_enemies:
-        cut += state.special.frozen_enemies[bat_id].get('armor_reduction', 2)
-    if bat_id in state.special.bleeding_enemies:
-        cut += state.special.bleeding_enemies[bat_id].get('armor_reduction', 1)
-    return cut
 
 
 def _scare_neighbours(bird_idx, bat, seconds):
