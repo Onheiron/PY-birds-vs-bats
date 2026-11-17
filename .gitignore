@@ -43,3 +43,10 @@ npm-debug.log*
 
 # Other
 *.pyc
+
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
