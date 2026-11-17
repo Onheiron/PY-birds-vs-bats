@@ -1,9 +1,9 @@
 """Jelly Boss (Rotten Marshes)."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.logic.bosses.common import get_boss_config
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
@@ -34,7 +34,7 @@ def spawn_jelly_boss():
         'anim_frame': 0,  # Index into animation sequence (0-9)
         'anim_timer': 0,  # Timer for animation steps
         'oscillation_dir': 1,
-        'spawn_ts': time.time(),
+        'spawn_ts': clock.now(),
         'boss_type': 'jelly',
         'spawned_bats': 0,  # Number of bats spawned
         'bat_spawn_anim': None,  # Active spawn animation
@@ -248,7 +248,7 @@ def _spawn_bat_from_jelly_boss(boss, anim):
         'hp': hp,
         'max_hp': hp,
         'target_y': boss['y_pos'] + 8,  # Target below the boss
-        'spawn_ts': time.time(),
+        'spawn_ts': clock.now(),
         'armored': armored,
         'diver': diver,
         'spellcaster': spellcaster,
@@ -352,6 +352,6 @@ def _convert_jelly_boss_to_obstacle(boss):
                 'y_pos': boss['y_pos'] + 3,
                 'type': loot_type,
                 'rarity': rarity,
-                'spawn_ts': time.time(),
+                'spawn_ts': clock.now(),
             }
         )

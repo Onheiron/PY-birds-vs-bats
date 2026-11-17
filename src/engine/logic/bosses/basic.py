@@ -1,9 +1,9 @@
 """Default end-of-biome boss (scream attack)."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.birds import set_ball_vy
 from src.engine.logic.bosses.common import convert_boss_to_obstacle, get_boss_config
 from src.services.sound import play_sfx
@@ -65,7 +65,7 @@ def spawn_basic_boss():
         'scream_timer': 0,  # Frames remaining in current scream
         'anim_frame': 0,  # Animation frame counter
         'oscillation_dir': 1,  # Direction of oscillation (1 = right, -1 = left)
-        'spawn_ts': time.time(),
+        'spawn_ts': clock.now(),
         'boss_type': 'normal',  # Mark as normal boss
     }
     state.enemies.boss_spawned = True

@@ -1,9 +1,9 @@
 """Swamp flowers growing on obstacles and Tree Boss branches."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.entities.sprites import FLOWER_MATURE_FRAME, SWAMP_OBSTACLE_FLOWER_POSITIONS
 
 
@@ -43,7 +43,7 @@ def maybe_add_flower_to_obstacle(obstacle_data):
         'frame': FLOWER_MATURE_FRAME,  # Already bloomed (obstacles get destroyed too fast otherwise)
         'hp': flower_hp,
         'max_hp': flower_hp,
-        'grow_timer': time.time() + grow_interval,
+        'grow_timer': clock.now() + grow_interval,
         'active': True,
         'rel_x': flower_pos[0],  # Relative X position in obstacle sprite
         'rel_y': flower_pos[1],  # Relative Y position in obstacle sprite
@@ -56,7 +56,7 @@ def update_obstacle_flowers():
     if state.game.level_group != 4:
         return
 
-    now = time.time()
+    now = clock.now()
     tree_boss_cfg = getattr(constants, 'tree_boss', None)
     flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
     grow_interval = getattr(flowers_cfg, 'grow_interval', 2.0) if flowers_cfg else 2.0
@@ -92,7 +92,7 @@ def apply_flower_collision_effect(flower, bird_idx):
             bleed_duration = getattr(red_cfg, 'bleed_duration', 5.0) if red_cfg else 5.0
             lives = getattr(red_cfg, 'lives', 3) if red_cfg else 3
             state.special.bleeding_birds[bird_idx] = {
-                'end_time': time.time() + bleed_duration,
+                'end_time': clock.now() + bleed_duration,
                 'lives_needed': lives,
                 'lives_lost': 0,
             }
@@ -105,7 +105,7 @@ def apply_flower_collision_effect(flower, bird_idx):
         if random.random() < probability:
             stun_duration = getattr(yellow_cfg, 'stun_duration', 3.0) if yellow_cfg else 3.0
             state.special.stunned_birds[bird_idx] = {
-                'end_time': time.time() + stun_duration,
+                'end_time': clock.now() + stun_duration,
                 'type': 'flower',  # Mark as flower stun (different from obstacle stun)
             }
 
@@ -134,7 +134,7 @@ def apply_flower_collision_effect(flower, bird_idx):
             cure_max = getattr(green_cfg, 'cure_attempts_max', 4) if green_cfg else 4
             cure_attempts = random.randint(cure_min, cure_max)
             state.special.poisoned_birds[bird_idx] = {
-                'death_time': time.time() + poison_duration,
+                'death_time': clock.now() + poison_duration,
                 'cure_attempts_needed': cure_attempts,
                 'cure_attempts_done': 0,
             }

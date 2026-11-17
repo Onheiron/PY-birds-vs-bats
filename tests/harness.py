@@ -102,13 +102,17 @@ def _freeze(value):
     return value
 
 
+# Fields that describe how time is measured, not the world itself
+_BOOKKEEPING = {'clock_offset'}
+
+
 def state_digest():
     from src.core import state
 
     parts = []
     for name in ('birds', 'special', 'enemies', 'items', 'spells', 'powerups', 'game', 'player'):
-        ns = getattr(state, name)
-        parts.append((name, _freeze(vars(ns))))
+        values = {k: v for k, v in vars(getattr(state, name)).items() if k not in _BOOKKEEPING}
+        parts.append((name, _freeze(values)))
     return hashlib.sha256(repr(parts).encode()).hexdigest()
 
 

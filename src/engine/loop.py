@@ -7,7 +7,7 @@ and game logic advance every N frames, N shrinking as the gear goes up.
 import time
 
 from src.core import state
-from src.engine import input_handler, logic, menus, physics, progression
+from src.engine import clock, input_handler, logic, menus, physics, progression
 from src.engine.timing import FrameClock, frames_per_update
 from src.entities.bird_types import get_bird_type_by_color
 from src.services import achievements, save_manager, sound
@@ -31,7 +31,9 @@ class Session:
         now = time.time()
 
         if game.paused:
-            # Do not accumulate miles while paused
+            # Neither miles nor game time advance while paused
+            if game.last_mile_update is not None:
+                clock.hold(now - game.last_mile_update)
             game.last_mile_update = now
             return
 

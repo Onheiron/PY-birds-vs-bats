@@ -1,9 +1,9 @@
 """Loot collection, eggs and power-up pickups."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.progression import award_xp
 from src.entities.sprites import (
     BERSERK,
@@ -208,7 +208,7 @@ def _spawn_bird_from_egg(egg_type):
             if bird_color == RAINBOW:
                 max_charge = getattr(constants.rainbow, 'max_charge', 100)
                 state.special.rainbow_charge[idx] = max_charge
-                state.special.rainbow_last_decay[idx] = time.time()
+                state.special.rainbow_last_decay[idx] = clock.now()
             break
 
 
@@ -291,7 +291,7 @@ def _apply_timelapse_power(loot_type):
     slowdown = _tiered(section, 'slowdown', tier, ('base', 'plus', 'max', 'max'), (1.5, 1.75, 2.0, 2.0))
 
     state.powerups.timelapse_active = True
-    state.powerups.timelapse_end_time = time.time() + duration
+    state.powerups.timelapse_end_time = clock.now() + duration
     state.powerups.timelapse_slowdown = slowdown
     achievements.check_achievements_event(
         'power_used', state.game.frame_count, state.ui.notifications, power='timelapse'

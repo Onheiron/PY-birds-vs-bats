@@ -1,9 +1,9 @@
 """Player actions during play: move, swap, bounce, suction and toggles."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.birds import (
     check_pending_transforms,
     find_bird_in_lane,
@@ -140,7 +140,7 @@ def handle_bounce():
     Processes ALL birds in the affected lanes (multiple birds can be in same lane due to portals).
     """
     # Record last UP press time (for Purple hold-to-charge)
-    state.special.last_up_time = time.time()
+    state.special.last_up_time = clock.now()
 
     lanes = get_affected_lanes()
 

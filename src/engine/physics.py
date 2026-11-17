@@ -4,6 +4,7 @@ import random
 import time as time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.bat_ai import update_bat_positions
 from src.engine.birds import reset_bird_power, set_ball_vy
 from src.engine.glitch import update_glitch_chaos
@@ -93,7 +94,7 @@ def update_bird_positions():
 
         # Apply TWISTER local tailwind (affects only birds in specific lanes)
 
-        now = time.time()
+        now = clock.now()
         for twister_idx, tw_info in list(state.special.twister_tailwind.items()):
             if now >= tw_info['end_time']:
                 # Expired, clean up

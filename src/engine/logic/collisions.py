@@ -1,9 +1,9 @@
 """Bird, bat, obstacle and projectile collisions."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.birds import check_pending_transforms, get_scared_frames, reset_bird_power, set_ball_vy
 from src.engine.logic.damage import calculate_bird_damage, handle_bat_death
 from src.engine.logic.flowers import apply_flower_collision_effect
@@ -50,7 +50,7 @@ def check_bird_ceiling_bounce():
                         'y_pos': constants.layout.starting_line,
                         'type': 'orange_egg',
                         'rarity': 'epic',
-                        'spawn_ts': time.time(),
+                        'spawn_ts': clock.now(),
                     }
                 )
                 continue
@@ -311,7 +311,7 @@ def check_bird_bat_collision():
 
             # ROCK bird pushes enemies up
             if bird_color == ROCK:
-                now = time.time()
+                now = clock.now()
                 # Check if boosted (power active)
                 is_boosted = i in state.special.rock_boosted and now < state.special.rock_boosted[i]
                 if is_boosted:
@@ -324,7 +324,7 @@ def check_bird_bat_collision():
 
             # FROSTY bird applies FROZEN debuff to enemies
             if bird_color == FROSTY:
-                now = time.time()
+                now = clock.now()
                 # Check if boosted
                 is_boosted = i in state.special.frosty_boosted and now < state.special.frosty_boosted[i]
                 # Boss has lower chance
@@ -346,7 +346,7 @@ def check_bird_bat_collision():
 
             # POISON bird applies POISON debuff to bats/boss only
             if bird_color == POISON:
-                now = time.time()
+                now = clock.now()
                 # Check if boosted
                 is_boosted = i in state.special.poison_boosted and now < state.special.poison_boosted[i]
                 if is_boosted:
@@ -365,7 +365,7 @@ def check_bird_bat_collision():
 
             # BERSERK bird applies BLEED debuff
             if bird_color == BERSERK:
-                now = time.time()
+                now = clock.now()
                 # Check if boosted
                 is_boosted = i in state.special.berserk_boosted and now < state.special.berserk_boosted[i]
                 if is_boosted:
@@ -490,7 +490,7 @@ def check_projectile_collision():
                             tree_boss_cfg = getattr(constants, 'tree_boss', None)
                             flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
                             respawn_delay = getattr(flowers_cfg, 'respawn_delay', 3.0) if flowers_cfg else 3.0
-                            flower['respawn_timer'] = time.time() + respawn_delay
+                            flower['respawn_timer'] = clock.now() + respawn_delay
                     else:
                         # Damage branch
                         branch['hp'] -= damage

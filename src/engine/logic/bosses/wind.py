@@ -1,9 +1,9 @@
 """Wind Boss (The Borders)."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.logic.bosses.common import get_boss_config
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
@@ -29,7 +29,7 @@ def spawn_wind_boss():
         'anim_frame': 0,  # Index into animation sequence (0-9)
         'anim_timer': 0,  # Timer for animation steps
         'oscillation_dir': 1,
-        'spawn_ts': time.time(),
+        'spawn_ts': clock.now(),
         'boss_type': 'wind',
         'wind_phase': 'tailwind',  # 'tailwind' during pull up, 'headwind' during push down
     }
@@ -217,6 +217,6 @@ def _convert_wind_boss_to_obstacle(boss):
                 'y_pos': boss['y_pos'] + 2,
                 'type': loot_type,
                 'rarity': rarity,
-                'spawn_ts': time.time(),
+                'spawn_ts': clock.now(),
             }
         )

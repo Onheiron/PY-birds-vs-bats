@@ -211,6 +211,7 @@ def _new_game():
         paused=False,
         frame_count=0,
         start_time=None,
+        clock_offset=0.0,  # wall-clock seconds spent paused (see src/engine/clock.py)
         last_mile_update=None,  # Timestamp for mile calculation
     )
 

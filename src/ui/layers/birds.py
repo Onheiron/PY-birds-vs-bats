@@ -2,9 +2,9 @@
 
 import math
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.entities.sprites import (
     BIRD_DOWN_1,
     BIRD_DOWN_2,
@@ -81,7 +81,7 @@ def draw_bird_status_indicators(fb):
     This is extracted from Tree Boss rendering so it can be reused by Owl Boss and other bosses.
     """
 
-    now = time.time()
+    now = clock.now()
 
     # Stunned birds get a lightning indicator with countdown
     for bird_idx in state.special.stunned_birds:
@@ -301,7 +301,7 @@ def draw_birds(fb):
         # Purple bird charging orb
         if state.birds.colors[i] == PURPLE and state.special.purple_state[i] == 2:
             start_time = state.special.purple_charge_started_frame[i]  # Now stores timestamp
-            elapsed_seconds = int(time.time() - start_time)
+            elapsed_seconds = int(clock.now() - start_time)
             s = max(0, min(3, elapsed_seconds))
             sym = '⋅' if s <= 0 else ('•' if s == 1 else '●')
             orb_y = y_pos + 1

@@ -1,9 +1,9 @@
 """Bird powers, triggered by bouncing a bird that is already rising."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.birds import (
     allow_consume_power,
     check_pending_transforms,
@@ -184,7 +184,7 @@ def _power_cookie(bird_idx, bird_lane):
             'type': 'cookie_crumb',
             'rarity': 'rare',
             'xp': crumb_xp,
-            'spawn_ts': time.time(),
+            'spawn_ts': clock.now(),
         }
     )
 
@@ -281,7 +281,7 @@ def _power_stealth(bird_idx, bird_lane):
 def _power_twister(bird_idx, bird_lane):
     """Twister power: create local tailwind in current lane + 2 adjacent."""
     duration = getattr(constants.twister, 'tailwind_duration', 2.0)
-    end_time = time.time() + duration
+    end_time = clock.now() + duration
     # Affected lanes: current + adjacent
     lanes = [bird_lane]
     if bird_lane > 0:
@@ -295,19 +295,19 @@ def _power_twister(bird_idx, bird_lane):
 def _power_frosty(bird_idx):
     """Frosty power: boost freeze chance to 60% for 2s."""
     duration = getattr(constants.frosty, 'boost_duration', 2.0)
-    state.special.frosty_boosted[bird_idx] = time.time() + duration
+    state.special.frosty_boosted[bird_idx] = clock.now() + duration
 
 
 def _power_poison(bird_idx):
     """Poison power: boost poison chance to 60% for 2s."""
     duration = getattr(constants.poison, 'boost_duration', 2.0)
-    state.special.poison_boosted[bird_idx] = time.time() + duration
+    state.special.poison_boosted[bird_idx] = clock.now() + duration
 
 
 def _power_berserk(bird_idx):
     """Berserk power: boost bleed chance to 60% for 2s."""
     duration = getattr(constants.berserk, 'boost_duration', 2.0)
-    state.special.berserk_boosted[bird_idx] = time.time() + duration
+    state.special.berserk_boosted[bird_idx] = clock.now() + duration
 
 
 def _power_rock(bird_idx):
@@ -317,5 +317,5 @@ def _power_rock(bird_idx):
     if bird_idx not in state.special.rock_boosted:
         state.special.rock_prev_speeds = getattr(state.special, 'rock_prev_speeds', {})
         state.special.rock_prev_speeds[bird_idx] = state.birds.speeds[bird_idx]
-    state.special.rock_boosted[bird_idx] = time.time() + duration
+    state.special.rock_boosted[bird_idx] = clock.now() + duration
     state.birds.speeds[bird_idx] = getattr(constants.rock, 'boosted_speed', 3)

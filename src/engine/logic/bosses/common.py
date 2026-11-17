@@ -1,9 +1,9 @@
 """Shared boss helpers."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige, get_level_milestones
 
@@ -99,6 +99,6 @@ def convert_boss_to_obstacle(boss):
                 'y_pos': boss['y_pos'] + 1,  # Just below boss
                 'type': loot_type,
                 'rarity': rarity,
-                'spawn_ts': time.time(),
+                'spawn_ts': clock.now(),
             }
         )

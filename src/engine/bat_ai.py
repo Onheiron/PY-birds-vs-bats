@@ -4,6 +4,7 @@ import random
 import time as time
 
 from src.core import constants, state
+from src.engine import clock
 from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
 
@@ -120,12 +121,12 @@ def _update_diver_bat(bat):
             # End dive, become stunned
             bat['diver_state'] = 'stunned'
             stun_duration = getattr(diver_cfg, 'stun_duration', 1.5)
-            bat['stun_end_time'] = time.time() + stun_duration
+            bat['stun_end_time'] = clock.now() + stun_duration
 
     elif diver_state == 'stunned':
         # Wait for stun to end
         stun_end = bat.get('stun_end_time', 0)
-        if time.time() >= stun_end:
+        if clock.now() >= stun_end:
             bat['diver_state'] = 'returning'
 
     elif diver_state == 'returning':
@@ -150,7 +151,7 @@ def _update_spellcaster_bat(bat):
         return
 
     spell_state = bat.get('spell_state', 'idle')
-    now = time.time()
+    now = clock.now()
 
     # Check if currently casting
     if spell_state == 'casting':
@@ -216,7 +217,7 @@ def _apply_spell_effect(bat):
 
     # Get lanes affected by this spell (based on bat position)
     affected_lanes = _get_bat_affected_lanes(bat)
-    now = time.time()
+    now = clock.now()
 
     if spell == 'silence':
         # Disable powers in affected lanes
@@ -354,7 +355,7 @@ def _cast_exile_spell(affected_lanes):
     exile_cfg = getattr(spellcaster_cfg, 'exile', None) if spellcaster_cfg else None
     swap_delay = getattr(exile_cfg, 'swap_delay', 0.3) if exile_cfg else 0.3
 
-    now = time.time()
+    now = clock.now()
     state.spells.pending_exiles.append(
         {
             'swap_time': now + swap_delay,

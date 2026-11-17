@@ -2,9 +2,9 @@
 
 import math
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 from src.entities.sprites import METEOR_LEFT, METEOR_RIGHT, OWL_BOSS_SPELLS, PORTAL_FRAME_1, SWAMP_OBSTACLE_T2
@@ -53,7 +53,7 @@ def spawn_owl_boss():
         'max_hp': hp,
         'state': 'descending',
         'boss_type': 'owl',
-        'spawn_ts': time.time(),
+        'spawn_ts': clock.now(),
         # Animation
         'anim_frame': 0,  # 0 or 1 for wing animation
         'anim_timer': 0,
@@ -85,7 +85,7 @@ def update_owl_boss():
         return
 
     owl_boss_cfg = getattr(constants, 'owl_boss', None)
-    current_time = time.time()
+    current_time = clock.now()
 
     # Check if boss is dead
     if boss['hp'] <= 0:
@@ -298,7 +298,7 @@ def _owl_cast_ominous_wind(boss, spells_cfg):
     down_bonus = getattr(cfg, 'down_bonus', 3) if cfg else 3
     up_penalty = getattr(cfg, 'up_penalty', 2) if cfg else 2
 
-    boss['owl_wind_end_time'] = time.time() + duration
+    boss['owl_wind_end_time'] = clock.now() + duration
     # Use wind_boss effects (negative = headwind)
     state.powerups.wind_boss_up_bonus = -up_penalty
     state.powerups.wind_boss_down_penalty = -down_bonus
@@ -339,7 +339,7 @@ def _owl_cast_evocation(boss, spells_cfg):
             'hp': hp,
             'max_hp': hp,
             'target_y': target_y,
-            'spawn_ts': time.time(),
+            'spawn_ts': clock.now(),
             'from_owl_boss': True,
             'armored': False,
             'diver': False,
@@ -464,11 +464,11 @@ def _owl_cast_bend_time(boss, spells_cfg):
     slowdown = getattr(cfg, 'slowdown_factor', 2.0) if cfg else 2.0
 
     boss['bend_time_active'] = True
-    boss['bend_time_end_time'] = time.time() + duration
+    boss['bend_time_end_time'] = clock.now() + duration
 
     # Use timelapse system for slowdown
     state.powerups.timelapse_active = True
-    state.powerups.timelapse_end_time = time.time() + duration
+    state.powerups.timelapse_end_time = clock.now() + duration
     state.powerups.timelapse_slowdown = slowdown
 
 
@@ -595,7 +595,7 @@ def _owl_boss_defeated(boss):
                 'y_pos': boss['y_pos'] + 2 + i,
                 'type': loot_type,
                 'rarity': rarity,
-                'spawn_ts': time.time(),
+                'spawn_ts': clock.now(),
             }
         )
 

@@ -1,9 +1,9 @@
 """Tree Boss (Dark Swamp)."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.logic.damage import calculate_bird_damage
 from src.engine.logic.flowers import apply_flower_collision_effect, apply_mature_flower_effect
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
@@ -139,7 +139,7 @@ def spawn_tree_boss():
         'hp': 1,  # Tree boss HP is based on branches, not central HP
         'max_hp': 1,
         'state': 'active',
-        'spawn_ts': time.time(),
+        'spawn_ts': clock.now(),
         'boss_type': 'tree',
         'branches': branches,
         'bg_y_offset': -bg_height,  # Background tree starts above screen
@@ -162,7 +162,7 @@ def update_tree_boss():
     getattr(flowers_cfg, 'respawn_delay', 3.0) if flowers_cfg else 3.0
     flower_hp = getattr(flowers_cfg, 'hp', 10) if flowers_cfg else 10
 
-    now = time.time()
+    now = clock.now()
     branches = boss.get('branches', [])
 
     # Check if boss is already defeated and scrolling down
@@ -270,7 +270,7 @@ def _handle_tree_branch_hit(branch, bird_idx):
             # Flower destroyed - will respawn later
             flower['active'] = False
             respawn_delay = getattr(flowers_cfg, 'respawn_delay', 3.0) if flowers_cfg else 3.0
-            flower['respawn_timer'] = time.time() + respawn_delay
+            flower['respawn_timer'] = clock.now() + respawn_delay
     else:
         # No flower or flower dead - damage branch
         branch['hp'] -= damage
@@ -332,7 +332,7 @@ def _spawn_jumpscare_bat_from_branch(branch):
         'hp': 8,
         'max_hp': 8,
         'target_y': y_pos + 5,
-        'spawn_ts': time.time(),
+        'spawn_ts': clock.now(),
         'is_jumpscare': True,
         'lane': closest_lane,  # Required for activate_jumpscare_scary_face
         'from_boss': True,  # Spawned from boss - no loot drop
@@ -381,7 +381,7 @@ def _tree_boss_defeated(boss):
                     'y_pos': 5 + i * 3,
                     'type': loot_type,
                     'rarity': rarity,
-                    'spawn_ts': time.time(),
+                    'spawn_ts': clock.now(),
                 }
             )
 

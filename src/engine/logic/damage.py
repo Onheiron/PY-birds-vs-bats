@@ -1,9 +1,9 @@
 """Bird damage computation and enemy death handling."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 from src.entities.bird_types import get_bird_type_by_color
@@ -138,7 +138,7 @@ def handle_bat_death(bat, killer_bird_idx):
                 'y_pos': bat['y_pos'],
                 'type': loot_type,
                 'rarity': rarity,
-                'spawn_ts': time.time(),
+                'spawn_ts': clock.now(),
             }
         )
 
@@ -187,7 +187,7 @@ def handle_mini_bat_death(mini_bat, killer_bird_idx):
                 'y_pos': mini_bat['y_pos'],
                 'type': loot_type,
                 'rarity': rarity,
-                'spawn_ts': time.time(),
+                'spawn_ts': clock.now(),
             }
         )
 

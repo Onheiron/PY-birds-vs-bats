@@ -11,6 +11,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from src.core import state
+from src.engine import clock
 
 # Constants
 SAVE_VERSION = "2.0"
@@ -336,11 +337,19 @@ def load_game(slot):
         if 'game_seed' in data:
             state.game_seed = data['game_seed']
 
+        # Game clock first: every saved timer is expressed in game time.
+        # Saves made before the game clock existed hold wall-clock times.
+        game_time = data.get('game', {}).get('game_time')
+        if game_time is None:
+            state.game.clock_offset = 0.0
+        else:
+            clock.resume_at(game_time)
+
         # Restore all namespaces
         _restore_birds(state.birds, data.get('birds', {}))
         _restore_special(state.special, data.get('special', {}))
-        _restore_enemies(state.enemies, data.get('enemies', {}))
-        _restore_items(state.items, data.get('items', {}))
+        _restore_enemies(state.enemies, data.get('enemies', {}), keep_ages=game_time is not None)
+        _restore_items(state.items, data.get('items', {}), keep_ages=game_time is not None)
         _restore_powerups(state.powerups, data.get('powerups', {}))
         _restore_game_state(data.get('game', {}))
         _restore_player_state(data.get('player', {}))
@@ -462,6 +471,7 @@ def _build_game_dict():
         'lives': state.game.lives,
         'swaps_used': state.game.swaps_used,
         'frame_count': state.game.frame_count,
+        'game_time': clock.now(),
     }
 
 
@@ -571,7 +581,7 @@ def _restore_special(special, data):
         special.red_projectiles = data['red_projectiles']
 
 
-def _restore_enemies(enemies, data):
+def _restore_enemies(enemies, data, keep_ages=False):
     """Restore enemies namespace from dict."""
     enemies.obstacles = data.get('obstacles', [])
     enemies.obstacle_spawn_timer = data.get('obstacle_spawn_timer', 0)
@@ -581,20 +591,24 @@ def _restore_enemies(enemies, data):
     enemies.right_panel_barriers = data.get('right_panel_barriers', [])
     enemies.right_panel_barrier_timer = data.get('right_panel_barrier_timer', 0)
 
-    # Adjust spawn_ts for bats and loot to be relative to current time
-    current_time = time.time()
+    if keep_ages:
+        return
+    # Old saves: wall-clock spawn times are meaningless now, restart their age
+    current_time = clock.now()
     for bat in enemies.bats:
         if 'spawn_ts' in bat:
             # Keep the relative age of the bat
             bat['spawn_ts'] = current_time
 
 
-def _restore_items(items, data):
+def _restore_items(items, data, keep_ages=False):
     """Restore items namespace from dict."""
     items.loot_items = data.get('loot_items', [])
 
-    # Adjust spawn_ts to current time
-    current_time = time.time()
+    if keep_ages:
+        return
+    # Old saves: wall-clock spawn times are meaningless now, restart their age
+    current_time = clock.now()
     for loot in items.loot_items:
         if 'spawn_ts' in loot:
             loot['spawn_ts'] = current_time

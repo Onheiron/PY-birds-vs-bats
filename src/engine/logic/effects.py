@@ -1,8 +1,7 @@
 """Timed effects: power-ups, bird states, spells and enemy debuffs."""
 
-import time
-
 from src.core import constants, state
+from src.engine import clock
 from src.engine.birds import check_pending_transforms, reset_bird_power
 from src.engine.logic.damage import handle_bat_death
 from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
@@ -38,7 +37,7 @@ def update_powerup_timers():
 
     if state.powerups.timelapse_active:
         # Use real time instead of frame count
-        if time.time() >= state.powerups.timelapse_end_time:
+        if clock.now() >= state.powerups.timelapse_end_time:
             state.powerups.timelapse_active = False
             state.powerups.timelapse_slowdown = 1.0
 
@@ -65,7 +64,7 @@ def update_special_bird_states():
             del state.special.scared_birds[bird_idx]
 
     # Stunned birds (from obstacle collision or flower)
-    now = time.time()
+    now = clock.now()
     for bird_idx in list(state.special.stunned_birds.keys()):
         stun_info = state.special.stunned_birds[bird_idx]
         if isinstance(stun_info, dict):
@@ -99,7 +98,7 @@ def update_special_bird_states():
             state.special.purple_just_fired_frames[i] -= 1
 
     # Poisoned birds - check death timer
-    now = time.time()
+    now = clock.now()
     for bird_idx in list(state.special.poisoned_birds.keys()):
         poison_info = state.special.poisoned_birds[bird_idx]
         death_time = poison_info.get('death_time', 0)
@@ -207,7 +206,7 @@ def update_special_bird_states():
 
 def update_spell_effects():
     """Update spell effects from spellcaster bats."""
-    now = time.time()
+    now = clock.now()
 
     # Update silenced lanes (remove expired)
     for lane in list(state.spells.silenced_lanes.keys()):
@@ -253,7 +252,7 @@ def _execute_exile_swap(exile):
 
 def update_enemy_debuffs():
     """Update enemy debuffs applied by FROSTY/POISON/BERSERK birds."""
-    now = time.time()
+    now = clock.now()
 
     # FROZEN enemies - cleanup expired, no damage tick
     for enemy_id in list(state.special.frozen_enemies.keys()):
@@ -321,7 +320,7 @@ def update_purple_charging():
     # Must be > terminal key repeat initial delay (~500ms)
     RELEASE_THRESHOLD_SECS = 0.6
 
-    now = time.time()
+    now = clock.now()
 
     for b in range(constants.layout.num_balls):
         ps = state.special.purple_state[b]

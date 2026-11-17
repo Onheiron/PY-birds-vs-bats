@@ -1,9 +1,9 @@
 """Enemy, obstacle, flower and cloud spawning plus despawn."""
 
 import random
-import time
 
 from src.core import constants, state
+from src.engine import clock
 from src.engine.birds import check_pending_transforms
 from src.engine.logic.flowers import maybe_add_flower_to_obstacle
 from src.engine.logic.helpers import get_obstacle_lanes
@@ -358,7 +358,7 @@ def spawn_bat():
         'hp': hp,
         'max_hp': hp,
         'target_y': final_target_y,
-        'spawn_ts': time.time(),
+        'spawn_ts': clock.now(),
         'armored': armored,
         'diver': diver,
         'spellcaster': spellcaster,
@@ -475,7 +475,7 @@ def update_cloud_banks():
 
 def despawn_old_entities():
     """Remove entities that have been around too long."""
-    now = time.time()
+    now = clock.now()
 
     # Bats despawn after configured time (armored bats stay longer)
     bat_despawn = getattr(constants.loot, 'bat_despawn_time', 60)
