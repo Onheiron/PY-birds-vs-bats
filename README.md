@@ -248,6 +248,9 @@ simulator plays for that seed and those options.
 Bot strategies (braking with swaps, formations, fewer birds, favourite
 birds, adaptive card choices) are described and compared in
 `docs/strategies.md`: `python3 tools/simulate.py --strategies default,brake,yellow_guard`.
+`tools/analyze.py` ranks what matters most (every factor drawn at random per
+game) and which card or pact is worth taking in which situation; see
+`docs/analysis.md`.
 
 `tools/simulate.py` plays whole games headless with a bot and reports the
 numbers that matter for tuning: how far runs get, why birds are lost, gears

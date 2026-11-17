@@ -28,12 +28,14 @@ def decision(card, offered, levels, lives=5):
 
 def test_decision_report_finds_the_better_card_per_situation():
     items = []
-    for _ in range(20):
-        items.append(decision('good', ['good', 'bad'], 2))
-        items.append(decision('bad', ['good', 'bad'], 0))
-        items.append(decision('shield', ['shield', 'good'], 3, lives=2))
-        items.append(decision('good', ['shield', 'good'], 0, lives=2))
+    for k in range(20):
+        noise = 0.1 * (k % 3)
+        items.append(decision('good', ['good', 'bad'], 2 + noise))
+        items.append(decision('bad', ['good', 'bad'], noise))
+        items.append(decision('shield', ['shield', 'good'], 3 + noise, lives=2))
+        items.append(decision('good', ['shield', 'good'], noise, lives=2))
     report = analyze.decision_report(items, ['lives'], min_samples=10)
-    assert '| good | +2.00 |' in report
+    assert '| good' in report and '+2.00' in report
     assert 'When **lives <= 3**: take **shield**' in report
     assert 'When **lives > 3**: take **good**' in report
+    assert 'avoid **bad**' in report

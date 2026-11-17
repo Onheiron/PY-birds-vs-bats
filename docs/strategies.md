@@ -57,6 +57,10 @@ birds let go per game.
 
 ## First results
 
+> These were measured before `tools/analyze.py` showed that the bot's
+> dodging cost ~1.8 levels; dodging is now off by default, so rerun the
+> comparison for current numbers. `docs/analysis.md` measures every factor at once.
+
 Expert bot, default flock, 24 games per strategy, 12 minutes of game time
 at most (`--seed 1`):
 

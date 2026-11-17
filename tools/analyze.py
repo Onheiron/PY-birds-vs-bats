@@ -272,8 +272,14 @@ def _effects(items, key):
     out = {}
     for option in taken:
         if option in passed:
-            out[option] = (mean(taken[option]), mean(passed[option]), len(taken[option]), len(passed[option]))
+            t, p = taken[option], passed[option]
+            se = math.sqrt(_var(t) / len(t) + _var(p) / len(p)) if len(t) > 1 and len(p) > 1 else float('inf')
+            out[option] = (mean(t), mean(p), len(t), len(p), se)
     return out
+
+
+def _var(values):
+    return statistics.variance(values) if len(values) > 1 else 0.0
 
 
 def _card_name(_d, card_id):
@@ -285,7 +291,8 @@ def decision_report(items, by, min_samples):
     pacts = [d for d in items if d['offer'] == 'pact']
     lines = [f'# Which choice is worth what ({len(eggs)} egg choices, {len(pacts)} pact choices)\n']
     lines.append('Score of a choice = levels gained + 0.3 × birds kept − 3 if the game ended, over the next')
-    lines.append('2 minutes. "Worth" = mean score when the card was taken − when it was offered and left.\n')
+    lines.append('2 minutes. "Worth" = mean score when the card was taken − when it was offered and left;')
+    lines.append('"±" is its standard error and * marks a worth larger than twice the standard error.\n')
 
     lines.append('## Egg cards, overall\n')
     lines.append(_table(_effects(eggs, _card_name), min_samples))
@@ -305,33 +312,42 @@ def decision_report(items, by, min_samples):
             lines.append(f'### {value} ({len(subset)} choices)\n')
             lines.append(_table(effects, min_samples, limit=8))
             lines.append('')
-            good = [
-                (t - p, opt) for opt, (t, p, nt, np_) in effects.items() if nt >= min_samples and np_ >= min_samples
+            # Only differences larger than twice their standard error count as rules
+            sure = [
+                (t - p, opt, se)
+                for opt, (t, p, nt, np_, se) in effects.items()
+                if nt >= min_samples and np_ >= min_samples and abs(t - p) > 2 * se
             ]
-            good.sort(reverse=True)
-            if good and good[0][0] > 0:
+            sure.sort(reverse=True)
+            takes = [r for r in sure if r[0] > 0][:3]
+            avoids = [r for r in sure if r[0] < 0][-3:]
+            if takes:
                 rules.append(
-                    f'- When **{value}**: take **{good[0][1]}** ({good[0][0]:+.2f}); '
-                    f'avoid **{good[-1][1]}** ({good[-1][0]:+.2f})'
+                    f'- When **{value}**: take ' + ', '.join(f'**{o}** ({w:+.2f} ±{e:.2f})' for w, o, e in takes)
+                )
+            if avoids:
+                rules.append(
+                    f'- When **{value}**: avoid ' + ', '.join(f'**{o}** ({w:+.2f} ±{e:.2f})' for w, o, e in avoids)
                 )
 
     if rules:
         lines.append('\n## Rules found\n')
         lines += rules
-        lines.append('\nRules with a worth below about ±0.3 rest on few games: check them with more runs.')
+        lines.append('\nOnly differences larger than twice their standard error (±) are listed as rules.')
     return '\n'.join(lines)
 
 
 def _table(effects, min_samples, limit=None):
-    rows = [(t - p, opt, t, p, nt, np_) for opt, (t, p, nt, np_) in effects.items() if nt >= min_samples]
+    rows = [(t - p, opt, t, p, nt, se) for opt, (t, p, nt, _np, se) in effects.items() if nt >= min_samples]
     rows.sort(reverse=True)
     if limit and len(rows) > limit:
         rows = rows[: limit // 2] + rows[-(limit - limit // 2) :]
     if not rows:
         return '(not enough choices: run more games)'
-    lines = ['| Card | Worth | Taken | Left | Times taken |', '|---|--:|--:|--:|--:|']
-    for worth, opt, t, p, nt, _np in rows:
-        lines.append(f'| {opt} | {worth:+.2f} | {t:.2f} | {p:.2f} | {nt} |')
+    lines = ['| Card | Worth | ± | Taken | Left | Times taken |', '|---|--:|--:|--:|--:|--:|']
+    for worth, opt, t, p, nt, se in rows:
+        flag = ' *' if abs(worth) > 2 * se else ''
+        lines.append(f'| {opt}{flag} | {worth:+.2f} | {se:.2f} | {t:.2f} | {p:.2f} | {nt} |')
     return '\n'.join(lines)
 
 

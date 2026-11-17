@@ -51,8 +51,10 @@ class Skill:
     # worth a press. Bouncing near the ceiling is wasted: the bird hits it again.
     bounce_from: float = 0.35
     # Birds only collide while rising: hold a bounce while an enemy sits above
-    # the bird in its lane, unless the bird cannot wait any longer
-    dodge: bool = True
+    # the bird in its lane, unless the bird cannot wait any longer. Off by
+    # default: tools/analyze.py factors found it costs ~1.8 levels (holding
+    # bounces lets birds fall too far; hitting enemies is how they die anyway)
+    dodge: bool = False
     dodge_margin: int = 60  # frames of slack below which a blocked bird is bounced anyway
     # Egg cards: 'smart' (rarity, then kind), 'adaptive' (what the flock needs now), 'first', 'random'
     card_policy: str = 'smart'
