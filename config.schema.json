@@ -214,15 +214,6 @@
           },
           "type": "object"
         },
-        "loot_base_weights": {
-          "additionalProperties": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array"
-          },
-          "type": "object"
-        },
         "max_bats_by_level": {
           "properties": {
             "level_10_12": {
@@ -1210,9 +1201,6 @@
         "loot": {
           "properties": {
             "count": {
-              "type": "number"
-            },
-            "tier": {
               "type": "number"
             }
           },
@@ -2256,6 +2244,9 @@
           },
           "type": "object"
         },
+        "prestige_scale": {
+          "type": "number"
+        },
         "rarity_scale": {
           "properties": {
             "common": {
@@ -2278,6 +2269,32 @@
             }
           },
           "type": "object"
+        },
+        "rarity_weights": {
+          "properties": {
+            "bat": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "boss": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "mini_bat": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "tier_shift": {
+          "type": "number"
         }
       },
       "type": "object"
@@ -2996,12 +3013,6 @@
     },
     "loot": {
       "properties": {
-        "base_rarity_weights": {
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
-        },
         "bat_despawn_time": {
           "type": "number"
         },

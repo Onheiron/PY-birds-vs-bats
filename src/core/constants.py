@@ -71,7 +71,6 @@ _SECTION_DEFAULTS = {
 # Tables looked up with .get(): they must stay dicts even if their keys are strings
 _DICT_ATTRIBUTES = (
     ('prestige', 'modifiers'),
-    ('bat_enemy', 'loot_base_weights'),
     ('bat_enemy', 'hp_by_tier'),
     ('obstacle', 'max_hp_by_tier'),
     ('eggs', 'rarity_candidates'),

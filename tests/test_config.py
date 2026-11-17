@@ -117,10 +117,10 @@ def test_difficulty_presets_apply_and_revert(normal_difficulty):
 
 def test_difficulty_presets_leave_loot_tables_alone(normal_difficulty):
     eggs = constants.eggs.rarity_candidates
-    loot_weights = constants.loot.base_rarity_weights
+    weights = vars(constants.cards.rarity_weights).copy()
     constants.reload_for_difficulty(3)
     assert constants.eggs.rarity_candidates == eggs
-    assert constants.loot.base_rarity_weights == loot_weights
+    assert vars(constants.cards.rarity_weights) == weights
 
 
 def test_stat_sheets_tool_prints_every_bird_and_enemy():

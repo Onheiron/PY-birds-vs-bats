@@ -6,8 +6,8 @@ from src.core import constants, state
 from src.engine import clock
 from src.engine.logic.bosses.common import get_boss_config
 from src.engine.logic.drops import drop_loot
-from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
-from src.engine.progression import add_score, award_xp, compute_prestige
+from src.engine.loot_tables import choose_loot_type, roll_drop_rarity
+from src.engine.progression import add_score, award_xp
 
 
 def spawn_jelly_boss():
@@ -329,19 +329,9 @@ def _convert_jelly_boss_to_obstacle(boss):
     # Drop loot
     loot_cfg = getattr(boss_cfg, 'loot', None)
     loot_count = getattr(loot_cfg, 'count', 3) if loot_cfg else 3
-    loot_tier = getattr(loot_cfg, 'tier', 3) if loot_cfg else 3
-
-    loot_weights = constants.bat_enemy.loot_base_weights
-    if isinstance(loot_weights, dict):
-        tier_weights = loot_weights.get(loot_tier, loot_weights.get(str(loot_tier), [30, 35, 25, 10]))
-    else:
-        tier_weights = getattr(loot_weights, str(loot_tier), [30, 35, 25, 10])
-
-    prestige = compute_prestige()
-    adj_weights = adjust_rarity_weights(tier_weights, prestige)
 
     for i in range(loot_count):
-        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=adj_weights)[0]
+        rarity = roll_drop_rarity('boss')
         loot_type = choose_loot_type(rarity)
 
         lane_offset = i - loot_count // 2

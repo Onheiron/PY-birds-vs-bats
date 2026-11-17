@@ -7,8 +7,8 @@ from src.engine import bird_kinds, clock
 from src.engine.logic.damage import calculate_bird_damage
 from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect, apply_mature_flower_effect
-from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
-from src.engine.progression import add_score, award_xp, compute_prestige, hp_scale
+from src.engine.loot_tables import choose_loot_type, roll_drop_rarity
+from src.engine.progression import add_score, award_xp, hp_scale
 from src.entities.sprites import (
     FLOWER_MATURE_FRAME,
     TREE_BOSS_BACKGROUND,
@@ -361,16 +361,8 @@ def _tree_boss_defeated(boss):
 
         # Drop loot (spread across screen)
         loot_count = 5  # One per branch destroyed
-        prestige = compute_prestige()
-        base_weights = getattr(constants.loot, 'base_rarity_weights', [1, 0.1, 0.01, 0.001, 0.0001, 0.00001])
-        if not isinstance(base_weights, list):
-            base_weights = [1, 0.1, 0.01, 0.001, 0.0001, 0.00001]
-        adj_weights = adjust_rarity_weights(base_weights, prestige)
-
         for i in range(loot_count):
-            rarity = random.choices(
-                ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical'], weights=adj_weights
-            )[0]
+            rarity = roll_drop_rarity('boss')
             loot_type = choose_loot_type(rarity)
 
             lane = i % constants.layout.num_lanes

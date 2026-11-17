@@ -1,8 +1,8 @@
 """Choices that stop the game: the cards of an egg, the pacts after a boss.
 
 While ``state.choice.active`` is set the session does not advance (the game
-clock holds, as in a pause) and the keys move between the options:
-LEFT / RIGHT select, UP (bounce), SPACE or ENTER confirm. A pact offer also
+clock holds, as in a pause) and the keys move between the options, which are
+listed top to bottom: UP / DOWN select, ENTER takes. A pact offer also
 has a last option to refuse.
 
 An offer is a dict: {'kind': 'egg' | 'pact', 'title', 'rarity', 'cards': [...],
@@ -11,14 +11,9 @@ in ``state.choice.queue``.
 """
 
 import random
-import time
 
 from src.core import state
 from src.engine import cards, events
-
-# Real seconds during which a new choice ignores confirm keys, so that UP
-# presses meant for the birds do not pick a card by accident
-GRACE_SECONDS = 0.5
 
 REFUSE = {'id': 'refuse', 'name': 'Refuse', 'kind': 'refuse', 'rarity': 'common', 'effects': [], 'drawbacks': []}
 
@@ -31,7 +26,6 @@ def _open(offer):
     if not offer['cards']:
         return
     if state.choice.active is None:
-        offer['opened_at'] = time.time()
         state.choice.active = offer
         events.emit('choice_offered', offer=offer)
     else:
@@ -94,13 +88,10 @@ def pick(index=None):
 
 
 def handle_key(key):
-    """Keys while a choice is on screen."""
-    bindings = state.settings.key_bindings
-    upper = key.upper() if isinstance(key, str) and len(key) == 1 else key
-    if upper in (bindings.get('MOVE_LEFT'), 'LEFT'):
+    """Keys while a choice is on screen: UP / DOWN move, ENTER takes."""
+    if key == 'UP':
         move(-1)
-    elif upper in (bindings.get('MOVE_RIGHT'), 'RIGHT'):
+    elif key == 'DOWN':
         move(1)
-    elif upper in (bindings.get('BOUNCE'), bindings.get('SWAP'), 'ENTER', 'SPACE', 'UP'):
-        if time.time() - state.choice.active.get('opened_at', 0) >= GRACE_SECONDS:
-            pick()
+    elif key == 'ENTER':
+        pick()

@@ -352,8 +352,6 @@ def load_game(slot):
         saved_choice = data.get('choice') or {}
         state.choice.active = saved_choice.get('active')
         state.choice.queue[:] = saved_choice.get('queue', [])
-        if state.choice.active is not None:
-            state.choice.active['opened_at'] = time.time()
         _restore_game_state(data.get('game', {}))
         _restore_player_state(data.get('player', {}))
         _restore_ui_state(data.get('ui', {}))

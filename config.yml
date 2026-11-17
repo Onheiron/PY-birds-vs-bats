@@ -63,9 +63,6 @@ combat:
 
 # Loot and rarity
 loot:
-  # Base rarity weights [common, uncommon, rare, epic, legendary, mythical]
-  # Spawn chance: common=1, uncommon=0.1, rare=0.01, epic=0.001, legendary=0.0001, mythical=0.00001
-  base_rarity_weights: [1, 0.1, 0.01, 0.001, 0.0001, 0.00001]
   # Glitch bird special loot interactions
   glitch_ignore_chance: 0.05         # Chance to ignore loot
   # Despawn times (seconds)
@@ -111,12 +108,6 @@ bat_enemy:
     2: 480
     3: 960
     4: 1920
-  loot_base_weights:
-    0: [80, 15, 5, 0]   # Mini bat - mostly common loot
-    1: [60, 25, 10, 5]
-    2: [50, 30, 15, 5]
-    3: [40, 33, 17, 10]
-    4: [35, 25, 20, 15]
   # Mini bat (tier 0) spawn settings - spawns from tier 3+ obstacles
   mini_bat:
     min_level: 2                   # Minimum game level for mini bats to spawn (1-18)
@@ -289,7 +280,6 @@ boss:
   # Loot settings (drops when boss dies)
   loot:
     count: 3                        # Number of items to drop
-    tier: 3                         # Use tier 3 loot weights
 
 # Wind Boss configuration - boss for level 2-3 (The Borders)
 wind_boss:
@@ -799,7 +789,20 @@ elites:
 # See src/engine/cards.py and docs/cards.md.
 cards:
   # Chance that a defeated enemy drops an egg at all
-  drop_chance: {bat: 0.55, mini_bat: 0.25, boss: 1.0}
+  drop_chance: {bat: 1.0, mini_bat: 1.0, boss: 1.0}
+  # Rarity of a dropped egg: base weights per source (common ... mythical),
+  # then each bat tier above 1 multiplies weight i by (1 + tier_shift × i),
+  # then prestige (× prestige_scale) pushes towards rarer eggs as set by the
+  # difficulty (difficulty.<mode>.rarity_factor / tier_scaling / base_rarity_boost).
+  # Expected in a normal run (~40 eggs): ~1–2 epic, a legendary every 2–3 runs,
+  # a mythical about once in 15 runs.
+  rarity_weights:
+    #          common uncommon rare epic legendary mythical
+    mini_bat: [72,    21,      6,   1,   0,        0]
+    bat:      [64,    24,      8.5, 3,   0.4,      0.04]
+    boss:     [10,    40,      35,  12,  2.5,      0.3]
+  tier_shift: 0.05
+  prestige_scale: 0.03
   other_slots:
     #            common uncommon rare epic legendary mythical
     common:    [80,    18,      2,   0,   0,        0]
@@ -857,7 +860,7 @@ cards:
                       effects: [{stat: luck, add: 0.05}], drawbacks: [{stat: pickup_radius, add: -0.4}]}
     more_choices:    {name: Wider Nest,      kind: flock, min_rarity: epic,
                       effects: [{stat: choices, add: 1, scale: false}]}
-    lucky_nest:      {name: Lucky Nest,      kind: flock, min_rarity: rare, effects: [{stat: egg_luck, add: 0.02}]}
+    lucky_nest:      {name: Lucky Nest,      kind: flock, min_rarity: rare, effects: [{stat: egg_luck, add: 0.008}]}
 
 # =============================================================================
 # PACTS
@@ -882,13 +885,13 @@ pacts:
                     bane: [{stat: fall_speed_bonus, add: 2}]}
     featherweight: {name: Featherweight, boon: [{stat: rise_speed_bonus, add: 3}],
                     bane: [{stat: impact_stun, pct: 20}]}
-    greedy_nest:   {name: Greedy Nest,   boon: [{stat: egg_luck, add: 0.08}],
+    greedy_nest:   {name: Greedy Nest,   boon: [{stat: egg_luck, add: 0.04}],
                     bane: [{enemy: {hp_mult: 10}}]}
     thick_skin:    {name: Thick Skin,    boon: [{stat: fear_resist, add: 0.1}],
                     bane: [{stat: rise_speed_bonus, add: -1.5}]}
     glass_cannon:  {name: Glass Cannon,  boon: [{stat: crit_chance, add: 0.08}, {stat: crit_damage, add: 0.3}],
                     bane: [{stat: fear_duration_mult, pct: 15}]}
-    hunters_moon:  {name: "Hunter's Moon", boon: [{stat: vs_elites, add: 0.2}, {stat: egg_luck, add: 0.03}],
+    hunters_moon:  {name: "Hunter's Moon", boon: [{stat: vs_elites, add: 0.2}, {stat: egg_luck, add: 0.015}],
                     bane: [{stat: elite_chance, add: 0.03}]}
     iron_will:     {name: Iron Will,     boon: [{stat: fear_immunity, add: 0.08}],
                     bane: [{stat: damage_mult, pct: -6}]}
@@ -902,7 +905,7 @@ pacts:
                     bane: [{stat: pickup_radius, add: -0.3}]}
     midas:         {name: Midas,         boon: [{stat: score_mult, pct: 25}, {stat: luck, add: 0.03}],
                     bane: [{stat: damage_mult, pct: -8}]}
-    wealth:        {name: Wealth,        boon: [{stat: luck, add: 0.05}, {stat: egg_luck, add: 0.04}],
+    wealth:        {name: Wealth,        boon: [{stat: luck, add: 0.05}, {stat: egg_luck, add: 0.02}],
                     bane: [{enemy: {defense: 4}}]}
     last_stand:    {name: Last Stand,    boon: [{stat: floor_save, add: 0.05}],
                     bane: [{stat: damage_mult, pct: -5}, {stat: fear_duration_mult, pct: 8}]}

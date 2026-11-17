@@ -1,5 +1,7 @@
 """Loot tables: rarity weights and drop selection."""
 
+import random
+
 from src.core import constants
 
 
@@ -46,6 +48,31 @@ def adjust_rarity_weights(base_weights, prestige):
         return [100.0 / n] * n
 
     return [w * 100.0 / total for w in new]
+
+
+RARITIES = ('common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical')
+
+
+def roll_drop_rarity(source, tier=1):
+    """Rarity of the egg an enemy drops.
+
+    Base weights per source (``cards.rarity_weights``: mini_bat, bat, boss),
+    shifted towards rarer eggs by the bat's tier (``cards.tier_shift``) and by
+    prestige (``cards.prestige_scale`` × the difficulty's prestige rules, see
+    adjust_rarity_weights).
+    """
+    from src.engine.progression import compute_prestige
+
+    cards_cfg = getattr(constants, 'cards', None)
+    table = getattr(cards_cfg, 'rarity_weights', None)
+    table = table if isinstance(table, dict) else vars(table) if table is not None else {}
+    weights = [float(w) for w in table.get(source, [1, 0, 0, 0, 0, 0])]
+    weights += [0.0] * (len(RARITIES) - len(weights))
+    shift = float(getattr(cards_cfg, 'tier_shift', 0.0)) * max(0, tier - 1)
+    if shift:
+        weights = [w * (1 + shift * i) for i, w in enumerate(weights)]
+    prestige = compute_prestige() * float(getattr(cards_cfg, 'prestige_scale', 1.0))
+    return random.choices(RARITIES, weights=adjust_rarity_weights(weights, prestige))[0]
 
 
 def choose_loot_type(rarity):

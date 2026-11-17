@@ -83,7 +83,7 @@ BIRD_STATS = {
 # Stats of the flock as a whole (not of one bird): modified with target 'flock'
 FLOCK_STATS = {
     'choices': StatDef(3, 1, 6, 'options offered by an egg'),
-    'egg_luck': StatDef(0, 0, 1, 'chance that an enemy drop is one rarity higher'),
+    'egg_luck': StatDef(0, 0, 0.25, 'chance that an enemy drop is one rarity higher'),
     'elite_chance': StatDef(0, 0, 1, 'added to the chance that a bat spawns as an elite'),
 }
 

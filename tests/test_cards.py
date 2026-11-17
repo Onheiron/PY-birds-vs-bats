@@ -6,7 +6,7 @@ from collections import Counter
 from src.core import constants
 from src.engine import cards, choices, enemy_stats, stats
 from src.engine.enemy_stats import RARITIES
-from tests.harness import FRAME_DT, Simulation
+from tests.harness import Simulation
 
 
 def offers(rarity, n=300):
@@ -87,9 +87,8 @@ def test_picking_up_an_egg_stops_the_game_until_a_card_is_taken():
         sim.run(120)
         assert state.game.frame_count == before, 'the game does not advance while choosing'
         card = state.choice.active['cards'][1]
-        sim.step(key='RIGHT')
-        sim.run(int(choices.GRACE_SECONDS / FRAME_DT) + 2)
-        sim.step(key='SPACE')
+        sim.step(key='DOWN')
+        sim.step(key='ENTER')
         assert state.choice.active is None
         assert any(m['source'] == f"card:{card['id']}" for m in state.stats.modifiers) or card['kind'] in (
             'bird',
@@ -100,11 +99,20 @@ def test_picking_up_an_egg_stops_the_game_until_a_card_is_taken():
         assert state.game.frame_count > before
 
 
-def test_a_choice_ignores_confirm_keys_at_first():
+def test_choice_keys_move_up_and_down_and_only_enter_takes():
     with Simulation(seed=2, key_rate=0) as sim:
         choices.offer_egg('common', random.Random(4))
+        offer = sim.state.choice.active
+        sim.step(key='DOWN')
+        assert offer['index'] == 1
         sim.step(key='UP')
-        assert sim.state.choice.active is not None, 'UP pressed for a bird must not take a card'
+        sim.step(key='UP')
+        assert offer['index'] == len(offer['cards']) - 1, 'UP from the top wraps to the bottom'
+        for key in ('LEFT', 'RIGHT', 'SPACE'):
+            sim.step(key=key)
+        assert sim.state.choice.active is offer, 'only ENTER takes a card'
+        sim.step(key='ENTER')
+        assert sim.state.choice.active is None
 
 
 def test_pacts_scale_with_the_boss_and_can_be_refused():
@@ -146,7 +154,7 @@ def test_enemies_drop_rarity_eggs():
         from src.engine.loot_tables import choose_loot_type
 
         assert choose_loot_type('epic') == 'egg'
-        assert set(vars(constants.cards.drop_chance)) == {'bat', 'mini_bat', 'boss'}
+        assert vars(constants.cards.drop_chance) == {'bat': 1.0, 'mini_bat': 1.0, 'boss': 1.0}
 
 
 def test_a_choice_survives_save_and_load(tmp_path, monkeypatch):

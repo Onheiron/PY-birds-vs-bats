@@ -80,11 +80,6 @@ eggs:
       dinosaur_egg: 50       # Equal chance for legendaries
       glitch_egg: 50
 
-  # Higher chance to get rare/epic eggs
-  # Base weights: [common, uncommon, rare, epic]
-  # ADVENTURE: [60, 25, 10, 5]
-loot:
-  base_rarity_weights: [40, 30, 18, 12]  # Much better rare/epic chances
 
 progression:
   # Glacial grade progression - birds barely level up

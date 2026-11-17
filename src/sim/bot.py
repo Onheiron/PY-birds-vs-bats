@@ -380,12 +380,11 @@ class Bot:
         return max(range(len(options)), key=worth)
 
     def _choice_key(self, offer):
-        bindings = state.settings.key_bindings
         target = self._choose(offer)
         if offer['index'] < target:
-            return bindings.get('MOVE_RIGHT', 'RIGHT')
+            return 'DOWN'
         if offer['index'] > target:
-            return bindings.get('MOVE_LEFT', 'LEFT')
+            return 'UP'
         return 'ENTER'
 
     def decide(self):

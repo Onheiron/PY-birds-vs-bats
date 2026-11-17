@@ -5,8 +5,8 @@ import random
 from src.core import constants, state
 from src.engine import bird_kinds, clock, enemy_stats, events, stats
 from src.engine.logic.drops import drop_loot
-from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
-from src.engine.progression import add_score, award_xp, compute_prestige, hp_scale
+from src.engine.loot_tables import choose_loot_type, roll_drop_rarity
+from src.engine.progression import add_score, award_xp, hp_scale
 from src.entities.sprites import BLUE, GLITCH, ORANGE
 
 VS_STAT = {'bat': 'vs_bats', 'obstacle': 'vs_obstacles', 'elite': 'vs_elites'}
@@ -107,15 +107,7 @@ def handle_bat_death(bat, killer_bird_idx):
             key=lambda lane: abs(constants.layout.lane_positions[lane] - bat_center_x),
         )
 
-        prestige = compute_prestige()
-        base_weights = getattr(constants.loot, 'base_rarity_weights', [1, 0.1, 0.01, 0.001, 0.0001, 0.00001])
-        if isinstance(base_weights, list):
-            pass
-        else:
-            base_weights = [1, 0.1, 0.01, 0.001, 0.0001, 0.00001]
-        adj_weights = adjust_rarity_weights(base_weights, prestige)
-        # 6 rarity tiers: common, uncommon, rare, epic, legendary, mythical
-        rarity = random.choices(['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical'], weights=adj_weights)[0]
+        rarity = roll_drop_rarity('bat', tier)
         rarity = enemy_stats.upgrade_rarity(rarity, enemy_stats.get(bat, 'loot_rarity_bonus'))
         loot_type = choose_loot_type(rarity)
 
@@ -145,17 +137,7 @@ def handle_mini_bat_death(mini_bat, killer_bird_idx):
 
     # Bats spawned by bosses NEVER drop loot (general rule)
     if not mini_bat.get('from_boss'):
-        # Drop loot based on tier 0 loot weights
-        loot_weights = constants.bat_enemy.loot_base_weights
-        if isinstance(loot_weights, dict):
-            tier_weights = loot_weights.get(0, loot_weights.get('0', [80, 15, 5, 0]))
-        else:
-            tier_weights = getattr(loot_weights, '0', [80, 15, 5, 0])
-
-        # Adjust with prestige
-        prestige = compute_prestige()
-        adj_weights = adjust_rarity_weights(tier_weights, prestige)
-        rarity = random.choices(['common', 'uncommon', 'rare', 'epic'], weights=adj_weights)[0]
+        rarity = roll_drop_rarity('mini_bat')
         loot_type = choose_loot_type(rarity)
 
         # Drop loot at mini bat position (find closest lane)

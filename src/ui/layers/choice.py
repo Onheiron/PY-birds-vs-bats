@@ -76,5 +76,5 @@ def draw_choice_overlay(fb):
         fb.put(x + width - 1, row, '║', MENU_BORDER_COLOR)
         row += 1
     fb.put_string(x, row, '╚' + '═' * inner + '╝', MENU_BORDER_COLOR)
-    hint = '←/→ choose   ↑ or SPACE take'
+    hint = '↑/↓ choose   ENTER take'
     fb.put_string(x + (width - len(hint)) // 2, row + 1, hint, MENU_BORDER_COLOR)

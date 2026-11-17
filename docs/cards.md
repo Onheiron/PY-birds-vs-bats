@@ -2,16 +2,31 @@
 
 ## Eggs
 
-Every enemy drop is an **egg** coloured by its rarity: grey common, green
-uncommon, blue rare, purple epic, yellow legendary, white mythical. Bats drop
-one 55% of the time, mini bats 25%, bosses always (`cards.drop_chance`). The
-rarity is rolled as before (prestige pushes it up); a bird's `luck` can
-upgrade an egg it collects, and the flock's `egg_luck` upgrades drops.
+Every defeated enemy drops an **egg** (`cards.drop_chance`: 100% for bats,
+mini bats and bosses), coloured by its rarity: grey common, green uncommon,
+blue rare, purple epic, yellow legendary, white mythical.
 
-Picking an egg up **stops the game** and offers cards: as many as the flock
-stat `choices` (3 to start, up to 6). LEFT / RIGHT select, UP or SPACE take
-(confirm keys are ignored for the first half second, so a press meant for a
-bird does not take a card). P still pauses.
+**Egg rarity** (`cards.rarity_weights`, weights for common … mythical):
+
+| Source | common | uncommon | rare | epic | legendary | mythical |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| mini bat | 72 | 21 | 6 | 1 | 0 | 0 |
+| bat | 64 | 24 | 8.5 | 3 | 0.4 | 0.04 |
+| boss (3–5 eggs) | 10 | 40 | 35 | 12 | 2.5 | 0.3 |
+
+Each bat tier above 1 shifts these a little towards rarer eggs
+(`tier_shift`), and so does prestige (`prestige_scale`, through the
+difficulty's prestige rules). Elites drop one rarity higher; the flock's
+`egg_luck` (from cards and pacts, at most 25%) upgrades drops; a bird's
+`luck` upgrades an egg it collects.
+
+Measured over 60 simulated runs (expert bot, ~50 eggs per run): 47% common,
+29% uncommon, 15% rare, 6.6% epic, 2% legendary, 0.5% mythical; a legendary
+egg in one run out of three, a mythical one in one run out of fourteen.
+
+Picking an egg up **stops the game** and offers cards, listed top to bottom:
+as many as the flock stat `choices` (3 to start, up to 6). **↑ / ↓** select,
+**ENTER** takes. P still pauses.
 
 **What an egg contains.** One card of the egg's rarity is guaranteed; every
 other card rolls its own rarity from `cards.other_slots` (weights below). A
