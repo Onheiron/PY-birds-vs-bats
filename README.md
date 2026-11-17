@@ -33,7 +33,8 @@ pip install -r requirements-optional.txt
 ```
 
 - `numpy` + `sounddevice`: sound effects and dynamic 8-bit music
-- `firebase-admin` + a service account file: online leaderboard
+- `firebase-admin` + a service account file: online leaderboard (not active yet:
+  the client is never connected, see `docs/unused-mechanics.md`)
 
 ### Command line
 

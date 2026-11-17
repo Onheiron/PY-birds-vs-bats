@@ -1,15 +1,10 @@
 """Parallax background, cave shimmer and foreground clouds."""
 
 from src.core import constants, state
-from src.entities.sprites import TREE_BOSS_BACKGROUND, WOODS_BG_LAYER1, WOODS_BG_LAYER2, get_biome_bg
+from src.entities.sprites import TREE_BOSS_BACKGROUND, get_biome_bg
 from src.ui.colors import apply_faint, get_biome_colors, get_shimmer_color
 from src.ui.framebuffer import BLANK
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
-
-# Default patterns (Windy Woods) - used as fallback
-TREE_PATTERN = WOODS_BG_LAYER1
-
-MID_TREE_PATTERN = WOODS_BG_LAYER2
 
 
 def get_current_biome_bg():

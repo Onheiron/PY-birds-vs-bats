@@ -179,3 +179,11 @@ Rainbow never hatch, and a legendary or mythical drop is a yellow egg.
 The `swamp_flowers` section is not in `SECTIONS` (`src/core/constants.py`), so
 it is never loaded: obstacles in the Dark Swamp bloom with the code default of
 30% instead of the configured 50%.
+
+### Online leaderboard and telemetry never start
+`init_from_env` in `src/services/firebase_client.py` connects to Firebase, but
+nothing calls it (in `50e5447` only `sign_in_anonymous` did, and that was never
+called either). The client therefore stays disconnected: `send_score`,
+`unlock_achievement` and `log_event` silently do nothing, so no score or event
+has ever been sent. Turning it on means calling `init_from_env()` at startup
+(with a service account file) and deciding what the game should send.
