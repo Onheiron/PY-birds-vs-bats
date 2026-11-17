@@ -3,16 +3,14 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import bird_kinds, clock
 from src.engine.logic.damage import calculate_bird_damage
 from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect, apply_mature_flower_effect
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 from src.entities.sprites import (
-    DINOSAUR,
     FLOWER_MATURE_FRAME,
-    STEALTH,
     TREE_BOSS_BACKGROUND,
     TREE_BOSS_BRANCH_FLOWER_POSITIONS,
     TREE_BOSS_BRANCHES,
@@ -433,14 +431,14 @@ def check_bird_tree_branch_collision():
 
         bird_lane = state.birds.random_lanes[i]
         bird_lane_x = constants.layout.lane_positions[bird_lane]
-        bird_color = state.birds.colors[i]
+        state.birds.colors[i]
         bird_y = state.birds.y[i]
 
         # STEALTH passes through unless tangible
-        if bird_color == STEALTH and i not in state.special.stealth_timers:
+        if bird_kinds.is_intangible(i):
             continue
 
-        bird_height = 3 if bird_color == DINOSAUR else 2
+        bird_height = bird_kinds.height(i)
 
         # Check each branch for collision
         for branch in branches:

@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from src.core import constants, state
+from src.engine import bird_kinds
 from src.engine.birds import reset_bird_power, set_ball_vy
 from src.engine.logic.bosses.basic import spawn_basic_boss, update_basic_boss
 from src.engine.logic.bosses.common import get_boss_config
@@ -13,7 +14,7 @@ from src.engine.logic.bosses.tree import check_bird_tree_branch_collision, spawn
 from src.engine.logic.bosses.wind import spawn_wind_boss, update_wind_boss
 from src.engine.logic.damage import calculate_bird_damage
 from src.engine.progression import add_score, award_xp, get_level_milestones
-from src.entities.sprites import BLUE, DINOSAUR, ORANGE, STEALTH
+from src.entities.sprites import BLUE, ORANGE
 from src.services.sound import play_sfx
 
 
@@ -159,10 +160,10 @@ def check_bird_boss_collision():
         bird_y = state.birds.y[i]
 
         # STEALTH passes through unless tangible
-        if bird_color == STEALTH and i not in state.special.stealth_timers:
+        if bird_kinds.is_intangible(i):
             continue
 
-        bird_height = 3 if bird_color == DINOSAUR else 2
+        bird_height = bird_kinds.height(i)
 
         lane_left = bird_lane_x - 2
         lane_right = bird_lane_x + 2
@@ -227,10 +228,10 @@ def check_bird_meteor_collision():
         bird_y = state.birds.y[i]
 
         # STEALTH passes through unless tangible
-        if bird_color == STEALTH and i not in state.special.stealth_timers:
+        if bird_kinds.is_intangible(i):
             continue
 
-        bird_height = 3 if bird_color == DINOSAUR else 2
+        bird_height = bird_kinds.height(i)
 
         for meteor in owl_meteors:
             meteor_x = meteor['x_pos']

@@ -3,12 +3,12 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, events
+from src.engine import bird_kinds, clock, events
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 from src.entities.bird_types import get_bird_type_by_color
-from src.entities.sprites import BLUE, GLITCH, ORANGE, STEALTH
+from src.entities.sprites import BLUE, GLITCH, ORANGE
 
 
 def calculate_bird_damage(bird_idx):
@@ -26,13 +26,7 @@ def calculate_bird_damage(bird_idx):
     bird_color = state.birds.colors[bird_idx]
 
     # Get bird type name for config lookup
-    bird_type = get_bird_type_by_color(bird_color)
-    if bird_type is None:
-        # Fallback for special colors like STEALTH
-        if bird_color == STEALTH:
-            bird_type = 'STEALTH'
-        else:
-            bird_type = 'YELLOW'  # Default fallback
+    bird_type = get_bird_type_by_color(bird_color) or 'YELLOW'
 
     # Get type name in lowercase for config lookup
     type_name = bird_type.lower()
@@ -73,7 +67,7 @@ def calculate_bird_damage(bird_idx):
         base_dmg *= random_mult
 
     # Special case: Stealth when tangible (in stealth_timers) gets damage boost
-    if bird_color == STEALTH and bird_idx in state.special.stealth_timers:
+    if bird_kinds.is_phased_in(bird_idx):
         stealth_tangible_boost = getattr(constants.combat, 'stealth_tangible_dmg_boost', 4)
         dmg_boost += stealth_tangible_boost
 

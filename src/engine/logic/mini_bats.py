@@ -3,10 +3,11 @@
 import random
 
 from src.core import constants, state
+from src.engine import bird_kinds
 from src.engine.birds import get_scared_frames, set_ball_vy
 from src.engine.logic.damage import calculate_bird_damage, handle_mini_bat_death
 from src.engine.progression import award_xp
-from src.entities.sprites import DINOSAUR, ORANGE, STEALTH
+from src.entities.sprites import ORANGE
 from src.services.sound import play_sfx
 
 
@@ -355,10 +356,10 @@ def check_bird_mini_bat_collision():
         bird_y = state.birds.y[i]
 
         # STEALTH passes through unless tangible
-        if bird_color == STEALTH and i not in state.special.stealth_timers:
+        if bird_kinds.is_intangible(i):
             continue
 
-        bird_height = 3 if bird_color == DINOSAUR else 2
+        bird_height = bird_kinds.height(i)
 
         for mb in state.enemies.mini_bats[:]:
             # Only collide with active mini bats

@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, events
+from src.engine import bird_kinds, clock, events
 from src.engine.birds import check_pending_transforms, get_scared_frames, reset_bird_power, set_ball_vy
 from src.engine.logic.damage import calculate_bird_damage, handle_bat_death
 from src.engine.logic.drops import drop_loot
@@ -15,7 +15,6 @@ from src.entities.sprites import (
     BERSERK,
     BLUE,
     CLOCKWORK,
-    DINOSAUR,
     FLOWER_MATURE_FRAME,
     FROSTY,
     GLITCH,
@@ -26,7 +25,6 @@ from src.entities.sprites import (
     POISON,
     RAINBOW,
     ROCK,
-    STEALTH,
 )
 from src.services.sound import play_sfx
 
@@ -147,7 +145,7 @@ def check_bird_obstacle_collision():
         next_y = state.birds.y[i]
 
         # STEALTH passes through unless tangible
-        if bird_color == STEALTH and i not in state.special.stealth_timers:
+        if bird_kinds.is_intangible(i):
             continue
 
         for obs in state.enemies.obstacles[:]:
@@ -223,10 +221,10 @@ def check_bird_bat_collision():
         next_y = state.birds.y[i]
 
         # STEALTH passes through unless tangible
-        if bird_color == STEALTH and i not in state.special.stealth_timers:
+        if bird_kinds.is_intangible(i):
             continue
 
-        bird_height = 3 if bird_color == DINOSAUR else 2
+        bird_height = bird_kinds.height(i)
 
         for bat in state.enemies.bats[:]:
             bat_left = bat['x_pos']
@@ -280,7 +278,7 @@ def check_bird_bat_collision():
             diver_no_scare = is_diver and diver_state in ('stunned', 'returning')
 
             # Apply scared effect (unless stealth tangible or diver stunned/returning)
-            is_stealth_tangible = bird_color == STEALTH and i in state.special.stealth_timers
+            is_stealth_tangible = bird_kinds.is_phased_in(i)
             if not is_stealth_tangible and not diver_no_scare:
                 bat_tier = bat.get('tier', 1)
                 scared_duration = getattr(constants.combat, 'scared_duration', 2.0)

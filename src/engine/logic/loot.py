@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, events
+from src.engine import bird_kinds, clock, events
 from src.engine.progression import award_xp
 from src.entities.bird_types import get_bird_type_from_egg, get_color_for_bird_type, get_default_speed
 from src.entities.sprites import (
@@ -11,7 +11,6 @@ from src.entities.sprites import (
     COOKIE,
     GLITCH,
     RAINBOW,
-    STEALTH,
 )
 
 
@@ -27,7 +26,7 @@ def check_loot_collection():
         bird_y = state.birds.y[i]
 
         # STEALTH passes through unless tangible
-        if bird_color == STEALTH and i not in state.special.stealth_timers:
+        if bird_kinds.is_intangible(i):
             continue
 
         for loot in state.items.loot_items[:]:

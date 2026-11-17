@@ -14,21 +14,15 @@ from src.engine.birds import (
 )
 from src.engine.grades import compute_grade_from_xp
 from src.engine.logic.drops import drop_loot
+from src.entities.bird_types import BirdType, get_bird_type_by_color
 from src.entities.sprites import (
-    BERSERK,
     BLUE,
-    CLOCKWORK,
-    COOKIE,
-    FROSTY,
     GLITCH,
     PATCHWORK,
-    POISON,
     PURPLE,
     RED,
-    ROCK,
     STEALTH,
     TWISTER,
-    WHITE,
     YELLOW,
 )
 from src.services import achievements
@@ -60,33 +54,9 @@ def activate_bird_power(bird_idx):
     color_name = get_color_name(bird_color)
     events.emit('power_used', power=color_name, lane=bird_lane)
 
-    # Execute power based on color
-    if bird_color == YELLOW:
-        _power_yellow(bird_idx, bird_lane)
-    elif bird_color == RED:
-        _power_red(bird_idx, bird_lane)
-    elif bird_color == PURPLE:
-        _power_purple(bird_idx)
-    elif bird_color == COOKIE:
-        _power_cookie(bird_idx, bird_lane)
-    elif bird_color == BLUE:
-        _power_blue(bird_idx)
-    elif bird_color == WHITE:
-        _power_white(bird_idx, bird_lane)
-    elif bird_color == CLOCKWORK:
-        _power_clockwork(bird_idx)
-    elif bird_color == STEALTH:
-        _power_stealth(bird_idx, bird_lane)
-    elif bird_color == TWISTER:
-        _power_twister(bird_idx, bird_lane)
-    elif bird_color == FROSTY:
-        _power_frosty(bird_idx)
-    elif bird_color == POISON:
-        _power_poison(bird_idx)
-    elif bird_color == BERSERK:
-        _power_berserk(bird_idx)
-    elif bird_color == ROCK:
-        _power_rock(bird_idx)
+    power = POWERS.get(get_bird_type_by_color(bird_color))
+    if power:
+        power(bird_idx, bird_lane)
 
 
 def _power_yellow(bird_idx, bird_lane):
@@ -164,7 +134,7 @@ def _power_red(bird_idx, bird_lane):
     )
 
 
-def _power_purple(bird_idx):
+def _power_purple(bird_idx, _bird_lane=None):
     """Purple power: begin charging."""
     if state.special.purple_state[bird_idx] == 0:
         state.special.purple_state[bird_idx] = 1
@@ -207,7 +177,7 @@ def _power_cookie(bird_idx, bird_lane):
                 state.game.game_over = True
 
 
-def _power_blue(bird_idx):
+def _power_blue(bird_idx, _bird_lane=None):
     """Blue power: speed boost."""
     boost_frames = int(3.0 / constants.timing.base_sleep)
     state.special.speed_boosts[bird_idx] = boost_frames
@@ -248,17 +218,12 @@ def _power_white(bird_idx, bird_lane):
 
 def _activate_adjacent_power(adj_bird, adj_lane):
     """Activate an adjacent bird's power (triggered by white bird)."""
-    adj_color = state.birds.colors[adj_bird]
-
-    if adj_color == YELLOW:
-        _power_yellow(adj_bird, adj_lane)
-    elif adj_color == RED:
-        _power_red(adj_bird, adj_lane)
-    elif adj_color == BLUE:
-        _power_blue(adj_bird)
+    bird_type = get_bird_type_by_color(state.birds.colors[adj_bird])
+    if bird_type in RELAYED_BY_WHITE:
+        POWERS[bird_type](adj_bird, adj_lane)
 
 
-def _power_clockwork(bird_idx):
+def _power_clockwork(bird_idx, _bird_lane=None):
     """Clockwork power: increase charge."""
     cur = state.special.clockwork_charge.get(bird_idx, constants.clockwork.initial_charge)
     if cur is None:
@@ -293,25 +258,25 @@ def _power_twister(bird_idx, bird_lane):
     achievements.append_recent_action('twister', lane=bird_lane, color=TWISTER, frame_count=state.game.frame_count)
 
 
-def _power_frosty(bird_idx):
+def _power_frosty(bird_idx, _bird_lane=None):
     """Frosty power: boost freeze chance to 60% for 2s."""
     duration = getattr(constants.frosty, 'boost_duration', 2.0)
     state.special.frosty_boosted[bird_idx] = clock.now() + duration
 
 
-def _power_poison(bird_idx):
+def _power_poison(bird_idx, _bird_lane=None):
     """Poison power: boost poison chance to 60% for 2s."""
     duration = getattr(constants.poison, 'boost_duration', 2.0)
     state.special.poison_boosted[bird_idx] = clock.now() + duration
 
 
-def _power_berserk(bird_idx):
+def _power_berserk(bird_idx, _bird_lane=None):
     """Berserk power: boost bleed chance to 60% for 2s."""
     duration = getattr(constants.berserk, 'boost_duration', 2.0)
     state.special.berserk_boosted[bird_idx] = clock.now() + duration
 
 
-def _power_rock(bird_idx):
+def _power_rock(bird_idx, _bird_lane=None):
     """Rock power: boost push to 2 rows and speed to 3 for 3s."""
     duration = getattr(constants.rock, 'boost_duration', 3.0)
     # Save original speed before boosting
@@ -320,3 +285,25 @@ def _power_rock(bird_idx):
         state.special.rock_prev_speeds[bird_idx] = state.birds.speeds[bird_idx]
     state.special.rock_boosted[bird_idx] = clock.now() + duration
     state.birds.speeds[bird_idx] = getattr(constants.rock, 'boosted_speed', 3)
+
+
+# Power of each bird type, triggered by bouncing the bird while it rises.
+# Every power takes (bird index, lane). Types without an entry have no power.
+POWERS = {
+    BirdType.YELLOW: _power_yellow,
+    BirdType.RED: _power_red,
+    BirdType.PURPLE: _power_purple,
+    BirdType.COOKIE: _power_cookie,
+    BirdType.BLUE: _power_blue,
+    BirdType.WHITE: _power_white,
+    BirdType.CLOCKWORK: _power_clockwork,
+    BirdType.STEALTH: _power_stealth,
+    BirdType.TWISTER: _power_twister,
+    BirdType.FROSTY: _power_frosty,
+    BirdType.POISON: _power_poison,
+    BirdType.BERSERK: _power_berserk,
+    BirdType.ROCK: _power_rock,
+}
+
+# Powers a White bird can set off in the birds next to it
+RELAYED_BY_WHITE = (BirdType.YELLOW, BirdType.RED, BirdType.BLUE)
