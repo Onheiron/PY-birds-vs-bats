@@ -1,12 +1,12 @@
 """Boss lifecycle: spawn conditions, dispatch and collisions."""
 
-import random
-import time
+from dataclasses import dataclass
+from typing import Callable
 
 from src.core import constants, state
 from src.engine.birds import reset_bird_power, set_ball_vy
-from src.engine.logic.bosses.basic import _boss_start_scream
-from src.engine.logic.bosses.common import _convert_boss_to_obstacle, _get_boss_config
+from src.engine.logic.bosses.basic import spawn_basic_boss, update_basic_boss
+from src.engine.logic.bosses.common import _get_boss_config
 from src.engine.logic.bosses.jelly import spawn_jelly_boss, update_jelly_boss
 from src.engine.logic.bosses.owl import spawn_owl_boss, update_owl_boss
 from src.engine.logic.bosses.tree import _check_bird_tree_branch_collision, spawn_tree_boss, update_tree_boss
@@ -17,146 +17,85 @@ from src.entities.sprites import BLUE, DINOSAUR, ORANGE, STEALTH
 from src.services.sound import play_sfx
 
 
+@dataclass(frozen=True)
+class BossKind:
+    """A boss with its own behaviour, bound to one level through its config section."""
+
+    boss_type: str
+    config_section: str
+    default_level: int
+    default_spawn_miles: int
+    spawn: Callable[[], None]
+    update: Callable[[], None]
+
+    @property
+    def config(self):
+        return getattr(constants, self.config_section, None)
+
+    @property
+    def level(self):
+        return getattr(self.config, 'level', self.default_level)
+
+    @property
+    def spawn_miles_before_transition(self):
+        return getattr(self.config, 'spawn_miles_before_transition', self.default_spawn_miles)
+
+
+# Bosses with dedicated mechanics. Any other boss level gets the basic boss.
+SPECIAL_BOSSES = (
+    BossKind('wind', 'wind_boss', 6, 1, spawn_wind_boss, update_wind_boss),
+    BossKind('jelly', 'jelly_boss', 9, 1, spawn_jelly_boss, update_jelly_boss),
+    BossKind('tree', 'tree_boss', 12, 3, spawn_tree_boss, update_tree_boss),
+    BossKind('owl', 'owl_boss', 15, 3, spawn_owl_boss, update_owl_boss),
+)
+_UPDATE_BY_TYPE = {kind.boss_type: kind.update for kind in SPECIAL_BOSSES}
+
+
+def special_boss_for_level(level):
+    """The special boss configured for ``level``, or None."""
+    for kind in SPECIAL_BOSSES:
+        if kind.level == level:
+            return kind
+    return None
+
+
 def should_spawn_boss():
     """Check if boss should spawn (end of biome level, near transition)."""
     # Already spawned or defeated this level?
     if state.enemies.boss_spawned or state.enemies.boss is not None:
         return False
 
-    # Check special boss levels first (wind, jelly, tree, owl)
-    wind_boss_cfg = getattr(constants, 'wind_boss', None)
-    wind_boss_level = getattr(wind_boss_cfg, 'level', 6) if wind_boss_cfg else 6
-
-    jelly_boss_cfg = getattr(constants, 'jelly_boss', None)
-    jelly_boss_level = getattr(jelly_boss_cfg, 'level', 9) if jelly_boss_cfg else 9
-
-    tree_boss_cfg = getattr(constants, 'tree_boss', None)
-    tree_boss_level = getattr(tree_boss_cfg, 'level', 12) if tree_boss_cfg else 12
-
-    owl_boss_cfg = getattr(constants, 'owl_boss', None)
-    owl_boss_level = getattr(owl_boss_cfg, 'level', 15) if owl_boss_cfg else 15
-
-    is_special_boss_level = (
-        state.game.level == wind_boss_level
-        or state.game.level == jelly_boss_level
-        or state.game.level == tree_boss_level
-        or state.game.level == owl_boss_level
-    )
-
-    # Get normal boss config
+    level = state.game.level
+    special = special_boss_for_level(level)
     boss_cfg = _get_boss_config()
 
-    # Check if current level is a boss level (including special boss levels)
-    boss_levels = getattr(boss_cfg, 'boss_levels', [3, 6, 9, 12, 15, 18]) if boss_cfg else [3, 6, 9, 12, 15, 18]
-
-    # Level must be in boss_levels OR be a special boss level
-    if state.game.level not in boss_levels and not is_special_boss_level:
-        return False
-
-    # For normal bosses, we need the config
-    if not is_special_boss_level and boss_cfg is None:
-        return False
-
-    # Get milestones to calculate level progress
-
-    milestones = get_level_milestones()
-    current_level = state.game.level
-
-    # Get the threshold for ENTERING current level (start of this level)
-    level_start_miles = milestones[current_level - 2] if current_level >= 2 else 0
-    # Get the threshold for LEAVING current level (end of this level)
-    level_end_miles = milestones[current_level - 1] if current_level <= len(milestones) else milestones[-1]
-
-    # Miles traveled within THIS level
-    miles_in_level = state.game.miles - level_start_miles
-    # Total miles in this level
-    level_end_miles - level_start_miles
-    # Miles remaining in this level
-    miles_remaining = level_end_miles - state.game.miles
-
-    # Check if close enough to level transition
-    # For special bosses, use their own config or default
-    if is_special_boss_level:
-        if state.game.level == jelly_boss_level:
-            spawn_miles_before = getattr(jelly_boss_cfg, 'spawn_miles_before_transition', 1) if jelly_boss_cfg else 1
-        elif state.game.level == tree_boss_level:
-            spawn_miles_before = getattr(tree_boss_cfg, 'spawn_miles_before_transition', 3) if tree_boss_cfg else 3
-        elif state.game.level == owl_boss_level:
-            spawn_miles_before = getattr(owl_boss_cfg, 'spawn_miles_before_transition', 3) if owl_boss_cfg else 3
-        else:
-            spawn_miles_before = getattr(wind_boss_cfg, 'spawn_miles_before_transition', 1) if wind_boss_cfg else 1
+    if special is not None:
+        spawn_miles_before = special.spawn_miles_before_transition
     else:
+        # Basic boss: needs its config and a level listed in boss_levels
+        if boss_cfg is None or level not in getattr(boss_cfg, 'boss_levels', [3, 6, 9, 12, 15, 18]):
+            return False
         spawn_miles_before = getattr(boss_cfg, 'spawn_miles_before_transition', 1)
 
-    # Boss spawns when:
-    # 1. We have progressed into the level (not at start)
-    # 2. Miles remaining is less than spawn_miles_before
+    milestones = get_level_milestones()
+    # Miles at which the current level starts and ends
+    level_start_miles = milestones[level - 2] if level >= 2 else 0
+    level_end_miles = milestones[level - 1] if level <= len(milestones) else milestones[-1]
+
+    miles_in_level = state.game.miles - level_start_miles
+    miles_remaining = level_end_miles - state.game.miles
+
+    # Spawn once we are inside the level and close enough to its end
     return miles_in_level > 0 and miles_remaining <= spawn_miles_before
 
 
 def spawn_boss():
     """Spawn the boss for current biome."""
-    # Check if this is a Wind Boss level
-    wind_boss_cfg = getattr(constants, 'wind_boss', None)
-    wind_boss_level = getattr(wind_boss_cfg, 'level', 6) if wind_boss_cfg else 6
-
-    if state.game.level == wind_boss_level:
-        spawn_wind_boss()
-        return
-
-    # Check if this is a Jelly Boss level
-    jelly_boss_cfg = getattr(constants, 'jelly_boss', None)
-    jelly_boss_level = getattr(jelly_boss_cfg, 'level', 9) if jelly_boss_cfg else 9
-
-    if state.game.level == jelly_boss_level:
-        spawn_jelly_boss()
-        return
-
-    # Check if this is a Tree Boss level
-    tree_boss_cfg = getattr(constants, 'tree_boss', None)
-    tree_boss_level = getattr(tree_boss_cfg, 'level', 12) if tree_boss_cfg else 12
-
-    if state.game.level == tree_boss_level:
-        spawn_tree_boss()
-        return
-
-    # Check if this is an Owl Boss level
-    owl_boss_cfg = getattr(constants, 'owl_boss', None)
-    owl_boss_level = getattr(owl_boss_cfg, 'level', 15) if owl_boss_cfg else 15
-
-    if state.game.level == owl_boss_level:
-        spawn_owl_boss()
-        return
-
-    boss_cfg = _get_boss_config()
-    if boss_cfg is None:
-        return
-
-    hp = getattr(boss_cfg, 'hp', 300)
-
-    # Boss spawns at center of screen, above view
-    boss_sprite_height = 3  # Boss is 3 lines tall
-    boss_sprite_width = 19  # Width of boss sprite
-    base_x = (constants.layout.width - boss_sprite_width) // 2
-
-    state.enemies.boss = {
-        'x_pos': base_x,
-        'base_x_pos': base_x,  # Center position for oscillation
-        'y_pos': -boss_sprite_height,  # Start above screen
-        'hp': hp,
-        'max_hp': hp,
-        'state': 'descending',  # 'descending', 'active', 'screaming', 'dying', 'dead'
-        'scream_cooldown': 0,  # Frames until can scream again
-        'scream_timer': 0,  # Frames remaining in current scream
-        'anim_frame': 0,  # Animation frame counter
-        'oscillation_dir': 1,  # Direction of oscillation (1 = right, -1 = left)
-        'spawn_ts': time.time(),
-        'boss_type': 'normal',  # Mark as normal boss
-    }
-    state.enemies.boss_spawned = True
-    # Clear other enemies when boss appears for dramatic effect
-    state.enemies.bats = []
-    state.enemies.mini_bats = []
+    special = special_boss_for_level(state.game.level)
+    if special is not None:
+        special.spawn()
+    else:
+        spawn_basic_boss()
 
 
 def update_boss():
@@ -164,92 +103,7 @@ def update_boss():
     boss = state.enemies.boss
     if boss is None:
         return
-
-    # Route to appropriate update function based on boss type
-    boss_type = boss.get('boss_type', 'normal')
-    if boss_type == 'wind':
-        update_wind_boss()
-        return
-    if boss_type == 'jelly':
-        update_jelly_boss()
-        return
-    if boss_type == 'tree':
-        update_tree_boss()
-        return
-    if boss_type == 'owl':
-        update_owl_boss()
-        return
-
-    boss_cfg = _get_boss_config()
-    if boss_cfg is None:
-        return
-
-    boss_state = boss['state']
-
-    if boss_state == 'descending':
-        # Move boss down until fully visible
-        descent_speed = getattr(boss_cfg, 'descent_speed', 8)
-        if state.game.frame_count % descent_speed == 0:
-            boss['y_pos'] += 1
-            # Stop when fully on screen (3 lines visible)
-            if boss['y_pos'] >= 2:
-                boss['state'] = 'active'
-                boss['y_pos'] = 2  # Lock position
-
-    elif boss_state == 'active':
-        # Animation frame cycling
-        if state.game.frame_count % 6 == 0:
-            boss['anim_frame'] = (boss['anim_frame'] + 1) % 2
-
-        # Subtle left/right oscillation
-        oscillation_speed = getattr(boss_cfg, 'oscillation_speed', 12)
-        oscillation_range = getattr(boss_cfg, 'oscillation_range', 2)
-        if state.game.frame_count % oscillation_speed == 0:
-            base_x = boss['base_x_pos']
-            current_offset = boss['x_pos'] - base_x
-            direction = boss.get('oscillation_dir', 1)
-
-            # Move in current direction
-            new_offset = current_offset + direction
-
-            # Reverse direction at boundaries
-            if new_offset >= oscillation_range:
-                new_offset = oscillation_range
-                boss['oscillation_dir'] = -1
-            elif new_offset <= -oscillation_range:
-                new_offset = -oscillation_range
-                boss['oscillation_dir'] = 1
-
-            boss['x_pos'] = base_x + new_offset
-
-        # Decrement scream cooldown
-        if boss['scream_cooldown'] > 0:
-            boss['scream_cooldown'] -= 1
-
-        # Random chance to scream
-        if boss['scream_cooldown'] == 0:
-            scream_cfg = getattr(boss_cfg, 'scream', None)
-            prob_per_second = getattr(scream_cfg, 'probability_per_second', 0.15) if scream_cfg else 0.15
-            prob_per_frame = prob_per_second * constants.timing.base_sleep
-
-            if random.random() < prob_per_frame:
-                _boss_start_scream(boss)
-
-    elif boss_state == 'screaming':
-        # Scream animation
-        boss['scream_timer'] -= 1
-        if boss['scream_timer'] <= 0:
-            boss['state'] = 'active'
-            # Set cooldown
-            scream_cfg = getattr(boss_cfg, 'scream', None)
-            cooldown_sec = getattr(scream_cfg, 'cooldown_seconds', 3.0) if scream_cfg else 3.0
-            boss['scream_cooldown'] = int(cooldown_sec / constants.timing.base_sleep)
-
-    elif boss_state == 'dying':
-        # Convert to falling obstacle (tier 4)
-        _convert_boss_to_obstacle(boss)
-        state.enemies.boss = None
-        state.enemies.boss_defeated = True
+    _UPDATE_BY_TYPE.get(boss.get('boss_type', 'normal'), update_basic_boss)()
 
 
 def check_bird_boss_collision():

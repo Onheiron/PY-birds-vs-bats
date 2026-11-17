@@ -36,26 +36,16 @@ from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
 
 def _fb_render_boss(fb):
-    """Render boss to framebuffer."""
+    """Render the active boss with the renderer for its type."""
     boss = state.enemies.boss
     if boss is None:
         return
+    _BOSS_RENDERERS.get(boss.get('boss_type', 'normal'), _fb_render_basic_boss)(fb)
 
-    # Route to specific boss renderer if applicable
-    boss_type = boss.get('boss_type', 'normal')
-    if boss_type == 'wind':
-        _fb_render_wind_boss(fb)
-        return
-    if boss_type == 'jelly':
-        _fb_render_jelly_boss(fb)
-        return
-    if boss_type == 'tree':
-        _fb_render_tree_boss(fb)
-        return
-    if boss_type == 'owl':
-        _fb_render_owl_boss(fb)
-        return
 
+def _fb_render_basic_boss(fb):
+    """Render the default boss."""
+    boss = state.enemies.boss
     boss_hp = boss.get('hp', 0)
     boss_max = boss.get('max_hp', boss_hp if boss_hp > 0 else 1)
     boss_state = boss.get('state', 'active')
@@ -368,3 +358,11 @@ def _fb_render_owl_boss(fb):
 
     # Render status indicators for affected birds (same as Tree Boss)
     _fb_render_bird_status_indicators(fb)
+
+
+_BOSS_RENDERERS = {
+    'wind': _fb_render_wind_boss,
+    'jelly': _fb_render_jelly_boss,
+    'tree': _fb_render_tree_boss,
+    'owl': _fb_render_owl_boss,
+}

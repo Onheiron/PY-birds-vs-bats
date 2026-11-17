@@ -95,23 +95,20 @@ def _apply_loot_effect(loot, collector_idx):
     """Apply the effect of collected loot."""
     loot_type = loot['type']
 
-    # Egg types - spawn new bird
-    if loot_type.endswith('_egg') and loot_type != 'orange_egg' or loot_type == 'orange_egg':
+    if loot_type.endswith('_egg'):
+        # Eggs hatch a new bird
         _spawn_bird_from_egg(loot_type)
     elif loot_type == 'cookie_crumb':
         xp_val = loot.get('xp', 0)
         if xp_val > 0 and state.birds.colors[collector_idx] != COOKIE:
             award_xp(collector_idx, xp_val)
-    elif loot_type.startswith('wide_cursor'):
-        _apply_wide_cursor_power(loot_type)
-    elif loot_type.startswith('bounce_boost'):
-        _apply_bounce_boost_power(loot_type)
-    elif loot_type.startswith('suction'):
-        _apply_suction_power(loot_type)
-    elif loot_type.startswith('tailwind'):
-        _apply_tailwind_power(loot_type)
     elif loot_type.startswith('timelapse'):
         _apply_timelapse_power(loot_type)
+    else:
+        for name in _POWERUPS:
+            if loot_type.startswith(name):
+                _apply_timed_power(name, loot_type)
+                break
 
 
 def _spawn_bird_from_egg(egg_type):
@@ -215,141 +212,83 @@ def _spawn_bird_from_egg(egg_type):
             break
 
 
-def _apply_wide_cursor_power(loot_type):
-    """Apply wide cursor powerup."""
-    state.powerups.wide_cursor_active = True
-
-    wc = constants.wide_cursor
-    wc_sec = getattr(wc, 'seconds', None)
-    wc_lanes = getattr(wc, 'lanes', None)
-
-    if loot_type == 'wide_cursor':
-        seconds = getattr(wc_sec, 'base', 10.0) if wc_sec else 10.0
-        lanes = getattr(wc_lanes, 'base', 3) if wc_lanes else 3
-    elif loot_type == 'wide_cursor+':
-        seconds = getattr(wc_sec, 'plus', 20.0) if wc_sec else 15.0
-        lanes = getattr(wc_lanes, 'base', 3) if wc_lanes else 3
-    elif loot_type == 'wide_cursor++':
-        seconds = getattr(wc_sec, 'plusplus', 25.0) if wc_sec else 20.0
-        lanes = getattr(wc_lanes, 'max', 5) if wc_lanes else 5
-    else:  # max
-        seconds = getattr(wc_sec, 'max', 50.0) if wc_sec else 30.0
-        lanes = getattr(wc_lanes, 'max', 5) if wc_lanes else 5
-
-    state.powerups.wide_cursor_frames = int(seconds / constants.timing.base_sleep)
-    state.powerups.wide_cursor_lanes = lanes
-    achievements.check_achievements_event(
-        'power_used', state.game.frame_count, state.ui.notifications, power='wide_cursor'
-    )
+_TIERS = ('base', 'plus', 'plusplus', 'max')
 
 
-def _apply_bounce_boost_power(loot_type):
-    """Apply bounce boost powerup."""
-    state.powerups.bounce_boost_active = True
-
-    bb = constants.bounce_boost
-    bb_sec = getattr(bb, 'seconds', None)
-    bb_dur = getattr(bb, 'duration', None)
-
-    if loot_type == 'bounce_boost':
-        seconds = getattr(bb_sec, 'base', 10.0) if bb_sec else 10.0
-        duration = getattr(bb_dur, 'base', 4) if bb_dur else 1.0
-    elif loot_type == 'bounce_boost+':
-        seconds = getattr(bb_sec, 'plus', 20.0) if bb_sec else 15.0
-        duration = getattr(bb_dur, 'plus', 4) if bb_dur else 1.5
-    elif loot_type == 'bounce_boost++':
-        seconds = getattr(bb_sec, 'plusplus', 25.0) if bb_sec else 20.0
-        duration = getattr(bb_dur, 'plusplus', 8) if bb_dur else 2.0
-    else:  # max
-        seconds = getattr(bb_sec, 'max', 50.0) if bb_sec else 30.0
-        duration = getattr(bb_dur, 'max', 12) if bb_dur else 3.0
-
-    state.powerups.bounce_boost_frames = int(seconds / constants.timing.base_sleep)
-    state.powerups.bounce_boost_duration = duration
-    achievements.check_achievements_event(
-        'power_used', state.game.frame_count, state.ui.notifications, power='bounce_boost'
-    )
+def _loot_tier(loot_type, name):
+    """Index into _TIERS for a pickup such as 'tailwind', 'tailwind+', 'tailwind++' or 'tailwind_max'."""
+    suffix = loot_type[len(name) :]
+    return {'': 0, '+': 1, '++': 2}.get(suffix, 3)
 
 
-def _apply_suction_power(loot_type):
-    """Apply suction powerup."""
-    state.powerups.suction_active = True
+def _tiered(section, table_name, tier, keys, defaults, fallbacks=None):
+    """Read the value of a power-up tier from ``constants.<section>.<table_name>``.
 
-    sc = constants.suction
-    sc_sec = getattr(sc, 'seconds', None)
-    sc_boost = getattr(sc, 'boost_duration', None)
-
-    if loot_type == 'suction':
-        seconds = getattr(sc_sec, 'base', 10.0) if sc_sec else 10.0
-        boost = getattr(sc_boost, 'base', 0) if sc_boost else 1.0
-    elif loot_type == 'suction+':
-        seconds = getattr(sc_sec, 'plus', 20.0) if sc_sec else 15.0
-        boost = getattr(sc_boost, 'plus', 0) if sc_boost else 1.5
-    elif loot_type == 'suction++':
-        seconds = getattr(sc_sec, 'plusplus', 25.0) if sc_sec else 20.0
-        boost = getattr(sc_boost, 'plusplus', 4) if sc_boost else 2.0
-    else:  # max
-        seconds = getattr(sc_sec, 'max', 50.0) if sc_sec else 30.0
-        boost = getattr(sc_boost, 'max', 8) if sc_boost else 3.0
-
-    state.powerups.suction_frames = int(seconds / constants.timing.base_sleep)
-    state.powerups.suction_boost_duration = boost
-    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power='suction')
+    ``keys`` and ``defaults`` give, per tier, the config key to read and the
+    value to use when that key is missing; ``fallbacks`` is used when the
+    whole table is missing.
+    """
+    table = getattr(section, table_name, None)
+    if not table:
+        return (fallbacks or defaults)[tier]
+    return getattr(table, keys[tier], defaults[tier])
 
 
-def _apply_tailwind_power(loot_type):
-    """Apply tailwind powerup."""
-    state.powerups.tailwind_active = True
+# Timed power-ups: how long each tier lasts and which extra values it sets on
+# state.powerups. Every entry is (config table, keys, defaults, fallbacks) per tier.
+_SECONDS_FALLBACK = (10.0, 15.0, 20.0, 30.0)
+_POWERUPS = {
+    'wide_cursor': {
+        'seconds': ('seconds', _TIERS, (10.0, 20.0, 25.0, 50.0), _SECONDS_FALLBACK),
+        'values': {
+            'wide_cursor_lanes': ('lanes', ('base', 'base', 'max', 'max'), (3, 3, 5, 5), None),
+        },
+    },
+    'bounce_boost': {
+        'seconds': ('seconds', _TIERS, (10.0, 20.0, 25.0, 50.0), _SECONDS_FALLBACK),
+        'values': {
+            'bounce_boost_duration': ('duration', _TIERS, (4, 4, 8, 12), (1.0, 1.5, 2.0, 3.0)),
+        },
+    },
+    'suction': {
+        'seconds': ('seconds', _TIERS, (10.0, 20.0, 25.0, 50.0), _SECONDS_FALLBACK),
+        'values': {
+            'suction_boost_duration': ('boost_duration', _TIERS, (0, 0, 4, 8), (1.0, 1.5, 2.0, 3.0)),
+        },
+    },
+    'tailwind': {
+        'seconds': ('seconds', _TIERS, _SECONDS_FALLBACK, None),
+        'values': {
+            'tailwind_up_bonus': ('up_bonus', ('base', 'plus', 'plusplus', 'plusplus'), (1, 2, 3, 3), (1, 1, 2, 2)),
+            'tailwind_down_penalty': ('down_penalty', _TIERS, (1, 1, 2, 3), (1, 1, 2, 2)),
+        },
+    },
+}
 
-    tw = constants.tailwind
-    tw_sec = getattr(tw, 'seconds', None)
-    tw_up = getattr(tw, 'up_bonus', None)
-    tw_down = getattr(tw, 'down_penalty', None)
 
-    if loot_type == 'tailwind':
-        seconds = getattr(tw_sec, 'base', 10.0) if tw_sec else 10.0
-        up_bonus = getattr(tw_up, 'base', 1) if tw_up else 1
-        down_pen = getattr(tw_down, 'base', 1) if tw_down else 1
-    elif loot_type == 'tailwind+':
-        seconds = getattr(tw_sec, 'plus', 15.0) if tw_sec else 15.0
-        up_bonus = getattr(tw_up, 'plus', 2) if tw_up else 1
-        down_pen = getattr(tw_down, 'plus', 1) if tw_down else 1
-    elif loot_type == 'tailwind++':
-        seconds = getattr(tw_sec, 'plusplus', 20.0) if tw_sec else 20.0
-        up_bonus = getattr(tw_up, 'plusplus', 3) if tw_up else 2
-        down_pen = getattr(tw_down, 'plusplus', 2) if tw_down else 2
-    else:  # max
-        seconds = getattr(tw_sec, 'max', 30.0) if tw_sec else 30.0
-        up_bonus = getattr(tw_up, 'plusplus', 3) if tw_up else 2
-        down_pen = getattr(tw_down, 'max', 3) if tw_down else 2
+def _apply_timed_power(name, loot_type):
+    """Activate a frame-timed power-up (wide cursor, bounce boost, suction, tailwind)."""
+    spec = _POWERUPS[name]
+    section = getattr(constants, name)
+    tier = _loot_tier(loot_type, name)
+    powerups = state.powerups
 
-    state.powerups.tailwind_frames = int(seconds / constants.timing.base_sleep)
-    state.powerups.tailwind_up_bonus = up_bonus
-    state.powerups.tailwind_down_penalty = down_pen
-    achievements.check_achievements_event(
-        'power_used', state.game.frame_count, state.ui.notifications, power='tailwind'
-    )
+    setattr(powerups, f'{name}_active', True)
+    table_name, keys, defaults, fallbacks = spec['seconds']
+    seconds = _tiered(section, table_name, tier, keys, defaults, fallbacks)
+    setattr(powerups, f'{name}_frames', int(seconds / constants.timing.base_sleep))
+    for attr, (table_name, keys, defaults, fallbacks) in spec['values'].items():
+        setattr(powerups, attr, _tiered(section, table_name, tier, keys, defaults, fallbacks))
+
+    achievements.check_achievements_event('power_used', state.game.frame_count, state.ui.notifications, power=name)
 
 
 def _apply_timelapse_power(loot_type):
-    """Apply timelapse powerup - slows down game tick."""
-    # Get config values (with fallbacks)
-    seconds_cfg = getattr(constants.timelapse, 'seconds', None)
-    slowdown_cfg = getattr(constants.timelapse, 'slowdown', None)
-
-    # Duration in real seconds
-    if loot_type == 'timelapse':
-        duration = getattr(seconds_cfg, 'base', 2.0) if seconds_cfg else 2.0
-        slowdown = getattr(slowdown_cfg, 'base', 1.5) if slowdown_cfg else 1.5
-    elif loot_type == 'timelapse+':
-        duration = getattr(seconds_cfg, 'plus', 3.0) if seconds_cfg else 3.0
-        slowdown = getattr(slowdown_cfg, 'plus', 1.75) if slowdown_cfg else 1.75
-    elif loot_type == 'timelapse++':
-        duration = getattr(seconds_cfg, 'plusplus', 4.0) if seconds_cfg else 4.0
-        slowdown = getattr(slowdown_cfg, 'max', 2.0) if slowdown_cfg else 2.0
-    else:  # max
-        duration = getattr(seconds_cfg, 'max', 5.0) if seconds_cfg else 5.0
-        slowdown = getattr(slowdown_cfg, 'max', 2.0) if slowdown_cfg else 2.0
+    """Apply timelapse powerup - slows down the game tick for some real seconds."""
+    section = constants.timelapse
+    tier = _loot_tier(loot_type, 'timelapse')
+    duration = _tiered(section, 'seconds', tier, _TIERS, (2.0, 3.0, 4.0, 5.0))
+    slowdown = _tiered(section, 'slowdown', tier, ('base', 'plus', 'max', 'max'), (1.5, 1.75, 2.0, 2.0))
 
     state.powerups.timelapse_active = True
     state.powerups.timelapse_end_time = time.time() + duration
