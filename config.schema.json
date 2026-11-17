@@ -3657,6 +3657,9 @@
         "boss_hp_mult": {
           "type": "number"
         },
+        "boss_hp_per_world": {
+          "type": "number"
+        },
         "damage_formula": {
           "properties": {
             "gear_coefficient": {

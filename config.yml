@@ -44,6 +44,8 @@ combat:
   hp_scale: 10
   # Every boss's HP is multiplied by this (one knob for all of them)
   boss_hp_mult: 1.0
+  # ...and grows by this share per world after the first (0.5: ×3.5 in the last world)
+  boss_hp_per_world: 0.0
   # Afflictions (freeze, poison, bleed) land this much less often on bosses
   boss_affliction_factor: 0.33
   # Score/XP multipliers for destroying enemies
