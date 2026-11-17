@@ -1,314 +1,234 @@
-# BVB - Bird vs Bat Juggling Game
+# BVB — Bird vs Bat
 
-A roguelike arcade game where you juggle 9 colorful birds that bounce and battle against obstacles and bats!
+[![CI](https://github.com/Onheiron/PY-birds-vs-bats/actions/workflows/ci.yml/badge.svg)](https://github.com/Onheiron/PY-birds-vs-bats/actions/workflows/ci.yml)
 
+A terminal arcade roguelike: keep a flock of nine birds in the air, use each
+bird's power, and fight your way through six biomes of obstacles, bats and
+bosses. Pure Python, runs in any modern terminal.
 
-
-# BVB — Bird vs Bat (terminal arcade)
-
-Bird vs Bat (BVB) is a lightweight terminal arcade/roguelike where you juggle 9 birds, use per-bird powers,
-manage lanes, and fight dynamically spawning bats and obstacles. This README documents how to play,
-what changed recently, developer notes and configuration.
-
-All content below is in English.
-
-<!-- Project media: replace the files in media/ with your real assets -->
 ![Screenshot](media/screenshot.png)
 
 ![Footage](media/footage.gif)
 
 ## Quick start
 
-From source (recommended for development):
+Requires Python 3.10 or newer and a terminal of at least 115 × 38 characters
+(the playfield is laid out for a wide screen; shrink the font if it does not fit).
 
 ```bash
-# Install dependencies
-pip install pyyaml jsonschema
-
-# Run with default config
-python3 start.py
-
-# Run with custom config
-python3 start.py --config myconfig.yml
+pip install -r requirements.txt
 ```
 
-Standalone binary (if present):
-- macOS: `dist/BVB` (run `./dist/BVB`)
-- Windows: `dist/BVB.exe`
+```bash
+python3 game.py
+```
+
+Standalone binaries for Linux, macOS and Windows are attached to each
+[release](https://github.com/Onheiron/PY-birds-vs-bats/releases): unpack and run `BVB`.
+
+Optional extras (the game runs fine without them):
+
+```bash
+pip install -r requirements-optional.txt
+```
+
+- `numpy` + `sounddevice`: sound effects and dynamic 8-bit music
+- `firebase-admin` + a service account file: online leaderboard
+
+### Command line
+
+| Option | Meaning |
+|---|---|
+| `--config FILE` | YAML configuration, merged over the defaults in `config.yml` |
+| `--theme FILE` | Colour theme (default `theme.yml`) |
+| `--version` | Print the version |
+| `--help` | Show usage |
+
+Setting `BVB_SYNC_OUTPUT=0` disables synchronized terminal updates, in case a
+terminal mishandles them.
+
+## How to play
+
+Birds fall; you bounce them back up. A bird that reaches the floor is lost and
+costs a life. The higher the flock flies, the more **momentum** you build:
+momentum shifts gears (1–10), and gears make everything faster and the miles
+go by quicker. Miles take you through 18 levels in 6 biomes, each biome ending
+with a boss.
+
+### Controls
+
+| Key | Action |
+|---|---|
+| ← / → | Move the cursor between lanes |
+| ↑ | Bounce the bird in the selected lane; if it is already rising, use its power (once per ascent) |
+| SPACE | Select a lane, then SPACE on another lane to swap the two birds (costs momentum) |
+| ↓ | Suction (only while the legacy Suction power-up is active) |
+| P / ESC | Pause menu: resume, restart, save, load, Birdpedia, settings |
+| X | Toggle the XP overlay |
+| M | Mute / unmute audio |
+| Q / Ctrl+C | Quit |
+
+Movement, bounce, suction and swap keys can be rebound in **Settings → Controls**.
+
+### Birds
+
+Every bird has a base speed and a power. New birds hatch from eggs dropped by
+enemies (only while a lane is free). Birds earn XP, climb grades from D to S,
+and raise your **prestige**, which multiplies score and improves loot.
+
+| Bird | Rarity | Speed | Power |
+|---|---|:---:|---|
+| Yellow | common | 2 | Standard bird, bounces adjacent yellow birds |
+| Red | common | 3 | Shoots projectiles, damage scales with adjacent reds |
+| Blue | common | 4 | Speed boost ability, cures adjacent scared birds |
+| Patchwork | uncommon | 3 | Can transform and use multiple bird abilities |
+| Purple | uncommon | 3 | Charges powerful shots, damage increases with charge time |
+| Clockwork | uncommon | 2 | Auto-bounces at floor, has charge system that decays |
+| Templar | rare | 4 | Activates abilities of adjacent birds |
+| Phoenix | rare | 5 | One-hit kills enemies, goes out of play after |
+| Gold | rare | 5 | Generates massive score per frame |
+| Cookie | uncommon | 3 | Drops XP crumbs, dies after 5 crumbs |
+| Stealth | uncommon | 3 | Can phase through enemies dealing massive damage |
+| Dinosaur | epic | 4 | Requires multiple presses to bounce, high damage |
+| Glitch | epic | 3 | Unpredictable: random speed, damage, can swap lanes, duplicate |
+| Rainbow | mythic | 6 | Warps between ceiling/floor, colors fade over time, recharge with UP |
+| Twister | rare | 4 | Creates tailwind in current lane and 2 adjacent lanes |
+| Frosty | rare | 3 | 30% chance to freeze enemies on hit, power boosts to 60% |
+| Poison | rare | 3 | 30% chance to poison bats (2HP/s), power boosts to 60% |
+| Berserk | rare | 3 | 30% chance to cause bleeding (1HP/s, -1 armor), power boosts to 60% |
+| Rock | rare | 2 | Pushes enemies up 1 row on hit, power boosts to 2 rows + speed 3 |
+
+The in-game **Birdpedia** fills in as you discover birds, bats, obstacles and biomes.
+
+### Biomes and bosses
+
+| Levels | Biome | Boss (last level of the biome) |
+|---|---|---|
+| 1-1 … 1-3 | Windy Woods | Giant bat: screams and scatters the flock |
+| 2-1 … 2-3 | The Borders | Wind Boss: pushes rising birds down |
+| 3-1 … 3-3 | Rotten Marshes | Jelly Boss: keeps spawning bats |
+| 4-1 … 4-3 | The Dark Swamp | Tree Boss: branches bloom status-effect flowers |
+| 5-1 … 5-3 | The Void Cave | Owl Boss: casts spells and meteor showers |
+| 6-1 … 6-3 | Mountain Range | Giant bat (a dedicated boss is still to come) |
+
+Distance does not advance while a boss is alive.
+
+### Enemies and loot
+
+- **Obstacles** scroll down in four tiers; tier 3+ obstacles can hide mini bats
+  and jumpscare bats, swamp obstacles grow flowers, cave portals teleport birds.
+- **Bats** come in tiers with special kinds: armored, divers, spellcasters.
+- **Loot** falls from defeated enemies in six rarities: eggs, plus the
+  power-ups Wide Cursor, Tailwind and Timelapse, each in up to four strengths.
+
+### Difficulty
+
+Choose it on the title screen with ← / → on **NEW GAME**:
+
+| Difficulty | Preset | Rules |
+|---|---|---|
+| PEACEFUL | `config_easy.yml` | Fewer, weaker enemies |
+| ADVENTURE | `config.yml` | The default balance |
+| SURVIVAL | `config_hard.yml` | Hatching a bird no longer gives a life back |
+| LEGENDARY | `config_hell.yml` | Brutal enemies, no life recovery, better rare loot |
+
+`hardmode.yml` is a ready-made tougher ruleset to start from:
+
+```bash
+python3 game.py --config hardmode.yml
+```
+
+### Saves
+
+Progress is autosaved every minute and can be saved to three manual slots from
+the pause menu. Saves, settings and Birdpedia discoveries live in `~/.bvb/`.
 
 ## Configuration
 
-**Important**: BVB requires a configuration file to run. All game constants are loaded from `config.yml`.
-
-### Quick Start
-
-```bash
-# The game expects config.yml in the current directory
-# Copy the sample if you don't have one:
-cp config.sample.yml config.yml
-
-# Edit config.yml to customize game settings
-# Run the game (uses config.yml by default)
-python3 start.py
-
-# Or specify a different config file:
-python3 start.py --config myconfig.yml
-```
-
-### Configuration Structure
-
-**All game constants are defined in config.yml** - there are no hardcoded defaults in the code. The configuration file uses a namespace structure:
+`config.yml` is the complete, commented reference of every tunable: layout,
+birds, enemies, bosses, loot tables, progression, controls. A custom file only
+needs the values it changes:
 
 ```yaml
-# Example config.yml structure
-layout:
-  width: 50        # Game field width
-  height: 35       # Game field height
-  num_balls: 12    # Number of birds
-
-timing:
-  base_sleep: 0.15 # Frame delay (lower = faster)
-
-physics:
-  speed_max: 8     # Maximum bird speed
+# my_config.yml
+bat_enemy:
+  max_on_screen: 3
+birds:
+  default_formation: [YELLOW, YELLOW, RED, RED, RED, BLUE, BLUE, PURPLE, CLOCKWORK]
 ```
-
-All namespaces must be present in config.yml:
-- `layout` - Game dimensions and lane setup (required)
-- `birds` - Bird formation and behavior (required)
-- `timing` - Frame rates and durations (required)
-- `physics` - Speed limits and movement (required)
-- `eggs` - Drop rates and rarity weights (required)
-- `bat_enemy` - Bat spawning and HP (required)
-- `obstacle` - Obstacle spawning (required)
-- `wide_cursor`, `bounce_boost`, `suction`, `tailwind` - Power-up settings
-- `dinosaur`, `stealth`, `gold`, `clockwork`, `glitch`, `orange` - Special bird behaviors
-- `progression`, `combo`, `combat` - Game mechanics
-- `controls` - Key bindings
-
-**See `config.sample.yml` for the complete reference configuration.** This file contains all required values and serves as documentation for available settings.
-
-## Controls
-
-- ← / → : Move cursor between lanes
-- ↑ : Bounce the bird in the selected lane (if already rising, activates that bird's power — once per ascent)
-- ↓ : (unused) — the Suction power has been removed; new loot-based power-ups (Tailwind, Shuffle) now change flock behavior when collected
-- SPACE : Swap mode (select a lane, press again to swap two birds). Swap costs points (200 × current level).
-- Q or Ctrl+C : Quit
-
-## What's new (high level)
-
-- Added new bird types: STEALTH, PATCHWORK, GOLD and their eggs.
-- `stealth_egg`: a new rare egg (rarity = "rare", weight = 10) that spawns a STEALTH bird when collected.
-- STEALTH bird behaviour:
-  - Normally invisible: rendering alternates between visible dark-gray and ANSI "conceal" (SGR 8) so it is
-    hidden on supporting terminals.
-  - Pass-through: while stealth (non-tangible) it passes through bats, obstacles and loot.
-  - Power (press ↑ while rising): become tangible for a short window and deal heavy damage to nearby enemies.
-  - Power also grants a short speed boost (speed = 6) for the power duration.
-- PATCHWORK bird and `patchwork_egg` (uncommon): triggers all synergy effects of other birds.
-- GOLD bird and `gold_egg` (rare): special scoring bird (higher passive score / fast speed).
-- Blue sprint behaviour fixed: sprint now times out correctly and the bird returns to its normal color when the boost ends.
-- Despawn: bats and loot older than 60 seconds are cleaned up automatically to avoid screen clutter.
-- Firebase telemetry: total play time is now tracked and submitted with game-over events.
-- Misc: audio/music backend removed for determinism in terminal builds.
- - Removed legacy power-ups: Bounce Boost and Suction. These were replaced with two new loot-based power-ups (Tailwind and Shuffle) to streamline gameplay and avoid input lag issues.
- - New power-up — Tailwind (symbol: ༄): a tiered pickup that temporarily boosts rising birds and penalizes falling birds. While active the starting line is visually highlighted and bird vertical speeds are clamped for balance.
- - New power-up — Shuffle (symbol: 𖦹): a tiered pickup that smartly swaps birds between lanes (2/4/6 birds depending on tier) to compact the formation toward the center. Moved birds are reset to the starting line and begin rising.
-
-## Birds (summary)
-
-Each bird has a base speed and a special power triggered while the bird is rising (↑ twice).
-
-- Yellow (speed 2)
-  - Power: slow adjacent falling birds for a short duration (except other yellows, which are bounced).
-
-- Red (speed 3)
-  - Power: fires a projectile upward. Projectile damage increases when adjacent red/patchwork birds are rising.
-
-- Blue (speed 4)
-  - Power: temporary speed boost and +1 damage. The bird is visually highlighted (CYAN) while boosted.
-  - Sprint is limited-time and will stop either on bounce or when the boost duration expires.
-
-- White (speed 4)
-  - Power: affects multiple lanes (±2 lanes). Can bounce falling birds or trigger rising birds' powers.
-
-- Purple (speed 3)
-  - Knows no fear.
-
-- Clockwork (speed 2)
-  - Auto-bounce on floor (helps keep lanes active). Does not die on floor like other birds.
-
-- PATCHWORK (speed 3)
-  - Triggers synergy effects of all other colors.
-
-- GOLD (speed 6)
-  - High-scoring special bird. Scores larger passive points each frame when alive.
-
-- STEALTH (speed 3 base)
-  - Stealth behavior (see "Stealth mechanics" below).
-
-## Stealth mechanics (detailed)
-
-- Stealth birds alternate between visible DARK_GRAY and ANSI conceal (hidden) while flying.
-- While in stealth (non-tangible) they pass through bats, obstacles and loot — they won't collide or collect.
-- Activating the stealth power (↑ while rising) makes the bird tangible for a short duration (configurable in code):
-  - During tangibility the bird deals heavy damage to nearby bats/obstacles and destroys nearby loot.
-  - The bird's speed is temporarily set to 6 for the duration of the tangible window.
-  - The bird displays a bright color (WHITE) while tangible so the player sees the power.
-- The power is allowed only once per ascent (the internal `bird_power_used` flag prevents re-activation until the bird
-  falls and then rises again).
-
-## Loot system (brief)
-
-- Loot drop logic takes the enemy tier and current empty lanes into account. Eggs are only dropped when there are
-  empty lanes available (to avoid unreachable eggs).
-- New egg: `stealth_egg` included in the "rare" egg pool with weight 10.
-
-Rare egg composition now includes: blue_egg, clockwork_egg, purple_egg, gold_egg, stealth_egg (weights: 40, 20, 20, 10, 10).
-
-When a `stealth_egg` is collected, it spawns a STEALTH bird in the first available (dead) bird slot.
-
-New loot additions: Tailwind and Shuffle
-
-- Tailwind (symbol: '༄'): a loot pickup that applies a tiered modifier to bird vertical speeds. Rising birds receive a temporary upward speed bonus while falling birds receive a penalty; speeds are clamped to remain balanced (game clamps to a safe range). The starting line receives a visual indicator while Tailwind is active.
-- Shuffle (symbol: '𖦹'): a loot pickup that triggers an automatic lane reorganization. Depending on tier, it swaps a small group of birds (e.g. 2 / 4 / 6) and prefers compacting birds toward the center by moving outer birds into empty or inner lanes; birds moved by Shuffle are reset to the starting line and set to rise.
-
-## Enemies & despawn
-
-- Obstacles and bats spawn in tiers with increasing HP and difficulty.
-- Entities older than 60 seconds are automatically removed from the world (both bats and loot) to reduce clutter.
-
-## Achievements & telemetry
-
-- Basic achievements are tracked and displayed as short notifications.
-- If a Firebase client is configured, the game attempts to submit analytics events in the background.
-- On game over the session's elapsed play time (seconds + formatted string) is included with the score submission.
-
-## Developer notes
-
-Run locally:
 
 ```bash
-pip install pyyaml jsonschema
-python3 start.py
+python3 game.py --config my_config.yml
 ```
 
-**Configuration validation:**
-- The game validates configuration files against `config.schema.json` if `jsonschema` is installed
-- Invalid configs will cause the game to exit with a descriptive error message
-- All config fields are optional with sensible defaults
+`config.sample.yml` is a starting point. Configurations are validated at
+startup against `config.schema.json`: a misspelt section or a value of the
+wrong type stops the game with a message naming the offending key. Colours
+come from `theme.yml`; `theme_accessible.yml` is the high-contrast palette
+enabled from **Settings → Graphics → Accessibility**.
 
-**Configurable settings include:**
-- Initial bird formation and lane randomization (`birds.formation`, `birds.randomize_lanes`)
-- Keyboard controls (`controls.*`)
-- Enemy spawning rates, HP, and tier weights
-- Power-up durations and effects
-- Physics speeds and timing
-- Collision detection parameters
-- And much more...
-
-See `config.sample.yml` for the complete list of tunables.
-
-Build a single-file executable with PyInstaller:
+## Development
 
 ```bash
-pip install pyinstaller
-pyinstaller --onefile --name BVB --console start.py
+pip install -r requirements-dev.txt
 ```
 
-Configuration & tuning
+| Task | Command |
+|---|---|
+| Run the tests | `python3 -m pytest` |
+| Lint | `ruff check .` |
+| Format | `ruff format .` |
+| Regenerate the config schema after adding keys to `config.yml` | `python3 tools/gen_config_schema.py` |
+| Measure frame time | `python3 tools/benchmark.py` (add `--profile` for hot spots) |
+| Build a standalone binary | `pyinstaller --noconfirm packaging/BVB.spec` |
 
-- Many gameplay timings are derived from `base_sleep` at the top of `start.py`.
-  - `base_sleep` controls the global frame speed; durations are converted to frame counts using `int(seconds/base_sleep)`.
-- To tune power durations, search for values like `int(2.0 / base_sleep)` or `int(5.0 / base_sleep)` in `start.py`.
-- Stealth tangible window and speed boost are applied near the code path where `stealth_timers[...]` is set.
-
-Terminal compatibility notes
-
-- The stealth effect uses ANSI SGR 8 (conceal) to hide the sprite on terminals that support it. Not all terminals honor
-  SGR 8; on terminals that ignore it the invisibility will be a no-op and the bird will still appear. If you see no
-  invisibility, the bird will still behave correctly (pass-through mechanics are logic-based).
-
-Debugging tips
-
-- Enable on-screen notifications (they are used for achievements and some debug messages). They appear in the footer.
-- If a power doesn't look like it activated, check whether `bird_power_used` is True for that bird (logic prevents multiple
-  activations per ascent).
-
-Contributing
-
-- Open a PR with focused changes. Prefer minimal, isolated diffs. If changing tune constants, include the rationale and
-  observable impact (e.g. "increased blue sprint to 8s for better feel").
-
-License & credits
-
-- This project is provided as-is. See repository for license information and credits.
-
-Enjoy and let me know if you want any of these behaviours tuned or documented further.
- 
----
-
-## Visual highlights & quick reference ✨
-
-Below are compact, printable references that are easy to scan while playing.
-
-### Birds at a glance
-
-| Bird | Speed | Power (while rising) | Notes |
-|---:|:---:|:---|:---|
-| 📣 Yellow | 2 | Slow adjacent falling birds (except yellows) | Bounce other yellows instead of slowing |
-| 🔥 Red | 3 | Fire projectile (damage bonus with adjacent rising red/patchwork) | Great vs bats/obstacles |
-| ✈️ Blue | 4 | Temporary speed + damage (+1) — visual: CYAN | Sprint ends on bounce or timeout |
-| 💪🏻 White | 4 | Multi-lane effect (±2 lanes) — bounce or trigger adjacent powers | Utility / crowd control |
-| 🦸🏻‍♂️ Purple | 3 | Special obstacle/bat interactions | Lane-control specialist |
-| 🤖 Clockwork | 2 | Auto-bounce on floor/ceiling | Stable lane maintainer (survivor) |
-| ✂️ Patchwork | 3 | Visual multicolor (counts as other colors for synergy) | Decorative + synergy |
-| 🥇 Gold | 6 | High passive score | Fast and valuable |
-| 🕶️ Stealth | 3 (base) | Become tangible briefly — heavy damage, speed=6 while active | Invisible while stealth; pass-through mechanics |
-
----
-
-### Power-ups (loot) at a glance
-
-- ༄  Tailwind — Tiered pickup that boosts rising birds and penalizes falling birds. Visual starting-line indicator while active. Speeds are clamped for balance.
-- 𖦹  Shuffle — Tiered pickup that performs smart lane swaps (2/4/6 birds depending on tier) to compact the formation toward center; moved birds reset to the starting line and begin rising.
-
-
-### Loot rarity bar chart (approximate weights)
+### Project layout
 
 ```
-Rare/Epic egg weights (visual):
-common   ██████████████████████████████████  ~60
-uncommon ████████████████  ~25-35
-rare     ██████████  ~10-20  
-epic     ████  ~5-15
+game.py                 entry point
+config*.yml, theme*.yml  balance, difficulty presets, colours
+src/core/               config loading, constants, mutable game state
+src/entities/           bird types and sprites
+src/engine/             loop, timing, input, physics, bat AI, progression
+src/engine/logic/       collisions, spawning, loot, effects, portals, scoring
+src/engine/logic/bosses/  one module per boss + the director that picks them
+src/ui/                 framebuffer, terminal, keyboard, colours, screens
+src/ui/layers/          one module per render layer, drawn back to front
+src/services/           saves, achievements, sound, leaderboard
+tests/                  unit tests + a headless simulation harness
+tools/                  schema generator, benchmark, binary smoke test
+packaging/              PyInstaller spec
 ```
 
-Below is a tiny ASCII breakdown for *rare* egg choices (weights):
+### How it runs
 
-```
-blue_egg     : ██████████████████████████ (40)
-clockwork_egg     : ██████████ (20)
-purple_egg   : ██████████ (20)
-gold_egg     : ████ (10)
-stealth_egg  : ████ (10)
-```
+- The loop renders at a fixed 60 FPS, so input is always responsive; physics
+  and game logic advance every 2–10 frames depending on the gear.
+- Rendering goes through a double-buffered framebuffer: layers draw cells, and
+  only the cells that changed since the previous frame are sent to the
+  terminal (typically a few hundred bytes per frame).
+- All state lives in `src/core/state.py`, all tunables in `src/core/constants.py`
+  (loaded from the config). A game is deterministic for a given seed, which is
+  what the test harness (`tests/harness.py`) relies on: it runs the real loop
+  with a virtual clock and a tiny terminal emulator instead of a screen.
 
----
+### Adding a boss
 
-## Formatting & color notes
+1. Write `src/engine/logic/bosses/<name>.py` with a `spawn_<name>_boss()` and an `update_<name>_boss()`.
+2. Register it in `SPECIAL_BOSSES` in `src/engine/logic/bosses/director.py` with its config section and level.
+3. Add a renderer to `_BOSS_RENDERERS` in `src/ui/layers/bosses.py`.
+4. Add its section to `config.yml` and run `python3 tools/gen_config_schema.py`.
 
-- This README uses emoji, **bold**, *italic* and tables for clarity.
-- Terminal color samples are shown in `start.py` as ANSI escapes; not all terminals honor every SGR code (notably SGR 8 "conceal").
+### Releasing
 
-If you want more visual polish (SVG charts, images, or GitHub action-generated badges), tell me which graphs you prefer and I can add them.
+1. Bump `__version__` in `src/__init__.py`.
+2. Tag the commit `vX.Y.Z` (it must match `__version__`) and push the tag.
 
----
+The Release workflow runs the tests, builds binaries for Linux, macOS and
+Windows, smoke-tests each one and publishes them as a GitHub release.
 
-## Full content (reference & details)
+## Terminal notes
 
-> The rest of the README documents gameplay, developer notes and tuning pointers in plain English so you can
-> tune and run the game easily. See the source `start.py` for implementation specifics (timings derived from `base_sleep`).
-
-(See the file header in `start.py` for constants and exact code pointers.)
+- A terminal with 256 colours and UTF-8 is required; truecolor is used when `COLORTERM` advertises it.
+- Stealth birds use the ANSI "conceal" attribute; terminals that ignore it simply show the bird.
+- On Windows use Windows Terminal (the legacy console lacks the needed character set).

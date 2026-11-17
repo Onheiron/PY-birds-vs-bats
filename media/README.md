@@ -1,7 +1,4 @@
-This folder is intended to hold media assets for the repository.
+Media used by the project README:
 
-Please add the real files with the following names:
-- `screenshot.png` — primary project screenshot (PNG)
-- `footage.gif` — short animated gameplay GIF (GIF)
-
-Current files are placeholders; replace them with binary assets and commit.
+- `screenshot.png` — gameplay screenshot
+- `footage.gif` — short gameplay clip
