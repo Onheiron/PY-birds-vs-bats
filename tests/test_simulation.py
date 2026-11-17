@@ -140,3 +140,18 @@ def test_output_stays_small_between_frames():
         before = sim.output_bytes
         sim.run(600)
         assert (sim.output_bytes - before) / 600 < 1500
+
+
+def test_owl_boss_dies_when_out_of_hp():
+    """Regression: a defeated Owl Boss used to stay 'dying' forever, freezing the miles."""
+    with Simulation(seed=6, level=15, near_boss=True) as sim:
+        state = sim.state
+        for _ in range(60):
+            sim.run(20)
+            if state.enemies.boss is not None and state.enemies.boss.get('state') == 'fly':
+                break
+        assert state.enemies.boss['boss_type'] == 'owl'
+        state.enemies.boss['hp'] = 0
+        sim.run(120)
+        assert state.enemies.boss is None
+        assert state.enemies.boss_defeated

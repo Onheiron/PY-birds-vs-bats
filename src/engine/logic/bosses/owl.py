@@ -88,8 +88,8 @@ def update_owl_boss():
     owl_boss_cfg = getattr(constants, 'owl_boss', None)
     current_time = clock.now()
 
-    # Check if boss is dead
-    if boss['hp'] <= 0:
+    # Out of HP: drop the rewards once, then die on the next tick
+    if boss['hp'] <= 0 and boss['state'] != 'dying':
         _owl_boss_defeated(boss)
         return
 
