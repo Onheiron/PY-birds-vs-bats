@@ -344,6 +344,8 @@ def check_projectile_collision():
                 if bat['hp'] <= 0:
                     handle_bat_death(bat, owner if owner is not None else 0)
 
+                events.emit('shot_hit', bird=proj.get('owner'), kind=proj.get('color'), damage=proj.get('damage', 0))
+
                 if proj in state.special.red_projectiles:
                     state.special.red_projectiles.remove(proj)
                 removed = True
@@ -380,6 +382,8 @@ def check_projectile_collision():
                 score_per_tier = getattr(constants.combat, 'obstacle_destroy_score_per_tier', 50)
                 add_score(tier * score_per_tier)
                 state.enemies.obstacles.remove(obs)
+
+            events.emit('shot_hit', bird=proj.get('owner'), kind=proj.get('color'), damage=proj.get('damage', 0))
 
             if proj in state.special.red_projectiles:
                 state.special.red_projectiles.remove(proj)
@@ -428,6 +432,10 @@ def check_projectile_collision():
                             branch['destroyed'] = True
                             add_score(100)
 
+                    events.emit(
+                        'shot_hit', bird=proj.get('owner'), kind=proj.get('color'), damage=proj.get('damage', 0)
+                    )
+
                     if proj in state.special.red_projectiles:
                         state.special.red_projectiles.remove(proj)
                     removed = True
@@ -473,6 +481,8 @@ def check_projectile_collision():
                 if boss['hp'] <= 0:
                     boss['state'] = 'dying'
                     play_sfx('boss_death')
+
+                events.emit('shot_hit', bird=proj.get('owner'), kind=proj.get('color'), damage=proj.get('damage', 0))
 
                 if proj in state.special.red_projectiles:
                     state.special.red_projectiles.remove(proj)

@@ -191,6 +191,14 @@ def report(results):
     for action in actions:
         row(f'  {action}', lambda r, a=action: mean([x.get('strategy', {}).get(a, 0) for x in r]))
 
+    section('Powers per game')
+    powers = sorted({p for n in names for x in results[n]['runs'] for p in x.get('powers', {})})
+    for power in powers:
+        row(f'  {power.lower()}', lambda r, p=power: mean([x.get('powers', {}).get(p, 0) for x in r]), '{:.2f}')
+    shots = sorted({s for n in names for x in results[n]['runs'] for s in x.get('shots', {})})
+    for shot in shots:
+        row(f'  shots {shot.lower()}', lambda r, s=shot: mean([x.get('shots', {}).get(s, 0) for x in r]), '{:.2f}')
+
     section('Birds lost per game')
     causes = sorted({c for n in names for x in results[n]['runs'] for c in x['birds_lost']})
     for cause in causes:

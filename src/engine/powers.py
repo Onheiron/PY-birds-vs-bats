@@ -51,7 +51,9 @@ def activate_bird_power(bird_idx):
     color_name = get_color_name(bird_color)
     events.emit('power_used', power=color_name, lane=bird_lane)
 
-    power = POWERS.get(get_bird_type_by_color(bird_color))
+    bird_type = get_bird_type_by_color(bird_color)
+    events.emit('power_fired', bird=bird_idx, kind=bird_type, use=state.birds.power_uses[bird_idx])
+    power = POWERS.get(bird_type)
     if power:
         power(bird_idx, bird_lane)
 
@@ -116,6 +118,7 @@ def _power_red(bird_idx, bird_lane):
                     damage_bonus += 1
                 break
 
+    events.emit('shot_fired', bird=bird_idx, kind='RED', bonus=damage_bonus)
     state.special.red_projectiles.append(
         {
             'x_pos': constants.layout.lane_positions[bird_lane],

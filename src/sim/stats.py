@@ -22,6 +22,26 @@ def prestige_now():
         random.setstate(saved)
 
 
+# Seconds after a decision over which its outcome is measured
+DECISION_HORIZON = 120
+
+
+def decision_context():
+    """The situation when a choice is made: what a rule "when X, take Y" can look at."""
+    game = state.game
+    living = [i for i, lost in enumerate(state.birds.lost) if not lost]
+    return {
+        'level': game.level,
+        'lives': game.lives,
+        'birds': len(living),
+        'gear': game.speed,
+        'prestige': round(prestige_now(), 2),
+        'scared': sum(1 for i in living if i in state.special.scared_birds),
+        'boss': state.enemies.boss is not None,
+        'bats': len(state.enemies.bats),
+    }
+
+
 class RunStats:
     def __init__(self, config, milestones):
         self.config = config
@@ -33,7 +53,10 @@ class RunStats:
         self.lost = Counter()
         self.kills = Counter()
         self.picks = []  # (offer kind, card kind, card rarity, card id)
+        self.powers = Counter()  # 'RED', 'RED second use'...
+        self.shots = Counter()  # 'RED +2' (bonus), 'PURPLE tier 3', 'hits'
         self.offers = Counter()  # offer kind ('egg', 'pact') -> count
+        self.decisions = []  # every card / pact taken, with its context (see decision_context)
         self.bosses = {}  # boss type -> {'spawned': s, 'defeated': s or None}
         self.level_times = {state.game.level: 0.0}
         self.samples = []  # (seconds, level, gear, prestige, birds alive, score)
@@ -64,6 +87,29 @@ class RunStats:
 
     def _on_choice_made(self, offer, card):
         self.picks.append((offer['kind'], card['kind'], card['rarity'], card['id']))
+        self.decisions.append(
+            {
+                't': self._now(),
+                'offer': offer['kind'],
+                'egg': offer.get('rarity'),
+                'card': card['id'],
+                'card_kind': card['kind'],
+                'rarity': card['rarity'],
+                'offered': [c['id'] for c in offer['cards']],
+                'context': decision_context(),
+            }
+        )
+
+    def _on_power_fired(self, bird, kind, use):
+        self.powers[kind] += 1
+        if use > 1:
+            self.powers[f'{kind} use {use}'] += 1
+
+    def _on_shot_fired(self, bird, kind, bonus):
+        self.shots[f'{kind} +{bonus}' if kind == 'RED' else f'{kind} tier {bonus}'] += 1
+
+    def _on_shot_hit(self, bird, kind, damage):
+        self.shots['hits'] += 1
 
     def _on_bird_lost(self, bird, color, cause):
         self.lost[cause] += 1
@@ -95,6 +141,9 @@ class RunStats:
             'bird_hatched': self._on_bird_hatched,
             'choice_offered': self._on_choice_offered,
             'choice_made': self._on_choice_made,
+            'power_fired': self._on_power_fired,
+            'shot_fired': self._on_shot_fired,
+            'shot_hit': self._on_shot_hit,
             'bird_lost': self._on_bird_lost,
             'bat_killed': self._on_bat_killed,
             'mini_bat_killed': self._on_mini_bat_killed,
@@ -136,6 +185,28 @@ class RunStats:
 
     # ------------------------------------------------------------------ summary
 
+    def _decision_outcomes(self):
+        """Each decision with what followed it within DECISION_HORIZON seconds."""
+        samples = self.samples
+        out = []
+        for decision in self.decisions:
+            t = decision['t']
+            later = [s for s in samples if t <= s[0] <= t + DECISION_HORIZON]
+            start = next((s for s in samples if s[0] >= t), samples[-1] if samples else None)
+            if not later or start is None:
+                continue
+            end = later[-1]
+            ended_early = self.end == 'game over' and self.seconds <= t + DECISION_HORIZON
+            out.append(
+                {
+                    **decision,
+                    'levels_after': end[1] - start[1],
+                    'birds_after': end[4] - start[4],
+                    'died_after': ended_early,
+                }
+            )
+        return out
+
     def summary(self):
         """A JSON-friendly digest of the run."""
         prestiges = [s[3] for s in self.samples]
@@ -166,6 +237,9 @@ class RunStats:
             'hatched_from_orange': sum(1 for *_rest, src in self.hatched if src == 'orange'),
             'birds_lost': dict(self.lost),
             'strategy': getattr(self, 'strategy_counts', {}),
+            'decisions': self._decision_outcomes(),
+            'powers': dict(self.powers),
+            'shots': dict(self.shots),
             'eggs_opened': self.offers.get('egg', 0),
             'cards_by_kind': dict(Counter(kind for _o, kind, _r, _id in egg_picks)),
             'cards_by_rarity': {r: sum(1 for p in egg_picks if p[2] == r) for r in RARITIES},

@@ -12,6 +12,9 @@ Events and their fields:
   score_changed     score
   swap              swaps
   power_used        power, lane (lane is None for power-up pickups)
+  power_fired       bird, kind, use (1 = first use this ascent, 2 = second...)
+  shot_fired        bird, kind ('RED' bonus = rising shooter neighbours, 'PURPLE' bonus = charge tier)
+  shot_hit          bird, kind, damage
   bat_killed        bat, tier, killer
   mini_bat_killed   bat, killer
   loot_dropped      loot, source

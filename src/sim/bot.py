@@ -295,7 +295,10 @@ class Bot:
         best = None
         enemy_lanes = self._enemy_lanes()
         for i in range(constants.layout.num_balls):
-            if state.birds.lost[i] or state.birds.vy[i] != -1 or state.birds.power_used[i]:
+            if state.birds.lost[i] or state.birds.vy[i] != -1:
+                continue
+            # A1 grades and above (or cards) give more than one use per ascent
+            if state.birds.power_uses[i] >= int(stats.bird(i, 'power_uses')):
                 continue
             lane = state.birds.random_lanes[i]
             if lane in state.spells.silenced_lanes or i in state.special.poisoned_birds:
