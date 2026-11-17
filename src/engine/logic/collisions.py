@@ -339,7 +339,7 @@ def check_projectile_collision():
 
                 owner = proj.get('owner')
                 if owner is not None:
-                    award_damage_xp(owner, damage)
+                    award_damage_xp(owner, damage, 'shot')
 
                 if bat['hp'] <= 0:
                     handle_bat_death(bat, owner if owner is not None else 0)
@@ -372,7 +372,7 @@ def check_projectile_collision():
 
             owner = proj.get('owner')
             if owner is not None:
-                award_damage_xp(owner, damage)
+                award_damage_xp(owner, damage, 'shot')
 
             if obs['hp'] <= 0:
                 tier = obs.get('tier', 1)
@@ -416,7 +416,7 @@ def check_projectile_collision():
                     if flower and flower.get('active') and flower.get('hp', 0) > 0:
                         flower['hp'] -= damage
                         if owner is not None:
-                            award_damage_xp(owner, damage)
+                            award_damage_xp(owner, damage, 'shot')
                         if flower['hp'] <= 0:
                             flower['active'] = False
                             tree_boss_cfg = getattr(constants, 'tree_boss', None)
@@ -427,7 +427,7 @@ def check_projectile_collision():
                         # Damage branch
                         branch['hp'] -= damage
                         if owner is not None:
-                            award_damage_xp(owner, damage)
+                            award_damage_xp(owner, damage, 'shot')
                         if branch['hp'] <= 0:
                             branch['destroyed'] = True
                             add_score(100)
@@ -474,7 +474,7 @@ def check_projectile_collision():
 
                 boss['hp'] -= damage
                 if owner is not None:
-                    award_damage_xp(owner, damage)
+                    award_damage_xp(owner, damage, 'shot')
 
                 play_sfx('hit')
 

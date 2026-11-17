@@ -126,7 +126,7 @@ def update():
             target['hp'] -= damage
             owner = entry.get('owner', 0)
             if 0 <= owner < constants.layout.num_balls:
-                award_damage_xp(owner, damage)
+                award_damage_xp(owner, damage, 'dot')
             if target['hp'] <= 0:
                 for other in _TABLES:
                     getattr(state.special, other).pop(key, None)

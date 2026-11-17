@@ -7,10 +7,10 @@ and game logic advance every N frames, N shrinking as the gear goes up.
 import time
 
 from src.core import state
-from src.engine import clock, events, input_handler, menus, progression, systems
+from src.engine import clock, events, input_handler, menus, meta, progression, systems
 from src.engine.timing import FrameClock, frames_per_update
 from src.entities.bird_types import get_bird_type_by_color
-from src.services import achievements, save_manager, sound
+from src.services import save_manager, sound
 from src.ui import game_over, render
 from src.ui.keyboard import read_keys
 from src.ui.layers.title import render_title_screen
@@ -19,8 +19,8 @@ from src.ui.layers.title import render_title_screen
 AUTOSAVE_INTERVAL = 60
 
 # Side effects that react to game events
-achievements.subscribe()
 sound.subscribe()
+meta.subscribe()
 
 
 class Session:
@@ -82,7 +82,9 @@ def run_title_screen():
 def run_session():
     """Play until game over, quit or return to the title screen."""
     # Game state was initialised by the title menu (NEW GAME, CONTINUE or LOAD)
-    achievements.init_achievements()
+    if state.meta.profile is None:
+        state.meta.profile = save_manager.load_profile()
+    meta.start_run()
     state.game.start_time = time.time()
     state.game.last_mile_update = time.time()
 
@@ -110,6 +112,9 @@ def run_session():
     except KeyboardInterrupt:
         # Ctrl+C is a deliberate exit
         state.game.quit_requested = True
+    finally:
+        # Game over, quit or back to the title: the run's gold goes to the profile
+        meta.end_run()
 
 
 def run_game():

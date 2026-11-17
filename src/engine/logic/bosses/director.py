@@ -187,7 +187,7 @@ def check_bird_boss_collision():
             boss['hp'] -= 32 * hp_scale()  # Orange does a fixed 32 (×hp_scale) to bosses
         else:
             boss['hp'] -= damage
-            award_damage_xp(i, damage)
+            award_damage_xp(i, damage, 'contact', 'boss')
 
         # Boss scream if hit causes scare
         scare_bird_ticks(i, int(1.0 / constants.timing.base_sleep))

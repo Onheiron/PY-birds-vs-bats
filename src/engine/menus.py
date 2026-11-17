@@ -249,6 +249,8 @@ def _title_items():
         Item('CONTINUE', on_enter=_continue),
         Item('NEW GAME', value=_difficulty_name, on_enter=_new_game, on_change=_change_new_game_difficulty),
         Item('LOAD', opens='load'),
+        Item('UPGRADES', value=_gold_text, opens='upgrades'),
+        Item('ACHIEVEMENTS', opens='achievements'),
         Item('BIRDPEDIA', opens='birdpedia'),
         Item('SETTINGS', opens='settings'),
         Item('QUIT', on_enter=_quit),
@@ -352,6 +354,140 @@ def _guide_items():
     ]
 
 
+# =============================================================================
+# META PROGRESSION: upgrades and achievements
+# =============================================================================
+
+
+def _profile():
+    from src.engine import meta
+
+    if state.meta.profile is None:
+        state.meta.profile = save_manager.load_profile()
+    return meta
+
+
+def _gold_text():
+    meta = _profile()
+    return f"{meta.profile().get('gold', 0)} gold"
+
+
+def _branches():
+    meta = _profile()
+    out = []
+    for entry in meta.upgrades().values():
+        branch = (entry if isinstance(entry, dict) else vars(entry)).get('branch', 'Other')
+        if branch not in out:
+            out.append(branch)
+    return out
+
+
+def _upgrade_ids(branch):
+    meta = _profile()
+    return [
+        uid for uid, e in meta.upgrades().items() if (e if isinstance(e, dict) else vars(e)).get('branch') == branch
+    ]
+
+
+def _upgrade_value(uid):
+    meta = _profile()
+    entry = meta.upgrades()[uid]
+    entry = entry if isinstance(entry, dict) else vars(entry)
+    top = len(entry.get('costs', []))
+    level = meta.level_of(uid)
+    if level >= top:
+        return f'{level}/{top}  MAX'
+    if meta.missing_requirements(uid):
+        return f'{level}/{top}  ✗'
+    return f'{level}/{top}  {meta.cost(uid)}g'
+
+
+def _buy(uid):
+    def buy():
+        meta = _profile()
+        entry = meta.upgrades()[uid]
+        name = (entry if isinstance(entry, dict) else vars(entry)).get('name', uid)
+        if meta.buy(uid):
+            notify(f'{name} {meta.level_of(uid)}: {meta.describe_upgrade(uid, meta.level_of(uid))}', title='Upgrade!')
+            return
+        missing = meta.missing_requirements(uid)
+        if missing:
+            needs = ', '.join(f'{_upgrade_name(m)} {lvl}' for m, lvl in missing.items())
+            notify(f'Needs {needs}', title='Locked')
+        elif meta.cost(uid) is None:
+            notify(f'{name} is at its maximum', title='Upgrade')
+        else:
+            notify(f'{name} costs {meta.cost(uid)} gold', title='Not enough gold')
+
+    return buy
+
+
+def _upgrade_name(uid):
+    meta = _profile()
+    entry = meta.upgrades().get(uid, {})
+    return (entry if isinstance(entry, dict) else vars(entry)).get('name', uid)
+
+
+def upgrade_hint(screen_id, cursor):
+    """The line under an upgrade screen: what the selected upgrade does next."""
+    meta = _profile()
+    SCREENS[screen_id].items()  # fills _UPGRADE_OF for this screen
+    uid = _UPGRADE_OF.get((screen_id, cursor))
+    if uid is None:
+        return f"Gold: {meta.profile().get('gold', 0)}   ⏎ Buy  ESC Back"
+    entry = meta.upgrades()[uid]
+    desc = (entry if isinstance(entry, dict) else vars(entry)).get('desc', '')
+    missing = meta.missing_requirements(uid)
+    if missing:
+        return 'Needs ' + ', '.join(f'{_upgrade_name(m)} {lvl}' for m, lvl in missing.items())
+    nxt = meta.describe_upgrade(uid) if meta.cost(uid) is not None else 'maximum reached'
+    return f'{desc}: {nxt}'
+
+
+_UPGRADE_OF = {}
+
+
+def _branch_items(branch):
+    def items():
+        out = []
+        for n, uid in enumerate(_upgrade_ids(branch)):
+            _UPGRADE_OF[(f'upgrades_{branch}', n)] = uid
+            out.append(
+                Item(_upgrade_name(uid).upper(), 'option', (lambda u=uid: _upgrade_value(u)), on_enter=_buy(uid))
+            )
+        return out + [_back_item()]
+
+    return items
+
+
+def _upgrades_items():
+    meta = _profile()
+    items = []
+    for branch in _branches():
+        ids = _upgrade_ids(branch)
+        owned = sum(meta.level_of(u) for u in ids)
+        top = sum(
+            len(
+                (meta.upgrades()[u] if isinstance(meta.upgrades()[u], dict) else vars(meta.upgrades()[u])).get(
+                    'costs', []
+                )
+            )
+            for u in ids
+        )
+        items.append(Item(branch.upper(), 'option', (lambda o=owned, t=top: f'{o}/{t}'), opens=f'upgrades_{branch}'))
+    return items + [_back_item()]
+
+
+def _achievements_items():
+    from src.ui.pages import achievement_pages
+
+    items = []
+    for content in achievement_pages():
+        _prefix, kind, number = content.split('_')
+        items.append(Item(f'{kind.upper()} {int(number) + 1}', opens=f'page_{content}'))
+    return items + [_back_item()]
+
+
 def _page(screen_id, content):
     return Screen(screen_id, '', lambda: [_back_item()], content=content)
 
@@ -376,8 +512,25 @@ SCREENS = {
         _page('birdpedia_list', 'birds'),
         _page('batpedia_list', 'bats'),
         _page('biomes_list', 'biomes'),
+        Screen('upgrades', 'UPGRADES', _upgrades_items, hint='select'),
+        Screen('achievements', 'ACHIEVEMENTS', _achievements_items, hint='select'),
     )
 }
+
+
+def _add_meta_screens():
+    """One screen per upgrade branch and per achievement page (they come from the config)."""
+    from src.ui.pages import achievement_pages
+
+    for branch in _branches():
+        sid = f'upgrades_{branch}'
+        SCREENS[sid] = Screen(sid, branch.upper(), _branch_items(branch), hint='upgrade')
+    for content in achievement_pages():
+        SCREENS[f'page_{content}'] = _page(f'page_{content}', content)
+
+
+# The configuration is loaded when constants is imported: build them now too
+_add_meta_screens()
 
 
 # =============================================================================
@@ -415,6 +568,8 @@ def close_submenus():
 
 
 def _open(screen_id):
+    if screen_id not in SCREENS:
+        _add_meta_screens()
     state.ui.menu_stack.append([screen_id, 0])
 
 

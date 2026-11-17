@@ -15,6 +15,7 @@ Events and their fields:
   power_fired       bird, kind, use (1 = first use this ascent, 2 = second...)
   shot_fired        bird, kind ('RED' bonus = rising shooter neighbours, 'PURPLE' bonus = charge tier)
   shot_hit          bird, kind, damage
+  damage_dealt      bird, kind, source ('contact', 'shot', 'dot'), target ('enemy', 'boss'), amount
   bat_killed        bat, tier, killer
   mini_bat_killed   bat, killer
   loot_dropped      loot, source

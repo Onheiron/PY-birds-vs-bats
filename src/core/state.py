@@ -195,6 +195,7 @@ def _new_game():
         score=0,  # Total score (never decreases)
         momentum=getattr(constants.speed, 'starting_momentum', 100),  # Momentum (from config)
         level=1,  # Level as milestone (1-18, displayed as 1-1 to 6-3)
+        meta_applied=False,  # upgrades of the meta progression applied to this run
         level_group=1,  # Group number (1-6)
         level_sub=1,  # Sub-level within group (1-3)
         speed=1,  # Speed level (1-10) - controls game pace
@@ -322,6 +323,8 @@ powerups = _new_powerups()
 game = _new_game()
 player = _new_player()
 stats = _new_stats()
+# Meta progression (src/engine/meta.py): the profile outlives games
+meta = SimpleNamespace(profile=None, run=None, run_gold=0, run_achievements=[], finished=True)
 choice = _new_choice()
 ui = _new_ui()
 settings = _new_settings()

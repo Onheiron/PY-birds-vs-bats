@@ -270,9 +270,18 @@ def hp_scale():
     return getattr(constants.combat, 'hp_scale', 1) or 1
 
 
-def award_damage_xp(bird_idx, damage):
-    """XP for dealing ``damage`` (one XP per hp_scale points of damage)."""
+def award_damage_xp(bird_idx, damage, source='contact', target='enemy'):
+    """XP for dealing ``damage`` (one XP per hp_scale points of damage).
+
+    ``source`` ('contact', 'shot', 'dot') and ``target`` ('enemy', 'boss') only
+    describe the hit for the damage_dealt event.
+    """
     award_xp(bird_idx, damage / hp_scale())
+    if 0 <= bird_idx < len(state.birds.colors):
+        from src.entities.bird_types import get_bird_type_by_color
+
+        kind = get_bird_type_by_color(state.birds.colors[bird_idx])
+        events.emit('damage_dealt', bird=bird_idx, kind=kind, source=source, target=target, amount=damage)
 
 
 def deduct_momentum(amount):

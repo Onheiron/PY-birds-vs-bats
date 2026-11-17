@@ -925,3 +925,110 @@ pacts:
     last_stand:    {name: Last Stand, desc: "Birds may survive the floor, but fight worse.",    boon: [{stat: floor_save, add: 0.05}],
                     bane: [{stat: damage_mult, pct: -5}, {stat: fear_duration_mult, pct: 8}]}
 
+
+# =============================================================================
+# ACHIEVEMENTS (src/engine/meta.py, docs/progression.md)
+# =============================================================================
+# run: goals for one run, paid every run they are met.
+# global: goals over every run played, paid once.
+# all: {counter: minimum}, most: {counter: maximum}. Counters: level, score,
+# bats, elites, mini_bats, bosses, eggs, rare_eggs, epic_eggs, legendary_eggs,
+# mythical_eggs, hatched, pacts, swaps, powers, double_powers, battery_shots,
+# full_charges, birds_lost (global ones also: runs).
+achievements:
+  run:
+    first_steps:    {name: First Steps,       desc: Reach level 1-2,                  gold: 2,  all: {level: 2}}
+    forest_edge:    {name: Forest Edge,       desc: Reach level 1-3,                  gold: 3,  all: {level: 3}}
+    borderlands:    {name: Borderlands,       desc: Reach the second world,           gold: 5,  all: {level: 4}}
+    border_keeper:  {name: Border Keeper,     desc: Reach level 2-3,                  gold: 8,  all: {level: 6}}
+    beyond:         {name: Beyond the Border, desc: Reach the third world,            gold: 15, all: {level: 7}}
+    deep_woods:     {name: Deep Woods,        desc: Reach the fourth world,           gold: 20, all: {level: 10}}
+    swamp_walker:   {name: Swamp Walker,      desc: Reach the fifth world,            gold: 25, all: {level: 13}}
+    cave_diver:     {name: Cave Diver,        desc: Reach the last world,             gold: 30, all: {level: 16}}
+    summit:         {name: Summit,            desc: Reach level 6-3,                  gold: 40, all: {level: 18}}
+    first_boss:     {name: Boss Down,         desc: Defeat a boss,                    gold: 5,  all: {bosses: 1}}
+    two_bosses:     {name: Double Trouble,    desc: Defeat two bosses in a run,       gold: 10, all: {bosses: 2}}
+    four_bosses:    {name: Boss Rush,         desc: Defeat four bosses in a run,      gold: 20, all: {bosses: 4}}
+    all_bosses:     {name: Lord of the Skies, desc: Defeat six bosses in a run,       gold: 40, all: {bosses: 6}}
+    pest_control:   {name: Pest Control,      desc: Kill 25 bats in a run,            gold: 4,  all: {bats: 25}}
+    exterminator:   {name: Exterminator,      desc: Kill 75 bats in a run,            gold: 8,  all: {bats: 75}}
+    bat_plague:     {name: Plague Doctor,     desc: Kill 150 bats in a run,           gold: 15, all: {bats: 150}}
+    elite_hunter:   {name: Elite Hunter,      desc: Kill an elite bat,                gold: 4,  all: {elites: 1}}
+    elite_slayer:   {name: Elite Slayer,      desc: Kill 5 elite bats in a run,       gold: 10, all: {elites: 5}}
+    rare_find:      {name: Rare Find,         desc: Open a rare egg,                  gold: 2,  all: {rare_eggs: 1}}
+    epic_find:      {name: Epic Find,         desc: Open an epic egg,                 gold: 5,  all: {epic_eggs: 1}}
+    legendary_find: {name: Legendary Find,    desc: Open a legendary egg,             gold: 12, all: {legendary_eggs: 1}}
+    mythical_find:  {name: Mythical Find,     desc: Open a mythical egg,              gold: 30, all: {mythical_eggs: 1}}
+    full_nest:      {name: Full Nest,         desc: Hatch 3 birds in a run,           gold: 4,  all: {hatched: 3}}
+    deal_maker:     {name: Deal Maker,        desc: Make a pact,                      gold: 3,  all: {pacts: 1}}
+    red_battery:    {name: Red Battery,       desc: Fire 5 Red shots with two shooters beside, gold: 5, all: {battery_shots: 5}}
+    full_charge:    {name: Full Charge,       desc: Fire a fully charged Purple shot, gold: 4,  all: {full_charges: 1}}
+    encore:         {name: Encore,            desc: Fire 10 second powers in a run,   gold: 4,  all: {double_powers: 10}}
+    untouched:      {name: Untouched,         desc: Reach level 1-3 without losing a bird, gold: 6, all: {level: 3}, most: {birds_lost: 0}}
+    careful_flock:  {name: Careful Flock,     desc: Reach level 2-3 losing at most 3 birds, gold: 12, all: {level: 6}, most: {birds_lost: 3}}
+    six_figures:    {name: Six Figures,       desc: Score 100,000 in a run,           gold: 4,  all: {score: 100000}}
+    millionaire:    {name: Millionaire,       desc: Score 1,000,000 in a run,         gold: 10, all: {score: 1000000}}
+    tycoon:         {name: Tycoon,            desc: Score 10,000,000 in a run,        gold: 20, all: {score: 10000000}}
+  global:
+    hatchling:      {name: Hatchling,         desc: Play your first run,              gold: 10,  all: {runs: 1}}
+    regular:        {name: Regular,           desc: Play 10 runs,                     gold: 30,  all: {runs: 10}}
+    devoted:        {name: Devoted,           desc: Play 50 runs,                     gold: 80,  all: {runs: 50}}
+    bat_bane:       {name: Bat Bane,          desc: Kill 500 bats in all,             gold: 30,  all: {bats: 500}}
+    bat_doom:       {name: Bat Doom,          desc: Kill 2,500 bats in all,           gold: 80,  all: {bats: 2500}}
+    elite_bane:     {name: Elite Bane,        desc: Kill 25 elite bats in all,        gold: 40,  all: {elites: 25}}
+    boss_bane:      {name: Boss Bane,         desc: Defeat 10 bosses in all,          gold: 40,  all: {bosses: 10}}
+    world_two:      {name: Second World,      desc: Reach level 2-3 for the first time, gold: 25, all: {level: 6}}
+    world_three:    {name: Third World,       desc: Reach the third world for the first time, gold: 40, all: {level: 7}}
+    world_four:     {name: Fourth World,      desc: Reach the fourth world for the first time, gold: 60, all: {level: 10}}
+    world_six:      {name: Last World,        desc: Reach the last world for the first time, gold: 100, all: {level: 16}}
+    champion:       {name: Champion,          desc: Reach level 6-3,                  gold: 200, all: {level: 18}}
+    egg_collector:  {name: Egg Collector,     desc: Open 200 eggs in all,             gold: 30,  all: {eggs: 200}}
+    legend_hunter:  {name: Legend Hunter,     desc: Open 5 legendary eggs in all,     gold: 60,  all: {legendary_eggs: 5}}
+    nursery:        {name: Nursery,           desc: Hatch 30 birds in all,            gold: 40,  all: {hatched: 30}}
+    dealer:         {name: Dealer,            desc: Make 10 pacts in all,             gold: 30,  all: {pacts: 10}}
+
+# =============================================================================
+# UPGRADES: the tree bought with gold in the title menu (src/engine/meta.py)
+# =============================================================================
+# Each level costs costs[level] gold and applies its effects again (level 3
+# of "+4% damage" is +12%). requires: {upgrade: level} to unlock it.
+# Effects as for cards ({stat, add/pct}, {rerolls}, {skips}) plus
+# {lives: n} (starting lives) and {gold_pct: n} (gold from achievements).
+upgrades:
+  tree:
+    sharp_talons:  {name: Sharp Talons,  branch: Talons,  desc: Every bird hits harder,
+                    costs: [15, 25, 40, 60, 90], effects: [{stat: damage_mult, pct: 4}]}
+    piercing:      {name: Piercing,      branch: Talons,  desc: Ignore some armor,
+                    costs: [30, 50, 80], requires: {sharp_talons: 2}, effects: [{stat: armor_pierce, add: 3}]}
+    keen_eye:      {name: Keen Eye,      branch: Talons,  desc: More critical hits,
+                    costs: [40, 65, 100], requires: {piercing: 1}, effects: [{stat: crit_chance, add: 0.03}]}
+    giant_slayer:  {name: Giant Slayer,  branch: Talons,  desc: More damage to elites and bosses,
+                    costs: [35, 60, 95], requires: {sharp_talons: 3}, effects: [{stat: vs_elites, add: 0.08}]}
+    light_bones:   {name: Light Bones,   branch: Wings,   desc: Birds rise faster,
+                    costs: [15, 25, 40, 60, 90], effects: [{stat: rise_speed_bonus, add: 1.5}]}
+    air_brakes:    {name: Air Brakes,    branch: Wings,   desc: Birds fall more slowly,
+                    costs: [20, 35, 55, 85], requires: {light_bones: 1}, effects: [{stat: fall_speed_bonus, add: -1.5}]}
+    encore:        {name: Encore,        branch: Wings,   desc: One more power per ascent,
+                    costs: [250], requires: {air_brakes: 3}, effects: [{stat: power_uses, add: 1}]}
+    steady:        {name: Steady,        branch: Nerve,   desc: Scared birds fall less fast,
+                    costs: [15, 25, 40, 65], effects: [{stat: fear_resist, add: 0.05}]}
+    short_fear:    {name: Short Fear,    branch: Nerve,   desc: Scares wear off sooner,
+                    costs: [30, 50, 80], requires: {steady: 2}, effects: [{stat: fear_duration_mult, pct: -8}]}
+    fearless:      {name: Fearless,      branch: Nerve,   desc: Some scares miss,
+                    costs: [45, 70, 110], requires: {short_fear: 1}, effects: [{stat: fear_immunity, add: 0.05}]}
+    extra_life:    {name: Extra Life,    branch: Nest,    desc: Start with one more life,
+                    costs: [25, 60, 120], effects: [{lives: 1}]}
+    safety_net:    {name: Safety Net,    branch: Nest,    desc: Birds may bounce back from the floor,
+                    costs: [40, 70, 110], requires: {extra_life: 1}, effects: [{stat: floor_save, add: 0.03}]}
+    wide_nest:     {name: Wide Nest,     branch: Nest,    desc: Every egg offers one more card,
+                    costs: [180], requires: {safety_net: 1}, effects: [{stat: choices, add: 1}]}
+    gold_digger:   {name: Gold Digger,   branch: Fortune, desc: More gold from achievements,
+                    costs: [15, 25, 40, 60, 90], effects: [{gold_pct: 10}]}
+    lucky_eggs:    {name: Lucky Eggs,    branch: Fortune, desc: Enemies drop rarer eggs,
+                    costs: [30, 50, 80], requires: {gold_digger: 1}, effects: [{stat: egg_luck, add: 0.02}]}
+    rerolls:       {name: Rerolls,       branch: Fortune, desc: One more egg reroll per run,
+                    costs: [25, 45, 70], requires: {gold_digger: 2}, effects: [{rerolls: 1}]}
+    skips:         {name: Skips,         branch: Fortune, desc: One more egg skip per run,
+                    costs: [30, 55], requires: {rerolls: 1}, effects: [{skips: 1}]}
+    renown:        {name: Renown,        branch: Fortune, desc: Start with more prestige,
+                    costs: [35, 55, 85, 130], requires: {lucky_eggs: 1}, effects: [{stat: prestige_bonus, add: 0.5}]}

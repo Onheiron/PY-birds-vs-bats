@@ -178,7 +178,8 @@ def draw_screen(fb, style, screen, selected):
     if longest > style.label_width:
         style = replace(style, label_width=longest)
     lines = [item_text(item, style) for item in items]
-    draw_box(fb, style, screen.title, lines, selected, screen_hint(screen))
+    hint = menus.upgrade_hint(screen.id, selected) if screen.hint == 'upgrade' else screen_hint(screen)
+    draw_box(fb, style, screen.title, lines, selected, hint)
 
 
 def draw_pause_overlay(fb):

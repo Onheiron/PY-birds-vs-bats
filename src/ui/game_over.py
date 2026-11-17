@@ -49,6 +49,19 @@ def session_stats():
     return elapsed, elapsed_str, avg_ppm
 
 
+def _achievement_gold(aid):
+    from src.engine import meta
+
+    entry = meta.run_achievements().get(aid, {})
+    return (entry if isinstance(entry, dict) else vars(entry)).get('gold', 0)
+
+
+def _banked_gold():
+    from src.engine import meta
+
+    return meta.run_gold()
+
+
 def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_length=20):
     """Draw the game over screen into the framebuffer.
 
@@ -83,23 +96,25 @@ def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_len
     for i, line in enumerate(_BOX_LINES):
         centered(center_y - 6 + i, line, RED)
 
+    gold = sum(_achievement_gold(a) for a in state.meta.run_achievements)
     stats = (
         f"Final Score:    {int(state.game.score):,}",
         f"Level Reached:  {state.game.level}",
         f"Time Played:    {elapsed_str}",
+        f"Gold Earned:    {_banked_gold()} ({len(state.meta.run_achievements)} achievements, {gold} base)",
     )
     for i, line in enumerate(stats):
-        centered(center_y - 2 + i, line)
+        centered(center_y - 2 + i, line, YELLOW if line.startswith('Gold') else '')
 
     if phase == "name":
-        name_y = center_y + 3
+        name_y = center_y + 4
         centered(name_y, "Enter name for leaderboard:", YELLOW)
         padding = " " * (name_max_length - len(player_name))
         centered(name_y + 1, f"[ {player_name}_{padding} ]", GREEN)
         centered(name_y + 3, "(ENTER to confirm, ESC to skip)")
         footer = "Type your name | ENTER confirm | ESC skip"
     else:
-        menu_y = center_y + 3
+        menu_y = center_y + 4
         if selected == 0:
             centered(menu_y, "> [ RETRY ] <", GREEN)
             centered(menu_y + 1, "    EXIT")

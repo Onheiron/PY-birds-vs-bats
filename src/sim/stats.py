@@ -55,6 +55,8 @@ class RunStats:
         self.picks = []  # (offer kind, card kind, card rarity, card id)
         self.powers = Counter()  # 'RED', 'RED second use'...
         self.shots = Counter()  # 'RED +2' (bonus), 'PURPLE tier 3', 'hits'
+        self.damage = Counter()  # 'contact', 'shot', 'dot', 'boss', 'kind RED'...
+        self.lost_by_level = Counter()
         self.offers = Counter()  # offer kind ('egg', 'pact') -> count
         self.decisions = []  # every card / pact taken, with its context (see decision_context)
         self.bosses = {}  # boss type -> {'spawned': s, 'defeated': s or None}
@@ -111,8 +113,15 @@ class RunStats:
     def _on_shot_hit(self, bird, kind, damage):
         self.shots['hits'] += 1
 
+    def _on_damage_dealt(self, bird, kind, source, target, amount):
+        self.damage[source] += amount
+        self.damage[f'kind {kind}'] += amount
+        if target == 'boss':
+            self.damage['boss'] += amount
+
     def _on_bird_lost(self, bird, color, cause):
         self.lost[cause] += 1
+        self.lost_by_level[state.game.level] += 1
 
     def _on_bat_killed(self, bat, tier, killer):
         self.kills[f'bat tier {tier}'] += 1
@@ -144,6 +153,7 @@ class RunStats:
             'power_fired': self._on_power_fired,
             'shot_fired': self._on_shot_fired,
             'shot_hit': self._on_shot_hit,
+            'damage_dealt': self._on_damage_dealt,
             'bird_lost': self._on_bird_lost,
             'bat_killed': self._on_bat_killed,
             'mini_bat_killed': self._on_mini_bat_killed,
@@ -173,6 +183,13 @@ class RunStats:
         self.end = end
         self.keys = bot.keys_pressed
         self.strategy_counts = dict(getattr(bot, 'counts', {}))
+        from src.engine import meta
+
+        self.meta = {
+            'gold': meta.end_run(save=False),
+            'run_achievements': list(state.meta.run_achievements),
+            'profile': meta.snapshot(),
+        }
         # The game state is global: keep the final values before the next run reuses it
         game = state.game
         self.final = {
@@ -238,8 +255,11 @@ class RunStats:
             'birds_lost': dict(self.lost),
             'strategy': getattr(self, 'strategy_counts', {}),
             'decisions': self._decision_outcomes(),
+            **getattr(self, 'meta', {}),
             'powers': dict(self.powers),
             'shots': dict(self.shots),
+            'damage': dict(self.damage),
+            'lost_by_level': dict(self.lost_by_level),
             'eggs_opened': self.offers.get('egg', 0),
             'cards_by_kind': dict(Counter(kind for _o, kind, _r, _id in egg_picks)),
             'cards_by_rarity': {r: sum(1 for p in egg_picks if p[2] == r) for r in RARITIES},

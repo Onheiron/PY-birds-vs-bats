@@ -11,12 +11,13 @@ Session.step, same systems), but:
 Runs are deterministic for a given RunConfig.
 """
 
+import copy
 import random
 import time
 from dataclasses import dataclass, field
 
 from src.core import constants, state
-from src.engine import clock, input_handler, loop, progression
+from src.engine import clock, input_handler, loop, meta, progression
 from src.services import optional, sound
 from src.sim.bot import PROFILES, Bot, Skill
 from src.sim.stats import RunStats
@@ -36,6 +37,7 @@ class RunConfig:
     max_minutes: float = 240.0  # game time limit
     stop_at_level: int = None  # end the run once this level is reached
     sample_seconds: float = 5.0  # how often the time series are sampled
+    profile: dict = None  # meta-progression profile (upgrades bought...); None = a new player
 
 
 class _VirtualTime:
@@ -75,6 +77,9 @@ def start_game(config, now):
     state.settings.difficulty = config.difficulty
     # Settings outlive a game: start every simulated game with the cursor assists off
     state.settings.bounce_on_enter = state.settings.trigger_on_enter = False
+    # Meta progression: the run starts with the upgrades of the given profile
+    state.meta.profile = copy.deepcopy(config.profile) if config.profile else meta.new_profile()
+    meta.start_run()
     state.ui.show_title = False
     state.ui.menu_stack = []
     state.game.start_time = now

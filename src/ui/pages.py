@@ -174,4 +174,44 @@ def page(content_type):
         },
     }
 
+    if content_type.startswith('achievements_'):
+        return achievement_page(content_type)
     return CONTENT.get(content_type, {'title': 'UNKNOWN', 'lines': []})
+
+
+# Achievements shown per page
+ACHIEVEMENTS_PER_PAGE = 11
+
+
+def achievement_pages():
+    """Content ids of the achievement pages: run ones, then global ones."""
+    from src.engine import meta
+
+    out = []
+    for kind, table in (('run', meta.run_achievements()), ('global', meta.global_achievements())):
+        count = (len(table) + ACHIEVEMENTS_PER_PAGE - 1) // ACHIEVEMENTS_PER_PAGE
+        out += [f'achievements_{kind}_{n}' for n in range(count)]
+    return out
+
+
+def achievement_page(content_type):
+    """One page of achievements: ✓ for global ones already unlocked, the gold of each."""
+    from src.engine import meta
+
+    _prefix, kind, number = content_type.split('_')
+    table = meta.run_achievements() if kind == 'run' else meta.global_achievements()
+    entries = list(table.items())[int(number) * ACHIEVEMENTS_PER_PAGE :][:ACHIEVEMENTS_PER_PAGE]
+    done = set((meta.profile() or {}).get('achievements', [])) if state.meta.profile else set()
+    lines = []
+    if kind == 'run':
+        lines += ['Paid every run you reach them.', '']
+    else:
+        lines += ['Paid once, the first time.', '']
+    for aid, entry in entries:
+        entry = entry if isinstance(entry, dict) else vars(entry)
+        mark = '✓' if aid in done else ' '
+        gold = f"{entry.get('gold', 0)}g"
+        lines.append(f"{mark}{gold:>5} {entry.get('desc', aid)}"[:36])
+    pages = [p for p in achievement_pages() if f'_{kind}_' in p]
+    title = 'RUN' if kind == 'run' else 'GLOBAL'
+    return {'title': f'{title} ACHIEVEMENTS {int(number) + 1}/{len(pages)}', 'lines': lines}

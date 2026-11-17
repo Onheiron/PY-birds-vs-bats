@@ -66,6 +66,41 @@ def get_discovery_path():
     return discovery_dir / "discovery.json"
 
 
+def get_profile_path():
+    """The meta-progression profile: gold, upgrades, global achievements."""
+    home = Path.home()
+    profile_dir = home / SAVE_DIR_NAME
+    try:
+        profile_dir.mkdir(parents=True, exist_ok=True)
+    except (OSError, PermissionError):
+        profile_dir = Path.cwd()
+    return profile_dir / "profile.json"
+
+
+def save_profile(profile):
+    try:
+        with open(get_profile_path(), 'w') as f:
+            json.dump(profile, f, indent=2)
+        return True
+    except OSError:
+        return False
+
+
+def load_profile():
+    """The saved profile, or a new one."""
+    from src.engine.meta import new_profile
+
+    path = get_profile_path()
+    profile = new_profile()
+    if path.exists():
+        try:
+            with open(path) as f:
+                profile.update(json.load(f))
+        except (OSError, ValueError):
+            pass
+    return profile
+
+
 def save_discovery():
     """Save discovery data (persists across all saves)."""
 
@@ -483,6 +518,7 @@ def _build_game_dict():
         'lives': state.game.lives,
         'swaps_used': state.game.swaps_used,
         'frame_count': state.game.frame_count,
+        'meta_applied': getattr(state.game, 'meta_applied', False),
         'game_time': clock.now(),
     }
 
@@ -654,9 +690,13 @@ def _restore_game_state(data):
         'lives',
         'swaps_used',
         'frame_count',
+        'meta_applied',
     ]:
         if key in data:
             setattr(state.game, key, data[key])
+    if 'meta_applied' not in data:
+        # Saves from before the meta progression: do not stack upgrades on them
+        state.game.meta_applied = True
     # For old saves without momentum, initialize it to score value
     if 'momentum' not in data and 'score' in data:
         state.game.momentum = data['score']
