@@ -293,7 +293,7 @@ boss:
 wind_boss:
   level: 6                          # Which level this boss appears (2-3 = level 6)
   spawn_miles_before_transition: 1  # Spawn 1 mile before level end
-  hp: 4500                           # Slightly more HP than regular boss
+  hp: 6000                           # Slightly more HP than regular boss
   armor_reduction: 10
   # Animation timing
   anim_frames_per_step: 8           # Frames between animation steps
