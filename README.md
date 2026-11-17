@@ -82,7 +82,7 @@ Orange, Gold, Cookie, Stealth, Dinosaur, Glitch, Rainbow, Twister, Frosty,
 Poison, Berserk and Rock. `docs/birds.md` describes each one: speed, damage,
 power, passive behaviour, prestige and synergies.
 
-The in-game **Birdpedia** fills in as you discover birds, bats, obstacles and biomes.
+The in-game **Birdpedia** fills in as you discover birds, bats and obstacles.
 
 ### Biomes and bosses
 
