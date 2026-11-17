@@ -2,7 +2,7 @@
 
 from src.core import constants, state
 from src.engine import clock
-from src.engine.logic.bosses.common import get_boss_config
+from src.engine.logic.bosses.common import get_boss_config, scaled_hp
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import choose_loot_type, roll_drop_rarity
 from src.engine.progression import add_score, award_xp
@@ -12,6 +12,7 @@ def spawn_wind_boss():
     """Spawn the Wind Boss for level 2-3."""
     wind_boss_cfg = getattr(constants, 'wind_boss', None)
     hp = getattr(wind_boss_cfg, 'hp', 120) if wind_boss_cfg else 120
+    hp = scaled_hp(hp)
 
     # Wind boss is wider (up to 26 chars) and taller (5 lines)
     boss_sprite_height = 5

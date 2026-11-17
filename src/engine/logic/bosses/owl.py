@@ -5,6 +5,7 @@ import random
 
 from src.core import constants, state
 from src.engine import clock, enemy_stats
+from src.engine.logic.bosses.common import scaled_hp
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import choose_loot_type, roll_drop_rarity
 from src.engine.progression import add_score, award_xp, hp_scale
@@ -31,6 +32,7 @@ def spawn_owl_boss():
     """
     owl_boss_cfg = getattr(constants, 'owl_boss', None)
     hp = getattr(owl_boss_cfg, 'hp', 500) if owl_boss_cfg else 500
+    hp = scaled_hp(hp)
 
     # Owl boss sprite is 5 lines tall, ~11 chars wide
     boss_sprite_height = 5

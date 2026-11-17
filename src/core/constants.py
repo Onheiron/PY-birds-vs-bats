@@ -19,6 +19,7 @@ from src.entities.bird_types import BirdType, get_color_for_bird_type  # noqa: E
 
 SECTIONS = (
     'layout',
+    'power_damage',
     'achievements',
     'upgrades',
     'cards',

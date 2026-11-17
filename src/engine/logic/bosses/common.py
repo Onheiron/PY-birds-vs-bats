@@ -76,3 +76,8 @@ def convert_boss_to_obstacle(boss):
             },
             'boss',
         )
+
+
+def scaled_hp(hp):
+    """A boss's HP × combat.boss_hp_mult (one knob for every boss)."""
+    return max(1, int(hp * float(getattr(constants.combat, 'boss_hp_mult', 1.0))))

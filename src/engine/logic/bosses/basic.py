@@ -5,7 +5,7 @@ import random
 from src.core import constants, state
 from src.engine import clock
 from src.engine.birds import scare_bird_ticks, set_ball_vy
-from src.engine.logic.bosses.common import convert_boss_to_obstacle, get_boss_config
+from src.engine.logic.bosses.common import convert_boss_to_obstacle, get_boss_config, scaled_hp
 from src.services.sound import play_sfx
 
 
@@ -48,6 +48,7 @@ def spawn_basic_boss():
         return
 
     hp = getattr(boss_cfg, 'hp', 300)
+    hp = scaled_hp(hp)
 
     # Boss spawns at center of screen, above view
     boss_sprite_height = 3  # Boss is 3 lines tall

@@ -196,6 +196,8 @@ def spawn_bat():
         hp = bat_hp_by_tier.get(tier, bat_hp_by_tier.get(str(tier), 20))
     else:
         hp = getattr(bat_hp_by_tier, str(tier), 20)
+    # Tougher bats in later levels
+    hp = int(hp * (1 + (level - 1) * float(getattr(constants.bat_enemy, 'level_hp_multiplier', 0.0))))
 
     # Spawn position X
     x_pos = random.randint(0, constants.layout.width - 8)

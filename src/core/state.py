@@ -47,6 +47,7 @@ def _new_birds():
 # ============================================================================
 def _new_special():
     return SimpleNamespace(
+        xp_carry={},  # bird -> fraction of an XP point not credited yet
         # Red bird projectiles
         red_projectiles=[],
         # Speed boosts

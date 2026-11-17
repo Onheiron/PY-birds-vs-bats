@@ -302,7 +302,8 @@ def _fire_purple_projectile(bird_idx, charge_seconds):
     """
     charge_tier = min(3, int(charge_seconds))  # 0, 1, 2, or 3
     events.emit('shot_fired', bird=bird_idx, kind='PURPLE', bonus=charge_tier)
-    damage = int(pow(4, charge_tier)) * hp_scale()
+    tiers = list(getattr(getattr(constants, 'power_damage', None), 'purple_tiers', (1, 4, 16, 64)))
+    damage = int(tiers[min(charge_tier, len(tiers) - 1)] * hp_scale())
     potency = stats.bird(bird_idx, 'power_potency')
     if potency != 1:
         damage = max(1, round(damage * potency))

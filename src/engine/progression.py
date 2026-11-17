@@ -192,9 +192,8 @@ def add_score(amount, by_bird=None):
     state.game.score += score_amount * 0.2
 
     if by_bird is not None and 0 <= int(by_bird) < len(state.birds.per_bird_xp):
-        xp_award = int(max(0, int(amount)))
-        state.birds.per_bird_xp[int(by_bird)] += xp_award
-        transform_bird_to_s(int(by_bird))
+        # Moving earns XP too: as much as the score, × progression.move_xp_factor
+        award_xp(int(by_bird), max(0.0, amt) * float(getattr(constants.progression, 'move_xp_factor', 1.0)))
 
     events.emit('score_changed', score=state.game.score)
 
@@ -256,12 +255,13 @@ def award_xp(bird_idx, xp_amount):
     bi = int(bird_idx)
     if bi < 0 or bi >= len(state.birds.per_bird_xp):
         return
-    xp = int(max(0, int(xp_amount)))
-    # Some birds learn faster (Cookie: x1.5)
-    gain = stats.bird(bi, 'xp_gain')
-    if gain != 1:
-        xp = int(xp * gain)
-    state.birds.per_bird_xp[bi] += xp
+    # Some birds learn faster (Cookie: ×1.5, Quick Study cards...). Fractions of a
+    # point are kept for the next award, so small bonuses are not lost to rounding.
+    carry = state.special.xp_carry
+    xp = max(0.0, float(xp_amount)) * stats.bird(bi, 'xp_gain') + carry.get(bi, 0.0)
+    whole = int(xp)
+    carry[bi] = xp - whole
+    state.birds.per_bird_xp[bi] += whole
     transform_bird_to_s(bi)
 
 

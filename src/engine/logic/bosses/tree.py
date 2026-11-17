@@ -4,6 +4,7 @@ import random
 
 from src.core import constants, state
 from src.engine import bird_kinds, clock
+from src.engine.logic.bosses.common import scaled_hp
 from src.engine.logic.damage import calculate_bird_damage
 from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect, apply_mature_flower_effect
@@ -31,6 +32,7 @@ def spawn_tree_boss():
     # Get branch config
     branches_cfg = getattr(tree_boss_cfg, 'branches', None) if tree_boss_cfg else None
     base_hp = getattr(branches_cfg, 'base_hp', 50) if branches_cfg else 50
+    base_hp = scaled_hp(base_hp)
 
     # Branch positions calculated so numbered areas in branches overlap with tree
     # x = tree_col - branch_col (where digit appears)

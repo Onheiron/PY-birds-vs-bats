@@ -4,7 +4,7 @@ import random
 
 from src.core import constants, state
 from src.engine import clock
-from src.engine.logic.bosses.common import get_boss_config
+from src.engine.logic.bosses.common import get_boss_config, scaled_hp
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import choose_loot_type, roll_drop_rarity
 from src.engine.progression import add_score, award_xp
@@ -14,6 +14,7 @@ def spawn_jelly_boss():
     """Spawn the Jelly Boss for level 3-3."""
     jelly_boss_cfg = getattr(constants, 'jelly_boss', None)
     hp = getattr(jelly_boss_cfg, 'hp', 400) if jelly_boss_cfg else 400
+    hp = scaled_hp(hp)
 
     # Jelly boss is 6 lines tall
     boss_sprite_height = 6

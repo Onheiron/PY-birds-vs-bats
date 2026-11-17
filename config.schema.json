@@ -1267,6 +1267,9 @@
           },
           "type": "object"
         },
+        "level_hp_multiplier": {
+          "type": "number"
+        },
         "max_bats_by_level": {
           "properties": {
             "level_10_12": {
@@ -3651,6 +3654,9 @@
         "boss_affliction_factor": {
           "type": "number"
         },
+        "boss_hp_mult": {
+          "type": "number"
+        },
         "damage_formula": {
           "properties": {
             "gear_coefficient": {
@@ -5177,6 +5183,23 @@
       },
       "type": "object"
     },
+    "power_damage": {
+      "properties": {
+        "purple_tiers": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "red_per_neighbour": {
+          "type": "number"
+        },
+        "red_shot": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "prestige": {
       "properties": {
         "modifiers": {
@@ -5223,6 +5246,9 @@
           "type": "number"
         },
         "level_score_factor": {
+          "type": "number"
+        },
+        "move_xp_factor": {
           "type": "number"
         },
         "xp_base": {

@@ -124,7 +124,10 @@ def _power_red(bird_idx, bird_lane):
             'x_pos': constants.layout.lane_positions[bird_lane],
             'y_pos': state.birds.y[bird_idx],
             'lane': bird_lane,
-            'damage': _potent(bird_idx, (1 + damage_bonus) * hp_scale()),
+            'damage': _potent(
+                bird_idx,
+                (_power_damage('red_shot', 1) + _power_damage('red_per_neighbour', 1) * damage_bonus) * hp_scale(),
+            ),
             'powered': damage_bonus > 0,
             'owner': bird_idx,
             'speed': 1,
@@ -174,6 +177,11 @@ def _power_cookie(bird_idx, bird_lane):
             check_pending_transforms(dead_color)
             if state.game.lives <= 0:
                 state.game.game_over = True
+
+
+def _power_damage(key, default):
+    """A power damage value from config.yml power_damage (in units of combat.hp_scale)."""
+    return getattr(getattr(constants, 'power_damage', None), key, default)
 
 
 def _potent(bird_idx, damage):
