@@ -189,14 +189,15 @@ game.py                 entry point
 config*.yml, theme*.yml  balance, difficulty presets, colours
 src/core/               config loading, constants, mutable game state
 src/entities/           bird types and sprites
-src/engine/             loop, timing, input, physics, bat AI, progression
+src/engine/             loop, systems, clock, events, input, menus, physics, powers
 src/engine/logic/       collisions, spawning, loot, effects, portals, scoring
 src/engine/logic/bosses/  one module per boss + the director that picks them
 src/ui/                 framebuffer, terminal, keyboard, colours, screens
 src/ui/layers/          one module per render layer, drawn back to front
 src/services/           saves, achievements, sound, leaderboard
-tests/                  unit tests + a headless simulation harness
-tools/                  schema generator, benchmark, binary smoke test
+src/sim/                bot, headless runner and run statistics
+tests/                  unit tests + a headless replay harness
+tools/                  simulator, schema generator, benchmark, binary smoke test
 packaging/              PyInstaller spec
 ```
 
@@ -207,10 +208,50 @@ packaging/              PyInstaller spec
 - Rendering goes through a double-buffered framebuffer: layers draw cells, and
   only the cells that changed since the previous frame are sent to the
   terminal (typically a few hundred bytes per frame).
+- Every simulation tick runs the systems listed in `src/engine/systems.py`, in
+  phase order: move, progress, collide, spawn, act, effects, cleanup.
+- Game code announces what happens (`bat_killed`, `loot_dropped`, `bird_lost`...)
+  through `src/engine/events.py`; achievements, sounds and the simulator's
+  statistics subscribe to those events instead of being called directly.
+- Timed effects read the game clock (`src/engine/clock.py`), which stops while
+  the game is paused and is stored in saves.
+- Bird powers are looked up by bird type (`POWERS` in `src/engine/powers.py`);
+  shared traits such as Stealth phasing live in `src/engine/bird_kinds.py`.
+- Menus are one declarative tree (`src/engine/menus.py`) shared by the title
+  screen and the pause menu; `src/ui/layers/menus.py` draws any of its screens.
 - All state lives in `src/core/state.py`, all tunables in `src/core/constants.py`
   (loaded from the config). A game is deterministic for a given seed, which is
   what the test harness (`tests/harness.py`) relies on: it runs the real loop
   with a virtual clock and a tiny terminal emulator instead of a screen.
+
+### Balance simulator
+
+`tools/simulate.py` plays whole games headless with a bot and reports the
+numbers that matter for tuning: how far runs get, why birds are lost, gears
+and prestige, loot by source and rarity, eggs hatched, bosses beaten. A full
+game takes about ten seconds of CPU, and runs are spread over all cores.
+
+```bash
+python3 tools/simulate.py --runs 40
+```
+
+```bash
+python3 tools/simulate.py --runs 60 --bot perfect --variant "base:" --variant "slower: speed.mph_per_level=30"
+```
+
+- `--bot` picks a player: `perfect` (60 keys/s, instant), `expert` (15 keys/s,
+  150 ms reactions), `average`, `novice`; `--bot-set key_interval=3` adjusts one trait.
+- `--set section.key=value` changes the configuration, `--variant` compares
+  several configurations on the same seeds, `--base FILE` starts from another
+  config, `--difficulty`, `--start-level`, `--formation RED,RED,...` set up the game.
+- `--json FILE` saves every run summary for your own analysis.
+
+The bot plays through the same input path as a person: it moves the cursor and
+presses UP, at most once per `key_interval` frames. It prioritises the bird
+closest to being lost, bounces birds before they fall past an enemy (birds only
+collide while rising), fires powers when they help and waits under the next
+bird to fall. Its randomness is separate from the game's, so a seed always
+replays the same game.
 
 ### Adding a boss
 

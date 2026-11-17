@@ -146,20 +146,38 @@ def _apply(merged):
     }
 
 
+def compose(difficulty_index=1, base=None, overrides=None):
+    """The configuration for a game: base config, difficulty preset, overrides.
+
+    Args:
+        difficulty_index: 0=EASY, 1=NORMAL, 2=HARD, 3=HELL
+        base: configuration mapping to start from (default: the one loaded at startup)
+        overrides: mapping merged last, e.g. {'bat_enemy': {'max_on_screen': 3}}
+    """
+    merged = config if base is None else base
+    override_file = DIFFICULTY_CONFIG_FILES.get(difficulty_index)
+    if override_file:
+        path = paths.find(override_file)
+        if path:
+            preset = config_loader.load_yaml(path)
+            merged = config_loader.deep_merge(merged, {k: v for k, v in preset.items() if k in DIFFICULTY_SECTIONS})
+    if overrides:
+        merged = config_loader.deep_merge(merged, overrides)
+    return merged
+
+
+def configure(difficulty_index=1, base=None, overrides=None):
+    """Apply a composed configuration to every namespace of this module (in place)."""
+    _apply(compose(difficulty_index, base, overrides))
+
+
 def reload_for_difficulty(difficulty_index):
     """Re-apply the configuration with the overrides of a difficulty preset.
 
     Args:
         difficulty_index: 0=EASY, 1=NORMAL, 2=HARD, 3=HELL
     """
-    merged = config
-    override_file = DIFFICULTY_CONFIG_FILES.get(difficulty_index)
-    if override_file:
-        path = paths.find(override_file)
-        if path:
-            overrides = config_loader.load_yaml(path)
-            merged = config_loader.deep_merge(config, {k: v for k, v in overrides.items() if k in DIFFICULTY_SECTIONS})
-    _apply(merged)
+    configure(difficulty_index)
 
 
 _apply(config)
