@@ -1,6 +1,7 @@
 """Input dispatcher: routes each key to menus or gameplay actions."""
 
 from src.core import state
+from src.engine import menus
 from src.engine.actions import (
     handle_audio_toggle,
     handle_bounce,
@@ -10,14 +11,6 @@ from src.engine.actions import (
     handle_swap,
     handle_xp_toggle,
 )
-from src.engine.menus import (
-    execute_pause_menu_action,
-    get_settings_options_count,
-    handle_settings_back,
-    handle_settings_enter,
-    handle_settings_left_right,
-    handle_title_input,
-)
 
 
 def process_input(key):
@@ -25,8 +18,9 @@ def process_input(key):
     if key is None:
         return
 
-    # Handle title screen input first
-    if handle_title_input(key):
+    # On the title screen every key belongs to the menu
+    if state.ui.show_title:
+        menus.handle_key(key)
         return
 
     # Get the swap key binding
@@ -38,128 +32,10 @@ def process_input(key):
     swap_just_pressed = swap_pressed and not state.player.last_space_state
     state.player.last_space_state = swap_pressed
 
-    # When paused, handle pause menu navigation
+    # While paused every key belongs to the pause menu
     if state.game.paused:
-        # Check if we're in settings submenu
-        if state.ui.settings_menu is not None:
-            # Check if we're in rebinding mode
-            if state.ui.rebinding_control is not None:
-                if key == 'QUIT':
-                    state.game.quit_requested = True
-                    state.game.game_over = True
-                elif key == 'ESC':
-                    # Cancel rebinding
-                    state.ui.rebinding_control = None
-                else:
-                    # Accept any valid key for rebinding
-                    valid_keys = [
-                        'LEFT',
-                        'RIGHT',
-                        'UP',
-                        'DOWN',
-                        'SPACE',
-                        'ENTER',
-                        'A',
-                        'B',
-                        'C',
-                        'D',
-                        'E',
-                        'F',
-                        'G',
-                        'H',
-                        'I',
-                        'J',
-                        'K',
-                        'L',
-                        'M',
-                        'N',
-                        'O',
-                        'P',
-                        'Q',
-                        'R',
-                        'S',
-                        'T',
-                        'U',
-                        'V',
-                        'W',
-                        'X',
-                        'Y',
-                        'Z',
-                        'a',
-                        'b',
-                        'c',
-                        'd',
-                        'e',
-                        'f',
-                        'g',
-                        'h',
-                        'i',
-                        'j',
-                        'k',
-                        'l',
-                        'm',
-                        'n',
-                        'o',
-                        'p',
-                        'q',
-                        'r',
-                        's',
-                        't',
-                        'u',
-                        'v',
-                        'w',
-                        'x',
-                        'y',
-                        'z',
-                        '0',
-                        '1',
-                        '2',
-                        '3',
-                        '4',
-                        '5',
-                        '6',
-                        '7',
-                        '8',
-                        '9',
-                    ]
-                    if key in valid_keys:
-                        # Assign the new key
-                        state.settings.key_bindings[state.ui.rebinding_control] = key.upper() if len(key) == 1 else key
-                        state.ui.rebinding_control = None
-                return
-
-            if key == 'QUIT':
-                state.game.quit_requested = True
-                state.game.game_over = True
-            elif key == 'ESC':
-                handle_settings_back()
-            elif key == 'UP':
-                count = get_settings_options_count()
-                state.ui.settings_index = (state.ui.settings_index - 1) % count
-            elif key == 'DOWN':
-                count = get_settings_options_count()
-                state.ui.settings_index = (state.ui.settings_index + 1) % count
-            elif key in ('LEFT', 'RIGHT'):
-                handle_settings_left_right(key)
-            elif key == 'ENTER':
-                handle_settings_enter()
-            return
-
-        # Regular pause menu navigation
-        if key in ('P', 'p', 'ESC'):
-            handle_pause()  # Unpause
-        elif key == 'QUIT':
-            state.game.quit_requested = True
-            state.game.game_over = True
-        elif key == 'UP':
-            # Navigate menu up
-            state.ui.pause_menu_index = (state.ui.pause_menu_index - 1) % 7
-        elif key == 'DOWN':
-            # Navigate menu down
-            state.ui.pause_menu_index = (state.ui.pause_menu_index + 1) % 7
-        elif key == 'ENTER':
-            # Execute selected menu action
-            execute_pause_menu_action()
+        menus.ensure_pause_root()
+        menus.handle_key(key)
         return
 
     # Get key bindings

@@ -358,8 +358,6 @@ def load_game(slot):
 
         # Clear UI transient state
         state.ui.notifications = []
-        state.ui.settings_menu = None
-        state.ui.settings_index = 0
         state.ui.rebinding_control = None
 
         return True
@@ -658,7 +656,6 @@ def _restore_ui_state(data):
     state.ui.bg_offset = data.get('bg_offset', 0)
     state.ui.bg_mid_offset = data.get('bg_mid_offset', 0)
     state.ui.show_xp_overlay = data.get('show_xp_overlay', False)
-    state.ui.pause_menu_index = 0
 
 
 def _restore_settings(data):

@@ -1,660 +1,463 @@
-"""Pause, settings and title menu navigation."""
+"""Menus: one declarative tree shared by the title screen and the pause menu.
+
+Every screen is a ``Screen`` holding a list of ``Item``s. An item says what it
+shows (a name, optionally a value) and what it does: open a submenu, go back,
+run an action on ENTER, change a value with LEFT/RIGHT, or rebind a control.
+The same tree drives both input (``handle_key``) and drawing
+(``src.ui.layers.menus``), so adding an option is a single entry here.
+
+Navigation is a stack kept in ``state.ui.menu_stack``: a list of
+``[screen_id, cursor]`` pairs whose first entry is the root, ``'title'`` or
+``'pause'``. Going back pops the stack, so the cursor comes back to the item
+that opened the submenu.
+
+The two roots share every submenu. They differ only where the context does:
+settings changed on the title screen are saved as defaults straight away,
+while in the pause menu they apply to the running game.
+"""
+
+from collections.abc import Callable
+from dataclasses import dataclass, field
 
 from src.core import constants, state
-from src.core import state as game_state
 from src.engine.actions import handle_pause
 from src.engine.notifications import notify
 from src.services import save_manager
 from src.services.sound import apply_music_setting
 
+TITLE = 'title'
+PAUSE = 'pause'
 
-def execute_pause_menu_action():
-    """Execute the currently selected pause menu action."""
+DIFFICULTY_NAMES = ('PEACEFUL', 'ADVENTURE', 'SURVIVAL', 'LEGENDARY')
 
-    selected = state.ui.pause_menu_index
-
-    if selected == 0:
-        # RESUME - unpause the game
-        handle_pause()
-    elif selected == 1:
-        # RESTART - restart game
-        _handle_restart()
-    elif selected == 2:
-        # SAVE - open save menu
-        state.ui.settings_menu = 'save'
-        state.ui.settings_index = 0
-    elif selected == 3:
-        # LOAD - open load menu
-        state.ui.settings_menu = 'load'
-        state.ui.settings_index = 0
-    elif selected == 4:
-        # BIRDPEDIA - open birdpedia menu
-        state.ui.settings_menu = 'birdpedia'
-        state.ui.settings_index = 0
-    elif selected == 5:
-        # SETTINGS - enter settings menu
-        state.ui.settings_menu = 'main'
-        state.ui.settings_index = 0
-    elif selected == 6:
-        # MAIN MENU - return to title screen
-        state.game.paused = False
-        state.ui.pause_menu_index = 0
-        state.ui.settings_menu = None
-        state.ui.show_title = True
-        state.ui.title_menu_index = 0
-        state.game.game_over = True  # End current game loop to return to title
+# Controls that can be rebound, in the order the CONTROLS screen lists them
+REBINDABLE_CONTROLS = (
+    ('MOVE LEFT', 'MOVE_LEFT'),
+    ('MOVE RIGHT', 'MOVE_RIGHT'),
+    ('BOUNCE', 'BOUNCE'),
+    ('SUCTION', 'SUCTION'),
+    ('SWAP', 'SWAP'),
+)
+_NAMED_KEYS = ('LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE', 'ENTER')
+_KEY_SYMBOLS = {'LEFT': '←', 'RIGHT': '→', 'UP': '↑', 'DOWN': '↓', 'SPACE': 'SPC'}
 
 
-def _handle_restart():
-    """Restart the game from the beginning."""
+@dataclass(frozen=True)
+class Item:
+    """One line of a menu.
 
-    # Re-initialize game state
-    game_state.init()
+    kind tells the view how to lay it out:
+      'plain'   just the name
+      'option'  name followed by "< value >" (toggles, cyclers)
+      'binding' name followed by the key bound to a control
+      'slot'    a save slot: name followed by its level and date, or "(empty)"
+    """
 
-    # Unpause
-    state.game.paused = False
-    state.ui.pause_menu_index = 0
-
-    notify("New game!", title="Restart:")
-
-
-def get_settings_options_count():
-    """Return the number of options in the current settings submenu."""
-    menu = state.ui.settings_menu
-    if menu == 'main':
-        return 5  # SOUND, GRAPHICS, CONTROLS, DIFFICULTY, < BACK
-    if menu == 'sound':
-        return 3  # SFX, MUSIC, < BACK
-    if menu == 'graphics':
-        return 4  # BACKGROUND, PARALLAX, ACCESSIBILITY, < BACK
-    if menu == 'controls':
-        return 6  # 5 control display items + < BACK
-    if menu == 'save':
-        return 4  # SLOT 1, SLOT 2, SLOT 3, < BACK
-    if menu == 'load':
-        return 5  # AUTO, SLOT 1, SLOT 2, SLOT 3, < BACK
-    if menu == 'birdpedia':
-        return 5  # GUIDE, BIRDPEDIA, BATPEDIA, BIOMES, < BACK
-    if menu == 'guide':
-        return 5  # HOW TO PLAY, COMMANDS, OBSTACLES, ENEMIES, < BACK
-    if menu in (
-        'guide_howto',
-        'guide_commands',
-        'guide_obstacles',
-        'guide_enemies',
-        'birdpedia_list',
-        'batpedia_list',
-        'biomes_list',
-    ):
-        return 1  # Just < BACK (content view)
-    return 1
+    name: str
+    kind: str = 'plain'
+    value: Callable[[], object] | None = None
+    opens: str | None = None  # submenu opened by ENTER
+    back: bool = False  # ENTER goes back
+    on_enter: Callable[[], None] | None = None
+    on_change: Callable[[int], None] | None = None  # LEFT/RIGHT, delta -1/+1
+    rebind: str | None = None  # control rebound by ENTER
 
 
-def handle_settings_enter():
-    """Handle ENTER key in settings menu."""
-    menu = state.ui.settings_menu
-    idx = state.ui.settings_index
+@dataclass(frozen=True)
+class Screen:
+    """A menu screen. ``content`` names a text page instead of a list of items."""
 
-    if menu == 'main':
-        if idx == 0:  # SOUND
-            state.ui.settings_menu = 'sound'
-            state.ui.settings_index = 0
-        elif idx == 1:  # GRAPHICS
-            state.ui.settings_menu = 'graphics'
-            state.ui.settings_index = 0
-        elif idx == 2:  # CONTROLS
-            state.ui.settings_menu = 'controls'
-            state.ui.settings_index = 0
-        elif idx == 3:  # DIFFICULTY - cycle on enter too
-            _cycle_difficulty(1)
-        elif idx == 4:  # < BACK
-            state.ui.settings_menu = None
-            state.ui.settings_index = 0
-    elif menu == 'sound':
-        if idx == 0:  # SFX toggle
-            state.settings.sfx_enabled = not state.settings.sfx_enabled
-        elif idx == 1:  # MUSIC toggle
-            state.settings.music_enabled = not state.settings.music_enabled
-            apply_music_setting()
-        elif idx == 2:  # < BACK
-            state.ui.settings_menu = 'main'
-            state.ui.settings_index = 0
-    elif menu == 'graphics':
-        if idx == 0:  # BACKGROUND toggle
-            state.settings.background_enabled = not state.settings.background_enabled
-        elif idx == 1:  # PARALLAX toggle
-            state.settings.parallax_enabled = not state.settings.parallax_enabled
-        elif idx == 2:  # ACCESSIBILITY toggle
-            _toggle_accessibility()
-        elif idx == 3:  # < BACK
-            state.ui.settings_menu = 'main'
-            state.ui.settings_index = 1
-    elif menu == 'controls':
-        count = get_settings_options_count()
-        if idx == count - 1:  # < BACK
-            state.ui.settings_menu = 'main'
-            state.ui.settings_index = 2
-        elif idx < count - 1:  # Rebindable control
-            # Start rebinding mode
-            control_names = ['MOVE_LEFT', 'MOVE_RIGHT', 'BOUNCE', 'SUCTION', 'SWAP']
-            if idx < len(control_names):
-                state.ui.rebinding_control = control_names[idx]
-    elif menu == 'save':
-        if idx == 3:  # < BACK
-            state.ui.settings_menu = None
-            state.ui.settings_index = 0
-        elif idx < 3:  # Slot 1-3
-            slot = idx + 1
-
-            if save_manager.save_game(slot):
-                notify(f"Saved to Slot {slot}", title="Save:")
-                state.ui.settings_menu = None
-                state.ui.settings_index = 0
-            else:
-                notify("Save failed!", title="Error:")
-    elif menu == 'load':
-        if idx == 4:  # < BACK
-            state.ui.settings_menu = None
-            state.ui.settings_index = 0
-        elif idx <= 3:  # Slot 0 (auto), 1, 2, 3
-            slot = idx  # idx 0 = autosave, idx 1-3 = slots 1-3
-
-            slots = save_manager.list_save_slots()
-            if slots.get(slot, {}).get('exists'):
-                if save_manager.load_game(slot):
-                    slot_name = "Autosave" if slot == 0 else f"Slot {slot}"
-                    notify(f"Loaded {slot_name}", title="Load:")
-                    state.ui.settings_menu = None
-                    state.ui.settings_index = 0
-                    state.game.paused = False
-                else:
-                    notify("Load failed!", title="Error:")
-            else:
-                notify("Slot is empty!", title="Error:")
-    elif menu == 'birdpedia':
-        if idx == 0:  # GUIDE
-            state.ui.settings_menu = 'guide'
-            state.ui.settings_index = 0
-        elif idx == 1:  # BIRDPEDIA
-            state.ui.settings_menu = 'birdpedia_list'
-            state.ui.settings_index = 0
-        elif idx == 2:  # BATPEDIA
-            state.ui.settings_menu = 'batpedia_list'
-            state.ui.settings_index = 0
-        elif idx == 3:  # BIOMES
-            state.ui.settings_menu = 'biomes_list'
-            state.ui.settings_index = 0
-        elif idx == 4:  # < BACK
-            state.ui.settings_menu = None
-            state.ui.settings_index = 0
-    elif menu == 'guide':
-        if idx == 0:  # HOW TO PLAY
-            state.ui.settings_menu = 'guide_howto'
-            state.ui.settings_index = 0
-        elif idx == 1:  # COMMANDS
-            state.ui.settings_menu = 'guide_commands'
-            state.ui.settings_index = 0
-        elif idx == 2:  # OBSTACLES
-            state.ui.settings_menu = 'guide_obstacles'
-            state.ui.settings_index = 0
-        elif idx == 3:  # ENEMIES
-            state.ui.settings_menu = 'guide_enemies'
-            state.ui.settings_index = 0
-        elif idx == 4:  # < BACK
-            state.ui.settings_menu = 'birdpedia'
-            state.ui.settings_index = 0
-    elif menu in (
-        'guide_howto',
-        'guide_commands',
-        'guide_obstacles',
-        'guide_enemies',
-        'birdpedia_list',
-        'batpedia_list',
-        'biomes_list',
-    ):
-        # Content views - any key goes back
-        handle_settings_back()
+    id: str
+    title: str
+    items: Callable[[], list] = field(default=list)
+    hint: str = 'change'  # 'change', 'select' or 'controls'
+    content: str | None = None
 
 
-def handle_settings_back():
-    """Handle ESC or < BACK in settings menu."""
-    menu = state.ui.settings_menu
-
-    if menu == 'main':
-        state.ui.settings_menu = None
-        state.ui.settings_index = 0
-    elif menu in ('sound', 'graphics', 'controls'):
-        state.ui.settings_menu = 'main'
-        # Return to appropriate index in main menu
-        if menu == 'sound':
-            state.ui.settings_index = 0
-        elif menu == 'graphics':
-            state.ui.settings_index = 1
-        else:  # controls
-            state.ui.settings_index = 2
-    elif menu in ('save', 'load') or menu == 'birdpedia':
-        # Return directly to pause menu
-        state.ui.settings_menu = None
-        state.ui.settings_index = 0
-    elif menu == 'guide':
-        # Return to birdpedia menu
-        state.ui.settings_menu = 'birdpedia'
-        state.ui.settings_index = 0
-    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies'):
-        # Return to guide menu
-        state.ui.settings_menu = 'guide'
-        state.ui.settings_index = 0
-    elif menu == 'birdpedia_list':
-        state.ui.settings_menu = 'birdpedia'
-        state.ui.settings_index = 1
-    elif menu == 'batpedia_list':
-        state.ui.settings_menu = 'birdpedia'
-        state.ui.settings_index = 2
-    elif menu == 'biomes_list':
-        state.ui.settings_menu = 'birdpedia'
-        state.ui.settings_index = 3
+# =============================================================================
+# CONTEXT
+# =============================================================================
 
 
-def handle_settings_left_right(direction):
-    """Handle LEFT/RIGHT for cycling values in settings."""
-    menu = state.ui.settings_menu
-    idx = state.ui.settings_index
-    delta = -1 if direction == 'LEFT' else 1
-
-    if menu == 'main' and idx == 3:  # DIFFICULTY
-        _cycle_difficulty(delta)
-    elif menu == 'sound':
-        if idx == 0:  # SFX
-            state.settings.sfx_enabled = not state.settings.sfx_enabled
-        elif idx == 1:  # MUSIC
-            state.settings.music_enabled = not state.settings.music_enabled
-            apply_music_setting()
-    elif menu == 'graphics':
-        if idx == 0:  # BACKGROUND
-            state.settings.background_enabled = not state.settings.background_enabled
-        elif idx == 1:  # PARALLAX
-            state.settings.parallax_enabled = not state.settings.parallax_enabled
-        elif idx == 2:  # ACCESSIBILITY
-            _toggle_accessibility()
+def root():
+    """'title' or 'pause': which root the menu currently hangs from."""
+    stack = state.ui.menu_stack
+    return stack[0][0] if stack else None
 
 
-def _toggle_accessibility():
-    """Toggle accessibility mode and apply related settings."""
-    state.settings.accessibility_enabled = not state.settings.accessibility_enabled
+def _settings_changed():
+    """A setting changed: on the title screen it becomes the saved default."""
+    if root() == TITLE:
+        save_manager.save_default_settings()
 
+
+# =============================================================================
+# ACTIONS
+# =============================================================================
+
+
+def _quit():
+    state.game.quit_requested = True
+    state.game.game_over = True
+
+
+def _toggle(name, after=None):
+    def change(_delta=0):
+        setattr(state.settings, name, not getattr(state.settings, name))
+        if after:
+            after()
+        _settings_changed()
+
+    return change
+
+
+def _toggle_music_live():
+    # Starting or stopping the music only makes sense during a game
+    if root() == PAUSE:
+        apply_music_setting()
+
+
+def _accessibility_changed():
     if state.settings.accessibility_enabled:
-        # Disable background and parallax for clarity
+        # High-contrast mode: drop the scenery behind the playfield
         state.settings.background_enabled = False
         state.settings.parallax_enabled = False
 
 
-def _cycle_difficulty(delta):
-    """Cycle difficulty setting."""
-    state.settings.difficulty = (state.settings.difficulty + delta) % 4
+def _cycle_difficulty(delta=1):
+    state.settings.difficulty = (state.settings.difficulty + delta) % len(DIFFICULTY_NAMES)
+    _settings_changed()
 
 
-def handle_title_input(key):
-    """Handle input on title screen. Returns True if handled."""
-    if not state.ui.show_title:
-        return False
-
-    if key == 'QUIT':
-        state.game.quit_requested = True
-        state.game.game_over = True
-        return True
-
-    # If in load submenu on title screen
-    if state.ui.settings_menu == 'load':
-        if key == 'UP':
-            state.ui.settings_index = (state.ui.settings_index - 1) % 5  # 4 slots + back
-            return True
-        if key == 'DOWN':
-            state.ui.settings_index = (state.ui.settings_index + 1) % 5
-            return True
-        if key == 'ESC':
-            state.ui.settings_menu = None
-            return True
-        if key == 'ENTER':
-            idx = state.ui.settings_index
-            if idx == 4:  # BACK
-                state.ui.settings_menu = None
-            else:
-                # Load slot idx (0=autosave, 1-3=manual)
-
-                if save_manager.load_game(idx):
-                    state.ui.show_title = False
-                    state.ui.settings_menu = None
-            return True
-        return True
-
-    # If in settings submenu on title screen
-    if state.ui.settings_menu is not None:
-        return _handle_title_settings_input(key)
-
-    if key == 'UP':
-        state.ui.title_menu_index = (state.ui.title_menu_index - 1) % 6  # 6 options now
-        return True
-
-    if key == 'DOWN':
-        state.ui.title_menu_index = (state.ui.title_menu_index + 1) % 6
-        return True
-
-    # LEFT/RIGHT on NEW GAME changes difficulty
-    if key in ('LEFT', 'RIGHT') and state.ui.title_menu_index == 1:
-        delta = 1 if key == 'RIGHT' else -1
-        state.settings.difficulty = (state.settings.difficulty + delta) % 4
-        return True
-
-    if key == 'ENTER':
-        idx = state.ui.title_menu_index
-        if idx == 0:  # CONTINUE
-            # Try to load the most recent save (by timestamp)
-
-            most_recent = save_manager.get_most_recent_save()
-            if most_recent is not None and save_manager.load_game(most_recent):
-                state.ui.show_title = False
-            else:
-                # No saves, start new game with default settings
-
-                state.init()
-                save_manager.load_default_settings()
-                state.ui.show_title = False
-        elif idx == 1:  # NEW GAME
-            # Save the difficulty selection before init (which doesn't reset settings)
-            selected_difficulty = state.settings.difficulty
-            # Load difficulty-specific configuration
-            constants.reload_for_difficulty(selected_difficulty)
-            state.init()
-            save_manager.load_default_settings()
-            # Restore the difficulty we selected on title screen
-            state.settings.difficulty = selected_difficulty
-            state.ui.show_title = False
-        elif idx == 2:  # LOAD
-            state.ui.settings_menu = 'load'
-            state.ui.settings_index = 0
-        elif idx == 3:  # BIRDPEDIA
-            state.ui.settings_menu = 'birdpedia'
-            state.ui.settings_index = 0
-        elif idx == 4:  # SETTINGS
-            state.ui.settings_menu = 'main'
-            state.ui.settings_index = 0
-        elif idx == 5:  # QUIT
-            state.game.quit_requested = True
-            state.game.game_over = True
-        return True
-
-    return False
+def _difficulty_name():
+    return DIFFICULTY_NAMES[state.settings.difficulty]
 
 
-def _handle_title_settings_input(key):
-    """Handle settings menu input on title screen. Returns True if handled."""
+def _start_game(difficulty):
+    """Fresh game state; the selected difficulty survives the reset."""
+    state.init()
+    save_manager.load_default_settings()
+    state.settings.difficulty = difficulty
+    state.ui.show_title = False
 
-    # Rebinding mode
-    if state.ui.rebinding_control is not None:
-        if key == 'ESC':
-            state.ui.rebinding_control = None
+
+def _continue():
+    """Load the most recent save, or start a new game when there is none."""
+    most_recent = save_manager.get_most_recent_save()
+    if most_recent is not None and save_manager.load_game(most_recent):
+        state.ui.show_title = False
+        return
+    state.init()
+    save_manager.load_default_settings()
+    state.ui.show_title = False
+
+
+def _new_game():
+    selected = state.settings.difficulty
+    constants.reload_for_difficulty(selected)
+    _start_game(selected)
+
+
+def _change_new_game_difficulty(delta):
+    # Picking the difficulty for one game is not a settings change
+    state.settings.difficulty = (state.settings.difficulty + delta) % len(DIFFICULTY_NAMES)
+
+
+def _restart():
+    state.init()
+    state.game.paused = False
+    state.ui.menu_stack = []
+    notify("New game!", title="Restart:")
+
+
+def _main_menu():
+    state.game.paused = False
+    state.ui.show_title = True
+    state.ui.menu_stack = [[TITLE, 0]]
+    state.game.game_over = True  # ends the session loop: back to the title screen
+
+
+def _slot_info(slot):
+    """(level text, date text) of a save slot, or None when it is empty."""
+    info = save_manager.list_save_slots().get(slot, {})
+    if not info.get('exists'):
+        return None
+    timestamp = info.get('timestamp', '')
+    date = save_manager.format_timestamp_display(timestamp) if timestamp else '???'
+    return info.get('level_display', '?'), date
+
+
+def _save_to(slot):
+    def save():
+        if save_manager.save_game(slot):
+            notify(f"Saved to Slot {slot}", title="Save:")
+            close_submenus()
         else:
-            valid_keys = [
-                'LEFT',
-                'RIGHT',
-                'UP',
-                'DOWN',
-                'SPACE',
-                'ENTER',
-                'A',
-                'B',
-                'C',
-                'D',
-                'E',
-                'F',
-                'G',
-                'H',
-                'I',
-                'J',
-                'K',
-                'L',
-                'M',
-                'N',
-                'O',
-                'P',
-                'Q',
-                'R',
-                'S',
-                'T',
-                'U',
-                'V',
-                'W',
-                'X',
-                'Y',
-                'Z',
-                'a',
-                'b',
-                'c',
-                'd',
-                'e',
-                'f',
-                'g',
-                'h',
-                'i',
-                'j',
-                'k',
-                'l',
-                'm',
-                'n',
-                'o',
-                'p',
-                'q',
-                'r',
-                's',
-                't',
-                'u',
-                'v',
-                'w',
-                'x',
-                'y',
-                'z',
-                '0',
-                '1',
-                '2',
-                '3',
-                '4',
-                '5',
-                '6',
-                '7',
-                '8',
-                '9',
-            ]
-            if key in valid_keys:
-                state.settings.key_bindings[state.ui.rebinding_control] = key.upper() if len(key) == 1 else key
-                state.ui.rebinding_control = None
-                # Save default settings
-                save_manager.save_default_settings()
-        return True
+            notify("Save failed!", title="Error:")
 
+    return save
+
+
+def _load_from(slot):
+    def load():
+        if root() == TITLE:
+            if save_manager.load_game(slot):
+                state.ui.show_title = False
+                close_submenus()
+            return
+        if _slot_info(slot) is None:
+            notify("Slot is empty!", title="Error:")
+        elif save_manager.load_game(slot):
+            notify(f"Loaded {'Autosave' if slot == 0 else f'Slot {slot}'}", title="Load:")
+            state.ui.menu_stack = [[PAUSE, 0]]
+            state.game.paused = False
+        else:
+            notify("Load failed!", title="Error:")
+
+    return load
+
+
+def binding_display(control):
+    """Text shown for a control's key (blinks while it is being rebound)."""
+    if state.ui.rebinding_control == control:
+        return "___" if (state.game.frame_count // 5) % 2 == 0 else "   "
+    key = state.settings.key_bindings.get(control, '?')
+    return _KEY_SYMBOLS.get(key, key)
+
+
+def _rebind(key):
+    """Assign ``key`` to the control waiting for one (ESC cancels)."""
     if key == 'ESC':
-        _handle_title_settings_back()
-        return True
-
-    if key == 'UP':
-        count = get_settings_options_count()
-        state.ui.settings_index = (state.ui.settings_index - 1) % count
-        return True
-
-    if key == 'DOWN':
-        count = get_settings_options_count()
-        state.ui.settings_index = (state.ui.settings_index + 1) % count
-        return True
-
-    if key in ('LEFT', 'RIGHT'):
-        _handle_title_settings_left_right(key)
-        return True
-
-    if key == 'ENTER':
-        _handle_title_settings_enter()
-        return True
-
-    return True
+        state.ui.rebinding_control = None
+        return
+    if key in _NAMED_KEYS or (len(key) == 1 and key.isascii() and key.isalnum()):
+        state.settings.key_bindings[state.ui.rebinding_control] = key.upper() if len(key) == 1 else key
+        state.ui.rebinding_control = None
+        _settings_changed()
 
 
-def _handle_title_settings_back():
-    """Handle ESC or < BACK in title settings menu."""
-
-    menu = state.ui.settings_menu
-
-    if menu == 'main':
-        state.ui.settings_menu = None
-        state.ui.settings_index = 0
-        # Save defaults when exiting settings
-        save_manager.save_default_settings()
-    elif menu in ('sound', 'graphics', 'controls'):
-        state.ui.settings_menu = 'main'
-        if menu == 'sound':
-            state.ui.settings_index = 0
-        elif menu == 'graphics':
-            state.ui.settings_index = 1
-        else:
-            state.ui.settings_index = 2
-    elif menu == 'birdpedia':
-        state.ui.settings_menu = None
-        state.ui.settings_index = 0
-    elif menu == 'guide':
-        state.ui.settings_menu = 'birdpedia'
-        state.ui.settings_index = 0
-    elif menu in ('guide_howto', 'guide_commands', 'guide_obstacles', 'guide_enemies'):
-        state.ui.settings_menu = 'guide'
-        state.ui.settings_index = 0
-    elif menu == 'birdpedia_list':
-        state.ui.settings_menu = 'birdpedia'
-        state.ui.settings_index = 1
-    elif menu == 'batpedia_list':
-        state.ui.settings_menu = 'birdpedia'
-        state.ui.settings_index = 2
-    elif menu == 'biomes_list':
-        state.ui.settings_menu = 'birdpedia'
-        state.ui.settings_index = 3
+# =============================================================================
+# THE MENU TREE
+# =============================================================================
 
 
-def _handle_title_settings_left_right(key):
-    """Handle LEFT/RIGHT in title settings menu."""
-
-    menu = state.ui.settings_menu
-    idx = state.ui.settings_index
-    delta = 1 if key == 'RIGHT' else -1
-
-    if menu == 'main' and idx == 3:  # DIFFICULTY
-        state.settings.difficulty = (state.settings.difficulty + delta) % 4
-        save_manager.save_default_settings()
-    elif menu == 'sound':
-        if idx == 0:  # SFX
-            state.settings.sfx_enabled = not state.settings.sfx_enabled
-            save_manager.save_default_settings()
-        elif idx == 1:  # MUSIC
-            state.settings.music_enabled = not state.settings.music_enabled
-            save_manager.save_default_settings()
-    elif menu == 'graphics':
-        if idx == 0:  # BACKGROUND
-            state.settings.background_enabled = not state.settings.background_enabled
-            save_manager.save_default_settings()
-        elif idx == 1:  # PARALLAX
-            state.settings.parallax_enabled = not state.settings.parallax_enabled
-            save_manager.save_default_settings()
-        elif idx == 2:  # ACCESSIBILITY
-            state.settings.accessibility_enabled = not state.settings.accessibility_enabled
-            if state.settings.accessibility_enabled:
-                state.settings.background_enabled = False
-                state.settings.parallax_enabled = False
-            save_manager.save_default_settings()
+def _back_item():
+    return Item('< BACK', back=True)
 
 
-def _handle_title_settings_enter():
-    """Handle ENTER in title settings menu."""
+def _title_items():
+    return [
+        Item('CONTINUE', on_enter=_continue),
+        Item('NEW GAME', value=_difficulty_name, on_enter=_new_game, on_change=_change_new_game_difficulty),
+        Item('LOAD', opens='load'),
+        Item('BIRDPEDIA', opens='birdpedia'),
+        Item('SETTINGS', opens='settings'),
+        Item('QUIT', on_enter=_quit),
+    ]
 
-    menu = state.ui.settings_menu
-    idx = state.ui.settings_index
 
-    if menu == 'main':
-        if idx == 0:  # SOUND
-            state.ui.settings_menu = 'sound'
-            state.ui.settings_index = 0
-        elif idx == 1:  # GRAPHICS
-            state.ui.settings_menu = 'graphics'
-            state.ui.settings_index = 0
-        elif idx == 2:  # CONTROLS
-            state.ui.settings_menu = 'controls'
-            state.ui.settings_index = 0
-        elif idx == 3:  # DIFFICULTY (cycle)
-            state.settings.difficulty = (state.settings.difficulty + 1) % 4
-            save_manager.save_default_settings()
-        elif idx == 4:  # < BACK
-            _handle_title_settings_back()
-    elif menu == 'sound':
-        if idx == 0:  # SFX
-            state.settings.sfx_enabled = not state.settings.sfx_enabled
-            save_manager.save_default_settings()
-        elif idx == 1:  # MUSIC
-            state.settings.music_enabled = not state.settings.music_enabled
-            save_manager.save_default_settings()
-        elif idx == 2:  # < BACK
-            _handle_title_settings_back()
-    elif menu == 'graphics':
-        if idx == 0:  # BACKGROUND
-            state.settings.background_enabled = not state.settings.background_enabled
-            save_manager.save_default_settings()
-        elif idx == 1:  # PARALLAX
-            state.settings.parallax_enabled = not state.settings.parallax_enabled
-            save_manager.save_default_settings()
-        elif idx == 2:  # ACCESSIBILITY
-            state.settings.accessibility_enabled = not state.settings.accessibility_enabled
-            if state.settings.accessibility_enabled:
-                state.settings.background_enabled = False
-                state.settings.parallax_enabled = False
-            save_manager.save_default_settings()
-        elif idx == 3:  # < BACK
-            _handle_title_settings_back()
-    elif menu == 'controls':
-        if idx < 5:  # Rebind controls
-            control_names = ['MOVE_LEFT', 'MOVE_RIGHT', 'BOUNCE', 'SUCTION', 'SWAP']
-            state.ui.rebinding_control = control_names[idx]
-        elif idx == 5:  # < BACK
-            _handle_title_settings_back()
-    elif menu == 'birdpedia':
-        if idx == 0:  # GUIDE
-            state.ui.settings_menu = 'guide'
-            state.ui.settings_index = 0
-        elif idx == 1:  # BIRDPEDIA
-            state.ui.settings_menu = 'birdpedia_list'
-            state.ui.settings_index = 0
-        elif idx == 2:  # BATPEDIA
-            state.ui.settings_menu = 'batpedia_list'
-            state.ui.settings_index = 0
-        elif idx == 3:  # BIOMES
-            state.ui.settings_menu = 'biomes_list'
-            state.ui.settings_index = 0
-        elif idx == 4:  # < BACK
-            _handle_title_settings_back()
-    elif menu == 'guide':
-        if idx == 0:  # HOW TO PLAY
-            state.ui.settings_menu = 'guide_howto'
-            state.ui.settings_index = 0
-        elif idx == 1:  # COMMANDS
-            state.ui.settings_menu = 'guide_commands'
-            state.ui.settings_index = 0
-        elif idx == 2:  # OBSTACLES
-            state.ui.settings_menu = 'guide_obstacles'
-            state.ui.settings_index = 0
-        elif idx == 3:  # ENEMIES
-            state.ui.settings_menu = 'guide_enemies'
-            state.ui.settings_index = 0
-        elif idx == 4:  # < BACK
-            _handle_title_settings_back()
-    elif menu in (
-        'guide_howto',
-        'guide_commands',
-        'guide_obstacles',
-        'guide_enemies',
-        'birdpedia_list',
-        'batpedia_list',
-        'biomes_list',
-    ):
-        # Content views - any key goes back
-        _handle_title_settings_back()
+def _pause_items():
+    return [
+        Item('RESUME', on_enter=handle_pause),
+        Item('RESTART', on_enter=_restart),
+        Item('SAVE', opens='save'),
+        Item('LOAD', opens='load'),
+        Item('BIRDPEDIA', opens='birdpedia'),
+        Item('SETTINGS', opens='settings'),
+        Item('MAIN MENU', on_enter=_main_menu),
+    ]
+
+
+def _settings_items():
+    return [
+        Item('SOUND', opens='sound'),
+        Item('GRAPHICS', opens='graphics'),
+        Item('CONTROLS', opens='controls'),
+        Item('DIFFICULTY', 'option', _difficulty_name, on_enter=_cycle_difficulty, on_change=_cycle_difficulty),
+        _back_item(),
+    ]
+
+
+def _option(name, setting, after=None):
+    toggle = _toggle(setting, after)
+    return Item(
+        name,
+        'option',
+        lambda: 'ON' if getattr(state.settings, setting) else 'OFF',
+        on_enter=toggle,
+        on_change=toggle,
+    )
+
+
+def _sound_items():
+    return [
+        _option('SFX', 'sfx_enabled'),
+        _option('MUSIC', 'music_enabled', _toggle_music_live),
+        _back_item(),
+    ]
+
+
+def _graphics_items():
+    return [
+        _option('BACKGROUND', 'background_enabled'),
+        _option('PARALLAX', 'parallax_enabled'),
+        _option('ACCESSIBILITY', 'accessibility_enabled', _accessibility_changed),
+        _back_item(),
+    ]
+
+
+def _controls_items():
+    items = [
+        Item(name, 'binding', (lambda control=control: binding_display(control)), rebind=control)
+        for name, control in REBINDABLE_CONTROLS
+    ]
+    return items + [_back_item()]
+
+
+def _save_items():
+    slots = [
+        Item(f'SLOT {slot}', 'slot', (lambda s=slot: _slot_info(s)), on_enter=_save_to(slot)) for slot in (1, 2, 3)
+    ]
+    return slots + [_back_item()]
+
+
+def _load_items():
+    slots = [
+        Item('AUTO' if slot == 0 else f'SLOT {slot}', 'slot', (lambda s=slot: _slot_info(s)), on_enter=_load_from(slot))
+        for slot in (0, 1, 2, 3)
+    ]
+    return slots + [_back_item()]
+
+
+def _birdpedia_items():
+    return [
+        Item('GUIDE', opens='guide'),
+        Item('BIRD-DEX', opens='birdpedia_list'),
+        Item('BAT-DEX', opens='batpedia_list'),
+        Item('BIOMES', opens='biomes_list'),
+        _back_item(),
+    ]
+
+
+def _guide_items():
+    return [
+        Item('HOW TO PLAY', opens='guide_howto'),
+        Item('COMMANDS', opens='guide_commands'),
+        Item('OBSTACLES', opens='guide_obstacles'),
+        Item('ENEMIES', opens='guide_enemies'),
+        _back_item(),
+    ]
+
+
+def _page(screen_id, content):
+    return Screen(screen_id, '', lambda: [_back_item()], content=content)
+
+
+SCREENS = {
+    screen.id: screen
+    for screen in (
+        Screen(TITLE, '', _title_items),
+        Screen(PAUSE, 'PAUSED', _pause_items),
+        Screen('settings', 'SETTINGS', _settings_items),
+        Screen('sound', 'SOUND', _sound_items),
+        Screen('graphics', 'GRAPHICS', _graphics_items),
+        Screen('controls', 'CONTROLS', _controls_items, hint='controls'),
+        Screen('save', 'SAVE GAME', _save_items, hint='select'),
+        Screen('load', 'LOAD GAME', _load_items, hint='select'),
+        Screen('birdpedia', 'BIRDPEDIA', _birdpedia_items, hint='select'),
+        Screen('guide', 'GUIDE', _guide_items, hint='select'),
+        _page('guide_howto', 'howto'),
+        _page('guide_commands', 'commands'),
+        _page('guide_obstacles', 'obstacles'),
+        _page('guide_enemies', 'enemies'),
+        _page('birdpedia_list', 'birds'),
+        _page('batpedia_list', 'bats'),
+        _page('biomes_list', 'biomes'),
+    )
+}
+
+
+# =============================================================================
+# NAVIGATION
+# =============================================================================
+
+
+def open_title():
+    """Show the title menu with the cursor on its first item."""
+    state.ui.menu_stack = [[TITLE, 0]]
+    state.ui.rebinding_control = None
+
+
+def ensure_pause_root():
+    """Make sure the menu hangs from the pause root (keeping its cursor)."""
+    if root() != PAUSE:
+        state.ui.menu_stack = [[PAUSE, 0]]
+
+
+def current_screen():
+    return SCREENS[state.ui.menu_stack[-1][0]]
+
+
+def cursor():
+    return state.ui.menu_stack[-1][1]
+
+
+def depth():
+    """1 at the root, more inside submenus."""
+    return len(state.ui.menu_stack)
+
+
+def close_submenus():
+    del state.ui.menu_stack[1:]
+
+
+def _open(screen_id):
+    state.ui.menu_stack.append([screen_id, 0])
+
+
+def _back():
+    stack = state.ui.menu_stack
+    if len(stack) <= 1:
+        return
+    leaving = stack.pop()[0]
+    if leaving == 'settings':
+        # Leaving the settings: on the title screen they become the defaults
+        _settings_changed()
+
+
+def _activate(item):
+    if item.back:
+        _back()
+    elif item.opens:
+        _open(item.opens)
+    elif item.rebind:
+        state.ui.rebinding_control = item.rebind
+    elif item.on_enter:
+        item.on_enter()
+
+
+def handle_key(key):
+    """Apply one key press to the open menu."""
+    if key == 'QUIT':
+        _quit()
+        return
+    if state.ui.rebinding_control is not None:
+        _rebind(key)
+        return
+
+    entry = state.ui.menu_stack[-1]
+    items = SCREENS[entry[0]].items()
+
+    if key in ('UP', 'DOWN'):
+        entry[1] = (entry[1] + (1 if key == 'DOWN' else -1)) % len(items)
+    elif key in ('LEFT', 'RIGHT'):
+        item = items[entry[1]]
+        if item.on_change:
+            item.on_change(1 if key == 'RIGHT' else -1)
+    elif key == 'ENTER':
+        _activate(items[entry[1]])
+    elif depth() > 1:
+        if key == 'ESC':
+            _back()
+    elif root() == PAUSE and key in ('ESC', 'p', 'P'):
+        handle_pause()  # resume

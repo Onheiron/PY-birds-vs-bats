@@ -137,6 +137,7 @@ class Simulation:
         constants.reload_for_difficulty(1)
         state.init(seed)
         state.ui.show_title = False
+        state.ui.menu_stack = []
         state.game.start_time = self.clock.now
         state.game.last_mile_update = self.clock.now
         if all_birds:

@@ -1,0 +1,197 @@
+"""The menu tree: structure, navigation and the title/pause differences."""
+
+import json
+
+import pytest
+
+from src.core import state
+from src.engine import menus
+from src.services import save_manager
+from tests.harness import Simulation
+
+
+@pytest.fixture
+def sim():
+    with Simulation(seed=21, level=2) as simulation:
+        simulation.run(30)
+        yield simulation
+
+
+def open_title(sim):
+    state.ui.show_title = True
+    menus.open_title()
+    sim.press(None, title=True)
+
+
+def pause(sim):
+    sim.step(key='p')
+    assert state.game.paused
+
+
+def press_all(sim, keys, title=False):
+    for key in keys:
+        sim.press(key, title=title)
+
+
+def current():
+    return state.ui.menu_stack[-1][0], state.ui.menu_stack[-1][1]
+
+
+def test_tree_is_consistent():
+    for screen in menus.SCREENS.values():
+        items = screen.items()
+        assert items, screen.id
+        for item in items:
+            if item.opens:
+                assert item.opens in menus.SCREENS, f'{screen.id} opens unknown {item.opens}'
+        if screen.id not in (menus.TITLE, menus.PAUSE):
+            # Every submenu can be left with its last entry
+            assert items[-1].back, screen.id
+
+
+def test_every_submenu_is_reachable_from_a_root():
+    reachable = set()
+    todo = [menus.TITLE, menus.PAUSE]
+    while todo:
+        screen_id = todo.pop()
+        if screen_id in reachable:
+            continue
+        reachable.add(screen_id)
+        todo.extend(item.opens for item in menus.SCREENS[screen_id].items() if item.opens)
+    assert reachable == set(menus.SCREENS)
+
+
+def test_cursor_wraps_and_back_returns_to_the_opening_item(sim):
+    pause(sim)
+    press_all(sim, ['UP'])
+    assert current() == ('pause', 6)  # wrapped to MAIN MENU
+    press_all(sim, ['UP', 'ENTER'])  # SETTINGS
+    assert current() == ('settings', 0)
+    press_all(sim, ['DOWN', 'DOWN', 'ENTER'])  # CONTROLS
+    assert current() == ('controls', 0)
+    press_all(sim, ['ESC'])
+    assert current() == ('settings', 2)
+    press_all(sim, ['ESC'])
+    assert current() == ('pause', 5)
+    assert 'SETTINGS' in sim.screen.text()
+
+
+def test_guide_pages_return_to_their_entry(sim):
+    pause(sim)
+    press_all(sim, ['DOWN'] * 4 + ['ENTER', 'ENTER', 'DOWN', 'ENTER'])  # BIRDPEDIA > GUIDE > COMMANDS
+    assert current() == ('guide_commands', 0)
+    assert 'P - Pause game' in sim.screen.text()
+    press_all(sim, ['ENTER'])  # the page's only option goes back
+    assert current() == ('guide', 1)
+
+
+def test_pause_root_resumes_with_escape_and_keeps_its_cursor(sim):
+    pause(sim)
+    press_all(sim, ['DOWN', 'DOWN', 'ESC'])
+    assert not state.game.paused
+    pause(sim)
+    assert current() == ('pause', 2)
+
+
+def test_keys_in_a_submenu_do_not_unpause(sim):
+    pause(sim)
+    press_all(sim, ['DOWN'] * 5 + ['ENTER', 'p', 'P'])
+    assert state.game.paused
+    assert current() == ('settings', 0)
+
+
+def test_title_screen_swallows_gameplay_keys(sim):
+    lane = state.player.lane
+    open_title(sim)
+    press_all(sim, ['RIGHT', 'p', 'x', 'SPACE', 'ESC'], title=True)
+    assert state.player.lane == lane
+    assert not state.game.paused
+    assert not state.ui.show_xp_overlay
+    assert current() == ('title', 0)
+
+
+def test_new_game_difficulty_is_chosen_on_the_title_menu(sim):
+    open_title(sim)
+    state.settings.difficulty = 1
+    press_all(sim, ['DOWN', 'LEFT'], title=True)
+    assert state.settings.difficulty == 0
+    assert 'NEW GAME  < PEACEFUL >' in sim.screen.text()
+    press_all(sim, ['RIGHT'], title=True)
+    assert state.settings.difficulty == 1
+    # LEFT/RIGHT elsewhere does nothing
+    press_all(sim, ['UP', 'RIGHT'], title=True)
+    assert state.settings.difficulty == 1
+
+
+def defaults_file():
+    path = save_manager.get_default_settings_path()
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
+def test_title_settings_are_saved_as_defaults_but_pause_settings_are_not(sim):
+    state.settings.sfx_enabled = True
+    save_manager.save_default_settings()
+
+    pause(sim)
+    press_all(sim, ['DOWN'] * 5 + ['ENTER', 'ENTER', 'ENTER'])  # SETTINGS > SOUND > toggle SFX
+    assert state.settings.sfx_enabled is False
+    assert defaults_file()['sfx_enabled'] is True
+    press_all(sim, ['ESC', 'ESC', 'ESC'])
+
+    open_title(sim)
+    press_all(sim, ['DOWN'] * 4 + ['ENTER', 'ENTER', 'RIGHT'], title=True)  # SETTINGS > SOUND > toggle SFX
+    assert state.settings.sfx_enabled is True
+    assert defaults_file()['sfx_enabled'] is True
+    press_all(sim, ['LEFT'], title=True)
+    assert defaults_file()['sfx_enabled'] is False
+    state.settings.sfx_enabled = True
+    save_manager.save_default_settings()
+
+
+def test_rebinding_a_control(sim):
+    pause(sim)
+    press_all(sim, ['DOWN'] * 5 + ['ENTER', 'DOWN', 'DOWN', 'ENTER', 'DOWN', 'DOWN', 'ENTER'])  # CONTROLS > BOUNCE
+    assert state.ui.rebinding_control == 'BOUNCE'
+    assert 'Press new key' in sim.screen.text()
+    press_all(sim, ['!'])  # not bindable: still waiting
+    assert state.ui.rebinding_control == 'BOUNCE'
+    press_all(sim, ['w'])
+    assert state.ui.rebinding_control is None
+    assert state.settings.key_bindings['BOUNCE'] == 'W'
+    # ESC cancels without changing anything
+    press_all(sim, ['ENTER', 'ESC'])
+    assert state.settings.key_bindings['BOUNCE'] == 'W'
+    state.settings.key_bindings['BOUNCE'] = 'UP'
+
+
+def test_save_and_load_through_the_pause_menu(sim):
+    score = state.game.score = 4321
+    pause(sim)
+    press_all(sim, ['DOWN', 'DOWN', 'ENTER', 'DOWN', 'DOWN', 'ENTER'])  # SAVE > SLOT 3
+    assert current() == ('pause', 2)
+    assert save_manager.list_save_slots()[3]['exists']
+
+    state.game.score = 0
+    press_all(sim, ['DOWN', 'ENTER', 'DOWN', 'DOWN', 'DOWN', 'ENTER'])  # LOAD > SLOT 3
+    assert state.game.score == score
+    assert not state.game.paused
+    assert state.ui.notifications[0]['text'] == 'Loaded Slot 3'
+    save_manager.delete_save(3)
+
+
+def test_loading_an_empty_slot_reports_it(sim):
+    for slot in range(4):
+        save_manager.delete_save(slot)
+    pause(sim)
+    press_all(sim, ['DOWN'] * 3 + ['ENTER', 'ENTER'])  # LOAD > AUTO
+    assert state.ui.notifications[0]['text'] == 'Slot is empty!'
+    assert state.game.paused
+    assert 'AUTO  (empty)' in sim.screen.text()
+
+
+def test_main_menu_returns_to_the_title(sim):
+    pause(sim)
+    press_all(sim, ['UP', 'ENTER'])  # MAIN MENU
+    assert state.ui.show_title
+    assert state.game.game_over
+    assert current() == ('title', 0)

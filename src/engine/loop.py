@@ -7,7 +7,7 @@ and game logic advance every N frames, N shrinking as the gear goes up.
 import time
 
 from src.core import state
-from src.engine import input_handler, logic, physics, progression
+from src.engine import input_handler, logic, menus, physics, progression
 from src.engine.timing import FrameClock, frames_per_update
 from src.entities.bird_types import get_bird_type_by_color
 from src.services import achievements, save_manager, sound
@@ -60,8 +60,7 @@ def _discover_current_birds():
 def run_title_screen():
     """Show the title screen until a game starts. Returns False if the user quit."""
     state.ui.show_title = True
-    state.ui.title_menu_index = 0
-    state.ui.settings_menu = None
+    menus.open_title()
 
     clock = FrameClock()
     try:

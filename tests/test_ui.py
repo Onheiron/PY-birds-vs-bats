@@ -5,6 +5,7 @@ import random
 
 import pytest
 
+from src.engine import menus
 from src.services import save_manager
 from src.ui import game_over, terminal
 from tests.harness import Simulation
@@ -36,6 +37,7 @@ def walk_menu(sim, title):
         if title:
             state.ui.show_title = True
         else:
+            state.ui.show_title = False
             state.game.paused = True
         sim.press(key, title=title)
         screens.add(sim.screen.digest())
@@ -52,8 +54,7 @@ def test_pause_menu_navigation(sim):
 def test_title_screen_navigation(sim):
     state = sim.state
     state.ui.show_title = True
-    state.ui.title_menu_index = 0
-    state.ui.settings_menu = None
+    menus.open_title()
     sim.press(None, title=True)
     text = sim.screen.text()
     for option in ('CONTINUE', 'NEW GAME', 'LOAD', 'BIRDPEDIA', 'SETTINGS', 'QUIT'):
@@ -64,8 +65,8 @@ def test_title_screen_navigation(sim):
 def test_new_game_from_title_applies_selected_difficulty(sim):
     state = sim.state
     state.ui.show_title = True
-    state.ui.settings_menu = None
-    state.ui.title_menu_index = 1  # NEW GAME
+    menus.open_title()
+    sim.press('DOWN', title=True)  # CONTINUE -> NEW GAME
     state.settings.difficulty = 1
     try:
         sim.press('RIGHT', title=True)  # NORMAL -> HARD

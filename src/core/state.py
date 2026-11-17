@@ -240,15 +240,11 @@ def _new_ui():
         # Level sign animation in right panel (legacy, not used)
         level_sign_scroll_y=0,
         level_sign_scrolling=False,
-        # Pause menu state
-        pause_menu_index=0,  # 0=RESUME, 1=RESTART, 2=SAVE & EXIT, etc.
-        # Settings menu state
-        settings_menu=None,  # None=not in settings, 'main'/'sound'/'graphics'/'controls'/'save'/'load'
-        settings_index=0,  # Current selection index in settings submenu
-        # Key rebinding state
-        rebinding_control=None,  # None or control name being rebound (e.g., 'MOVE_LEFT')
-        # Title screen state
-        title_menu_index=0,  # 0=CONTINUE, 1=NEW GAME, 2=LOAD, 3=QUIT
+        # Menu navigation: [[screen_id, cursor], ...], root first ('title' or 'pause').
+        # See src/engine/menus.py.
+        menu_stack=[],
+        # Control waiting for a new key on the CONTROLS screen (e.g. 'MOVE_LEFT')
+        rebinding_control=None,
         show_title=True,  # True when on title screen
     )
 
@@ -323,8 +319,8 @@ _SESSION_FACTORIES = (
     (player, _new_player),
 )
 
-# UI fields owned by the title screen flow: a new game must not touch them
-_UI_KEPT_ACROSS_GAMES = ('show_title', 'title_menu_index')
+# UI fields owned by the application rather than by a game: a new game keeps them
+_UI_KEPT_ACROSS_GAMES = ('show_title', 'menu_stack')
 
 # Per-bird lists in ``special`` (one slot per bird) and their initial value
 _PURPLE_BIRD_LISTS = {
