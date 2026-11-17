@@ -82,6 +82,9 @@ def resolve(family, tier, kinds=(), affixes=(), elite=False, extra=None):
     _apply(values, _node(_node(cfg, 'tiers'), tier))
     for kind in kinds:
         _apply(values, _node(_node(cfg, 'kinds'), kind))
+    if family == 'bats':
+        for layer in state.stats.enemy_layers:
+            _apply(values, layer)
     elites = getattr(constants, 'elites', None)
     if elite:
         _apply(values, _node(elites, 'stats'))
@@ -124,7 +127,9 @@ def elite_chance():
     if not table:
         return 0.0
     group = max(1, state.game.level_group)
-    return float(table[min(group, len(table)) - 1])
+    from src.engine import stats
+
+    return min(1.0, float(table[min(group, len(table)) - 1]) + stats.flock('elite_chance'))
 
 
 def roll_elite():

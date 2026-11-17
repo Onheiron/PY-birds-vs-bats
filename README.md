@@ -107,8 +107,14 @@ Distance does not advance while a boss is alive.
   From the second biome some are **elites** (gold, marked ♦): tougher, with
   one or two affixes (Swift, Regenerating, Terrifying...) and better drops.
   Enemy stats and affixes are listed in `docs/stats.md`.
-- **Loot** falls from defeated enemies in six rarities: eggs, plus the
-  power-ups Wide Cursor, Tailwind and Timelapse, each in up to four strengths.
+- **Eggs** fall from defeated enemies, coloured by rarity (grey, green, blue,
+  purple, yellow, white). Picking one up stops the game and offers three cards
+  (more with the right cards): permanent flock bonuses, short boosts,
+  power-ups, cursed cards with a drawback, or a new bird while a lane is free.
+  An egg has at least one card of its rarity and the others are close to it.
+- **Pacts:** after every boss you may accept one of its pacts, a permanent
+  bonus with a permanent drawback, stronger for later bosses, or refuse.
+  `docs/cards.md` lists every card and pact.
 
 ### Difficulty
 

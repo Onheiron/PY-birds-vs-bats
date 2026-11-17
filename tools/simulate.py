@@ -174,11 +174,20 @@ def report(results):
     rows.append(('  by rarity (enemy drops only: Orange eggs and Cookie crumbs are fixed)', None))
     for rarity in RARITIES:
         row(f'  {rarity}', lambda r, k=rarity: mean([x['drops_by_rarity'][k] for x in r]), '{:.2f}')
-    rows.append(('  eggs among them', None))
-    for rarity in RARITIES:
-        row(f'  {rarity} eggs', lambda r, k=rarity: mean([x['egg_drops_by_rarity'][k] for x in r]), '{:.2f}')
 
-    section('Eggs hatched per game, by the rarity of the drop they came from')
+    section('Eggs and cards per game')
+    row('  eggs opened (game stopped to choose)', lambda r: mean([x.get('eggs_opened', 0) for x in r]), '{:.2f}')
+    rows.append(('  cards taken, by rarity', None))
+    for rarity in RARITIES:
+        row(f'    {rarity}', lambda r, k=rarity: mean([x.get('cards_by_rarity', {}).get(k, 0) for x in r]), '{:.2f}')
+    rows.append(('  cards taken, by kind', None))
+    kinds = sorted({k for n in names for x in results[n]['runs'] for k in x.get('cards_by_kind', {})})
+    for kind in kinds:
+        row(f'    {kind}', lambda r, k=kind: mean([x.get('cards_by_kind', {}).get(k, 0) for x in r]), '{:.2f}')
+    row('  pacts offered', lambda r: mean([x.get('pacts_offered', 0) for x in r]), '{:.2f}')
+    row('  pacts made', lambda r: mean([len([p for p in x.get('pacts', []) if p != 'refuse']) for x in r]), '{:.2f}')
+
+    section('Birds hatched from cards per game, by rarity (Orange eggs excluded)')
     for rarity in RARITIES:
         row(f'  {rarity}', lambda r, k=rarity: mean([x['hatched_by_rarity'][k] for x in r]), '{:.2f}')
     for rarity in RARITIES[2:]:
@@ -190,7 +199,7 @@ def report(results):
 
     row('  Orange re-hatching its own egg', lambda r: mean([x['hatched_from_orange'] for x in r]), '{:.2f}')
 
-    section('Birds hatched (all games)')
+    section('Birds hatched (all games, Orange re-hatching included)')
     totals = {n: Counter(egg for x in results[n]['runs'] for egg in x['hatched']) for n in names}
     for egg in sorted({e for c in totals.values() for e in c}, key=lambda e: -sum(c[e] for c in totals.values())):
         rows.append((f'  {egg.replace("_egg", "")}', [str(totals[n][egg]) for n in names]))

@@ -21,6 +21,10 @@ Events and their fields:
   level_up          level
   boss_spawned      boss_type
   boss_defeated     boss_type
+  choice_offered    offer (an egg's cards or a boss's pacts; the game stops)
+  choice_made       offer, card
+  card_picked       card
+  pact_made         pact
 """
 
 from collections import defaultdict

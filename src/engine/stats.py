@@ -80,6 +80,13 @@ BIRD_STATS = {
     'luck': StatDef(0, 0, 1, 'chance to upgrade the rarity of what it collects'),
 }
 
+# Stats of the flock as a whole (not of one bird): modified with target 'flock'
+FLOCK_STATS = {
+    'choices': StatDef(3, 1, 6, 'options offered by an egg'),
+    'egg_luck': StatDef(0, 0, 1, 'chance that an enemy drop is one rarity higher'),
+    'elite_chance': StatDef(0, 0, 1, 'added to the chance that a bat spawns as an elite'),
+}
+
 # Modifiers: {'target': bird index or 'flock', 'stat', 'add', 'mul', 'until', 'source'}
 _cache = {}
 _cache_key = [None]
@@ -169,8 +176,10 @@ def bird(i, name):
 
 def add_modifier(target, stat, add=0.0, mul=1.0, seconds=None, source=''):
     """Change a stat for one bird (index) or for the whole flock ('flock')."""
-    if stat not in BIRD_STATS:
-        raise KeyError(f'unknown bird stat {stat!r}')
+    if stat not in BIRD_STATS and stat not in FLOCK_STATS:
+        raise KeyError(f'unknown stat {stat!r}')
+    if stat in FLOCK_STATS and target != 'flock':
+        raise ValueError(f'{stat!r} is a flock stat: its target must be "flock"')
     until = None if seconds is None else clock.now() + seconds
     state.stats.modifiers.append(
         {'target': target, 'stat': stat, 'add': add, 'mul': mul, 'until': until, 'source': source}
@@ -193,6 +202,17 @@ def expire_modifiers():
     state.stats.modifiers[:] = [m for m in state.stats.modifiers if m['until'] is None or m['until'] > now]
     if len(state.stats.modifiers) != before:
         state.stats.version += 1
+
+
+def flock(name):
+    """Current value of the flock stat ``name`` (choices per egg, egg luck...)."""
+    definition = FLOCK_STATS[name]
+    add, mul = 0.0, 1.0
+    for mod in state.stats.modifiers:
+        if mod['stat'] == name:
+            add += mod.get('add', 0)
+            mul *= mod.get('mul', 1)
+    return max(definition.minimum, min(definition.maximum, (definition.default + add) * mul))
 
 
 def type_value(bird_type, name):

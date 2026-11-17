@@ -366,7 +366,12 @@ def draw_loot(fb):
             else:
                 power_color = get_dynamic_color('WHITE')
 
-            if loot_type in loot_symbols:
+            if loot_type == 'egg':
+                # Rarity eggs: grey, green, blue, purple, yellow, white
+                from src.ui.layers.choice import RARITY_COLORS
+
+                char, color = '⬯', RARITY_COLORS.get(rarity, power_color)
+            elif loot_type in loot_symbols:
                 char, color_name = loot_symbols[loot_type]
                 color = get_dynamic_color(color_name)
             elif 'wide_cursor' in loot_type:

@@ -277,6 +277,9 @@ def save_game(slot=0):
         'items': _namespace_to_dict(state.items),
         'powerups': _namespace_to_dict(state.powerups),
         'stat_modifiers': list(state.stats.modifiers),
+        'enemy_layers': list(state.stats.enemy_layers),
+        'pacts': list(state.stats.pacts),
+        'choice': {'active': state.choice.active, 'queue': list(state.choice.queue)},
         'game': _build_game_dict(),
         'player': _build_player_dict(),
         'ui': _build_ui_dict(),
@@ -344,6 +347,13 @@ def load_game(slot):
             for m in data.get('stat_modifiers', [])
         ]
         state.stats.version += 1
+        state.stats.enemy_layers[:] = data.get('enemy_layers', [])
+        state.stats.pacts[:] = data.get('pacts', [])
+        saved_choice = data.get('choice') or {}
+        state.choice.active = saved_choice.get('active')
+        state.choice.queue[:] = saved_choice.get('queue', [])
+        if state.choice.active is not None:
+            state.choice.active['opened_at'] = time.time()
         _restore_game_state(data.get('game', {}))
         _restore_player_state(data.get('player', {}))
         _restore_ui_state(data.get('ui', {}))

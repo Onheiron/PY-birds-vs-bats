@@ -1250,6 +1250,1038 @@
       },
       "type": "object"
     },
+    "cards": {
+      "properties": {
+        "bird_weight": {
+          "type": "number"
+        },
+        "catalog": {
+          "properties": {
+            "bat_hunter": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "blood_price": {
+              "properties": {
+                "drawbacks": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "brave_hearts": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "fearless": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "seconds": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "feather_brake": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "frenzy": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "seconds": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "gamblers_luck": {
+              "properties": {
+                "drawbacks": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "giant_slayer": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "glass_wings": {
+              "properties": {
+                "drawbacks": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "golden_hour": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "seconds": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "heavy_blows": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "heavy_crown": {
+              "properties": {
+                "drawbacks": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "hollow_bones": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "jet_stream": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "seconds": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "keen_eyes": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "lasting_powers": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "lucky_feather": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "lucky_nest": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "lumberjack": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "more_choices": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "scale": {
+                        "type": "boolean"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "piercing_talons": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "potent_powers": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "quick_study": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "reckless": {
+              "properties": {
+                "drawbacks": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "safety_net": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "second_wind": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "scale": {
+                        "type": "boolean"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "sharp_beaks": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "show_off": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "steady_nerves": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "tailwind": {
+              "properties": {
+                "kind": {
+                  "type": "string"
+                },
+                "max_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "powerup": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "timelapse": {
+              "properties": {
+                "kind": {
+                  "type": "string"
+                },
+                "max_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "powerup": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "training": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "xp": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "wide_cursor": {
+              "properties": {
+                "kind": {
+                  "type": "string"
+                },
+                "max_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "powerup": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "wide_wings": {
+              "properties": {
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "drop_chance": {
+          "properties": {
+            "bat": {
+              "type": "number"
+            },
+            "boss": {
+              "type": "number"
+            },
+            "mini_bat": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "other_slots": {
+          "properties": {
+            "common": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "epic": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "legendary": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "mythical": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "rare": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "uncommon": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "rarity_scale": {
+          "properties": {
+            "common": {
+              "type": "number"
+            },
+            "epic": {
+              "type": "number"
+            },
+            "legendary": {
+              "type": "number"
+            },
+            "mythical": {
+              "type": "number"
+            },
+            "rare": {
+              "type": "number"
+            },
+            "uncommon": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "clockwork": {
       "properties": {
         "decay_seconds": {
@@ -1376,12 +2408,6 @@
     },
     "eggs": {
       "properties": {
-        "drop_probs": {
-          "additionalProperties": {
-            "type": "number"
-          },
-          "type": "object"
-        },
         "rarity_candidates": {
           "properties": {
             "common": {
@@ -2238,6 +3264,528 @@
           "type": "number"
         },
         "xp": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "pacts": {
+      "properties": {
+        "by_boss": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "object"
+        },
+        "catalog": {
+          "properties": {
+            "bat_plague": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "blood_oath": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "featherweight": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "glass_cannon": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "greedy_nest": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "enemy": {
+                        "properties": {
+                          "hp_mult": {
+                            "type": "number"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "hunters_moon": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "iron_will": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "last_stand": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "midas": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "reaper": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "tempest": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "thick_skin": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "war_drums": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "enemy": {
+                        "properties": {
+                          "fear_strength": {
+                            "type": "number"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "wealth": {
+              "properties": {
+                "bane": {
+                  "items": {
+                    "properties": {
+                      "enemy": {
+                        "properties": {
+                          "defense": {
+                            "type": "number"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "boon": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "intensity_by_boss": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "offered": {
           "type": "number"
         }
       },

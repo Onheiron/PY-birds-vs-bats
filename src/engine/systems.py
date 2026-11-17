@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from src.core import state
-from src.engine import enemy_stats, events, stats
+from src.engine import choices, enemy_stats, events, stats
 from src.engine.bat_ai import update_bat_positions
 from src.engine.glitch import update_glitch_chaos
 from src.engine.logic.bosses.director import (
@@ -113,6 +113,8 @@ class _BossWatch:
         if defeated and not self.defeated and self.boss_type is not None:
             events.emit('boss_defeated', boss_type=self.boss_type)
             self.boss_type = None
+            # Every biome boss offers a pact (see src/engine/cards.py)
+            choices.offer_pact(state.game.level_group)
         self.defeated = defeated
 
 

@@ -32,6 +32,8 @@ class RunStats:
         self._drop_source = {}  # id(loot) -> source
         self.lost = Counter()
         self.kills = Counter()
+        self.picks = []  # (offer kind, card kind, card rarity, card id)
+        self.offers = Counter()  # offer kind ('egg', 'pact') -> count
         self.bosses = {}  # boss type -> {'spawned': s, 'defeated': s or None}
         self.level_times = {state.game.level: 0.0}
         self.samples = []  # (seconds, level, gear, prestige, birds alive, score)
@@ -54,8 +56,14 @@ class RunStats:
     def _on_bird_hatched(self, bird, egg, loot):
         loot = loot or {}
         rarity = loot.get('rarity', '?')
-        source = self._drop_source.get(id(loot), '?')
+        source = self._drop_source.get(id(loot), 'card')
         self.hatched.append((self._now(), egg, rarity, source))
+
+    def _on_choice_offered(self, offer):
+        self.offers[offer['kind']] += 1
+
+    def _on_choice_made(self, offer, card):
+        self.picks.append((offer['kind'], card['kind'], card['rarity'], card['id']))
 
     def _on_bird_lost(self, bird, color, cause):
         self.lost[cause] += 1
@@ -85,6 +93,8 @@ class RunStats:
             'loot_dropped': self._on_loot_dropped,
             'loot_collected': self._on_loot_collected,
             'bird_hatched': self._on_bird_hatched,
+            'choice_offered': self._on_choice_offered,
+            'choice_made': self._on_choice_made,
             'bird_lost': self._on_bird_lost,
             'bat_killed': self._on_bat_killed,
             'mini_bat_killed': self._on_mini_bat_killed,
@@ -129,10 +139,9 @@ class RunStats:
         prestiges = [s[3] for s in self.samples]
         gears = [s[2] for s in self.samples]
         drop_rarity = Counter(rarity for _t, src, rarity, _type in self.drops if src in ENEMY_SOURCES)
-        egg_drops = Counter(
-            rarity for _t, src, rarity, loot in self.drops if src in ENEMY_SOURCES and loot.endswith('_egg')
-        )
-        hatched = Counter(rarity for _t, _egg, rarity, src in self.hatched if src in ENEMY_SOURCES)
+        egg_drops = Counter(rarity for _t, src, rarity, loot in self.drops if src in ENEMY_SOURCES and loot == 'egg')
+        hatched = Counter(rarity for _t, _egg, rarity, src in self.hatched if src != 'orange')
+        egg_picks = [p for p in self.picks if p[0] == 'egg']
         minutes = self.seconds / 60
         return {
             'seed': self.config.seed,
@@ -154,6 +163,11 @@ class RunStats:
             'hatched': [egg for _t, egg, _r, _src in self.hatched],
             'hatched_from_orange': sum(1 for *_rest, src in self.hatched if src == 'orange'),
             'birds_lost': dict(self.lost),
+            'eggs_opened': self.offers.get('egg', 0),
+            'cards_by_kind': dict(Counter(kind for _o, kind, _r, _id in egg_picks)),
+            'cards_by_rarity': {r: sum(1 for p in egg_picks if p[2] == r) for r in RARITIES},
+            'pacts_offered': self.offers.get('pact', 0),
+            'pacts': [cid for offer, _k, _r, cid in self.picks if offer == 'pact'],
             'kills': dict(self.kills),
             'bosses': self.bosses,
             'level_minutes': {level: round(t / 60, 2) for level, t in sorted(self.level_times.items())},

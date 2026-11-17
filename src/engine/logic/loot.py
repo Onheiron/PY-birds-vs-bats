@@ -3,7 +3,8 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, events, stats
+from src.engine import bird_kinds, choices, clock, events, stats
+from src.engine.enemy_stats import upgrade_rarity
 from src.engine.progression import award_xp
 from src.entities.bird_types import get_bird_type_from_egg, get_color_for_bird_type, get_default_speed
 from src.entities.sprites import (
@@ -58,34 +59,42 @@ def check_loot_collection():
 
 
 def _promote_loot_rarity(loot):
-    """Promote loot to next rarity tier."""
-    rar = loot.get('rarity', 'common')
-    if rar == 'common':
-        loot['rarity'] = 'uncommon'
-    elif rar == 'uncommon':
-        loot['rarity'] = 'rare'
-    elif rar == 'rare':
-        loot['rarity'] = 'epic'
+    """Promote loot to the next rarity (lucky birds)."""
+    loot['rarity'] = upgrade_rarity(loot.get('rarity', 'common'), 1)
 
 
 def _apply_loot_effect(loot, collector_idx):
     """Apply the effect of collected loot."""
     loot_type = loot['type']
 
-    if loot_type.endswith('_egg'):
-        # Eggs hatch a new bird
+    if loot_type == 'egg':
+        # Rarity eggs stop the game and offer cards
+        choices.offer_egg(loot.get('rarity', 'common'))
+    elif loot_type.endswith('_egg'):
+        # Bird eggs (an Orange's own egg) hatch a new bird
         _spawn_bird_from_egg(loot_type, loot)
     elif loot_type == 'cookie_crumb':
         xp_val = loot.get('xp', 0)
         if xp_val > 0 and state.birds.colors[collector_idx] != COOKIE:
             award_xp(collector_idx, xp_val)
-    elif loot_type.startswith('timelapse'):
-        _apply_timelapse_power(loot_type)
     else:
-        for name in _POWERUPS:
-            if loot_type.startswith(name):
-                _apply_timed_power(name, loot_type)
-                break
+        apply_powerup(loot_type)
+
+
+def apply_powerup(loot_type):
+    """Start a power-up such as 'tailwind+', 'wide_cursor_max' or 'timelapse++'."""
+    if loot_type.startswith('timelapse'):
+        _apply_timelapse_power(loot_type)
+        return
+    for name in _POWERUPS:
+        if loot_type.startswith(name):
+            _apply_timed_power(name, loot_type)
+            return
+
+
+def hatch_bird(bird_type, loot=None):
+    """Hatch a bird of ``bird_type`` into the first free slot (a bird card)."""
+    _spawn_bird_from_egg(f'{bird_type.lower()}_egg', loot)
 
 
 def _spawn_bird_from_egg(egg_type, loot=None):

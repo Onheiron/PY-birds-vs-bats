@@ -52,6 +52,10 @@ class Skill:
     # the bird in its lane, unless the bird cannot wait any longer
     dodge: bool = True
     dodge_margin: int = 60  # frames of slack below which a blocked bird is bounced anyway
+    # Egg cards: 'smart' (rarity, then kind), 'first', 'random'
+    card_policy: str = 'smart'
+    # Boss pacts: 'smart' (the one with the fewest drawbacks), 'refuse', 'random'
+    pact_policy: str = 'smart'
 
 
 PROFILES = {
@@ -354,8 +358,40 @@ class Bot:
             return None
         return left if lane < state.player.lane else right
 
+    def _choose(self, offer):
+        """Index of the option the bot wants in a choice on screen."""
+        options = offer['cards']
+        policy = self.skill.pact_policy if offer['kind'] == 'pact' else self.skill.card_policy
+        if policy == 'random':
+            return self.rng.randrange(len(options))
+        if offer['kind'] == 'pact':
+            if policy == 'refuse':
+                return len(options) - 1
+            pacts = [i for i, c in enumerate(options) if c['kind'] == 'pact']
+            return min(pacts, key=lambda i: (len(options[i]['drawbacks']), -len(options[i]['effects'])))
+        if policy == 'first':
+            return 0
+        rank = {'common': 0, 'uncommon': 1, 'rare': 2, 'epic': 3, 'legendary': 4, 'mythical': 5}
+        value = {'bird': 1.6, 'flock': 1.5, 'stat': 1.0, 'cursed': 0.9, 'training': 0.5, 'boost': 0.4, 'powerup': 0.3}
+
+        def worth(i):
+            return (rank[options[i]['rarity']] + 1) * value.get(options[i]['kind'], 1)
+
+        return max(range(len(options)), key=worth)
+
+    def _choice_key(self, offer):
+        bindings = state.settings.key_bindings
+        target = self._choose(offer)
+        if offer['index'] < target:
+            return bindings.get('MOVE_RIGHT', 'RIGHT')
+        if offer['index'] > target:
+            return bindings.get('MOVE_LEFT', 'LEFT')
+        return 'ENTER'
+
     def decide(self):
         """The key to press this frame, or None."""
+        if state.choice.active is not None:
+            return self._choice_key(state.choice.active)
         targets = self._urgent_targets()
         if targets:
             slack, lane, _bird, _ready = min(targets)

@@ -5,6 +5,7 @@ from src.ui.framebuffer import get_framebuffer
 from src.ui.layers.background import draw_background, draw_cloud_banks, draw_tree_boss_background
 from src.ui.layers.birds import draw_birds
 from src.ui.layers.bosses import draw_boss
+from src.ui.layers.choice import draw_choice_overlay
 from src.ui.layers.enemies import (
     draw_bats,
     draw_loot,
@@ -60,6 +61,7 @@ def render_game():
     draw_cloud_banks(fb)  # Mountain Range foreground clouds (on top of birds)
     draw_floor_and_cursor(fb)
     draw_footer(fb)
+    draw_choice_overlay(fb)
     draw_pause_overlay(fb)
     for overlay in OVERLAYS:
         overlay(fb)

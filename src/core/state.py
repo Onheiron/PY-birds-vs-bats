@@ -219,6 +219,19 @@ def _new_stats():
         # Stat modifiers from cards, boosts and pacts (see src/engine/stats.py)
         modifiers=[],
         version=0,  # bumped whenever modifiers change, to refresh cached stats
+        # Extra stat layers applied to every enemy spawning from now on (pacts)
+        enemy_layers=[],
+        # Pacts accepted this run (ids), in order
+        pacts=[],
+    )
+
+
+def _new_choice():
+    return SimpleNamespace(
+        # The choice on screen (game stopped) or None; see src/engine/choices.py
+        active=None,
+        # Choices waiting their turn (an egg picked up during a pact, two eggs at once...)
+        queue=[],
     )
 
 
@@ -302,6 +315,7 @@ powerups = _new_powerups()
 game = _new_game()
 player = _new_player()
 stats = _new_stats()
+choice = _new_choice()
 ui = _new_ui()
 settings = _new_settings()
 discovery = _new_discovery()
@@ -317,6 +331,7 @@ _SESSION_FACTORIES = (
     (game, _new_game),
     (player, _new_player),
     (stats, _new_stats),
+    (choice, _new_choice),
 )
 
 # UI fields owned by the application rather than by a game: a new game keeps them

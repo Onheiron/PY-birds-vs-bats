@@ -19,6 +19,8 @@ from src.entities.bird_types import BirdType, get_color_for_bird_type  # noqa: E
 
 SECTIONS = (
     'layout',
+    'cards',
+    'pacts',
     'enemy_stats',
     'elites',
     'birds',
@@ -72,7 +74,6 @@ _DICT_ATTRIBUTES = (
     ('bat_enemy', 'loot_base_weights'),
     ('bat_enemy', 'hp_by_tier'),
     ('obstacle', 'max_hp_by_tier'),
-    ('eggs', 'drop_probs'),
     ('eggs', 'rarity_candidates'),
 )
 

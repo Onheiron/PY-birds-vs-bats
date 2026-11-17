@@ -34,8 +34,8 @@ class Session:
         game = state.game
         now = time.time()
 
-        if game.paused:
-            # Neither miles nor game time advance while paused
+        if game.paused or state.choice.active is not None:
+            # Neither miles nor game time advance while paused or choosing a card
             if game.last_mile_update is not None:
                 clock.hold(now - game.last_mile_update)
             game.last_mile_update = now

@@ -1,7 +1,7 @@
 """Input dispatcher: routes each key to menus or gameplay actions."""
 
 from src.core import state
-from src.engine import menus
+from src.engine import choices, menus
 from src.engine.actions import (
     handle_audio_toggle,
     handle_bounce,
@@ -35,6 +35,17 @@ def process_input(key):
     if state.game.paused:
         menus.ensure_pause_root()
         menus.handle_key(key)
+        return
+
+    # While a choice is on screen (egg cards, pacts) keys pick an option; P still pauses
+    if state.choice.active is not None:
+        if key in ('P', 'p'):
+            handle_pause()
+        elif key == 'QUIT':
+            state.game.quit_requested = True
+            state.game.game_over = True
+        else:
+            choices.handle_key(key)
         return
 
     # Get key bindings

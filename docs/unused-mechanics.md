@@ -160,22 +160,14 @@ with every bird type while recording which configuration values are read.
 These are meant to work, so they were **not** removed. Fixing them changes the
 balance, so they are waiting for a decision.
 
-### Egg tables (`eggs.rarity_candidates`)
-The configuration is converted so that these tables end up in a shape
-`_choose_egg` (`src/engine/loot_tables.py`) does not recognise, and it always
-falls back to a table written in the code:
-
-| Rarity rolled | Eggs in config.yml | Eggs the game actually drops |
-|---|---|---|
-| common | yellow, red, blue, patchwork | yellow, red, blue |
-| uncommon | frosty, poison, berserk, purple, rock | blue, patchwork, purple |
-| rare | clockwork, cookie, stealth, twister | white, orange, gold |
-| epic | white, orange, gold | dinosaur, glitch |
-| legendary | dinosaur, glitch | **yellow** |
-| mythical | rainbow | **yellow** |
-
-So Frosty, Poison, Berserk, Rock, Clockwork, Cookie, Stealth, Twister and
-Rainbow never hatch, and a legendary or mythical drop is a yellow egg.
+### Egg tables (`eggs.rarity_candidates`) — fixed
+The configuration was converted so that these tables ended up in a shape
+`_choose_egg` did not recognise, and it always fell back to a table written in
+the code: Frosty, Poison, Berserk, Rock, Clockwork, Cookie, Stealth, Twister
+and Rainbow never hatched, and a legendary or mythical drop was a yellow egg.
+Since the card system (`docs/cards.md`) the tables are read correctly and
+decide which bird a bird card hatches; `eggs.drop_probs` and the hard-coded
+table are gone.
 
 ### Swamp flowers (`swamp_flowers.bloom_probability`)
 The `swamp_flowers` section is not in `SECTIONS` (`src/core/constants.py`), so
