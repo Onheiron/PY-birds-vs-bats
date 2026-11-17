@@ -63,8 +63,9 @@ def test_skill_profiles_can_be_adjusted():
 
 
 def test_cli_parses_overrides():
-    cli = load_cli()
-    parsed = cli.parse_assignments('bat_enemy.max_bats_by_level.level_4_6=2; speed.mph_per_level=60; birds.x=[1, 2]')
+    from src.sim.options import parse_assignments
+
+    parsed = parse_assignments('bat_enemy.max_bats_by_level.level_4_6=2; speed.mph_per_level=60; birds.x=[1, 2]')
     assert parsed == {
         'bat_enemy': {'max_bats_by_level': {'level_4_6': 2}},
         'speed': {'mph_per_level': 60},

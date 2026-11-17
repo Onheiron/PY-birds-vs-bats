@@ -34,69 +34,22 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DIFFICULTIES = {
-    'peaceful': 0,
-    'easy': 0,
-    'adventure': 1,
-    'normal': 1,
-    'survival': 2,
-    'hard': 2,
-    'legendary': 3,
-    'hell': 3,
-}
+sys.path.insert(0, str(ROOT))
 RARITIES = ('common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical')
 
 
-def parse_assignments(text):
-    """'a.b=1; c=[1,2]' -> {'a': {'b': 1}, 'c': [1, 2]} (values parsed as YAML)."""
-    import yaml
-
-    result = {}
-    for part in filter(None, (p.strip() for p in text.split(';'))):
-        if '=' not in part:
-            raise SystemExit(f'expected key=value, got {part!r}')
-        key, value = part.split('=', 1)
-        node = result
-        *parents, leaf = key.strip().split('.')
-        for name in parents:
-            node = node.setdefault(name, {})
-        node[leaf] = yaml.safe_load(value)
-    return result
-
-
-def merge(base, extra):
-    out = dict(base)
-    for key, value in extra.items():
-        out[key] = merge(out[key], value) if isinstance(value, dict) and isinstance(out.get(key), dict) else value
-    return out
-
-
 def build_parser():
+    from src.sim.options import add_game_options
+
     parser = argparse.ArgumentParser(
         description=__doc__.split('\n\n')[0],
         epilog=__doc__.split('\n\n', 1)[1],
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument('--runs', type=int, default=20, help='games per variant (default 20)')
-    parser.add_argument('--seed', type=int, default=1, help='first seed; run k uses seed+k')
     parser.add_argument('--jobs', type=int, default=0, help='parallel processes (default: all CPUs)')
-    parser.add_argument('--bot', default='expert', help='skill profile (default expert)')
-    parser.add_argument(
-        '--bot-set',
-        action='append',
-        default=[],
-        metavar='FIELD=VALUE',
-        help='change one skill field, e.g. key_interval=3',
-    )
-    parser.add_argument('--difficulty', default='adventure', choices=sorted(DIFFICULTIES))
+    add_game_options(parser)
     parser.add_argument('--base', metavar='FILE', help='configuration merged over config.yml (e.g. hardmode.yml)')
-    parser.add_argument(
-        '--set',
-        action='append',
-        default=[],
-        metavar='KEY=VALUE',
-        help='configuration override, e.g. bat_enemy.max_on_screen=3',
-    )
     parser.add_argument(
         '--variant',
         action='append',
@@ -104,8 +57,6 @@ def build_parser():
         metavar='"NAME: KEY=VALUE; ..."',
         help='compare configurations (repeatable); every variant uses the same seeds',
     )
-    parser.add_argument('--formation', help='starting flock, e.g. RED,RED,BLUE,...')
-    parser.add_argument('--start-level', type=int, default=1)
     parser.add_argument('--stop-at-level', type=int)
     parser.add_argument('--max-minutes', type=float, default=180.0, help='game-time limit per run')
     parser.add_argument('--json', metavar='FILE', help='write every run summary to this file')
@@ -121,22 +72,13 @@ def main(argv=None):
     import tempfile
 
     os.environ['HOME'] = os.environ['USERPROFILE'] = tempfile.mkdtemp(prefix='bvb-sim-')
-    sys.path.insert(0, str(ROOT))
     from src.core.config import load_config
-    from src.sim.bot import PROFILES, profile
+    from src.sim.options import DIFFICULTIES, formation_from, merge, overrides_from, parse_assignments, skill_from
     from src.sim.runner import RunConfig, run_many
 
-    if args.bot not in PROFILES:
-        raise SystemExit(f'unknown bot profile {args.bot!r}; choose from {", ".join(PROFILES)}')
-    skill_changes = {}
-    for item in args.bot_set:
-        skill_changes.update(parse_assignments(item))
-    skill = profile(args.bot, **skill_changes)
-
+    skill = skill_from(args)
     base = load_config(args.base) if args.base else None
-    common = {}
-    for item in args.set:
-        common = merge(common, parse_assignments(item))
+    common = overrides_from(args)
 
     variants = []
     for spec in args.variant or ['default:']:
@@ -144,7 +86,7 @@ def main(argv=None):
         variants.append((name.strip() or 'default', merge(common, parse_assignments(assignments))))
 
     jobs = args.jobs or __import__('os').cpu_count() or 1
-    formation = [b.strip().upper() for b in args.formation.split(',')] if args.formation else None
+    formation = formation_from(args)
     configs = []
     for _name, overrides in variants:
         for k in range(args.runs):

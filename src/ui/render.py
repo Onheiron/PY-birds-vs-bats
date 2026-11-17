@@ -29,12 +29,14 @@ from src.ui.layers.panels import (
     draw_side_panels,
 )
 
+# Extra layers drawn on top of everything, e.g. the watch-mode status bar.
+# Each is a callable taking the framebuffer.
+OVERLAYS = []
+
 
 def render_game():
     """Main render function using differential framebuffer."""
     fb = get_framebuffer()
-
-    # Level is now computed from miles in update_miles(), not from score
 
     # Render all components to framebuffer
     draw_side_panels(fb)  # Side panels FIRST (background)
@@ -59,6 +61,8 @@ def render_game():
     draw_floor_and_cursor(fb)
     draw_footer(fb)
     draw_pause_overlay(fb)
+    for overlay in OVERLAYS:
+        overlay(fb)
 
     # Generate differential output and write to screen
     terminal.write_frame(fb.render())

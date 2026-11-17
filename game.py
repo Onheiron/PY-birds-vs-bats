@@ -4,11 +4,13 @@
 import sys
 
 USAGE = """\
-usage: game.py [--config FILE] [--theme FILE] [--version] [--help]
+usage: game.py [--config FILE] [--theme FILE] [--bot PROFILE ...] [--version] [--help]
 
   --config FILE   YAML configuration merged over the defaults in config.yml
                   (try hardmode.yml, or start from config.sample.yml)
   --theme FILE    colour theme (default: theme.yml)
+  --bot PROFILE   watch the bot play (perfect, expert, average, novice);
+                  see game.py --bot expert --help for its options
   --version       print the version and exit
   --help          show this message and exit
 
@@ -22,6 +24,11 @@ def main():
 
     if '--version' in sys.argv[1:]:
         print(f'BVB {__version__}')
+        return
+    if any(arg == '--bot' or arg.startswith('--bot=') for arg in sys.argv[1:]):
+        from src.sim import watch
+
+        watch.main(sys.argv[1:])
         return
     if '--help' in sys.argv[1:] or '-h' in sys.argv[1:]:
         print(USAGE, end='')

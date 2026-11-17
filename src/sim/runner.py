@@ -64,7 +64,8 @@ def run(config):
         time.time = real_time
 
 
-def _play(config, virtual):
+def start_game(config, now):
+    """Set up a fresh game for ``config`` at time ``now``; returns (bot, session)."""
     overrides = dict(config.overrides)
     if config.formation:
         overrides = constants_merge(overrides, {'birds': {'default_formation': list(config.formation)}})
@@ -74,17 +75,31 @@ def _play(config, virtual):
     state.settings.difficulty = config.difficulty
     state.ui.show_title = False
     state.ui.menu_stack = []
-    state.game.start_time = virtual.now
-    state.game.last_mile_update = virtual.now
+    state.game.start_time = now
+    state.game.last_mile_update = now
 
-    milestones = progression.get_level_milestones()
     if config.start_level > 1:
+        milestones = progression.get_level_milestones()
         state.game.miles = float(milestones[config.start_level - 2]) + 0.01
         progression.update_miles(1e-9)
 
-    bot = Bot(config.skill, seed=config.seed ^ 0x5EED)
-    session = loop.Session()
-    stats = RunStats(config, milestones)
+    return Bot(config.skill, seed=config.seed ^ 0x5EED), loop.Session()
+
+
+def end_reason(config):
+    """Why the game is over, or None while it goes on."""
+    if state.game.game_over:
+        return 'game over'
+    if state.game.miles >= progression.get_level_milestones()[-1]:
+        return 'completed'
+    if config.stop_at_level and state.game.level >= config.stop_at_level:
+        return f'reached level {config.stop_at_level}'
+    return None
+
+
+def _play(config, virtual):
+    bot, session = start_game(config, virtual.now)
+    stats = RunStats(config, progression.get_level_milestones())
 
     frames_limit = int(config.max_minutes * 60 / FRAME_DT)
     sample_every = max(1, int(config.sample_seconds / FRAME_DT))
@@ -99,14 +114,9 @@ def _play(config, virtual):
 
             if frame % sample_every == 0:
                 stats.sample(frame * FRAME_DT)
-            if state.game.game_over:
-                end = 'game over'
-                break
-            if state.game.miles >= milestones[-1]:
-                end = 'completed'
-                break
-            if config.stop_at_level and state.game.level >= config.stop_at_level:
-                end = f'reached level {config.stop_at_level}'
+            reason = end_reason(config)
+            if reason:
+                end = reason
                 break
             virtual.now += FRAME_DT
 

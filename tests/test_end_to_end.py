@@ -157,3 +157,18 @@ def test_version_flag(tmp_path):
 
     assert result.returncode == 0
     assert result.stdout.strip() == f'BVB {__version__}'
+
+
+def test_watch_the_bot_play(tmp_path):
+    game = GameProcess(tmp_path, '--bot', 'perfect', '--speed', '4')
+    try:
+        game.wait_for('BOT perfect is playing')
+        game.wait_for('MPH')
+        game.send('+')
+        game.wait_for('x8')
+        game.send('b')
+        game.wait_for('YOU are playing')
+        game.send('q')
+        assert game.wait_exit() == 0, game.stderr()
+    finally:
+        game.close()

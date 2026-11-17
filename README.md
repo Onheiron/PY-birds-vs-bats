@@ -41,6 +41,7 @@ pip install -r requirements-optional.txt
 |---|---|
 | `--config FILE` | YAML configuration, merged over the defaults in `config.yml` |
 | `--theme FILE` | Colour theme (default `theme.yml`) |
+| `--bot PROFILE` | Watch the bot play (see below) |
 | `--version` | Print the version |
 | `--help` | Show usage |
 
@@ -223,6 +224,24 @@ packaging/              PyInstaller spec
   (loaded from the config). A game is deterministic for a given seed, which is
   what the test harness (`tests/harness.py`) relies on: it runs the real loop
   with a virtual clock and a tiny terminal emulator instead of a screen.
+
+### Watching the bot
+
+```bash
+python3 game.py --bot expert
+```
+
+```bash
+python3 game.py --bot perfect --speed 4 --start-level 10 --difficulty legendary
+```
+
+Options: `--bot` (`perfect`, `expert`, `average`, `novice`), `--bot-set
+key_interval=3` to tweak it, `--seed`, `--difficulty`, `--start-level`,
+`--formation RED,RED,...`, `--set section.key=value`, `--speed`, `--games N`
+(back to back, one seed after the other), `--sound`. While it plays: `+`/`-`
+change speed (x0.25 to x16), `B` takes over the controls and gives them back,
+`P` opens the pause menu, `Q` quits. A watched game is the same game the
+simulator plays for that seed and those options.
 
 ### Balance simulator
 
