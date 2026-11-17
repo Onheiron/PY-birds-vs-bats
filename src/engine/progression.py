@@ -4,26 +4,10 @@ import functools
 import random
 
 from src.core import constants, state
-from src.engine import events
+from src.engine import events, stats
 from src.engine.birds import transform_bird_to_s
-from src.engine.grades import compute_grade_from_xp
 from src.entities.sprites import (
-    BERSERK,
-    CLOCKWORK,
-    COOKIE,
-    DINOSAUR,
-    FROSTY,
     GLITCH,
-    GOLD,
-    ORANGE,
-    PATCHWORK,
-    POISON,
-    PURPLE,
-    RAINBOW,
-    ROCK,
-    STEALTH,
-    TWISTER,
-    WHITE,
 )
 from src.services.sound import get_audio
 
@@ -177,38 +161,6 @@ def compute_prestige():
     """Compute prestige multiplier based on active bird grades and rarity."""
     total = 1.0
 
-    # Rarity-based prestige bonuses
-    # COMMON (0): yellow, red, blue, patchwork
-    # UNCOMMON (+1): frosty, poison, berserk, purple, rock
-    # RARE (+2): clockwork, cookie, stealth, twister
-    # EPIC (+3): white, orange, gold
-    # LEGENDARY (+4): dinosaur, glitch (random 1-7)
-    # MYTHICAL (+5): rainbow
-    rarity_bonuses = {
-        # Common (+0) - yellow, red, blue, patchwork have no bonus
-        PATCHWORK: 0.0,
-        # Uncommon (+1)
-        FROSTY: 1.0,
-        POISON: 1.0,
-        BERSERK: 1.0,
-        PURPLE: 1.0,
-        ROCK: 1.0,
-        # Rare (+2)
-        CLOCKWORK: 2.0,
-        COOKIE: 2.0,
-        STEALTH: 2.0,
-        TWISTER: 2.0,
-        # Epic (+3)
-        WHITE: 3.0,
-        ORANGE: 3.0,
-        GOLD: 3.0,
-        # Legendary (+4)
-        DINOSAUR: 4.0,
-        GLITCH: 0.0,  # Handled separately (random 1-7)
-        # Mythical (+5)
-        RAINBOW: 5.0,
-    }
-
     for i in range(len(state.birds.per_bird_xp)):
         if state.birds.lost[i]:
             continue
@@ -220,14 +172,8 @@ def compute_prestige():
             total += float(random.randint(1, 7))
             continue
 
-        # Add rarity bonus
-        rarity_bonus = rarity_bonuses.get(bird_color, 0.0)
-        total += rarity_bonus
-
-        # Add grade bonus
-        label, _ = compute_grade_from_xp(state.birds.per_bird_xp[i])
-        add = constants.prestige.modifiers.get(label, 0.0)
-        total += add
+        # Kind of bird + grade (bird_stats.types / bird_stats.growth)
+        total += stats.bird(i, 'prestige')
 
     return float(total)
 
@@ -309,9 +255,10 @@ def award_xp(bird_idx, xp_amount):
     if bi < 0 or bi >= len(state.birds.per_bird_xp):
         return
     xp = int(max(0, int(xp_amount)))
-    # Cookie birds gain 1.5x XP (XP bank)
-    if state.birds.colors[bi] == COOKIE:
-        xp = int(xp * 1.5)
+    # Some birds learn faster (Cookie: x1.5)
+    gain = stats.bird(bi, 'xp_gain')
+    if gain != 1:
+        xp = int(xp * gain)
     state.birds.per_bird_xp[bi] += xp
     transform_bird_to_s(bi)
 

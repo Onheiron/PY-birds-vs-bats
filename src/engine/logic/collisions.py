@@ -3,8 +3,8 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, events
-from src.engine.birds import check_pending_transforms, get_scared_frames, reset_bird_power, set_ball_vy
+from src.engine import bird_kinds, clock, events, stats
+from src.engine.birds import check_pending_transforms, reset_bird_power, scare_bird, set_ball_vy, stun_bird
 from src.engine.logic.damage import calculate_bird_damage, handle_bat_death
 from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect
@@ -17,7 +17,6 @@ from src.entities.sprites import (
     CLOCKWORK,
     FLOWER_MATURE_FRAME,
     FROSTY,
-    GLITCH,
     OBSTACLE_LANE_WIDTH,
     OBSTACLE_SPRITE_T1,
     OBSTACLE_SPRITES,
@@ -107,8 +106,9 @@ def check_bird_floor_collision():
         if bird_color == ORANGE:
             continue
 
-        # GLITCH survival chance
-        if bird_color == GLITCH and random.random() < constants.glitch.survive_on_floor_chance:
+        # Lucky birds (Glitch) bounce back from the floor
+        floor_save = stats.bird(i, 'floor_save')
+        if floor_save > 0 and random.random() < floor_save:
             state.birds.y[i] = constants.layout.starting_line
             set_ball_vy(i, -1)
             reset_bird_power(i)
@@ -161,7 +161,7 @@ def check_bird_obstacle_collision():
                 continue
 
             # Hit obstacle
-            damage = calculate_bird_damage(i)
+            damage = calculate_bird_damage(i, 'obstacle')
 
             # Check if obstacle has a mature flower - apply effect before damage
             flower = obs.get('flower')
@@ -195,11 +195,8 @@ def check_bird_obstacle_collision():
                 play_sfx('destroy')
             else:
                 set_ball_vy(i, 1)
-                # Applica stun (1 secondo) - impedisce bounce
-                stun_frames = int(1.0 / constants.timing.base_sleep)
-                state.special.stunned_birds[i] = stun_frames
-                # Aggiungi a scared_birds per speed boost in caduta (1 secondo)
-                state.special.scared_birds[i] = stun_frames
+                # Stunned (cannot bounce) and falling fast for a second
+                stun_bird(i, 1.0)
                 if bird_color == BLUE:
                     reset_bird_power(i)
                 play_sfx('hit')
@@ -242,7 +239,7 @@ def check_bird_bat_collision():
                 continue
 
             # Hit bat
-            damage = calculate_bird_damage(i)
+            damage = calculate_bird_damage(i, 'elite' if bat.get('elite') else 'bat')
 
             # Apply armor damage reduction for armored bats
             is_armored = bat.get('armored', False)
@@ -264,6 +261,7 @@ def check_bird_bat_collision():
                         if bat_id in state.special.bleeding_enemies:
                             bleed_reduction = state.special.bleeding_enemies[bat_id].get('armor_reduction', 1)
                             reduction = max(0, reduction - bleed_reduction)
+                        reduction = max(0, reduction - stats.bird(i, 'armor_pierce'))
                         damage = max(1, damage - reduction)  # Minimum 1 damage
 
             if bird_color == ORANGE:
@@ -282,9 +280,9 @@ def check_bird_bat_collision():
             if not is_stealth_tangible and not diver_no_scare:
                 bat_tier = bat.get('tier', 1)
                 scared_duration = getattr(constants.combat, 'scared_duration', 2.0)
-                state.special.scared_birds[i] = get_scared_frames(i, scared_duration)
+                scared = scare_bird(i, scared_duration)
                 speed_boost_min_tier = getattr(constants.combat, 'speed_boost_min_tier', 3)
-                if bat_tier >= speed_boost_min_tier:
+                if scared and bat_tier >= speed_boost_min_tier:
                     speed_boost_duration = getattr(constants.combat, 'speed_boost_duration', 2.0)
                     state.special.speed_boosts[i] = int(speed_boost_duration / constants.timing.base_sleep)
 
@@ -309,15 +307,13 @@ def check_bird_bat_collision():
                     # Apply dive fall boost (separate from scared speed boost)
                     state.special.dive_fall_boosts[i] = {'frames': dive_boost_frames, 'speed': dive_boost_speed}
 
-            # ROCK bird pushes enemies up
+            # Knockback pushes the bat up (Rock: 2 rows while its power is active)
+            push_rows = int(stats.bird(i, 'knockback'))
             if bird_color == ROCK:
                 now = clock.now()
-                # Check if boosted (power active)
-                is_boosted = i in state.special.rock_boosted and now < state.special.rock_boosted[i]
-                if is_boosted:
-                    push_rows = getattr(constants.rock, 'boosted_push_rows', 2)
-                else:
-                    push_rows = getattr(constants.rock, 'push_rows', 1)
+                if i in state.special.rock_boosted and now < state.special.rock_boosted[i]:
+                    push_rows = max(push_rows, getattr(constants.rock, 'boosted_push_rows', 2))
+            if push_rows > 0:
                 # Push bat up (decrease y_pos, but not above 0)
                 bat['y_pos'] = max(0, bat['y_pos'] - push_rows)
                 bat['target_y'] = max(0, bat['target_y'] - push_rows)
@@ -334,7 +330,7 @@ def check_bird_bat_collision():
                 elif is_boosted:
                     chance = getattr(constants.frosty, 'boosted_chance', 0.60)
                 else:
-                    chance = getattr(constants.frosty, 'base_chance', 0.30)
+                    chance = stats.bird(i, 'affliction_chance')
                 if random.random() < chance:
                     bat_id = id(bat)
                     freeze_duration = getattr(constants.frosty, 'freeze_duration', 3.0)
@@ -352,7 +348,7 @@ def check_bird_bat_collision():
                 if is_boosted:
                     chance = getattr(constants.poison, 'boosted_chance', 0.60)
                 else:
-                    chance = getattr(constants.poison, 'base_chance', 0.30)
+                    chance = stats.bird(i, 'affliction_chance')
                 if random.random() < chance:
                     bat_id = id(bat)
                     effect_duration = getattr(constants.poison, 'effect_duration', 5.0)
@@ -371,7 +367,7 @@ def check_bird_bat_collision():
                 if is_boosted:
                     chance = getattr(constants.berserk, 'boosted_chance', 0.60)
                 else:
-                    chance = getattr(constants.berserk, 'base_chance', 0.30)
+                    chance = stats.bird(i, 'affliction_chance')
                 if random.random() < chance:
                     bat_id = id(bat)
                     effect_duration = getattr(constants.berserk, 'effect_duration', 10.0)

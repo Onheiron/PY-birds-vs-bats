@@ -27,7 +27,7 @@ import random
 from dataclasses import dataclass, replace
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock
+from src.engine import bird_kinds, clock, stats
 from src.engine.birds import get_affected_lanes
 from src.engine.logic.helpers import get_obstacle_lanes
 from src.engine.timing import frames_per_update
@@ -128,7 +128,7 @@ class Bot:
             info = special.frozen_birds[i]
             return max(1, info.get('thaw_attempts_needed', 3) - info.get('thaw_attempts_done', 0))
         if get_bird_type_by_color(state.birds.colors[i]) == BirdType.DINOSAUR:
-            return max(1, constants.dinosaur.presses_to_bounce - special.dinosaur_up_presses.get(i, 0))
+            return max(1, int(stats.bird(i, 'presses_to_bounce')) - special.dinosaur_up_presses.get(i, 0))
         return 1
 
     def _travel_frames(self, lane):

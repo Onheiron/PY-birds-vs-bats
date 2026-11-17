@@ -56,6 +56,7 @@ SECTIONS = (
     'tree_boss',
     'owl_boss',
     'difficulty',
+    'bird_stats',
 )
 
 # Sections that have defaults when the config omits them

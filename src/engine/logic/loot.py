@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, events
+from src.engine import bird_kinds, clock, events, stats
 from src.engine.progression import award_xp
 from src.entities.bird_types import get_bird_type_from_egg, get_color_for_bird_type, get_default_speed
 from src.entities.sprites import (
@@ -30,7 +30,7 @@ def check_loot_collection():
             continue
 
         for loot in state.items.loot_items[:]:
-            if abs(bird_lane_x - loot['x_pos']) > 2:
+            if abs(bird_lane_x - loot['x_pos']) > stats.bird(i, 'pickup_radius'):
                 continue
             if abs(bird_y - loot['y_pos']) > 2:
                 continue
@@ -41,14 +41,14 @@ def check_loot_collection():
             if loot_type == 'cookie_crumb' and bird_color == COOKIE:
                 continue
 
-            # GLITCH special loot interaction
-            if bird_color == GLITCH:
+            # Glitch ignores some loot; luck upgrades the rarity of what is collected
+            ignore = getattr(constants.loot, 'glitch_ignore_chance', 0.05) if bird_color == GLITCH else 0
+            luck = stats.bird(i, 'luck')
+            if ignore or luck:
                 r = random.random()
-                glitch_ignore = getattr(constants.loot, 'glitch_ignore_chance', 0.05)
-                glitch_promote = getattr(constants.loot, 'glitch_promote_chance', 0.10)
-                if r < glitch_ignore:
+                if r < ignore:
                     continue
-                if r < glitch_ignore + glitch_promote:
+                if r < ignore + luck:
                     _promote_loot_rarity(loot)
 
             state.items.loot_items.remove(loot)
@@ -106,6 +106,7 @@ def _spawn_bird_from_egg(egg_type, loot=None):
     for idx in range(constants.layout.num_balls):
         if state.birds.lost[idx]:
             state.birds.lost[idx] = False
+            stats.clear_bird(idx)
             state.birds.colors[idx] = bird_color
             state.birds.speeds[idx] = bird_speed
             state.birds.y[idx] = constants.layout.starting_line

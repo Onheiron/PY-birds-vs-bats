@@ -255,7 +255,7 @@ def _handle_tree_branch_hit(branch, bird_idx):
     flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
 
     # Calculate damage
-    damage = calculate_bird_damage(bird_idx)
+    damage = calculate_bird_damage(bird_idx, 'elite')
 
     flower = branch.get('flower')
     # Only apply effects if flower is active AND fully mature (frame 5)

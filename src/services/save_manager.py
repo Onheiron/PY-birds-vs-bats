@@ -276,6 +276,7 @@ def save_game(slot=0):
         'enemies': _enemies_to_dict(state.enemies),
         'items': _namespace_to_dict(state.items),
         'powerups': _namespace_to_dict(state.powerups),
+        'stat_modifiers': list(state.stats.modifiers),
         'game': _build_game_dict(),
         'player': _build_player_dict(),
         'ui': _build_ui_dict(),
@@ -338,6 +339,11 @@ def load_game(slot):
         _restore_enemies(state.enemies, data.get('enemies', {}), keep_ages=game_time is not None)
         _restore_items(state.items, data.get('items', {}), keep_ages=game_time is not None)
         _restore_powerups(state.powerups, data.get('powerups', {}))
+        state.stats.modifiers[:] = [
+            {**m, 'target': m['target'] if m['target'] == 'flock' else int(m['target'])}
+            for m in data.get('stat_modifiers', [])
+        ]
+        state.stats.version += 1
         _restore_game_state(data.get('game', {}))
         _restore_player_state(data.get('player', {}))
         _restore_ui_state(data.get('ui', {}))

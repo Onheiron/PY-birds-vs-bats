@@ -4,7 +4,7 @@ Game code used to compare a bird's colour with STEALTH, DINOSAUR... wherever
 a kind behaved differently. Traits shared by several systems are answered
 here instead, so a kind's rules are written once:
 
-  height(i)          rows the bird's sprite occupies (collision box)
+  height(i)          rows the bird occupies when colliding (stat hitbox_height)
   is_intangible(i)   passes through enemies, obstacles and loot
   is_phased_in(i)    a Stealth bird that made itself tangible (power active)
 
@@ -19,13 +19,11 @@ from src.entities.bird_types import BirdType, get_bird_type_by_color
 
 @dataclass(frozen=True)
 class Traits:
-    height: int = 2
     # Phases through everything unless its power made it tangible
     phases: bool = False
 
 
 TRAITS = {
-    BirdType.DINOSAUR: Traits(height=3),
     BirdType.STEALTH: Traits(phases=True),
 }
 _DEFAULT = Traits()
@@ -41,7 +39,9 @@ def traits(i):
 
 
 def height(i):
-    return traits(i).height
+    from src.engine import stats
+
+    return int(stats.bird(i, 'hitbox_height'))
 
 
 def is_phased_in(i):

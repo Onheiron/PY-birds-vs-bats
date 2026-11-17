@@ -80,7 +80,9 @@ and raise your **prestige**, which multiplies score and improves loot.
 There are 19 birds: Yellow, Red, Blue, Patchwork, Purple, Clockwork, White,
 Orange, Gold, Cookie, Stealth, Dinosaur, Glitch, Rainbow, Twister, Frosty,
 Poison, Berserk and Rock. `docs/birds.md` describes each one: speed, damage,
-power, passive behaviour, prestige and synergies.
+power, passive behaviour, prestige and synergies. `docs/stats.md` lists the
+stats every bird is made of (speed bonuses, damage, fear resistance, power
+uses, luck...) and how kinds and grades change them.
 
 The in-game **Birdpedia** fills in as you discover birds, bats and obstacles.
 
@@ -200,6 +202,9 @@ packaging/              PyInstaller spec
   statistics subscribe to those events instead of being called directly.
 - Timed effects read the game clock (`src/engine/clock.py`), which stops while
   the game is paused and is stored in saves.
+- Every number about a bird (damage, fear, power uses, score...) is a stat from
+  `src/engine/stats.py`: defaults, values per kind and per grade from the
+  `bird_stats` config section, plus timed or permanent modifiers.
 - Bird powers are looked up by bird type (`POWERS` in `src/engine/powers.py`);
   shared traits such as Stealth phasing live in `src/engine/bird_kinds.py`.
 - Menus are one declarative tree (`src/engine/menus.py`) shared by the title

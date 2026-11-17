@@ -517,9 +517,6 @@
         "armor_reduction": {
           "type": "number"
         },
-        "base_chance": {
-          "type": "number"
-        },
         "boost_duration": {
           "type": "number"
         },
@@ -531,6 +528,271 @@
         },
         "effect_duration": {
           "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "bird_stats": {
+      "properties": {
+        "defaults": {
+          "properties": {},
+          "type": "object"
+        },
+        "growth": {
+          "properties": {
+            "A1": {
+              "properties": {
+                "power_uses": {
+                  "type": "number"
+                },
+                "prestige": {
+                  "type": "number"
+                },
+                "score_grade_bonus": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "A2": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "score_grade_bonus": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "B1": {
+              "properties": {
+                "fear_duration_cut": {
+                  "type": "number"
+                },
+                "prestige": {
+                  "type": "number"
+                },
+                "score_grade_bonus": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "B2": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "score_grade_bonus": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "C1": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "score_grade_bonus": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "C2": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "score_grade_bonus": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "S": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "score_grade_bonus": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "type_growth": {
+          "properties": {},
+          "type": "object"
+        },
+        "types": {
+          "properties": {
+            "BERSERK": {
+              "properties": {
+                "affliction_chance": {
+                  "type": "number"
+                },
+                "prestige": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "CLOCKWORK": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "COOKIE": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "xp_gain": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "DINOSAUR": {
+              "properties": {
+                "hitbox_height": {
+                  "type": "number"
+                },
+                "presses_to_bounce": {
+                  "type": "number"
+                },
+                "prestige": {
+                  "type": "number"
+                },
+                "score_mult": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "FROSTY": {
+              "properties": {
+                "affliction_chance": {
+                  "type": "number"
+                },
+                "prestige": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "GLITCH": {
+              "properties": {
+                "floor_save": {
+                  "type": "number"
+                },
+                "luck": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "GOLD": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "score_mult": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "ORANGE": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "score_mult": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "POISON": {
+              "properties": {
+                "affliction_chance": {
+                  "type": "number"
+                },
+                "prestige": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "PURPLE": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "RAINBOW": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "ROCK": {
+              "properties": {
+                "knockback": {
+                  "type": "number"
+                },
+                "prestige": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "STEALTH": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "score_mult": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "TWISTER": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "WHITE": {
+              "properties": {
+                "prestige": {
+                  "type": "number"
+                },
+                "score_mult": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
         }
       },
       "type": "object"
@@ -858,9 +1120,6 @@
       "properties": {
         "press_chunk": {
           "type": "number"
-        },
-        "presses_to_bounce": {
-          "type": "number"
         }
       },
       "type": "object"
@@ -1006,9 +1265,6 @@
         "armor_reduction": {
           "type": "number"
         },
-        "base_chance": {
-          "type": "number"
-        },
         "boost_duration": {
           "type": "number"
         },
@@ -1079,9 +1335,6 @@
             }
           },
           "type": "object"
-        },
-        "survive_on_floor_chance": {
-          "type": "number"
         },
         "swap_chance": {
           "type": "number"
@@ -1202,9 +1455,6 @@
           "type": "number"
         },
         "glitch_ignore_chance": {
-          "type": "number"
-        },
-        "glitch_promote_chance": {
           "type": "number"
         },
         "gold_bird_score_per_tick": {
@@ -1470,9 +1720,6 @@
     },
     "poison": {
       "properties": {
-        "base_chance": {
-          "type": "number"
-        },
         "boost_duration": {
           "type": "number"
         },
@@ -1568,9 +1815,6 @@
           "type": "number"
         },
         "boosted_speed": {
-          "type": "number"
-        },
-        "push_rows": {
           "type": "number"
         }
       },

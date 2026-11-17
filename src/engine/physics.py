@@ -1,11 +1,29 @@
 """Movement of birds, projectiles, obstacles, loot and scenery."""
 
+import math
 import random
 
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, stats
 from src.engine.birds import reset_bird_power, set_ball_vy
 from src.entities.sprites import CLOCKWORK, GLITCH
+
+
+def move_interval(speed):
+    """Ticks between two one-cell steps at ``speed`` points (1 = slowest, 5+ = every tick)."""
+    return max(1.0, 6 - speed)
+
+
+def moves_this_tick(speed, tick=None):
+    """Whether a bird at ``speed`` takes a step this tick.
+
+    Steps are spread evenly: one every ``move_interval(speed)`` ticks, which
+    also works for fractional speeds. For whole speeds this is exactly
+    ``tick % interval == 0``.
+    """
+    tick = state.game.frame_count if tick is None else tick
+    interval = move_interval(speed)
+    return math.floor(tick / interval + 1e-9) > math.floor((tick - 1) / interval + 1e-9)
 
 
 def update_bird_positions():
@@ -61,6 +79,14 @@ def update_bird_positions():
 
         current_speed = state.birds.speeds[i]
 
+        # Stat bonuses: rising / falling speed, and the sprint after a bounce
+        if state.birds.vy[i] == -1:
+            current_speed += stats.bird(i, 'rise_speed_bonus')
+            if state.special.sprint_until.get(i, 0) > clock.now():
+                current_speed += stats.bird(i, 'bounce_sprint')
+        else:
+            current_speed += stats.bird(i, 'fall_speed_bonus')
+
         # Apply speed boosts
         if i in state.special.speed_boosts:
             if state.special.speed_boosts[i] > 0 and state.birds.vy[i] == -1:
@@ -70,7 +96,7 @@ def update_bird_positions():
 
         # Apply scared speed boost when falling
         if i in state.special.scared_birds and state.birds.vy[i] == 1:
-            current_speed += 1
+            current_speed += 1 - stats.bird(i, 'fear_resist')
 
         # Apply dive fall boost when falling (from diver bats)
         if i in state.special.dive_fall_boosts and state.birds.vy[i] == 1:
@@ -155,11 +181,8 @@ def update_bird_positions():
             if charge is not None and charge == 0:
                 current_speed = 6  # Max speed fall
 
-        # Calculate move interval (higher speed = more frequent movement)
-        move_interval = max(1, 6 - current_speed)
-
-        # Move bird
-        if state.game.frame_count % move_interval == 0:
+        # Move bird (higher speed = more frequent steps)
+        if moves_this_tick(current_speed):
             # CLOCKWORK auto-bounce at starting line
             if (
                 state.birds.colors[i] == CLOCKWORK

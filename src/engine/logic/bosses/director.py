@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from src.core import constants, state
 from src.engine import bird_kinds
-from src.engine.birds import reset_bird_power, set_ball_vy
+from src.engine.birds import reset_bird_power, scare_bird_ticks, set_ball_vy, stun_bird
 from src.engine.logic.bosses.basic import spawn_basic_boss, update_basic_boss
 from src.engine.logic.bosses.common import get_boss_config
 from src.engine.logic.bosses.jelly import spawn_jelly_boss, update_jelly_boss
@@ -175,7 +175,7 @@ def check_bird_boss_collision():
             continue
 
         # Hit boss!
-        damage = calculate_bird_damage(i)
+        damage = calculate_bird_damage(i, 'elite')
 
         # Apply armor reduction
         armor_reduction = getattr(boss_cfg, 'armor_reduction', 1)
@@ -189,8 +189,7 @@ def check_bird_boss_collision():
             award_xp(i, damage)
 
         # Boss scream if hit causes scare
-        scare_frames = int(1.0 / constants.timing.base_sleep)
-        state.special.scared_birds[i] = scare_frames
+        scare_bird_ticks(i, int(1.0 / constants.timing.base_sleep))
 
         if boss['hp'] <= 0:
             boss['state'] = 'dying'
@@ -254,7 +253,7 @@ def check_bird_meteor_collision():
                 continue
 
             # Hit meteor!
-            damage = calculate_bird_damage(i)
+            damage = calculate_bird_damage(i, 'obstacle')
 
             if bird_color == ORANGE:
                 meteor['hp'] = 0  # Orange destroys meteor
@@ -271,9 +270,7 @@ def check_bird_meteor_collision():
                 set_ball_vy(i, 1)
                 state.birds.y[i] = meteor_bottom + 1
                 # Stun bird briefly
-                stun_frames = int(0.5 / constants.timing.base_sleep)
-                state.special.stunned_birds[i] = stun_frames
-                state.special.scared_birds[i] = stun_frames
+                stun_bird(i, 0.5)
                 if bird_color == BLUE:
                     reset_bird_power(i)
                 play_sfx('hit')

@@ -3,17 +3,22 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, events
+from src.engine import bird_kinds, clock, events, stats
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 from src.entities.bird_types import get_bird_type_by_color
 from src.entities.sprites import BLUE, GLITCH, ORANGE
 
+VS_STAT = {'bat': 'vs_bats', 'obstacle': 'vs_obstacles', 'elite': 'vs_elites'}
 
-def calculate_bird_damage(bird_idx):
-    """Calculate damage a bird deals using formula:
-    TOT = round(((GR * 0.1) + (DMG + DMGBOOST - DMGNERF)) * (SPD + SPDBOOST - SPDNERF))
+
+def calculate_bird_damage(bird_idx, target='bat'):
+    """Calculate damage a bird deals to a ``target`` ('bat', 'obstacle' or 'elite'):
+
+    TOT = round((GR_BONUS + DMG + BOOST + damage_bonus) × SPEED_FACTOR
+                × damage_mult × (1 + vs_<target>) × crit)
+    SPEED_FACTOR = 1 + speed_damage × (SPD − 1)   (speed_damage 1 → × SPD)
 
     Where:
     - GR = gear/speed (state.game.speed, 1-10)
@@ -85,14 +90,20 @@ def calculate_bird_damage(bird_idx):
     gear_offset = getattr(dmg_formula, 'gear_offset', 3) if dmg_formula else 3
     gear_coeff = getattr(dmg_formula, 'gear_coefficient', 0.1) if dmg_formula else 0.1
     gear_bonus = (gear - gear_offset) * gear_coeff
-    effective_dmg = base_dmg + dmg_boost - dmg_nerf
+    effective_dmg = base_dmg + dmg_boost - dmg_nerf + stats.bird(bird_idx, 'damage_bonus')
     effective_spd = base_spd + spd_boost - spd_nerf
 
     # Ensure minimum values
     effective_dmg = max(0, effective_dmg)
     effective_spd = max(1, effective_spd)
 
-    total_damage = round((gear_bonus + effective_dmg) * effective_spd)
+    speed_factor = 1 + stats.bird(bird_idx, 'speed_damage') * (effective_spd - 1)
+    raw = (gear_bonus + effective_dmg) * speed_factor
+    raw *= stats.bird(bird_idx, 'damage_mult') * (1 + stats.bird(bird_idx, VS_STAT.get(target, 'vs_bats')))
+    crit = stats.bird(bird_idx, 'crit_chance')
+    if crit > 0 and random.random() < crit:
+        raw *= stats.bird(bird_idx, 'crit_damage')
+    total_damage = round(raw)
 
     # Minimum damage of 1
     return max(1, total_damage)

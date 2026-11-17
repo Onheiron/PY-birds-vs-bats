@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, events
+from src.engine import clock, events, stats
 from src.engine.birds import (
     allow_consume_power,
     check_pending_transforms,
@@ -39,8 +39,7 @@ def activate_bird_power(bird_idx):
         return
 
     # Check allowed uses
-    label, _ = compute_grade_from_xp(state.birds.per_bird_xp[bird_idx])
-    allowed_uses = 2 if (label and label.startswith('A')) else 1
+    allowed_uses = int(stats.bird(bird_idx, 'power_uses'))
 
     if not allow_consume_power(bird_idx, allowed_uses):
         return
@@ -80,7 +79,9 @@ def _power_yellow(bird_idx, bird_lane):
             _cure_nearby_scared_blues(adj_lane)
         else:
             # Slow non-yellow bird
-            state.special.speed_boosts[adj_bird] = -int(3.0 / constants.timing.base_sleep)
+            state.special.speed_boosts[adj_bird] = -int(
+                3.0 * stats.bird(bird_idx, 'power_duration') / constants.timing.base_sleep
+            )
 
 
 def _cure_nearby_scared_blues(lane):
@@ -119,7 +120,7 @@ def _power_red(bird_idx, bird_lane):
             'x_pos': constants.layout.lane_positions[bird_lane],
             'y_pos': state.birds.y[bird_idx],
             'lane': bird_lane,
-            'damage': 1 + damage_bonus,
+            'damage': _potent(bird_idx, 1 + damage_bonus),
             'powered': damage_bonus > 0,
             'owner': bird_idx,
             'speed': 1,
@@ -171,9 +172,15 @@ def _power_cookie(bird_idx, bird_lane):
                 state.game.game_over = True
 
 
+def _potent(bird_idx, damage):
+    """Projectile damage scaled by the bird's power potency (whole points)."""
+    potency = stats.bird(bird_idx, 'power_potency')
+    return damage if potency == 1 else max(1, round(damage * potency))
+
+
 def _power_blue(bird_idx, _bird_lane=None):
     """Blue power: speed boost."""
-    boost_frames = int(3.0 / constants.timing.base_sleep)
+    boost_frames = int(3.0 * stats.bird(bird_idx, 'power_duration') / constants.timing.base_sleep)
     state.special.speed_boosts[bird_idx] = boost_frames
 
 
@@ -228,7 +235,8 @@ def _power_clockwork(bird_idx, _bird_lane=None):
 def _power_stealth(bird_idx, bird_lane):
     """Stealth power: become tangible with speed boost."""
     state.special.stealth_timers[bird_idx] = max(
-        1, int(constants.stealth.tangible_seconds / constants.timing.base_sleep)
+        1,
+        int(constants.stealth.tangible_seconds * stats.bird(bird_idx, 'power_duration') / constants.timing.base_sleep),
     )
     state.special.stealth_prev_speeds[bird_idx] = state.birds.speeds[bird_idx]
     state.birds.speeds[bird_idx] = constants.stealth.speed_boost
@@ -236,7 +244,7 @@ def _power_stealth(bird_idx, bird_lane):
 
 def _power_twister(bird_idx, bird_lane):
     """Twister power: create local tailwind in current lane + 2 adjacent."""
-    duration = getattr(constants.twister, 'tailwind_duration', 2.0)
+    duration = getattr(constants.twister, 'tailwind_duration', 2.0) * stats.bird(bird_idx, 'power_duration')
     end_time = clock.now() + duration
     # Affected lanes: current + adjacent
     lanes = [bird_lane]
@@ -249,25 +257,25 @@ def _power_twister(bird_idx, bird_lane):
 
 def _power_frosty(bird_idx, _bird_lane=None):
     """Frosty power: boost freeze chance to 60% for 2s."""
-    duration = getattr(constants.frosty, 'boost_duration', 2.0)
+    duration = getattr(constants.frosty, 'boost_duration', 2.0) * stats.bird(bird_idx, 'power_duration')
     state.special.frosty_boosted[bird_idx] = clock.now() + duration
 
 
 def _power_poison(bird_idx, _bird_lane=None):
     """Poison power: boost poison chance to 60% for 2s."""
-    duration = getattr(constants.poison, 'boost_duration', 2.0)
+    duration = getattr(constants.poison, 'boost_duration', 2.0) * stats.bird(bird_idx, 'power_duration')
     state.special.poison_boosted[bird_idx] = clock.now() + duration
 
 
 def _power_berserk(bird_idx, _bird_lane=None):
     """Berserk power: boost bleed chance to 60% for 2s."""
-    duration = getattr(constants.berserk, 'boost_duration', 2.0)
+    duration = getattr(constants.berserk, 'boost_duration', 2.0) * stats.bird(bird_idx, 'power_duration')
     state.special.berserk_boosted[bird_idx] = clock.now() + duration
 
 
 def _power_rock(bird_idx, _bird_lane=None):
     """Rock power: boost push to 2 rows and speed to 3 for 3s."""
-    duration = getattr(constants.rock, 'boost_duration', 3.0)
+    duration = getattr(constants.rock, 'boost_duration', 3.0) * stats.bird(bird_idx, 'power_duration')
     # Save original speed before boosting
     if bird_idx not in state.special.rock_boosted:
         state.special.rock_prev_speeds = getattr(state.special, 'rock_prev_speeds', {})

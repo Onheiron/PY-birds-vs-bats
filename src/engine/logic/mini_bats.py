@@ -4,7 +4,7 @@ import random
 
 from src.core import constants, state
 from src.engine import bird_kinds
-from src.engine.birds import get_scared_frames, set_ball_vy
+from src.engine.birds import scare_bird, set_ball_vy, stun_bird
 from src.engine.logic.damage import calculate_bird_damage, handle_mini_bat_death
 from src.engine.progression import award_xp
 from src.entities.sprites import ORANGE
@@ -121,7 +121,7 @@ def activate_jumpscare_scary_face(jumpscare_bat):
             continue
         bird_lane = state.birds.random_lanes[i]
         if min_lane <= bird_lane <= max_lane:
-            state.special.scared_birds[i] = get_scared_frames(i, fear_duration)
+            scare_bird(i, fear_duration)
 
     # Set scary face timer on bat
     scary_face_duration = getattr(jumpscare_cfg, 'scary_face_duration', 0.5) if jumpscare_cfg else 0.5
@@ -395,8 +395,6 @@ def check_bird_mini_bat_collision():
                 handle_mini_bat_death(mb, i)
             else:
                 set_ball_vy(i, 1)
-                stun_frames = int(0.5 / constants.timing.base_sleep)  # Shorter stun
-                state.special.stunned_birds[i] = stun_frames
-                state.special.scared_birds[i] = stun_frames
+                stun_bird(i, 0.5)  # Shorter stun
                 play_sfx('hit')
             break

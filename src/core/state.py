@@ -53,6 +53,8 @@ def _new_special():
         speed_boosts={},
         # Dive fall boosts (from diver bats in diving state)
         dive_fall_boosts={},
+        # Bounce sprint: bird -> game time when it ends
+        sprint_until={},
         # Dinosaur
         dinosaur_up_presses={},
         # Scared birds
@@ -212,6 +214,14 @@ def _new_game():
 # ============================================================================
 # PLAYER STATE (organized as namespace)
 # ============================================================================
+def _new_stats():
+    return SimpleNamespace(
+        # Stat modifiers from cards, boosts and pacts (see src/engine/stats.py)
+        modifiers=[],
+        version=0,  # bumped whenever modifiers change, to refresh cached stats
+    )
+
+
 def _new_player():
     return SimpleNamespace(lane=2, selected_lane=None, last_space_state=False)
 
@@ -291,6 +301,7 @@ spells = _new_spells()
 powerups = _new_powerups()
 game = _new_game()
 player = _new_player()
+stats = _new_stats()
 ui = _new_ui()
 settings = _new_settings()
 discovery = _new_discovery()
@@ -305,6 +316,7 @@ _SESSION_FACTORIES = (
     (powerups, _new_powerups),
     (game, _new_game),
     (player, _new_player),
+    (stats, _new_stats),
 )
 
 # UI fields owned by the application rather than by a game: a new game keeps them

@@ -3,6 +3,7 @@
 import random
 
 from src.core import constants, state
+from src.engine import stats
 from src.entities.sprites import GLITCH
 from src.entities.sprites import GLITCH as GLITCH_COLOR
 
@@ -56,6 +57,7 @@ def _glitch_duplicate(source_idx):
     if target_idx is None:
         return
 
+    stats.clear_bird(target_idx)
     if state.birds.lost[target_idx]:
         # Resurrect as GLITCH
         state.birds.lost[target_idx] = False

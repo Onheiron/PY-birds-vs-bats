@@ -3,9 +3,10 @@
 import random
 
 from src.core import constants, state
-from src.engine.grades import compute_grade_from_xp
+from src.engine import stats
+from src.engine.physics import moves_this_tick
 from src.engine.progression import add_score, compute_momentum_factor, update_momentum
-from src.entities.sprites import DINOSAUR, GLITCH, GOLD, ORANGE, STEALTH, WHITE
+from src.entities.sprites import GLITCH, GOLD
 
 
 def _compute_score_position_multiplier(y_pos):
@@ -37,7 +38,7 @@ def _compute_score_position_multiplier(y_pos):
 def _compute_center_of_mass():
     """Calculate center of mass (weighted average Y position of active birds).
 
-    Weight = bird speed. Returns None if no active birds.
+    Weight = bird speed × its weight stat. Returns None if no active birds.
     """
     total_weight = 0.0
     weighted_sum = 0.0
@@ -50,7 +51,7 @@ def _compute_center_of_mass():
         if bird_y >= constants.layout.height:
             continue
 
-        weight = max(1, state.birds.speeds[i])
+        weight = max(1, state.birds.speeds[i]) * stats.bird(i, 'weight')
         weighted_sum += bird_y * weight
         total_weight += weight
 
@@ -82,19 +83,6 @@ def update_score_tick():
     level = state.game.level
     level_mult = 1.0 + (level - 1) * 0.1  # Level 1 = 1.0, Level 18 = 2.7
 
-    # Type multipliers (some birds are worth more)
-    type_multipliers = {
-        GOLD: 10.0,  # Gold birds are score machines
-        DINOSAUR: 2.0,  # Dinosaur is strong
-        WHITE: 1.5,  # White is fast
-        ORANGE: 0.5,  # Orange sacrifices for damage
-        STEALTH: 1.2,  # Stealth is sneaky
-        GLITCH: 1.0,  # Glitch is random (handled separately)
-    }
-
-    # Grade values
-    grade_values = {'D': 1.0, 'C1': 1.1, 'C2': 1.2, 'B1': 1.3, 'B2': 1.4, 'A1': 1.5, 'A2': 1.6, 'S': 2.0}
-
     # Calculate total score from all active birds
 
     for i in range(constants.layout.num_balls):
@@ -110,12 +98,11 @@ def update_score_tick():
             continue
 
         # Only on move frames (based on bird speed)
-        move_interval = max(1, 6 - current_speed)
-        if state.game.frame_count % move_interval != 0:
+        if not moves_this_tick(current_speed):
             continue
 
         # Type multiplier
-        type_mult = type_multipliers.get(bird_color, 1.0)
+        type_mult = stats.bird(i, 'score_mult')
 
         # Glitch has random multiplier
         if bird_color == GLITCH:
@@ -124,9 +111,7 @@ def update_score_tick():
             type_mult = random.uniform(glitch_min * 0.5, glitch_max * 0.5)
 
         # Grade multiplier based on bird's XP
-        bird_xp = state.birds.per_bird_xp[i]
-        grade_label, _ = compute_grade_from_xp(bird_xp)
-        grade_mult = grade_values.get(grade_label, 1.0)
+        grade_mult = 1 + stats.bird(i, 'score_grade_bonus')
 
         # Gold bird special handling
         if bird_color == GOLD:

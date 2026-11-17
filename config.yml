@@ -107,7 +107,6 @@ loot:
   base_rarity_weights: [1, 0.1, 0.01, 0.001, 0.0001, 0.00001]
   # Glitch bird special loot interactions
   glitch_ignore_chance: 0.05         # Chance to ignore loot
-  glitch_promote_chance: 0.10        # Chance to promote rarity (cumulative with ignore)
   # Despawn times (seconds)
   bat_despawn_time: 60
   loot_despawn_time: 30
@@ -590,7 +589,6 @@ tailwind:
     plusplus: 3
 dinosaur:
   press_chunk: 3
-  presses_to_bounce: 15
 stealth:
   speed_boost: 6
   tangible_seconds: 3.0
@@ -606,7 +604,6 @@ glitch:
   speed:
     max: 6
     min: 1
-  survive_on_floor_chance: 0.1
   swap_chance: 0.003
 orange:
   recover_chance: 0.1
@@ -624,7 +621,6 @@ twister:
   tailwind_down_penalty: 1    # Speed reduction when going down
 
 frosty:
-  base_chance: 0.30           # 30% base freeze chance
   boosted_chance: 0.60        # 60% when power active
   boost_duration: 2.0         # Power boost lasts 2s
   freeze_duration: 3.0        # Frozen enemies stay frozen 3s
@@ -632,14 +628,12 @@ frosty:
   armor_reduction: 2          # Frozen enemies take +2 damage
 
 poison:
-  base_chance: 0.30
   boosted_chance: 0.60
   boost_duration: 2.0
   effect_duration: 5.0        # Poison lasts 5s
   damage_per_second: 2        # 2 HP per second
 
 berserk:
-  base_chance: 0.30
   boosted_chance: 0.60
   boost_duration: 2.0
   effect_duration: 10.0       # Bleed lasts 10s
@@ -647,7 +641,6 @@ berserk:
   armor_reduction: 1          # -1 armor while bleeding
 
 rock:
-  push_rows: 1                # Normal push amount
   boosted_push_rows: 2        # Push when power active
   boost_duration: 3.0         # Power lasts 3s
   boosted_speed: 3            # Speed during power
@@ -734,3 +727,40 @@ prestige:
 colors:
   bats_base_rgb: [255, 0, 255]
   obstacles_base_rgb: [0, 255, 0]
+
+# =============================================================================
+# Bird stats (see docs/birds.md and src/engine/stats.py for every stat)
+# A bird's stat = default (in the code) -> value for its type -> grade growth,
+# then modifiers from cards, boosts and pacts.
+# =============================================================================
+bird_stats:
+  # Override a default for every bird, e.g. pickup_radius: 3
+  defaults: {}
+  types:
+    PURPLE:    {prestige: 1}
+    CLOCKWORK: {prestige: 2}
+    WHITE:     {prestige: 3, score_mult: 1.5}
+    ORANGE:    {prestige: 3, score_mult: 0.5}
+    GOLD:      {prestige: 3, score_mult: 10.0}    # Gold scores a flat amount (loot.gold_bird_score_per_tick)
+    COOKIE:    {prestige: 2, xp_gain: 1.5}
+    STEALTH:   {prestige: 2, score_mult: 1.2}
+    DINOSAUR:  {prestige: 4, score_mult: 2.0, presses_to_bounce: 15, hitbox_height: 3}
+    GLITCH:    {floor_save: 0.1, luck: 0.1}       # Glitch prestige is random (1-7)
+    RAINBOW:   {prestige: 5}
+    TWISTER:   {prestige: 2}
+    FROSTY:    {prestige: 1, affliction_chance: 0.3}
+    POISON:    {prestige: 1, affliction_chance: 0.3}
+    BERSERK:   {prestige: 1, affliction_chance: 0.3}
+    ROCK:      {prestige: 1, knockback: 1}
+  # Bonus a bird has from each grade on (a higher grade replaces the value of a
+  # lower one for the same stat). Per-type growth goes in type_growth, keyed
+  # TYPE_GRADE, e.g. RED_A1: {damage_bonus: 1}.
+  growth:
+    C1: {prestige: 0.03125, score_grade_bonus: 0.1}
+    C2: {prestige: 0.0625,  score_grade_bonus: 0.2}
+    B1: {prestige: 0.125,   score_grade_bonus: 0.3, fear_duration_cut: 1}
+    B2: {prestige: 0.25,    score_grade_bonus: 0.4}
+    A1: {prestige: 0.5,     score_grade_bonus: 0.5, power_uses: 1}
+    A2: {prestige: 1.0,     score_grade_bonus: 0.6}
+    S:  {prestige: 5.0,     score_grade_bonus: 1.0}
+  type_growth: {}

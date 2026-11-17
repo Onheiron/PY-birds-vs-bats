@@ -1,7 +1,7 @@
 """Timed effects: power-ups, bird states, spells and enemy debuffs."""
 
 from src.core import constants, state
-from src.engine import clock, events
+from src.engine import clock, events, stats
 from src.engine.birds import check_pending_transforms, reset_bird_power
 from src.engine.logic.damage import handle_bat_death
 from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
@@ -343,6 +343,9 @@ def _fire_purple_projectile(bird_idx, charge_seconds):
     """
     charge_tier = min(3, int(charge_seconds))  # 0, 1, 2, or 3
     damage = int(pow(4, charge_tier))
+    potency = stats.bird(bird_idx, 'power_potency')
+    if potency != 1:
+        damage = max(1, round(damage * potency))
     lane = state.birds.random_lanes[bird_idx]
 
     state.special.red_projectiles.append(

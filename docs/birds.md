@@ -2,22 +2,23 @@
 
 What every bird does, read from the code (not from the descriptions in
 `bird_types.py`, which are sometimes out of date). Values are those of
-`config.yml`.
+`config.yml`; the numbers behind each bird are stats, listed in `docs/stats.md`.
 
 ## Rules every bird follows
 
 - **Bounce:** UP on a falling bird sends it back up. A bird reaching the
   floor is lost (one life). Birds only collide with enemies while rising.
 - **Power:** UP on a rising bird fires its power, once per ascent; birds at
-  grade A1/A2 can fire it twice.
+  grade A1 and above can fire it twice.
 - **Damage on contact:** `round(((gear − 3) × 0.1 + DMG) × SPD)`, with DMG and
-  SPD from `birds.damage` / `birds.speed`.
+  SPD from `birds.damage` / `birds.speed`, then scaled by the bird's attack
+  stats (all neutral today, see `docs/stats.md`).
 - **Score:** every time a bird moves it scores `speed × type multiplier ×
   grade multiplier (1.0 D … 2.0 S)`, then × the flock-height multiplier
   (0.5–2.0), × the level multiplier (1.0 at 1-1 … 2.7 at 6-3), × prestige.
 - **Grades:** XP from hits and kills raises the grade D → C1 → C2 → B1 → B2 →
-  A1 → A2 → S. From B1 up a scare lasts one second less; A grades get two
-  powers per ascent; S gives +5 prestige and evolves three birds (below).
+  A1 → A2 → S. From B1 up a scare lasts one second less; from A1 up (S too)
+  a bird gets two powers per ascent; S gives +5 prestige and evolves three birds (below).
 - **Prestige:** 1 + a bonus per living bird for its kind (column "Prestige")
   + a bonus for its grade (C1 +0.03 … A2 +1, S +5). It multiplies the score
   and pushes loot towards rarer drops.

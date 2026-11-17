@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, events
+from src.engine import clock, events, stats
 from src.engine.birds import (
     check_pending_transforms,
     get_affected_lanes,
@@ -258,6 +258,9 @@ def _bounce_bird_up(bird_idx):
 
     set_ball_vy(bird_idx, -1)
     reset_bird_power(bird_idx)
+    sprint = stats.bird(bird_idx, 'bounce_sprint')
+    if sprint > 0:
+        state.special.sprint_until[bird_idx] = clock.now() + stats.bird(bird_idx, 'bounce_sprint_seconds')
     # play_sfx('bounce')  # Disabled - too frequent, clashes with music
 
     # CLOCKWORK charge restoration
@@ -277,7 +280,7 @@ def _handle_dinosaur_bounce(bird_idx):
 
     chunk = constants.dinosaur.press_chunk
     if chunk > 0 and cnt % chunk == 0:
-        if cnt >= constants.dinosaur.presses_to_bounce:
+        if cnt >= stats.bird(bird_idx, 'presses_to_bounce'):
             set_ball_vy(bird_idx, -1)
             state.birds.speeds[bird_idx] = bird_types.BIRD_TYPES.get('DINOSAUR', {}).get('speed', 4)
             state.special.dinosaur_up_presses[bird_idx] = 0

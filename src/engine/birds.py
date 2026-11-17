@@ -1,6 +1,9 @@
 """Bird helpers: velocity, powers, lanes, transformations and shuffling."""
 
+import random
+
 from src.core import constants, state
+from src.engine import stats
 from src.engine.grades import compute_grade_from_xp
 from src.entities.bird_types import get_bird_type_by_color
 from src.entities.sprites import (
@@ -48,11 +51,42 @@ def allow_consume_power(idx, allowed_uses=1):
 
 
 def get_scared_frames(bird_idx, base_seconds=2.0):
-    """Calculate frames for scared state, reduced for higher grades."""
-    label, _ = compute_grade_from_xp(state.birds.per_bird_xp[bird_idx])
-    if not label.startswith('D') and not label.startswith('C'):
-        base_seconds = max(1, base_seconds - 1.0)
-    return max(1, int(float(base_seconds) / constants.timing.base_sleep))
+    """Ticks a scare lasts: scaled by fear_duration_mult, cut by fear_duration_cut (never below 1 s)."""
+    seconds = float(base_seconds) * stats.bird(bird_idx, 'fear_duration_mult')
+    cut = stats.bird(bird_idx, 'fear_duration_cut')
+    if cut:
+        seconds = max(1, seconds - cut)
+    return max(1, int(seconds / constants.timing.base_sleep))
+
+
+def _resists_fear(bird_idx):
+    immunity = stats.bird(bird_idx, 'fear_immunity')
+    return immunity > 0 and random.random() < immunity
+
+
+def scare_bird(bird_idx, seconds):
+    """Scare a bird for ``seconds`` (its fear stats apply). False if it shrugged it off."""
+    if _resists_fear(bird_idx):
+        return False
+    state.special.scared_birds[bird_idx] = get_scared_frames(bird_idx, seconds)
+    return True
+
+
+def scare_bird_ticks(bird_idx, ticks):
+    """Scare for a fixed number of ticks (screams): only immunity and the duration multiplier apply."""
+    if _resists_fear(bird_idx):
+        return False
+    mult = stats.bird(bird_idx, 'fear_duration_mult')
+    state.special.scared_birds[bird_idx] = ticks if mult == 1 else max(1, int(ticks * mult))
+    return True
+
+
+def stun_bird(bird_idx, seconds):
+    """Bounce-off stun after hitting something that survived (scaled by impact_stun)."""
+    frames = int(seconds * stats.bird(bird_idx, 'impact_stun') / constants.timing.base_sleep)
+    state.special.stunned_birds[bird_idx] = frames
+    state.special.scared_birds[bird_idx] = frames
+    return frames
 
 
 def transform_bird_to_s(bi):

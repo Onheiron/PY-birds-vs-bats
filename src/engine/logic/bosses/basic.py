@@ -4,7 +4,7 @@ import random
 
 from src.core import constants, state
 from src.engine import clock
-from src.engine.birds import set_ball_vy
+from src.engine.birds import scare_bird_ticks, set_ball_vy
 from src.engine.logic.bosses.common import convert_boss_to_obstacle, get_boss_config
 from src.services.sound import play_sfx
 
@@ -38,7 +38,7 @@ def _boss_start_scream(boss):
                 set_ball_vy(i, 1)
 
             # Apply scare effect (like tier 1 bat)
-            state.special.scared_birds[i] = scare_frames
+            scare_bird_ticks(i, scare_frames)
 
 
 def spawn_basic_boss():
