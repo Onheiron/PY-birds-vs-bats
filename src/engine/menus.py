@@ -35,7 +35,6 @@ REBINDABLE_CONTROLS = (
     ('MOVE LEFT', 'MOVE_LEFT'),
     ('MOVE RIGHT', 'MOVE_RIGHT'),
     ('BOUNCE', 'BOUNCE'),
-    ('SUCTION', 'SUCTION'),
     ('SWAP', 'SWAP'),
 )
 _NAMED_KEYS = ('LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE', 'ENTER')

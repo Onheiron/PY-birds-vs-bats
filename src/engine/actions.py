@@ -1,4 +1,4 @@
-"""Player actions during play: move, swap, bounce, suction and toggles."""
+"""Player actions during play: move, swap, bounce and toggles."""
 
 import random
 
@@ -6,7 +6,6 @@ from src.core import constants, state
 from src.engine import clock, events
 from src.engine.birds import (
     check_pending_transforms,
-    find_bird_in_lane,
     get_affected_lanes,
     is_orange_egg_state,
     reset_bird_power,
@@ -17,7 +16,6 @@ from src.engine.powers import activate_bird_power
 from src.engine.progression import calculate_gear_threshold, compute_gear_from_momentum, deduct_momentum
 from src.entities import bird_types
 from src.entities.sprites import CLOCKWORK, DINOSAUR, GLITCH, ORANGE, PURPLE, RAINBOW
-from src.services import achievements
 from src.services.sound import get_audio
 
 
@@ -271,15 +269,7 @@ def _bounce_bird_up(bird_idx):
             state.special.clockwork_charge[bird_idx] = 1
             state.birds.speeds[bird_idx] = 1
 
-    # Apply bounce boost if active
-    if state.powerups.bounce_boost_active and bird_idx not in state.special.speed_boosts:
-        boost_frames = int(state.powerups.bounce_boost_duration / constants.timing.base_sleep)
-        state.special.speed_boosts[bird_idx] = boost_frames
 
-    # Record for combos
-    achievements.append_recent_action(
-        'bounce', lane=state.birds.random_lanes[bird_idx], color=bird_color, frame_count=state.game.frame_count
-    )
 
 
 def _handle_dinosaur_bounce(bird_idx):
@@ -296,30 +286,6 @@ def _handle_dinosaur_bounce(bird_idx):
             reset_bird_power(bird_idx)
         else:
             state.birds.speeds[bird_idx] = max(1, state.birds.speeds[bird_idx] - 1)
-
-
-def handle_suction():
-    """Handle DOWN key for suction power."""
-    if not state.powerups.suction_active:
-        return
-
-    lanes = get_affected_lanes()
-
-    for lane in lanes:
-        bird_idx = find_bird_in_lane(lane)
-        if bird_idx < 0 or state.birds.lost[bird_idx]:
-            continue
-
-        if state.birds.vy[bird_idx] == -1:  # Moving up - pull it down
-            set_ball_vy(bird_idx, 1)
-
-            if state.powerups.suction_boost_duration > 0 and bird_idx not in state.special.speed_boosts:
-                boost_frames = int(state.powerups.suction_boost_duration / constants.timing.base_sleep)
-                state.special.speed_boosts[bird_idx] = boost_frames
-
-            achievements.append_recent_action(
-                'suction', lane=lane, color=state.birds.colors[bird_idx], frame_count=state.game.frame_count
-            )
 
 
 def handle_xp_toggle():

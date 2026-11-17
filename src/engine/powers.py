@@ -21,11 +21,8 @@ from src.entities.sprites import (
     PATCHWORK,
     PURPLE,
     RED,
-    STEALTH,
-    TWISTER,
     YELLOW,
 )
-from src.services import achievements
 
 
 def activate_bird_power(bird_idx):
@@ -79,9 +76,6 @@ def _power_yellow(bird_idx, bird_lane):
                 continue
             set_ball_vy(adj_bird, -1)
             reset_bird_power(adj_bird)
-            achievements.append_recent_action(
-                'bounce', lane=adj_lane, color=adj_color, frame_count=state.game.frame_count
-            )
             # Cure scared blue birds nearby
             _cure_nearby_scared_blues(adj_lane)
         else:
@@ -206,9 +200,6 @@ def _power_white(bird_idx, bird_lane):
                 continue
             set_ball_vy(adj_bird, -1)
             reset_bird_power(adj_bird)
-            achievements.append_recent_action(
-                'bounce', lane=adj_lane, color=adj_color, frame_count=state.game.frame_count
-            )
         elif state.birds.vy[adj_bird] == -1:  # Rising - activate power
             label, _ = compute_grade_from_xp(state.birds.per_bird_xp[adj_bird])
             adj_allowed = 2 if (label and label.startswith('A')) else 1
@@ -241,7 +232,6 @@ def _power_stealth(bird_idx, bird_lane):
     )
     state.special.stealth_prev_speeds[bird_idx] = state.birds.speeds[bird_idx]
     state.birds.speeds[bird_idx] = constants.stealth.speed_boost
-    achievements.append_recent_action('stealth', lane=bird_lane, color=STEALTH, frame_count=state.game.frame_count)
 
 
 def _power_twister(bird_idx, bird_lane):
@@ -255,7 +245,6 @@ def _power_twister(bird_idx, bird_lane):
     if bird_lane < constants.layout.num_lanes - 1:
         lanes.append(bird_lane + 1)
     state.special.twister_tailwind[bird_idx] = {'end_time': end_time, 'lanes': lanes}
-    achievements.append_recent_action('twister', lane=bird_lane, color=TWISTER, frame_count=state.game.frame_count)
 
 
 def _power_frosty(bird_idx, _bird_lane=None):

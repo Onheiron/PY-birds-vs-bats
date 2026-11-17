@@ -7,7 +7,6 @@ from src.engine.actions import (
     handle_bounce,
     handle_movement,
     handle_pause,
-    handle_suction,
     handle_swap,
     handle_xp_toggle,
 )
@@ -56,8 +55,6 @@ def process_input(key):
         handle_audio_toggle()
     elif key_upper == bindings.get('BOUNCE'):
         handle_bounce()
-    elif key_upper == bindings.get('SUCTION'):
-        handle_suction()
     elif key == 'QUIT':
         state.game.quit_requested = True
         state.game.game_over = True

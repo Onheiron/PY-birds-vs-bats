@@ -15,17 +15,7 @@ def update_powerup_timers():
             state.powerups.wide_cursor_active = False
             state.powerups.wide_cursor_lanes = 1
 
-    if state.powerups.bounce_boost_active:
-        state.powerups.bounce_boost_frames -= 1
-        if state.powerups.bounce_boost_frames <= 0:
-            state.powerups.bounce_boost_active = False
-            state.powerups.bounce_boost_duration = 0
 
-    if state.powerups.suction_active:
-        state.powerups.suction_frames -= 1
-        if state.powerups.suction_frames <= 0:
-            state.powerups.suction_active = False
-            state.powerups.suction_boost_duration = 0
 
     if state.powerups.tailwind_active:
         state.powerups.tailwind_frames -= 1

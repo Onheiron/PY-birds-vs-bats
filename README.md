@@ -63,13 +63,12 @@ with a boss.
 | ← / → | Move the cursor between lanes |
 | ↑ | Bounce the bird in the selected lane; if it is already rising, use its power (once per ascent) |
 | SPACE | Select a lane, then SPACE on another lane to swap the two birds (costs momentum) |
-| ↓ | Suction (only while the legacy Suction power-up is active) |
 | P / ESC | Pause menu: resume, restart, save, load, Birdpedia, settings |
 | X | Toggle the XP overlay |
 | M | Mute / unmute audio |
 | Q / Ctrl+C | Quit |
 
-Movement, bounce, suction and swap keys can be rebound in **Settings → Controls**.
+Movement, bounce and swap keys can be rebound in **Settings → Controls**.
 
 ### Birds
 

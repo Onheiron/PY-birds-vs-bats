@@ -363,12 +363,6 @@ def draw_loot(fb):
             elif 'wide_cursor' in loot_type:
                 char = '↔'
                 color = power_color
-            elif 'bounce_boost' in loot_type:
-                char = '↺'  # Originale
-                color = power_color
-            elif 'suction' in loot_type:
-                char = '⥥'  # Originale
-                color = power_color
             elif 'tailwind' in loot_type:
                 char = '༄'  # Originale
                 color = power_color

@@ -91,7 +91,6 @@ def page(content_type):
                 "MOVEMENT:",
                 "  LEFT/RIGHT - Move cursor",
                 "  UP - Bounce / Power",
-                "  DOWN - Suction (if active)",
                 "",
                 "SELECTION:",
                 "  SPACE - Start/Execute swap",

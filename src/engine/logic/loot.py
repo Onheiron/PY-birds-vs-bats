@@ -158,18 +158,6 @@ _POWERUPS = {
             'wide_cursor_lanes': ('lanes', ('base', 'base', 'max', 'max'), (3, 3, 5, 5), None),
         },
     },
-    'bounce_boost': {
-        'seconds': ('seconds', _TIERS, (10.0, 20.0, 25.0, 50.0), _SECONDS_FALLBACK),
-        'values': {
-            'bounce_boost_duration': ('duration', _TIERS, (4, 4, 8, 12), (1.0, 1.5, 2.0, 3.0)),
-        },
-    },
-    'suction': {
-        'seconds': ('seconds', _TIERS, (10.0, 20.0, 25.0, 50.0), _SECONDS_FALLBACK),
-        'values': {
-            'suction_boost_duration': ('boost_duration', _TIERS, (0, 0, 4, 8), (1.0, 1.5, 2.0, 3.0)),
-        },
-    },
     'tailwind': {
         'seconds': ('seconds', _TIERS, _SECONDS_FALLBACK, None),
         'values': {
@@ -181,7 +169,7 @@ _POWERUPS = {
 
 
 def _apply_timed_power(name, loot_type):
-    """Activate a frame-timed power-up (wide cursor, bounce boost, suction, tailwind)."""
+    """Activate a frame-timed power-up (wide cursor, tailwind)."""
     spec = _POWERUPS[name]
     section = getattr(constants, name)
     tier = _loot_tier(loot_type, name)
