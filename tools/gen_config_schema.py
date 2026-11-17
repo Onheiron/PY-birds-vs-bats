@@ -42,7 +42,7 @@ def scalar_schema(value):
 
 def common_schema(schemas):
     """The schema shared by every item, or 'anything' when they differ."""
-    schemas = [s for s in schemas]
+    schemas = list(schemas)
     if schemas and all(s == schemas[0] for s in schemas):
         return schemas[0]
     types = {s.get('type') for s in schemas}
