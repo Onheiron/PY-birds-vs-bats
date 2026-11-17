@@ -9,7 +9,7 @@ from src.entities.sprites import (
 )
 
 
-def _get_obstacle_lanes(obs):
+def get_obstacle_lanes(obs):
     """Ritorna il set di lane occupate da un ostacolo basandosi sulla larghezza sprite."""
     obs_lane = obs['lane']
     # Usa sprite_width salvato nell'ostacolo, o calcola dalla sprite

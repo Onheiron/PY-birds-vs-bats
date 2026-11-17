@@ -5,7 +5,7 @@ import time
 
 from src.core import constants, state
 from src.engine.birds import set_ball_vy
-from src.engine.logic.bosses.common import _convert_boss_to_obstacle, _get_boss_config
+from src.engine.logic.bosses.common import convert_boss_to_obstacle, get_boss_config
 from src.services.sound import play_sfx
 
 
@@ -18,7 +18,7 @@ def _boss_start_scream(boss):
     play_sfx('boss_scream')
 
     # Apply scare effect to all birds below the boss
-    boss_cfg = _get_boss_config()
+    boss_cfg = get_boss_config()
     scream_cfg = getattr(boss_cfg, 'scream', None)
     scare_duration = getattr(scream_cfg, 'scare_duration', 1.5) if scream_cfg else 1.5
     scare_frames = int(scare_duration / constants.timing.base_sleep)
@@ -43,7 +43,7 @@ def _boss_start_scream(boss):
 
 def spawn_basic_boss():
     """Spawn the default boss: it descends, oscillates and screams."""
-    boss_cfg = _get_boss_config()
+    boss_cfg = get_boss_config()
     if boss_cfg is None:
         return
 
@@ -77,7 +77,7 @@ def spawn_basic_boss():
 def update_basic_boss():
     """Update the default boss (movement, animation, scream attacks, death)."""
     boss = state.enemies.boss
-    boss_cfg = _get_boss_config()
+    boss_cfg = get_boss_config()
     if boss_cfg is None:
         return
 
@@ -144,6 +144,6 @@ def update_basic_boss():
 
     elif boss_state == 'dying':
         # Convert to falling obstacle (tier 4)
-        _convert_boss_to_obstacle(boss)
+        convert_boss_to_obstacle(boss)
         state.enemies.boss = None
         state.enemies.boss_defeated = True

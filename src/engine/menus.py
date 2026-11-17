@@ -3,12 +3,12 @@
 from src.core import constants, state
 from src.core import state as game_state
 from src.engine.actions import handle_pause
-from src.engine.notifications import _add_notification
+from src.engine.notifications import notify
 from src.services import save_manager
 from src.services.sound import apply_music_setting
 
 
-def _execute_pause_menu_action():
+def execute_pause_menu_action():
     """Execute the currently selected pause menu action."""
 
     selected = state.ui.pause_menu_index
@@ -55,10 +55,10 @@ def _handle_restart():
     state.game.paused = False
     state.ui.pause_menu_index = 0
 
-    _add_notification("New game!", title="Restart:")
+    notify("New game!", title="Restart:")
 
 
-def _get_settings_options_count():
+def get_settings_options_count():
     """Return the number of options in the current settings submenu."""
     menu = state.ui.settings_menu
     if menu == 'main':
@@ -90,7 +90,7 @@ def _get_settings_options_count():
     return 1
 
 
-def _handle_settings_enter():
+def handle_settings_enter():
     """Handle ENTER key in settings menu."""
     menu = state.ui.settings_menu
     idx = state.ui.settings_index
@@ -130,7 +130,7 @@ def _handle_settings_enter():
             state.ui.settings_menu = 'main'
             state.ui.settings_index = 1
     elif menu == 'controls':
-        count = _get_settings_options_count()
+        count = get_settings_options_count()
         if idx == count - 1:  # < BACK
             state.ui.settings_menu = 'main'
             state.ui.settings_index = 2
@@ -147,11 +147,11 @@ def _handle_settings_enter():
             slot = idx + 1
 
             if save_manager.save_game(slot):
-                _add_notification(f"Saved to Slot {slot}", title="Save:")
+                notify(f"Saved to Slot {slot}", title="Save:")
                 state.ui.settings_menu = None
                 state.ui.settings_index = 0
             else:
-                _add_notification("Save failed!", title="Error:")
+                notify("Save failed!", title="Error:")
     elif menu == 'load':
         if idx == 4:  # < BACK
             state.ui.settings_menu = None
@@ -163,14 +163,14 @@ def _handle_settings_enter():
             if slots.get(slot, {}).get('exists'):
                 if save_manager.load_game(slot):
                     slot_name = "Autosave" if slot == 0 else f"Slot {slot}"
-                    _add_notification(f"Loaded {slot_name}", title="Load:")
+                    notify(f"Loaded {slot_name}", title="Load:")
                     state.ui.settings_menu = None
                     state.ui.settings_index = 0
                     state.game.paused = False
                 else:
-                    _add_notification("Load failed!", title="Error:")
+                    notify("Load failed!", title="Error:")
             else:
-                _add_notification("Slot is empty!", title="Error:")
+                notify("Slot is empty!", title="Error:")
     elif menu == 'birdpedia':
         if idx == 0:  # GUIDE
             state.ui.settings_menu = 'guide'
@@ -213,10 +213,10 @@ def _handle_settings_enter():
         'biomes_list',
     ):
         # Content views - any key goes back
-        _handle_settings_back()
+        handle_settings_back()
 
 
-def _handle_settings_back():
+def handle_settings_back():
     """Handle ESC or < BACK in settings menu."""
     menu = state.ui.settings_menu
 
@@ -255,7 +255,7 @@ def _handle_settings_back():
         state.ui.settings_index = 3
 
 
-def _handle_settings_left_right(direction):
+def handle_settings_left_right(direction):
     """Handle LEFT/RIGHT for cycling values in settings."""
     menu = state.ui.settings_menu
     idx = state.ui.settings_index
@@ -293,7 +293,7 @@ def _cycle_difficulty(delta):
     state.settings.difficulty = (state.settings.difficulty + delta) % 4
 
 
-def _handle_title_input(key):
+def handle_title_input(key):
     """Handle input on title screen. Returns True if handled."""
     if not state.ui.show_title:
         return False
@@ -476,12 +476,12 @@ def _handle_title_settings_input(key):
         return True
 
     if key == 'UP':
-        count = _get_settings_options_count()
+        count = get_settings_options_count()
         state.ui.settings_index = (state.ui.settings_index - 1) % count
         return True
 
     if key == 'DOWN':
-        count = _get_settings_options_count()
+        count = get_settings_options_count()
         state.ui.settings_index = (state.ui.settings_index + 1) % count
         return True
 

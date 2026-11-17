@@ -4,7 +4,7 @@ import random
 import time
 
 from src.core import constants, state
-from src.engine.logic.bosses.common import _get_boss_config
+from src.engine.logic.bosses.common import get_boss_config
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 
@@ -287,7 +287,7 @@ def _spawn_bat_from_jelly_boss(boss, anim):
 
 def _convert_jelly_boss_to_obstacle(boss):
     """Convert dead Jelly Boss to a falling obstacle."""
-    boss_cfg = _get_boss_config()
+    boss_cfg = get_boss_config()
     jelly_boss_cfg = getattr(constants, 'jelly_boss', None)
 
     corpse_cfg = getattr(jelly_boss_cfg, 'corpse', None) if jelly_boss_cfg else None

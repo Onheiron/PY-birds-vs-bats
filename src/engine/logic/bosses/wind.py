@@ -4,7 +4,7 @@ import random
 import time
 
 from src.core import constants, state
-from src.engine.logic.bosses.common import _get_boss_config
+from src.engine.logic.bosses.common import get_boss_config
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 
@@ -146,7 +146,7 @@ def _apply_wind_boss_effect(boss):
 
 def _convert_wind_boss_to_obstacle(boss):
     """Convert dead Wind Boss to a falling obstacle."""
-    boss_cfg = _get_boss_config()
+    boss_cfg = get_boss_config()
     wind_boss_cfg = getattr(constants, 'wind_boss', None)
 
     corpse_cfg = getattr(boss_cfg, 'corpse', None)

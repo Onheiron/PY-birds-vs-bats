@@ -5,8 +5,8 @@ import time
 
 from src.core import constants, state
 from src.engine.birds import check_pending_transforms
-from src.engine.logic.flowers import _maybe_add_flower_to_obstacle
-from src.engine.logic.helpers import _get_obstacle_lanes
+from src.engine.logic.flowers import maybe_add_flower_to_obstacle
+from src.engine.logic.helpers import get_obstacle_lanes
 from src.entities.sprites import (
     OBSTACLE_SPRITE_T1,
     ORANGE,
@@ -68,7 +68,7 @@ def spawn_obstacle():
     occupied_lanes = set()
     for obs in state.enemies.obstacles:
         if obs['y_pos'] < 5:  # Solo ostacoli vicini al top
-            occupied_lanes.update(_get_obstacle_lanes(obs))
+            occupied_lanes.update(get_obstacle_lanes(obs))
 
     # Trova posizioni valide per il nuovo ostacolo
     valid_start_lanes = []
@@ -403,7 +403,7 @@ def process_spawn_queue():
 
             # Check if swamp biome (level_group 4) - obstacles can have flowers
             if state.game.level_group == 4:
-                _maybe_add_flower_to_obstacle(obstacle_data)
+                maybe_add_flower_to_obstacle(obstacle_data)
 
             state.enemies.obstacles.append(obstacle_data)
             # Track obstacle discovery by tier

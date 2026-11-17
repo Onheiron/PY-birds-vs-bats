@@ -11,12 +11,12 @@ from src.engine.actions import (
     handle_xp_toggle,
 )
 from src.engine.menus import (
-    _execute_pause_menu_action,
-    _get_settings_options_count,
-    _handle_settings_back,
-    _handle_settings_enter,
-    _handle_settings_left_right,
-    _handle_title_input,
+    execute_pause_menu_action,
+    get_settings_options_count,
+    handle_settings_back,
+    handle_settings_enter,
+    handle_settings_left_right,
+    handle_title_input,
 )
 
 
@@ -26,7 +26,7 @@ def process_input(key):
         return
 
     # Handle title screen input first
-    if _handle_title_input(key):
+    if handle_title_input(key):
         return
 
     # Get the swap key binding
@@ -132,17 +132,17 @@ def process_input(key):
                 state.game.quit_requested = True
                 state.game.game_over = True
             elif key == 'ESC':
-                _handle_settings_back()
+                handle_settings_back()
             elif key == 'UP':
-                count = _get_settings_options_count()
+                count = get_settings_options_count()
                 state.ui.settings_index = (state.ui.settings_index - 1) % count
             elif key == 'DOWN':
-                count = _get_settings_options_count()
+                count = get_settings_options_count()
                 state.ui.settings_index = (state.ui.settings_index + 1) % count
             elif key in ('LEFT', 'RIGHT'):
-                _handle_settings_left_right(key)
+                handle_settings_left_right(key)
             elif key == 'ENTER':
-                _handle_settings_enter()
+                handle_settings_enter()
             return
 
         # Regular pause menu navigation
@@ -159,7 +159,7 @@ def process_input(key):
             state.ui.pause_menu_index = (state.ui.pause_menu_index + 1) % 7
         elif key == 'ENTER':
             # Execute selected menu action
-            _execute_pause_menu_action()
+            execute_pause_menu_action()
         return
 
     # Get key bindings

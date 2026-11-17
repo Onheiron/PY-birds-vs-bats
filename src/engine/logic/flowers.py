@@ -7,7 +7,7 @@ from src.core import constants, state
 from src.entities.sprites import FLOWER_MATURE_FRAME, SWAMP_OBSTACLE_FLOWER_POSITIONS
 
 
-def _maybe_add_flower_to_obstacle(obstacle_data):
+def maybe_add_flower_to_obstacle(obstacle_data):
     """Maybe add a flower to a swamp obstacle based on probability."""
 
     tier = obstacle_data.get('tier', 1)
@@ -72,12 +72,12 @@ def update_obstacle_flowers():
             flower['grow_timer'] = now + grow_interval
 
 
-def _apply_mature_flower_effect(branch, flower):
+def apply_mature_flower_effect(branch, flower):
     """Apply the effect of a mature (frame 5) flower to its lanes."""
     # Yellow, blue, and green effects are applied on collision, not passively
 
 
-def _apply_flower_collision_effect(flower, bird_idx):
+def apply_flower_collision_effect(flower, bird_idx):
     """Apply flower effect when bird collides with branch that has mature flower."""
     flower_type = flower.get('type')
     tree_boss_cfg = getattr(constants, 'tree_boss', None)

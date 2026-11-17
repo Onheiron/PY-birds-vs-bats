@@ -12,7 +12,7 @@ from src.services import achievements
 from src.services.sound import play_sfx
 
 
-def _calculate_bird_damage(bird_idx):
+def calculate_bird_damage(bird_idx):
     """Calculate damage a bird deals using formula:
     TOT = round(((GR * 0.1) + (DMG + DMGBOOST - DMGNERF)) * (SPD + SPDBOOST - SPDNERF))
 
@@ -105,7 +105,7 @@ def _calculate_bird_damage(bird_idx):
     return max(1, total_damage)
 
 
-def _handle_bat_death(bat, killer_bird_idx):
+def handle_bat_death(bat, killer_bird_idx):
     """Handle bat death: score, loot drop, achievements."""
     tier = bat.get('tier', 1)
     bat_xp_per_tier = getattr(constants.combat, 'bat_destroy_xp_per_tier', 5)
@@ -152,7 +152,7 @@ def _handle_bat_death(bat, killer_bird_idx):
     play_sfx('bat_death')  # Shrieking bat death sound!
 
 
-def _handle_mini_bat_death(mini_bat, killer_bird_idx):
+def handle_mini_bat_death(mini_bat, killer_bird_idx):
     """Handle mini bat (tier 0) death: score, loot drop, XP."""
     tier = mini_bat.get('tier', 0)
     bat_xp_per_tier = getattr(constants.combat, 'bat_destroy_xp_per_tier', 5)

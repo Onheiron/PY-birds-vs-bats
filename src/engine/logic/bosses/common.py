@@ -8,7 +8,7 @@ from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige, get_level_milestones
 
 
-def _get_boss_config():
+def get_boss_config():
     """Get boss configuration."""
     return getattr(constants, 'boss', None)
 
@@ -26,9 +26,9 @@ def _get_miles_to_next_level():
     return max(0, next_threshold - state.game.miles)
 
 
-def _convert_boss_to_obstacle(boss):
+def convert_boss_to_obstacle(boss):
     """Convert dead boss to a falling obstacle using BOSS_DEAD sprite."""
-    boss_cfg = _get_boss_config()
+    boss_cfg = get_boss_config()
 
     # Get corpse HP from config (special boss corpse, not tier 4)
     corpse_cfg = getattr(boss_cfg, 'corpse', None)

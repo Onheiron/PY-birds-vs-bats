@@ -31,19 +31,19 @@ from src.entities.sprites import (
 )
 from src.ui.colors import apply_bold, color_from_hp_to_red
 from src.ui.layers.background import TREE_HIDDEN_CHARS
-from src.ui.layers.birds import _fb_render_bird_status_indicators
+from src.ui.layers.birds import draw_bird_status_indicators
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
 
-def _fb_render_boss(fb):
+def draw_boss(fb):
     """Render the active boss with the renderer for its type."""
     boss = state.enemies.boss
     if boss is None:
         return
-    _BOSS_RENDERERS.get(boss.get('boss_type', 'normal'), _fb_render_basic_boss)(fb)
+    _BOSS_RENDERERS.get(boss.get('boss_type', 'normal'), _draw_basic_boss)(fb)
 
 
-def _fb_render_basic_boss(fb):
+def _draw_basic_boss(fb):
     """Render the default boss."""
     boss = state.enemies.boss
     boss_hp = boss.get('hp', 0)
@@ -84,7 +84,7 @@ def _fb_render_basic_boss(fb):
                         fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, char_color)
 
 
-def _fb_render_wind_boss(fb):
+def _draw_wind_boss(fb):
     """Render Wind Boss to framebuffer."""
     boss = state.enemies.boss
     if boss is None:
@@ -127,7 +127,7 @@ def _fb_render_wind_boss(fb):
                         fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, boss_color)
 
 
-def _fb_render_jelly_boss(fb):
+def _draw_jelly_boss(fb):
     """Render Jelly Boss to framebuffer."""
     boss = state.enemies.boss
     if boss is None:
@@ -171,10 +171,10 @@ def _fb_render_jelly_boss(fb):
                 fb.put(GAME_X_OFFSET + anim_x + i, anim_y + HEADER_HEIGHT, c, spawn_color)
 
 
-def _fb_render_tree_boss(fb):
+def _draw_tree_boss(fb):
     """Render Tree Boss foreground elements (branches, flowers, status indicators).
 
-    Note: The background tree is rendered separately by _fb_render_tree_boss_background()
+    Note: The background tree is rendered separately by draw_tree_boss_background()
     which is called BEFORE the biome background for proper layering.
     """
     boss = state.enemies.boss
@@ -260,10 +260,10 @@ def _fb_render_tree_boss(fb):
     # =========================================================================
     # 4. RENDER STATUS INDICATORS for stunned/frozen/poisoned birds
     # =========================================================================
-    _fb_render_bird_status_indicators(fb)
+    draw_bird_status_indicators(fb)
 
 
-def _fb_render_owl_boss(fb):
+def _draw_owl_boss(fb):
     """Render Owl Boss and its spell effects."""
     boss = state.enemies.boss
     if boss is None:
@@ -315,7 +315,7 @@ def _fb_render_owl_boss(fb):
                                 char_color = "\033[1;33m"  # Yellow (normal)
                         fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, char_color)
 
-    # Owl boss portals now use state.enemies.portals and are rendered by _fb_render_portals()
+    # Owl boss portals now use state.enemies.portals and are rendered by draw_portals()
 
     # Render owl meteors (2 large meteors: one left, one right)
     owl_meteors = boss.get('owl_meteors', [])
@@ -357,12 +357,12 @@ def _fb_render_owl_boss(fb):
                             fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, m_color)
 
     # Render status indicators for affected birds (same as Tree Boss)
-    _fb_render_bird_status_indicators(fb)
+    draw_bird_status_indicators(fb)
 
 
 _BOSS_RENDERERS = {
-    'wind': _fb_render_wind_boss,
-    'jelly': _fb_render_jelly_boss,
-    'tree': _fb_render_tree_boss,
-    'owl': _fb_render_owl_boss,
+    'wind': _draw_wind_boss,
+    'jelly': _draw_jelly_boss,
+    'tree': _draw_tree_boss,
+    'owl': _draw_owl_boss,
 }

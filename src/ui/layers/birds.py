@@ -75,7 +75,7 @@ def render_patchwork_line(line):
     return colored
 
 
-def _fb_render_bird_status_indicators(fb):
+def draw_bird_status_indicators(fb):
     """Render status indicators (stunned/frozen/poisoned/bleeding) above affected birds.
 
     This is extracted from Tree Boss rendering so it can be reused by Owl Boss and other bosses.
@@ -161,11 +161,11 @@ def _fb_render_bird_status_indicators(fb):
                         fb.put(GAME_X_OFFSET + bird_x + i, bird_y - 1 + HEADER_HEIGHT, c, bleed_color)
 
 
-def _fb_render_birds(fb):
+def draw_birds(fb):
     """Render birds to framebuffer."""
     for i in range(constants.layout.num_balls):
         if state.birds.lost[i]:
-            # X sul pavimento viene disegnata in _fb_render_floor_and_cursor
+            # X sul pavimento viene disegnata in draw_floor_and_cursor
             continue
 
         y_pos = state.birds.y[i]

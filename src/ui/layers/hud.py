@@ -10,8 +10,8 @@ from src.ui.colors import (
     HEADER_BORDER,
     HEADER_LABEL,
     HEADER_VALUE,
-    _get_position_color,
-    _grade_letter_color,
+    get_position_color,
+    grade_letter_color,
 )
 from src.ui.framebuffer import RegionCache
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, TOTAL_WIDTH
@@ -19,7 +19,7 @@ from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, TOTAL_WIDTH
 _header_cache = RegionCache()
 
 
-def _fb_render_header(fb):
+def draw_header(fb):
     """Render header to framebuffer - 3 rows with graphical boxes.
 
     Shows: Lives, Prestige, Score, Biome in styled boxes.
@@ -109,7 +109,7 @@ def _fb_render_header(fb):
     _header_cache.store(fb, cache_key, 0, 0, TOTAL_WIDTH, HEADER_HEIGHT)
 
 
-def _fb_render_starting_line(fb):
+def draw_starting_line(fb):
     """Render starting line to framebuffer."""
     starting_line_y = constants.layout.starting_line
     if starting_line_y < 0 or starting_line_y >= constants.layout.height:
@@ -165,7 +165,7 @@ def _fb_render_starting_line(fb):
                         fb.put(GAME_X_OFFSET + x, starting_line_y + HEADER_HEIGHT, '^', BLUE)
 
 
-def _fb_render_center_of_mass(fb):
+def draw_center_of_mass(fb):
     """Render a dashed line at the center of mass of active birds.
 
     Center of mass is calculated as weighted average of bird Y positions,
@@ -205,7 +205,7 @@ def _fb_render_center_of_mass(fb):
         return
 
     # Get color based on position (red at bottom -> green at top) with faint
-    line_color = _get_position_color(center_y)
+    line_color = get_position_color(center_y)
 
     # Draw dashed line across the game area
     game_width = constants.layout.width
@@ -216,7 +216,7 @@ def _fb_render_center_of_mass(fb):
             fb.put(GAME_X_OFFSET + x, screen_y, '-', line_color)
 
 
-def _fb_render_floor_and_cursor(fb):
+def draw_floor_and_cursor(fb):
     """Render floor and cursor to framebuffer."""
     floor_y = constants.layout.height + HEADER_HEIGHT
 
@@ -247,7 +247,7 @@ def _fb_render_floor_and_cursor(fb):
 
             if bird_idx >= 0 and not state.birds.lost[bird_idx]:
                 letter, _ = compute_grade_from_xp(state.birds.per_bird_xp[bird_idx])
-                color = _grade_letter_color(letter, fallback_cursor_color)
+                color = grade_letter_color(letter, fallback_cursor_color)
             else:
                 color = fallback_cursor_color
 
@@ -264,7 +264,7 @@ def _fb_render_floor_and_cursor(fb):
         fb.put(GAME_X_OFFSET + sel_x + 2, floor_y + 1, ']', YELLOW)
 
 
-def _fb_render_footer(fb):
+def draw_footer(fb):
     """Render footer to framebuffer - only XP overlay when enabled."""
     # Footer position: after floor and cursor
     footer_y = constants.layout.height + HEADER_HEIGHT + 2

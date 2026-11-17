@@ -6,7 +6,7 @@ from src.services import save_manager
 from src.ui import terminal
 from src.ui.colors import MENU_ARROW_COLOR, MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
 from src.ui.framebuffer import get_framebuffer
-from src.ui.layers.menus import _fb_render_birdpedia_content
+from src.ui.layers.menus import draw_birdpedia_content
 from src.ui.layout import TOTAL_WIDTH
 
 # ASCII art logo for title screen
@@ -88,16 +88,16 @@ def render_title_screen():
 
     # If in submenu, render overlay
     if state.ui.settings_menu == 'load':
-        _fb_render_title_load_menu(fb, logo_y + len(TITLE_LOGO) + 2)
+        _draw_title_load_menu(fb, logo_y + len(TITLE_LOGO) + 2)
     elif state.ui.settings_menu is not None:
         # Render settings submenu overlay
-        _fb_render_title_settings_menu(fb, logo_y + len(TITLE_LOGO) + 2)
+        _draw_title_settings_menu(fb, logo_y + len(TITLE_LOGO) + 2)
 
     # Generate output and display
     terminal.write_frame(fb.render())
 
 
-def _fb_render_title_load_menu(fb, start_y):
+def _draw_title_load_menu(fb, start_y):
     """Render load menu overlay on title screen."""
 
     slots = save_manager.list_save_slots()
@@ -174,7 +174,7 @@ def _fb_render_title_load_menu(fb, start_y):
     fb.put_string(hint_x, y, hint, MENU_BORDER_COLOR)
 
 
-def _fb_render_title_settings_menu(fb, start_y):
+def _draw_title_settings_menu(fb, start_y):
     """Render settings menu overlay on title screen."""
     DIFFICULTY_NAMES = ["PEACEFUL", "ADVENTURE", "SURVIVAL", "LEGENDARY"]
 
@@ -276,9 +276,7 @@ def _fb_render_title_settings_menu(fb, start_y):
             'batpedia_list': 'bats',
             'biomes_list': 'biomes',
         }
-        _fb_render_birdpedia_content(
-            fb, menu_x, start_y, menu_width, menu_width - 2, content_map[state.ui.settings_menu]
-        )
+        draw_birdpedia_content(fb, menu_x, start_y, menu_width, menu_width - 2, content_map[state.ui.settings_menu])
         return
     else:
         return

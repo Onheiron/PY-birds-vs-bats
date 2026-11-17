@@ -41,7 +41,7 @@ from src.ui.colors import apply_bold, color_from_hp, color_from_hp_to_red, dim_a
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
 
-def _fb_render_obstacles(fb):
+def draw_obstacles(fb):
     """Render obstacles to framebuffer using biome-specific sprites and colors."""
 
     # Get obstacle sprites for current biome (fallback)
@@ -105,10 +105,10 @@ def _fb_render_obstacles(fb):
             # Render flower if present
             flower = obs.get('flower')
             if flower and flower.get('active'):
-                _fb_render_obstacle_flower(fb, obs, flower, center_x, x_offset)
+                _draw_obstacle_flower(fb, obs, flower, center_x, x_offset)
 
 
-def _fb_render_obstacle_flower(fb, obs, flower, center_x, x_offset):
+def _draw_obstacle_flower(fb, obs, flower, center_x, x_offset):
     """Render a flower on a swamp obstacle using the same FLOWER_GROWTH_FRAMES as Tree Boss."""
 
     frame = flower.get('frame', 0)
@@ -143,7 +143,7 @@ def _fb_render_obstacle_flower(fb, obs, flower, center_x, x_offset):
                     fb.put(GAME_X_OFFSET + x_pos, flower_y + HEADER_HEIGHT, char, flower_color)
 
 
-def _fb_render_portals(fb):
+def draw_portals(fb):
     """Render portals to framebuffer (biome 5 natural portals OR Owl Boss bend_space portals)."""
     # Render if we're in biome 5 OR if there are any portals (from Owl Boss)
     if state.game.level_group != 5 and not state.enemies.portals:
@@ -171,7 +171,7 @@ def _fb_render_portals(fb):
                             fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, PORTAL_COLOR)
 
 
-def _fb_render_bats(fb):
+def draw_bats(fb):
     """Render bats to framebuffer."""
 
     for bat in state.enemies.bats:
@@ -252,7 +252,7 @@ def _fb_render_bats(fb):
                 fb.put(GAME_X_OFFSET + indicator_x + idx, indicator_y + HEADER_HEIGHT, symbol, apply_bold(color))
 
 
-def _fb_render_mini_bats(fb):
+def draw_mini_bats(fb):
     """Render mini bats to framebuffer."""
 
     for mb in state.enemies.mini_bats:
@@ -321,7 +321,7 @@ def _fb_render_mini_bats(fb):
                             fb.put(GAME_X_OFFSET + x, y_pos + HEADER_HEIGHT, char, mb_color)
 
 
-def _fb_render_loot(fb):
+def draw_loot(fb):
     """Render loot items to framebuffer."""
     # Use dynamic colors for accessibility support
     loot_symbols = {
@@ -382,7 +382,7 @@ def _fb_render_loot(fb):
             fb.put(GAME_X_OFFSET + loot['x_pos'], y_pos + HEADER_HEIGHT, char, color)
 
 
-def _fb_render_projectiles(fb):
+def draw_projectiles(fb):
     """Render projectiles to framebuffer."""
     for proj in state.special.red_projectiles:
         y_pos = proj['y_pos']

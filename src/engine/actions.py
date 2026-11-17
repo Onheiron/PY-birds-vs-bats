@@ -12,8 +12,8 @@ from src.engine.birds import (
     reset_bird_power,
     set_ball_vy,
 )
-from src.engine.notifications import _add_notification
-from src.engine.powers import _activate_bird_power
+from src.engine.notifications import notify
+from src.engine.powers import activate_bird_power
 from src.engine.progression import calculate_gear_threshold, compute_gear_from_momentum, deduct_momentum
 from src.entities import bird_types
 from src.entities.sprites import CLOCKWORK, DINOSAUR, GLITCH, ORANGE, PURPLE, RAINBOW
@@ -30,7 +30,7 @@ def handle_pause():
     """Toggle pause state."""
     state.game.paused = not state.game.paused
     msg = 'PAUSED' if state.game.paused else 'RESUMED'
-    _add_notification(msg)
+    notify(msg)
 
 
 def handle_movement(direction):
@@ -224,7 +224,7 @@ def handle_bounce():
                 _bounce_bird_up(bird_idx)
             # Bird moving up - activate power
             elif state.birds.vy[bird_idx] == -1:
-                _activate_bird_power(bird_idx)
+                activate_bird_power(bird_idx)
 
 
 def _recover_orange_bird(bird_idx, lane):
@@ -327,14 +327,14 @@ def handle_xp_toggle():
     """Toggle XP overlay display."""
     state.ui.show_xp_overlay = not state.ui.show_xp_overlay
     msg = 'XP overlay: ON' if state.ui.show_xp_overlay else 'XP overlay: OFF'
-    _add_notification(msg)
+    notify(msg)
 
 
 def handle_audio_toggle():
     """Toggle audio on/off (mute/unmute)."""
     audio = get_audio()
     if audio is None:
-        _add_notification('Audio not available')
+        notify('Audio not available')
         return
 
     # Toggle audio state
@@ -345,6 +345,6 @@ def handle_audio_toggle():
     if new_state:
         # Re-enable audio and restart music
         audio.start_music()
-        _add_notification('Audio: ON')
+        notify('Audio: ON')
     else:
-        _add_notification('Audio: OFF')
+        notify('Audio: OFF')

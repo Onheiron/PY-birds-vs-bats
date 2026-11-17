@@ -23,7 +23,7 @@ from src.ui.framebuffer import BLANK
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
 
 
-def _fb_render_left_panel_content(fb, panel_start_y, panel_end_y):
+def _draw_left_panel_content(fb, panel_start_y, panel_end_y):
     """
     Render left panel content (dynamic width):
     - Speed: (label)
@@ -278,7 +278,7 @@ def _calculate_level_line_y():
     return line_y, True, 0
 
 
-def _fb_render_level_line(fb):
+def draw_level_line(fb):
     """Render the level line in the game area (dashed line showing next level)."""
     line_y, is_on_screen, progress = _calculate_level_line_y()
 
@@ -300,7 +300,7 @@ def _fb_render_level_line(fb):
             fb.put(GAME_X_OFFSET + i, screen_y, char, LEVEL_LINE_COLOR)
 
 
-def _fb_render_right_panel_level_signs(fb):
+def draw_right_panel_level_signs(fb):
     """Render level signs in right panel.
 
     Top sign: Next level - stays at top until "level line" would enter screen,
@@ -446,7 +446,7 @@ def _fb_render_right_panel_level_signs(fb):
         fb.put_string(sign_x + 5, bottom_sign_y + 3, "══════════╝", SIGN_BORDER_COLOR)
 
 
-def _fb_render_side_panels(fb):
+def draw_side_panels(fb):
     """
     Render left and right side panels (placeholder for Steam Deck 16:9 layout).
     Panels are ONLY in the middle section (between header and footer).
@@ -465,7 +465,7 @@ def _fb_render_side_panels(fb):
         fb.put_cells(0, y, left_panel)
 
     # Render left panel content (speed info, gauge, momentum)
-    _fb_render_left_panel_content(fb, panel_start_y, panel_end_y)
+    _draw_left_panel_content(fb, panel_start_y, panel_end_y)
 
     # Right panel - vertical borders only (background rendered separately)
     rows = fb.current
@@ -476,7 +476,7 @@ def _fb_render_side_panels(fb):
         row[outer_x] = border
 
 
-def _fb_render_right_panel_barriers(fb):
+def draw_right_panel_barriers(fb):
     """Render decorative barriers in right panel using biome-specific sprites and colors."""
 
     # Right panel position
@@ -507,7 +507,7 @@ def _fb_render_right_panel_barriers(fb):
                             fb.put(x_pos, y_pos + HEADER_HEIGHT, char, biome_obs_color)
 
 
-def _fb_render_notifications(fb):
+def draw_notifications(fb):
     """Render notification cards in right panel between level signs."""
     # Filter expired notifications (support both old tuple and new dict format)
     active_notifications = []

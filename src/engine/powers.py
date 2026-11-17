@@ -33,7 +33,7 @@ from src.entities.sprites import (
 from src.services import achievements
 
 
-def _activate_bird_power(bird_idx):
+def activate_bird_power(bird_idx):
     """Activate a bird's special power."""
 
     # POISONED BIRDS: power is blocked while poisoned (cure handled in main input handler)

@@ -6,12 +6,12 @@ from dataclasses import dataclass
 from src.core import constants, state
 from src.engine.birds import reset_bird_power, set_ball_vy
 from src.engine.logic.bosses.basic import spawn_basic_boss, update_basic_boss
-from src.engine.logic.bosses.common import _get_boss_config
+from src.engine.logic.bosses.common import get_boss_config
 from src.engine.logic.bosses.jelly import spawn_jelly_boss, update_jelly_boss
 from src.engine.logic.bosses.owl import spawn_owl_boss, update_owl_boss
-from src.engine.logic.bosses.tree import _check_bird_tree_branch_collision, spawn_tree_boss, update_tree_boss
+from src.engine.logic.bosses.tree import check_bird_tree_branch_collision, spawn_tree_boss, update_tree_boss
 from src.engine.logic.bosses.wind import spawn_wind_boss, update_wind_boss
-from src.engine.logic.damage import _calculate_bird_damage
+from src.engine.logic.damage import calculate_bird_damage
 from src.engine.progression import add_score, award_xp, get_level_milestones
 from src.entities.sprites import BLUE, DINOSAUR, ORANGE, STEALTH
 from src.services.sound import play_sfx
@@ -67,7 +67,7 @@ def should_spawn_boss():
 
     level = state.game.level
     special = special_boss_for_level(level)
-    boss_cfg = _get_boss_config()
+    boss_cfg = get_boss_config()
 
     if special is not None:
         spawn_miles_before = special.spawn_miles_before_transition
@@ -114,7 +114,7 @@ def check_bird_boss_collision():
 
     # Special handling for Tree Boss (collision with branches)
     if boss.get('boss_type') == 'tree':
-        _check_bird_tree_branch_collision()
+        check_bird_tree_branch_collision()
         return
 
     # Get boss config based on type
@@ -132,7 +132,7 @@ def check_bird_boss_collision():
         boss_width = 23
         boss_height = 6
     else:
-        boss_cfg = _get_boss_config()
+        boss_cfg = get_boss_config()
         boss_width = 19
         boss_height = 3
 
@@ -174,7 +174,7 @@ def check_bird_boss_collision():
             continue
 
         # Hit boss!
-        damage = _calculate_bird_damage(i)
+        damage = calculate_bird_damage(i)
 
         # Apply armor reduction
         armor_reduction = getattr(boss_cfg, 'armor_reduction', 1)
@@ -253,7 +253,7 @@ def check_bird_meteor_collision():
                 continue
 
             # Hit meteor!
-            damage = _calculate_bird_damage(i)
+            damage = calculate_bird_damage(i)
 
             if bird_color == ORANGE:
                 meteor['hp'] = 0  # Orange destroys meteor

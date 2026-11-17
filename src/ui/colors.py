@@ -331,7 +331,7 @@ MENU_ARROW_COLOR = theme.get_color('pause_menu', 'arrow', 214)
 DECO_COLOR = theme.get_color('decorative', 'barriers', 22)
 
 
-def _get_position_color(y_pos):
+def get_position_color(y_pos):
     """Get color for center of mass line based on Y position.
 
     Red at bottom (starting_line) -> Green at top (ceiling).
@@ -363,7 +363,7 @@ def _get_position_color(y_pos):
     return f"\033[2;38;5;{color_code}m"
 
 
-def _grade_letter_color(letter, fallback):
+def grade_letter_color(letter, fallback):
     """Helper per colore cursore basato su grade."""
     if letter and isinstance(letter, str) and len(letter) > 0:
         prefix = letter[0]

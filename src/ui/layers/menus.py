@@ -7,7 +7,7 @@ from src.ui.colors import MENU_ARROW_COLOR, MENU_BORDER_COLOR, MENU_NORMAL_COLOR
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH
 
 
-def _fb_render_pause_overlay(fb):
+def draw_pause_overlay(fb):
     """Render pause overlay and menu to framebuffer."""
     if not state.game.paused:
         return
@@ -32,12 +32,12 @@ def _fb_render_pause_overlay(fb):
 
     # Check if we're in a settings submenu
     if state.ui.settings_menu is not None:
-        _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width)
+        _draw_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width)
     else:
-        _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width)
+        _draw_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width)
 
 
-def _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
+def _draw_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     """Render the main pause menu."""
     PAUSE_MENU_OPTIONS = ["RESUME", "RESTART", "SAVE", "LOAD", "BIRDPEDIA", "SETTINGS", "MAIN MENU"]
 
@@ -79,7 +79,7 @@ def _fb_render_pause_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)
 
 
-def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
+def _draw_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     """Render the settings submenu based on current settings_menu state."""
     # Define all settings menus
     DIFFICULTY_NAMES = ["PEACEFUL", "ADVENTURE", "SURVIVAL", "LEGENDARY"]
@@ -202,25 +202,25 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
             ("< BACK", "back"),
         ]
     elif state.ui.settings_menu == 'guide_howto':
-        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'howto')
+        draw_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'howto')
         return
     elif state.ui.settings_menu == 'guide_commands':
-        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'commands')
+        draw_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'commands')
         return
     elif state.ui.settings_menu == 'guide_obstacles':
-        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'obstacles')
+        draw_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'obstacles')
         return
     elif state.ui.settings_menu == 'guide_enemies':
-        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'enemies')
+        draw_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'enemies')
         return
     elif state.ui.settings_menu == 'birdpedia_list':
-        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'birds')
+        draw_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'birds')
         return
     elif state.ui.settings_menu == 'batpedia_list':
-        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'bats')
+        draw_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'bats')
         return
     elif state.ui.settings_menu == 'biomes_list':
-        _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'biomes')
+        draw_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, 'biomes')
         return
     else:
         return
@@ -276,7 +276,7 @@ def _fb_render_settings_menu(fb, menu_x, menu_start_y, menu_width, inner_width):
     fb.put_string(menu_x, y, hint[:menu_width], MENU_BORDER_COLOR)
 
 
-def _fb_render_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, content_type):
+def draw_birdpedia_content(fb, menu_x, menu_start_y, menu_width, inner_width, content_type):
     """Render birdpedia content pages."""
 
     # Get discovery state

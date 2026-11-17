@@ -4,8 +4,8 @@ import random
 import time
 
 from src.core import constants, state
-from src.engine.logic.damage import _calculate_bird_damage
-from src.engine.logic.flowers import _apply_flower_collision_effect, _apply_mature_flower_effect
+from src.engine.logic.damage import calculate_bird_damage
+from src.engine.logic.flowers import apply_flower_collision_effect, apply_mature_flower_effect
 from src.engine.loot_tables import adjust_rarity_weights, choose_loot_type
 from src.engine.progression import add_score, award_xp, compute_prestige
 from src.entities.sprites import (
@@ -220,7 +220,7 @@ def update_tree_boss():
 
                 # If flower just matured (frame 5), apply its effect
                 if flower['frame'] == FLOWER_MATURE_FRAME:
-                    _apply_mature_flower_effect(branch, flower)
+                    apply_mature_flower_effect(branch, flower)
         else:
             # Flower is dead - check if it should respawn (only when tree stopped)
             if tree_is_moving:
@@ -256,7 +256,7 @@ def _handle_tree_branch_hit(branch, bird_idx):
     flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
 
     # Calculate damage
-    damage = _calculate_bird_damage(bird_idx)
+    damage = calculate_bird_damage(bird_idx)
 
     flower = branch.get('flower')
     # Only apply effects if flower is active AND fully mature (frame 5)
@@ -304,7 +304,7 @@ def _handle_tree_branch_hit(branch, bird_idx):
 
     # 4. Apply flower effects if flower was mature
     if flower_was_mature:
-        _apply_flower_collision_effect(flower, bird_idx)
+        apply_flower_collision_effect(flower, bird_idx)
 
     return True
 
@@ -409,7 +409,7 @@ def _tree_boss_defeated(boss):
         state.enemies.boss = None
 
 
-def _check_bird_tree_branch_collision():
+def check_bird_tree_branch_collision():
     """Check bird collisions with Tree Boss branches."""
     boss = state.enemies.boss
     if boss is None or boss.get('boss_type') != 'tree':

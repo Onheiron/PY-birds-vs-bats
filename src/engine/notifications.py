@@ -3,7 +3,7 @@
 from src.core import constants, state
 
 
-def _add_notification(text, duration_frames=None, title=None):
+def notify(text, duration_frames=None, title=None):
     """Add a notification to display in right panel.
 
     Args:

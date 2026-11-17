@@ -4,7 +4,7 @@ import time
 
 from src.core import constants, state
 from src.engine.birds import check_pending_transforms, reset_bird_power
-from src.engine.logic.damage import _handle_bat_death
+from src.engine.logic.damage import handle_bat_death
 from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
 from src.services.sound import play_sfx
 
@@ -283,7 +283,7 @@ def update_enemy_debuffs():
             if bat:
                 bat['hp'] -= damage
                 if bat['hp'] <= 0:
-                    _handle_bat_death(bat, 0)  # No specific killer
+                    handle_bat_death(bat, 0)  # No specific killer
                     del state.special.poisoned_enemies[enemy_id]
 
     # BLEEDING enemies - damage tick every second, armor reduction
@@ -303,7 +303,7 @@ def update_enemy_debuffs():
             if bat:
                 bat['hp'] -= damage
                 if bat['hp'] <= 0:
-                    _handle_bat_death(bat, 0)
+                    handle_bat_death(bat, 0)
                     del state.special.bleeding_enemies[enemy_id]
 
 

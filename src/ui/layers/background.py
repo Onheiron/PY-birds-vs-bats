@@ -31,7 +31,7 @@ def get_current_biome_bg():
 TREE_HIDDEN_CHARS = set('12345o')
 
 
-def _fb_render_tree_boss_background(fb):
+def draw_tree_boss_background(fb):
     """Render Tree Boss background tree (on top of biome background).
 
     This is called AFTER the biome background to create a layered effect.
@@ -142,7 +142,7 @@ def _shimmer_row(line1, width1, line2, width2, screen_y, phase, span):
     return row
 
 
-def _fb_render_background(fb):
+def draw_background(fb):
     """Render parallax scrolling background for game area and right panel.
 
     3 layers with different scroll speeds (slowest to fastest):
@@ -212,7 +212,7 @@ def _fb_render_background(fb):
         row[right_panel_start:right_panel_end] = panel_cells
 
 
-def _fb_render_cloud_banks(fb):
+def draw_cloud_banks(fb):
     """Render Mountain Range cloud banks (foreground fog that obscures game area)."""
     # Only render in Mountain Range biome
     if state.game.level_group != 6:

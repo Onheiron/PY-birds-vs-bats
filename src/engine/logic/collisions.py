@@ -5,9 +5,9 @@ import time
 
 from src.core import constants, state
 from src.engine.birds import check_pending_transforms, get_scared_frames, reset_bird_power, set_ball_vy
-from src.engine.logic.damage import _calculate_bird_damage, _handle_bat_death
-from src.engine.logic.flowers import _apply_flower_collision_effect
-from src.engine.logic.helpers import _get_obstacle_lanes
+from src.engine.logic.damage import calculate_bird_damage, handle_bat_death
+from src.engine.logic.flowers import apply_flower_collision_effect
+from src.engine.logic.helpers import get_obstacle_lanes
 from src.engine.logic.mini_bats import handle_obstacle_destroyed, try_spawn_mini_bat_on_hit
 from src.engine.progression import add_score, award_xp
 from src.entities.sprites import (
@@ -150,7 +150,7 @@ def check_bird_obstacle_collision():
 
         for obs in state.enemies.obstacles[:]:
             # Check if bird lane is within obstacle's lanes
-            obs_lanes = _get_obstacle_lanes(obs)
+            obs_lanes = get_obstacle_lanes(obs)
             if bird_lane not in obs_lanes:
                 continue
 
@@ -161,13 +161,13 @@ def check_bird_obstacle_collision():
                 continue
 
             # Hit obstacle
-            damage = _calculate_bird_damage(i)
+            damage = calculate_bird_damage(i)
 
             # Check if obstacle has a mature flower - apply effect before damage
             flower = obs.get('flower')
 
             if flower and flower.get('active') and flower.get('frame', 0) >= FLOWER_MATURE_FRAME:
-                _apply_flower_collision_effect(flower, i)
+                apply_flower_collision_effect(flower, i)
 
             if bird_color == ORANGE:
                 obs['hp'] = 0
@@ -242,7 +242,7 @@ def check_bird_bat_collision():
                 continue
 
             # Hit bat
-            damage = _calculate_bird_damage(i)
+            damage = calculate_bird_damage(i)
 
             # Apply armor damage reduction for armored bats
             is_armored = bat.get('armored', False)
@@ -384,7 +384,7 @@ def check_bird_bat_collision():
                     }
 
             if bat['hp'] <= 0:
-                _handle_bat_death(bat, i)
+                handle_bat_death(bat, i)
             else:
                 set_ball_vy(i, 1)
                 state.birds.y[i] = bat_bottom + 1
@@ -414,7 +414,7 @@ def check_projectile_collision():
                     award_xp(owner, damage)
 
                 if bat['hp'] <= 0:
-                    _handle_bat_death(bat, owner if owner is not None else 0)
+                    handle_bat_death(bat, owner if owner is not None else 0)
 
                 if proj in state.special.red_projectiles:
                     state.special.red_projectiles.remove(proj)
@@ -427,7 +427,7 @@ def check_projectile_collision():
         # Check obstacle collision
         for obs in state.enemies.obstacles[:]:
             # Check if projectile lane is within obstacle's lanes
-            obs_lanes = _get_obstacle_lanes(obs)
+            obs_lanes = get_obstacle_lanes(obs)
             if proj['lane'] not in obs_lanes:
                 continue
 

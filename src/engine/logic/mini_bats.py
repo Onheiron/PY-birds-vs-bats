@@ -4,7 +4,7 @@ import random
 
 from src.core import constants, state
 from src.engine.birds import get_scared_frames, set_ball_vy
-from src.engine.logic.damage import _calculate_bird_damage, _handle_mini_bat_death
+from src.engine.logic.damage import calculate_bird_damage, handle_mini_bat_death
 from src.engine.progression import award_xp
 from src.entities.sprites import DINOSAUR, ORANGE, STEALTH
 from src.services.sound import play_sfx
@@ -381,7 +381,7 @@ def check_bird_mini_bat_collision():
                 continue
 
             # Hit mini bat
-            damage = _calculate_bird_damage(i)
+            damage = calculate_bird_damage(i)
 
             if bird_color == ORANGE:
                 mb['hp'] = 0
@@ -391,7 +391,7 @@ def check_bird_mini_bat_collision():
 
             if mb['hp'] <= 0:
                 # Mini bat destroyed - use same logic as regular bats
-                _handle_mini_bat_death(mb, i)
+                handle_mini_bat_death(mb, i)
             else:
                 set_ball_vy(i, 1)
                 stun_frames = int(0.5 / constants.timing.base_sleep)  # Shorter stun
