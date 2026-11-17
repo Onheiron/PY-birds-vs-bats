@@ -171,8 +171,29 @@ _POWERUPS = {
 }
 
 
+def powerup_details(loot_type):
+    """What a power-up such as 'tailwind++' does: {'seconds', and its values}."""
+    if loot_type.startswith('timelapse'):
+        tier = _loot_tier(loot_type, 'timelapse')
+        section = constants.timelapse
+        return {
+            'seconds': _tiered(section, 'seconds', tier, _TIERS, (2.0, 3.0, 4.0, 5.0)),
+            'slowdown': _tiered(section, 'slowdown', tier, ('base', 'plus', 'max', 'max'), (1.5, 1.75, 2.0, 2.0)),
+        }
+    for name, spec in _POWERUPS.items():
+        if loot_type.startswith(name):
+            section = getattr(constants, name)
+            tier = _loot_tier(loot_type, name)
+            table_name, keys, defaults, fallbacks = spec['seconds']
+            details = {'seconds': _tiered(section, table_name, tier, keys, defaults, fallbacks)}
+            for attr, (table_name, keys, defaults, fallbacks) in spec['values'].items():
+                details[attr] = _tiered(section, table_name, tier, keys, defaults, fallbacks)
+            return details
+    return {}
+
+
 def _apply_timed_power(name, loot_type):
-    """Activate a frame-timed power-up (wide cursor, tailwind)."""
+    """Activate a timed power-up (wide cursor, tailwind) for game-clock seconds."""
     spec = _POWERUPS[name]
     section = getattr(constants, name)
     tier = _loot_tier(loot_type, name)
@@ -181,7 +202,7 @@ def _apply_timed_power(name, loot_type):
     setattr(powerups, f'{name}_active', True)
     table_name, keys, defaults, fallbacks = spec['seconds']
     seconds = _tiered(section, table_name, tier, keys, defaults, fallbacks)
-    setattr(powerups, f'{name}_frames', int(seconds / constants.timing.base_sleep))
+    setattr(powerups, f'{name}_until', clock.now() + seconds)
     for attr, (table_name, keys, defaults, fallbacks) in spec['values'].items():
         setattr(powerups, attr, _tiered(section, table_name, tier, keys, defaults, fallbacks))
 

@@ -175,6 +175,8 @@ def compute_prestige():
         # Kind of bird + grade (bird_stats.types / bird_stats.growth)
         total += stats.bird(i, 'prestige')
 
+    # Flock bonuses from cards and pacts
+    total = (total + stats.flock('prestige_bonus')) * stats.flock('prestige_mult')
     return float(total)
 
 

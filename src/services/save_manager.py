@@ -279,7 +279,12 @@ def save_game(slot=0):
         'stat_modifiers': list(state.stats.modifiers),
         'enemy_layers': list(state.stats.enemy_layers),
         'pacts': list(state.stats.pacts),
-        'choice': {'active': state.choice.active, 'queue': list(state.choice.queue)},
+        'choice': {
+            'active': state.choice.active,
+            'queue': list(state.choice.queue),
+            'rerolls': state.choice.rerolls,
+            'skips': state.choice.skips,
+        },
         'game': _build_game_dict(),
         'player': _build_player_dict(),
         'ui': _build_ui_dict(),
@@ -352,6 +357,8 @@ def load_game(slot):
         saved_choice = data.get('choice') or {}
         state.choice.active = saved_choice.get('active')
         state.choice.queue[:] = saved_choice.get('queue', [])
+        state.choice.rerolls = saved_choice.get('rerolls')
+        state.choice.skips = saved_choice.get('skips')
         _restore_game_state(data.get('game', {}))
         _restore_player_state(data.get('player', {}))
         _restore_ui_state(data.get('ui', {}))
@@ -617,10 +624,10 @@ def _restore_powerups(powerups, data):
     """Restore powerups namespace from dict."""
     for key in [
         'wide_cursor_active',
-        'wide_cursor_frames',
+        'wide_cursor_until',
         'wide_cursor_lanes',
         'tailwind_active',
-        'tailwind_frames',
+        'tailwind_until',
         'tailwind_up_bonus',
         'tailwind_down_penalty',
     ]:

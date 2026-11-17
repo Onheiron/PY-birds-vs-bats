@@ -1247,6 +1247,9 @@
           "properties": {
             "bat_hunter": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1272,6 +1275,9 @@
             },
             "blood_price": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "drawbacks": {
                   "items": {
                     "properties": {
@@ -1314,6 +1320,99 @@
             },
             "brave_hearts": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "clover": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "escape_hatch": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "scale": {
+                        "type": "boolean"
+                      },
+                      "skips": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "max_rarity": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "fame": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1339,6 +1438,9 @@
             },
             "fearless": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1367,6 +1469,9 @@
             },
             "feather_brake": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1392,6 +1497,9 @@
             },
             "frenzy": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1420,6 +1528,9 @@
             },
             "gamblers_luck": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "drawbacks": {
                   "items": {
                     "properties": {
@@ -1462,6 +1573,9 @@
             },
             "giant_slayer": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1490,6 +1604,9 @@
             },
             "glass_wings": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "drawbacks": {
                   "items": {
                     "properties": {
@@ -1532,6 +1649,9 @@
             },
             "golden_hour": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1560,6 +1680,9 @@
             },
             "heavy_blows": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1585,6 +1708,9 @@
             },
             "heavy_crown": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "drawbacks": {
                   "items": {
                     "properties": {
@@ -1627,6 +1753,9 @@
             },
             "hollow_bones": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1652,6 +1781,9 @@
             },
             "jet_stream": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1680,6 +1812,9 @@
             },
             "keen_eyes": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1705,6 +1840,9 @@
             },
             "lasting_powers": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1728,8 +1866,42 @@
               },
               "type": "object"
             },
+            "legend": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "pct": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
             "lucky_feather": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1755,6 +1927,9 @@
             },
             "lucky_nest": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1783,6 +1958,9 @@
             },
             "lumberjack": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1808,6 +1986,9 @@
             },
             "more_choices": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1839,6 +2020,9 @@
             },
             "piercing_talons": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1864,6 +2048,9 @@
             },
             "potent_powers": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1889,6 +2076,9 @@
             },
             "quick_study": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1914,6 +2104,9 @@
             },
             "reckless": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "drawbacks": {
                   "items": {
                     "properties": {
@@ -1956,6 +2149,9 @@
             },
             "safety_net": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -1982,8 +2178,42 @@
               },
               "type": "object"
             },
+            "second_chance": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "rerolls": {
+                        "type": "number"
+                      },
+                      "scale": {
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "min_rarity": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
             "second_wind": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -2015,6 +2245,9 @@
             },
             "sharp_beaks": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -2040,6 +2273,9 @@
             },
             "show_off": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -2065,6 +2301,9 @@
             },
             "steady_nerves": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -2090,6 +2329,9 @@
             },
             "tailwind": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "kind": {
                   "type": "string"
                 },
@@ -2107,6 +2349,9 @@
             },
             "timelapse": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "kind": {
                   "type": "string"
                 },
@@ -2124,6 +2369,9 @@
             },
             "training": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -2146,6 +2394,9 @@
             },
             "wide_cursor": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "kind": {
                   "type": "string"
                 },
@@ -2163,6 +2414,9 @@
             },
             "wide_wings": {
               "properties": {
+                "desc": {
+                  "type": "string"
+                },
                 "effects": {
                   "items": {
                     "properties": {
@@ -2292,6 +2546,12 @@
             }
           },
           "type": "object"
+        },
+        "rerolls": {
+          "type": "number"
+        },
+        "skips": {
+          "type": "number"
         },
         "tier_shift": {
           "type": "number"
@@ -3315,6 +3575,9 @@
                   },
                   "type": "array"
                 },
+                "desc": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -3350,6 +3613,9 @@
                     "type": "object"
                   },
                   "type": "array"
+                },
+                "desc": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -3387,6 +3653,9 @@
                   },
                   "type": "array"
                 },
+                "desc": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -3422,6 +3691,9 @@
                     "type": "object"
                   },
                   "type": "array"
+                },
+                "desc": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -3461,6 +3733,9 @@
                   },
                   "type": "array"
                 },
+                "desc": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -3496,6 +3771,9 @@
                     "type": "object"
                   },
                   "type": "array"
+                },
+                "desc": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -3533,6 +3811,9 @@
                   },
                   "type": "array"
                 },
+                "desc": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -3569,6 +3850,9 @@
                   },
                   "type": "array"
                 },
+                "desc": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -3596,6 +3880,9 @@
                     "type": "object"
                   },
                   "type": "array"
+                },
+                "desc": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -3633,6 +3920,9 @@
                   },
                   "type": "array"
                 },
+                "desc": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -3669,6 +3959,9 @@
                   },
                   "type": "array"
                 },
+                "desc": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -3704,6 +3997,9 @@
                     "type": "object"
                   },
                   "type": "array"
+                },
+                "desc": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -3743,6 +4039,9 @@
                   },
                   "type": "array"
                 },
+                "desc": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -3780,6 +4079,9 @@
                     "type": "object"
                   },
                   "type": "array"
+                },
+                "desc": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"

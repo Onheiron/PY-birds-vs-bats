@@ -10,15 +10,14 @@ from src.entities.sprites import BLUE, CLOCKWORK, PURPLE, RAINBOW
 
 def update_powerup_timers():
     """Update all powerup timers."""
+    now = clock.now()
     if state.powerups.wide_cursor_active:
-        state.powerups.wide_cursor_frames -= 1
-        if state.powerups.wide_cursor_frames <= 0:
+        if now >= state.powerups.wide_cursor_until:
             state.powerups.wide_cursor_active = False
             state.powerups.wide_cursor_lanes = 1
 
     if state.powerups.tailwind_active:
-        state.powerups.tailwind_frames -= 1
-        if state.powerups.tailwind_frames <= 0:
+        if now >= state.powerups.tailwind_until:
             state.powerups.tailwind_active = False
             state.powerups.tailwind_up_bonus = 0
             state.powerups.tailwind_down_penalty = 0

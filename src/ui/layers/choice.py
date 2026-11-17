@@ -1,9 +1,23 @@
-"""The card choice drawn over the playfield (egg cards, boss pacts)."""
+"""The card choice drawn over the playfield (egg cards, boss pacts).
+
+Each card is a small framed sheet:
+
+    ┌─ Glass Wings ☠ ────────── EPIC ─┐
+    │ Cursed · Permanent              │
+    │ Much more damage, but birds     │
+    │ fall faster.                    │
+    │ + 52.5% damage                  │
+    │ − 7 falling speed               │
+    └─────────────────────────────────┘
+
+The selected card is framed in its rarity colour with a ▶ beside it. When
+the cards do not all fit, the others are shown as one line each.
+"""
 
 from src.core import constants, state
-from src.engine import cards
+from src.engine import cards, choices
 from src.entities.sprites import GREEN, RED, YELLOW
-from src.ui.colors import MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR, apply_bold
+from src.ui.colors import MENU_BORDER_COLOR, MENU_NORMAL_COLOR, apply_bold
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
 # Egg and card colours by rarity: grey, green, blue, purple, yellow, white.
@@ -17,7 +31,9 @@ RARITY_COLORS = {
     'legendary': apply_bold('\033[38;5;226m'),
     'mythical': apply_bold('\033[38;5;231m'),
 }
-_KIND_TAGS = {'cursed': ' ☠', 'boost': ' ⏱', 'bird': ' ⬯', 'pact': ''}
+DIM = '\033[38;5;244m'
+TEXT = '\033[38;5;250m'
+_KIND_TAGS = {'cursed': ' ☠', 'bird': ' ⬯'}
 
 
 def _wrap(text, width):
@@ -30,26 +46,61 @@ def _wrap(text, width):
             line = f'{line} {word}' if line else word
     if line:
         lines.append(line)
-    return lines or ['']
+    return lines
 
 
-def offer_lines(offer, width):
-    """[(text, color, selected)] for an offer, one entry per screen line."""
-    out = []
-    for index, card in enumerate(offer['cards']):
-        selected = index == offer['index']
-        color = RARITY_COLORS.get(card['rarity'], MENU_NORMAL_COLOR)
-        marker = '▶ ' if selected else '  '
-        tag = '' if card['kind'] in ('refuse', 'pact') else f" [{card['rarity'].upper()}]"
-        name = f"{marker}{card['name']}{_KIND_TAGS.get(card['kind'], '')}"
-        out.append((f'{name:<{width - len(tag)}}{tag}'[:width], MENU_SELECTED_COLOR if selected else color, selected))
-        if card['kind'] == 'refuse':
-            out.append(('    keep things as they are', MENU_NORMAL_COLOR, False))
-        for text, good in cards.card_lines(card):
-            for part in _wrap(text, width - 4):
-                out.append((f'    {part}', GREEN if good else RED, False))
-        out.append(('', MENU_NORMAL_COLOR, False))
-    return out
+def card_rows(card, width, selected):
+    """Rows of one framed card: [[(text, color), ...], ...], each row ``width`` wide."""
+    info = cards.card_info(card)
+    frame = RARITY_COLORS.get(info['rarity'], MENU_BORDER_COLOR) if selected else DIM
+    inner = width - 4  # "│ " + text + " │"
+    name = f"{info['name']}{_KIND_TAGS.get(card['kind'], '')}"
+    tag = '' if card['kind'] in ('refuse', 'pact') else info['rarity'].upper()
+    # '┌─ ' name ' ' dashes [' ' tag ' '] '┐' spans exactly width columns
+    fill = max(1, width - len(name) - (len(tag) + 7 if tag else 5))
+    top = [
+        ('┌─ ', frame),
+        (name, RARITY_COLORS.get(info['rarity'], TEXT) if card['kind'] != 'refuse' else TEXT),
+        (' ' + '─' * fill, frame),
+    ]
+    top += [(' ' + tag + ' ', RARITY_COLORS.get(info['rarity'], TEXT)), ('┐', frame)] if tag else [('┐', frame)]
+    rows = [top]
+
+    def line(text, color):
+        rows.append([('│ ', frame), (f'{text:<{inner}}'[:inner], color), (' │', frame)])
+
+    if info['kind'] or info['duration']:
+        line(' · '.join(x for x in (info['kind'], info['duration']) if x), YELLOW if selected else DIM)
+    for part in _wrap(info['text'], inner):
+        line(part, TEXT if selected else DIM)
+    for text, good in info['lines']:
+        sign, rest = (text[0], text[1:]) if text[:1] in '+−' else ('•', ' ' + text)
+        for i, part in enumerate(_wrap(rest.strip(), inner - 2)):
+            line(f"{sign if i == 0 else ' '} {part}", GREEN if good else RED)
+    rows.append([('└' + '─' * (width - 2) + '┘', frame)])
+    return rows
+
+
+def compact_row(card, width):
+    info = cards.card_info(card)
+    name = f"{info['name']}{_KIND_TAGS.get(card['kind'], '')}"
+    tag = '' if card['kind'] in ('refuse', 'pact') else info['rarity'].upper()
+    text = f'  {name:<{width - len(tag) - 3}}{tag} '[:width]
+    return [[(text, RARITY_COLORS.get(info['rarity'], MENU_NORMAL_COLOR))]]
+
+
+def offer_rows(offer, width, max_rows):
+    """Rows for every card: all framed if they fit, else only the selected one framed."""
+    full = [card_rows(c, width, i == offer['index']) for i, c in enumerate(offer['cards'])]
+    if sum(len(r) for r in full) <= max_rows:
+        return full
+    return [full[i] if i == offer['index'] else compact_row(c, width) for i, c in enumerate(offer['cards'])]
+
+
+def _put_row(fb, x, y, row):
+    for text, color in row:
+        fb.put_string(x, y, text, color)
+        x += len(text)
 
 
 def draw_choice_overlay(fb):
@@ -57,24 +108,39 @@ def draw_choice_overlay(fb):
     if offer is None or state.game.paused:
         return
     width = constants.layout.width - 2
-    inner = width - 2
     x = GAME_X_OFFSET + 1
-    lines = offer_lines(offer, inner - 2)
-    height = len(lines) + 4
+    card_width = width - 4
+    footer = 2 if offer['kind'] == 'egg' else 1
+    max_rows = constants.layout.height - 4 - footer
+    blocks = offer_rows(offer, card_width, max_rows)
+    body = sum(len(b) for b in blocks)
+    height = body + 3 + footer
     y = HEADER_HEIGHT + max(0, (constants.layout.height - height) // 2)
     title_color = RARITY_COLORS.get(offer.get('rarity'), YELLOW) if offer['kind'] == 'egg' else RED
 
-    fb.put_string(x, y, '╔' + '═' * inner + '╗', MENU_BORDER_COLOR)
+    # Clear the panel and frame it
+    for row in range(y, y + height + 1):
+        fb.put_string(x, row, ' ' * width)
+    fb.put_string(x, y, '╔' + '═' * (width - 2) + '╗', MENU_BORDER_COLOR)
+    fb.put_string(x + 1, y + 1, offer['title'].center(width - 2), title_color)
     fb.put(x, y + 1, '║', MENU_BORDER_COLOR)
-    fb.put_string(x + 1, y + 1, offer['title'].center(inner), title_color)
     fb.put(x + width - 1, y + 1, '║', MENU_BORDER_COLOR)
-    fb.put_string(x, y + 2, '╠' + '═' * inner + '╣', MENU_BORDER_COLOR)
-    row = y + 3
-    for text, color, _selected in lines[: constants.layout.height - 5]:
-        fb.put(x, row, '║', MENU_BORDER_COLOR)
-        fb.put_string(x + 1, row, f' {text:<{inner - 1}}'[:inner], color)
-        fb.put(x + width - 1, row, '║', MENU_BORDER_COLOR)
-        row += 1
-    fb.put_string(x, row, '╚' + '═' * inner + '╝', MENU_BORDER_COLOR)
-    hint = '↑/↓ choose   ENTER take'
-    fb.put_string(x + (width - len(hint)) // 2, row + 1, hint, MENU_BORDER_COLOR)
+    row_y = y + 2
+    for index, block in enumerate(blocks):
+        selected = index == offer['index']
+        for n, row in enumerate(block):
+            fb.put(x, row_y, '║', MENU_BORDER_COLOR)
+            if selected and n == (0 if len(block) == 1 else 1):
+                fb.put(x + 1, row_y, '▶', YELLOW)
+            _put_row(fb, x + 2, row_y, row)
+            fb.put(x + width - 1, row_y, '║', MENU_BORDER_COLOR)
+            row_y += 1
+    if offer['kind'] == 'egg':
+        status = f'Rerolls {choices.rerolls_left()}   Skips {choices.skips_left()}'
+        fb.put(x, row_y, '║', MENU_BORDER_COLOR)
+        fb.put_string(x + 1, row_y, status.center(width - 2), DIM)
+        fb.put(x + width - 1, row_y, '║', MENU_BORDER_COLOR)
+        row_y += 1
+    fb.put_string(x, row_y, '╚' + '═' * (width - 2) + '╝', MENU_BORDER_COLOR)
+    hint = '↑/↓ choose  ENTER take  R reroll  S skip' if offer['kind'] == 'egg' else '↑/↓ choose  ENTER confirm'
+    fb.put_string(x + max(0, (width - len(hint)) // 2), row_y + 1, hint, MENU_BORDER_COLOR)

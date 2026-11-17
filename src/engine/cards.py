@@ -79,10 +79,12 @@ _LABELS = {
     'score_mult': 'score',
     'xp_gain': 'XP',
     'pickup_radius': 'pickup radius',
-    'luck': 'luck',
+    'luck': 'lucky finds (a collected egg turns rarer)',
     'choices': 'choice per egg',
-    'egg_luck': 'rarer drops',
+    'egg_luck': 'luck (rarer drops)',
     'elite_chance': 'elite bats',
+    'prestige_bonus': 'prestige',
+    'prestige_mult': 'prestige',
 }
 # Stats where a lower value is better (for colouring the text of a drawback)
 _LOWER_IS_BETTER = {'fall_speed_bonus', 'impact_stun', 'fear_duration_mult', 'elite_chance'}
@@ -162,6 +164,12 @@ def apply_effect(effect, source=''):
         from src.engine.logic.loot import apply_powerup
 
         apply_powerup(effect['powerup'])
+    for allowance in ('rerolls', 'skips'):
+        if allowance in effect:
+            from src.engine import choices
+
+            getattr(choices, f'{allowance}_left')()
+            setattr(state.choice, allowance, getattr(state.choice, allowance) + int(effect[allowance]))
 
 
 def _number(value):
@@ -175,6 +183,10 @@ def describe_effect(effect):
         return _POWERUP_TEXT.get(effect['powerup'].rstrip('+').replace('_max', ''), effect['powerup']), True
     if 'xp' in effect:
         return f"+{_number(effect['xp'])} XP to every bird", True
+    for allowance, label in (('rerolls', 'reroll'), ('skips', 'skip')):
+        if allowance in effect:
+            n = int(effect[allowance])
+            return f"+{n} egg {label}{'s' if n != 1 else ''} this run", True
     if 'enemy' in effect:
         parts = []
         good = True
@@ -209,11 +221,115 @@ _POWERUP_TEXT = {
 }
 
 
+def _powerup_lines(loot_type):
+    from src.engine.logic.loot import powerup_details
+
+    d = powerup_details(loot_type)
+    if loot_type.startswith('tailwind'):
+        return [
+            (f"Rising birds +{_number(d['tailwind_up_bonus'] * 10)} speed", True),
+            (f"Falling birds −{_number(d['tailwind_down_penalty'] * 10)} speed", True),
+        ]
+    if loot_type.startswith('wide_cursor'):
+        return [(f"Bounce {d['wide_cursor_lanes']} lanes with one press", True)]
+    if loot_type.startswith('timelapse'):
+        return [(f"The game runs {_number(d['slowdown'])}× slower", True)]
+    return []
+
+
 def card_lines(card):
-    """The text lines of a card: [(text, good), ...]."""
+    """The effect lines of a card: [(text, good), ...]."""
     if card['kind'] == 'bird':
-        return [(f"Hatch a {card['bird'].title()} bird", True)]
-    return [describe_effect(e) for e in card['effects'] + card.get('drawbacks', [])]
+        speed = stats.type_value(card['bird'], 'speed')
+        damage = stats.type_value(card['bird'], 'damage')
+        return [(f'Speed {_number(speed)} · Damage {_number(damage)}', True)]
+    lines = []
+    for effect in card['effects'] + card.get('drawbacks', []):
+        if 'powerup' in effect:
+            lines += _powerup_lines(effect['powerup'])
+        else:
+            text, good = describe_effect(effect)
+            if effect.get('seconds'):
+                text = text.rsplit(' for ', 1)[0]
+            lines.append((text, good))
+    return lines
+
+
+_KIND_LABELS = {
+    'stat': 'Flock bonus',
+    'boost': 'Boost',
+    'powerup': 'Power-up',
+    'training': 'Training',
+    'cursed': 'Cursed',
+    'flock': 'Nest',
+    'bird': 'New bird',
+    'pact': 'Pact',
+    'refuse': '',
+}
+
+# One line about what each bird does, for bird cards
+BIRD_BLURBS = {
+    'YELLOW': 'Its power bounces falling neighbours.',
+    'RED': 'Its power fires a shot up its lane.',
+    'BLUE': 'Its power is a 3 s sprint.',
+    'PATCHWORK': 'Counts as a Yellow and as a Red.',
+    'PURPLE': 'Charged shot, up to 64× damage.',
+    'CLOCKWORK': 'Bounces by itself while charged.',
+    'WHITE': "Fires its neighbours' powers.",
+    'ORANGE': 'Kills anything in one hit.',
+    'GOLD': 'Scores 100 per move.',
+    'COOKIE': 'Drops XP crumbs for the others.',
+    'STEALTH': 'Passes through everything.',
+    'DINOSAUR': 'Huge and tough: 15 presses to bounce.',
+    'GLITCH': 'Random speed, damage and prestige.',
+    'RAINBOW': 'Wraps from the floor to the ceiling.',
+    'TWISTER': 'Tailwind for nearby lanes.',
+    'FROSTY': 'Freezes the bats it hits.',
+    'POISON': 'Poisons the bats it hits.',
+    'BERSERK': 'Makes the bats it hits bleed.',
+    'ROCK': 'Pushes bats back up.',
+}
+
+
+def _seconds_of(card):
+    for effect in card['effects']:
+        if effect.get('seconds'):
+            return effect['seconds']
+        if 'powerup' in effect:
+            from src.engine.logic.loot import powerup_details
+
+            return powerup_details(effect['powerup']).get('seconds')
+    return None
+
+
+def card_info(card):
+    """Everything a card shows: {'name', 'rarity', 'kind', 'duration', 'text', 'lines'}."""
+    kind = card['kind']
+    seconds = _seconds_of(card)
+    if kind == 'bird':
+        duration = 'Hatches now'
+    elif kind == 'training':
+        duration = 'Instant'
+    elif kind == 'refuse':
+        duration = ''
+    elif seconds:
+        duration = f'{_number(seconds)} s'
+    else:
+        duration = 'Permanent'
+    if kind == 'bird':
+        text = BIRD_BLURBS.get(card['bird'], '')
+    elif kind == 'refuse':
+        text = 'Keep things as they are.'
+    else:
+        text = card.get('desc', '')
+    return {
+        'name': card['name'],
+        'rarity': card['rarity'],
+        'kind': _KIND_LABELS.get(kind, kind.title()),
+        'duration': duration,
+        'text': text,
+        'lines': [] if kind == 'refuse' else card_lines(card),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -243,6 +359,7 @@ def _make_card(card_id, entry, rarity):
         'rarity': rarity,
         'effects': [scale_effect(e, factor) for e in _list(entry.get('effects'))],
         'drawbacks': [scale_effect(e, factor) for e in _list(entry.get('drawbacks'))],
+        'desc': entry.get('desc', ''),
     }
     if card['kind'] == 'powerup':
         # Rarer cards give a stronger tier of the power-up
@@ -376,6 +493,7 @@ def roll_pacts(boss_number, rng=random):
                 'rarity': RARITIES[min(len(RARITIES) - 1, boss_number - 1)],
                 'effects': [scale_effect(e, factor) for e in _list(entry.get('boon'))],
                 'drawbacks': [scale_effect(e, factor) for e in _list(entry.get('bane'))],
+                'desc': entry.get('desc', ''),
             }
         )
     return pacts

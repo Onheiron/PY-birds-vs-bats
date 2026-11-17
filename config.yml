@@ -813,6 +813,9 @@ cards:
     mythical:  [0,     0,       15,  45,  35,       5]
   # Effect values below are those of a common card; rarer cards multiply them
   rarity_scale: {common: 1, uncommon: 1.6, rare: 2.4, epic: 3.5, legendary: 5, mythical: 7}
+  # Rerolls (R: new cards for the same egg) and skips (S: take nothing) per run
+  rerolls: 3
+  skips: 3
   # Weight of "hatch a bird" among the cards of a rarity, while a lane is free
   bird_weight: 3
   # kind: stat (permanent, whole flock) | boost (temporary) | powerup | training |
@@ -820,47 +823,57 @@ cards:
   # Effects: {stat, add} adds to a stat, {stat, pct} multiplies it by 1 + pct/100,
   # seconds makes it temporary, scale: false keeps the value at every rarity.
   catalog:
-    sharp_beaks:     {name: Sharp Beaks,     kind: stat, effects: [{stat: damage_mult, pct: 6}]}
-    hollow_bones:    {name: Hollow Bones,    kind: stat, effects: [{stat: rise_speed_bonus, add: 1.5}]}
-    feather_brake:   {name: Feather Brake,   kind: stat, effects: [{stat: fall_speed_bonus, add: -1.5}]}
-    keen_eyes:       {name: Keen Eyes,       kind: stat, effects: [{stat: crit_chance, add: 0.03}]}
-    heavy_blows:     {name: Heavy Blows,     kind: stat, effects: [{stat: crit_damage, add: 0.15}]}
-    brave_hearts:    {name: Brave Hearts,    kind: stat, effects: [{stat: fear_resist, add: 0.06}]}
-    steady_nerves:   {name: Steady Nerves,   kind: stat, effects: [{stat: fear_duration_mult, pct: -6}]}
-    piercing_talons: {name: Piercing Talons, kind: stat, effects: [{stat: armor_pierce, add: 2}]}
-    bat_hunter:      {name: Bat Hunter,      kind: stat, effects: [{stat: vs_bats, add: 0.06}]}
-    lumberjack:      {name: Lumberjack,      kind: stat, effects: [{stat: vs_obstacles, add: 0.08}]}
-    giant_slayer:    {name: Giant Slayer,    kind: stat, effects: [{stat: vs_elites, add: 0.08}], min_rarity: uncommon}
-    wide_wings:      {name: Wide Wings,      kind: stat, effects: [{stat: pickup_radius, add: 0.5}]}
-    lucky_feather:   {name: Lucky Feather,   kind: stat, effects: [{stat: luck, add: 0.02}]}
-    quick_study:     {name: Quick Study,     kind: stat, effects: [{stat: xp_gain, pct: 6}]}
-    show_off:        {name: Show-off,        kind: stat, effects: [{stat: score_mult, pct: 5}]}
-    lasting_powers:  {name: Lasting Powers,  kind: stat, effects: [{stat: power_duration, pct: 8}]}
-    potent_powers:   {name: Potent Powers,   kind: stat, effects: [{stat: power_potency, pct: 8}]}
-    safety_net:      {name: Safety Net,      kind: stat, effects: [{stat: floor_save, add: 0.02}], min_rarity: rare}
-    second_wind:     {name: Second Wind,     kind: stat, effects: [{stat: power_uses, add: 1, scale: false}],
+    sharp_beaks:     {name: Sharp Beaks, desc: "Every bird hits harder.",     kind: stat, effects: [{stat: damage_mult, pct: 6}]}
+    hollow_bones:    {name: Hollow Bones, desc: "Birds climb faster.",    kind: stat, effects: [{stat: rise_speed_bonus, add: 1.5}]}
+    feather_brake:   {name: Feather Brake, desc: "Birds fall more slowly: more time to bounce them.",   kind: stat, effects: [{stat: fall_speed_bonus, add: -1.5}]}
+    keen_eyes:       {name: Keen Eyes, desc: "More critical hits.",       kind: stat, effects: [{stat: crit_chance, add: 0.03}]}
+    heavy_blows:     {name: Heavy Blows, desc: "Critical hits hurt more.",     kind: stat, effects: [{stat: crit_damage, add: 0.15}]}
+    brave_hearts:    {name: Brave Hearts, desc: "Scared birds fall less fast.",    kind: stat, effects: [{stat: fear_resist, add: 0.06}]}
+    steady_nerves:   {name: Steady Nerves, desc: "Scares wear off sooner.",   kind: stat, effects: [{stat: fear_duration_mult, pct: -6}]}
+    piercing_talons: {name: Piercing Talons, desc: "Ignore part of the armor of bats and barriers.", kind: stat, effects: [{stat: armor_pierce, add: 2}]}
+    bat_hunter:      {name: Bat Hunter, desc: "More damage against bats.",      kind: stat, effects: [{stat: vs_bats, add: 0.06}]}
+    lumberjack:      {name: Lumberjack, desc: "More damage against obstacles.",      kind: stat, effects: [{stat: vs_obstacles, add: 0.08}]}
+    giant_slayer:    {name: Giant Slayer, desc: "More damage against elites and bosses.",    kind: stat, effects: [{stat: vs_elites, add: 0.08}], min_rarity: uncommon}
+    wide_wings:      {name: Wide Wings, desc: "Birds collect eggs from farther away.",      kind: stat, effects: [{stat: pickup_radius, add: 0.5}]}
+    lucky_feather:   {name: Lucky Feather, desc: "An egg a bird collects may turn one rarity rarer.",   kind: stat, effects: [{stat: luck, add: 0.02}]}
+    quick_study:     {name: Quick Study, desc: "Birds earn more XP from hits and kills.",     kind: stat, effects: [{stat: xp_gain, pct: 6}]}
+    show_off:        {name: Show-off, desc: "More points.",        kind: stat, effects: [{stat: score_mult, pct: 5}]}
+    lasting_powers:  {name: Lasting Powers, desc: "Powers last longer.",  kind: stat, effects: [{stat: power_duration, pct: 8}]}
+    potent_powers:   {name: Potent Powers, desc: "Powers hit harder.",   kind: stat, effects: [{stat: power_potency, pct: 8}]}
+    safety_net:      {name: Safety Net, desc: "A bird reaching the floor may bounce back instead.",      kind: stat, effects: [{stat: floor_save, add: 0.02}], min_rarity: rare}
+    second_wind:     {name: Second Wind, desc: "Every bird can fire its power once more per ascent.",     kind: stat, effects: [{stat: power_uses, add: 1, scale: false}],
                       min_rarity: legendary}
-    frenzy:          {name: Frenzy,          kind: boost, effects: [{stat: damage_mult, pct: 40, seconds: 20}]}
-    fearless:        {name: Fearless,        kind: boost, effects: [{stat: fear_immunity, add: 0.25, seconds: 20}]}
-    jet_stream:      {name: Jet Stream,      kind: boost, effects: [{stat: rise_speed_bonus, add: 8, seconds: 20}]}
-    golden_hour:     {name: Golden Hour,     kind: boost, effects: [{stat: score_mult, pct: 40, seconds: 20}]}
-    tailwind:        {name: Tailwind,        kind: powerup, powerup: tailwind, max_rarity: epic}
-    wide_cursor:     {name: Wide Cursor,     kind: powerup, powerup: wide_cursor, max_rarity: epic}
-    timelapse:       {name: Timelapse,       kind: powerup, powerup: timelapse, max_rarity: epic}
-    training:        {name: Training,        kind: training, effects: [{xp: 20}]}
-    glass_wings:     {name: Glass Wings,     kind: cursed, min_rarity: uncommon,
+    frenzy:          {name: Frenzy, desc: "A short burst of damage.",          kind: boost, effects: [{stat: damage_mult, pct: 40, seconds: 20}]}
+    fearless:        {name: Fearless, desc: "Bats may fail to scare the flock.",        kind: boost, effects: [{stat: fear_immunity, add: 0.25, seconds: 20}]}
+    jet_stream:      {name: Jet Stream, desc: "The flock shoots up.",      kind: boost, effects: [{stat: rise_speed_bonus, add: 8, seconds: 20}]}
+    golden_hour:     {name: Golden Hour, desc: "More points for a while.",     kind: boost, effects: [{stat: score_mult, pct: 40, seconds: 20}]}
+    tailwind:        {name: Tailwind, desc: "A wind that lifts the whole flock.",        kind: powerup, powerup: tailwind, max_rarity: epic}
+    wide_cursor:     {name: Wide Cursor, desc: "The cursor covers more lanes.",     kind: powerup, powerup: wide_cursor, max_rarity: epic}
+    timelapse:       {name: Timelapse, desc: "Slow time down to catch falling birds.",       kind: powerup, powerup: timelapse, max_rarity: epic}
+    training:        {name: Training, desc: "XP for every bird right now.",        kind: training, effects: [{xp: 20}]}
+    glass_wings:     {name: Glass Wings, desc: "Much more damage, but birds fall faster.",     kind: cursed, min_rarity: uncommon,
                       effects: [{stat: damage_mult, pct: 15}], drawbacks: [{stat: fall_speed_bonus, add: 2}]}
-    heavy_crown:     {name: Heavy Crown,     kind: cursed, min_rarity: uncommon,
+    heavy_crown:     {name: Heavy Crown, desc: "Much more score, but birds rise more slowly.",     kind: cursed, min_rarity: uncommon,
                       effects: [{stat: score_mult, pct: 15}], drawbacks: [{stat: rise_speed_bonus, add: -2}]}
-    reckless:        {name: Reckless,        kind: cursed, min_rarity: uncommon,
+    reckless:        {name: Reckless, desc: "More crits, but scares last longer.",        kind: cursed, min_rarity: uncommon,
                       effects: [{stat: crit_chance, add: 0.06}], drawbacks: [{stat: fear_duration_mult, pct: 10}]}
-    blood_price:     {name: Blood Price,     kind: cursed, min_rarity: rare,
+    blood_price:     {name: Blood Price, desc: "Stronger powers, but hitting things stuns longer.",     kind: cursed, min_rarity: rare,
                       effects: [{stat: power_potency, pct: 20}], drawbacks: [{stat: impact_stun, pct: 15}]}
-    gamblers_luck:   {name: "Gambler's Luck", kind: cursed, min_rarity: rare,
+    gamblers_luck:   {name: "Gambler's Luck", desc: "Luckier finds, but a smaller pickup range.", kind: cursed, min_rarity: rare,
                       effects: [{stat: luck, add: 0.05}], drawbacks: [{stat: pickup_radius, add: -0.4}]}
-    more_choices:    {name: Wider Nest,      kind: flock, min_rarity: epic,
+    clover:          {name: Four-leaf Clover, desc: "Luck: enemies drop rarer eggs.", kind: flock,
+                      effects: [{stat: egg_luck, add: 0.004}]}
+    fame:            {name: Fame,            desc: "Fixed prestige for the flock: more score, rarer drops.",
+                      kind: flock, effects: [{stat: prestige_bonus, add: 0.4}]}
+    legend:          {name: Legend,          desc: "Multiplies the whole prestige of the flock.", kind: flock,
+                      min_rarity: epic, effects: [{stat: prestige_mult, pct: 5}]}
+    second_chance:   {name: Second Chance,   desc: "One more egg reroll for this run.", kind: flock,
+                      min_rarity: rare, effects: [{rerolls: 1, scale: false}]}
+    escape_hatch:    {name: Escape Hatch,    desc: "One more egg skip for this run.", kind: flock,
+                      min_rarity: uncommon, max_rarity: rare, effects: [{skips: 1, scale: false}]}
+    more_choices:    {name: Wider Nest, desc: "Every egg offers one more card.",      kind: flock, min_rarity: epic,
                       effects: [{stat: choices, add: 1, scale: false}]}
-    lucky_nest:      {name: Lucky Nest,      kind: flock, min_rarity: rare, effects: [{stat: egg_luck, add: 0.008}]}
+    lucky_nest:      {name: Lucky Nest, desc: "Enemies drop rarer eggs.",      kind: flock, min_rarity: rare, effects: [{stat: egg_luck, add: 0.008}]}
 
 # =============================================================================
 # PACTS
@@ -881,32 +894,32 @@ pacts:
     5: [bat_plague, midas, blood_oath, last_stand, wealth]
     6: [last_stand, glass_cannon, reaper, war_drums, bat_plague, midas]
   catalog:
-    blood_oath:    {name: Blood Oath,    boon: [{stat: damage_mult, pct: 15}],
+    blood_oath:    {name: Blood Oath, desc: "Strike harder, fall faster.",    boon: [{stat: damage_mult, pct: 15}],
                     bane: [{stat: fall_speed_bonus, add: 2}]}
-    featherweight: {name: Featherweight, boon: [{stat: rise_speed_bonus, add: 3}],
+    featherweight: {name: Featherweight, desc: "Climb faster, but impacts stun longer.", boon: [{stat: rise_speed_bonus, add: 3}],
                     bane: [{stat: impact_stun, pct: 20}]}
-    greedy_nest:   {name: Greedy Nest,   boon: [{stat: egg_luck, add: 0.04}],
+    greedy_nest:   {name: Greedy Nest, desc: "Rarer eggs, tougher bats.",   boon: [{stat: egg_luck, add: 0.04}],
                     bane: [{enemy: {hp_mult: 10}}]}
-    thick_skin:    {name: Thick Skin,    boon: [{stat: fear_resist, add: 0.1}],
+    thick_skin:    {name: Thick Skin, desc: "Braver birds that climb more slowly.",    boon: [{stat: fear_resist, add: 0.1}],
                     bane: [{stat: rise_speed_bonus, add: -1.5}]}
-    glass_cannon:  {name: Glass Cannon,  boon: [{stat: crit_chance, add: 0.08}, {stat: crit_damage, add: 0.3}],
+    glass_cannon:  {name: Glass Cannon, desc: "Deadly crits, longer scares.",  boon: [{stat: crit_chance, add: 0.08}, {stat: crit_damage, add: 0.3}],
                     bane: [{stat: fear_duration_mult, pct: 15}]}
-    hunters_moon:  {name: "Hunter's Moon", boon: [{stat: vs_elites, add: 0.2}, {stat: egg_luck, add: 0.015}],
+    hunters_moon:  {name: "Hunter's Moon", desc: "Hunt elites: more of them, better drops.", boon: [{stat: vs_elites, add: 0.2}, {stat: egg_luck, add: 0.015}],
                     bane: [{stat: elite_chance, add: 0.03}]}
-    iron_will:     {name: Iron Will,     boon: [{stat: fear_immunity, add: 0.08}],
+    iron_will:     {name: Iron Will, desc: "Ignore scares, hit softer.",     boon: [{stat: fear_immunity, add: 0.08}],
                     bane: [{stat: damage_mult, pct: -6}]}
-    war_drums:     {name: War Drums,     boon: [{stat: power_potency, pct: 15}, {stat: power_duration, pct: 15}],
+    war_drums:     {name: War Drums, desc: "Stronger, longer powers; scarier bats.",     boon: [{stat: power_potency, pct: 15}, {stat: power_duration, pct: 15}],
                     bane: [{enemy: {fear_strength: 10}}]}
-    tempest:       {name: Tempest,       boon: [{stat: rise_speed_bonus, add: 3}],
+    tempest:       {name: Tempest, desc: "Everything moves faster, up and down.",       boon: [{stat: rise_speed_bonus, add: 3}],
                     bane: [{stat: fall_speed_bonus, add: 3}]}
-    bat_plague:    {name: Bat Plague,    boon: [{stat: xp_gain, pct: 20}, {stat: score_mult, pct: 15}],
+    bat_plague:    {name: Bat Plague, desc: "More XP and score from tougher, more numerous elites.",    boon: [{stat: xp_gain, pct: 20}, {stat: score_mult, pct: 15}],
                     bane: [{enemy: {hp_mult: 12}}, {stat: elite_chance, add: 0.03}]}
-    reaper:        {name: Reaper,        boon: [{stat: armor_pierce, add: 5}],
+    reaper:        {name: Reaper, desc: "Cut through armor, reach less far.",        boon: [{stat: armor_pierce, add: 5}],
                     bane: [{stat: pickup_radius, add: -0.3}]}
-    midas:         {name: Midas,         boon: [{stat: score_mult, pct: 25}, {stat: luck, add: 0.03}],
+    midas:         {name: Midas, desc: "Gold and luck at the cost of damage.",         boon: [{stat: score_mult, pct: 25}, {stat: luck, add: 0.03}],
                     bane: [{stat: damage_mult, pct: -8}]}
-    wealth:        {name: Wealth,        boon: [{stat: luck, add: 0.05}, {stat: egg_luck, add: 0.02}],
+    wealth:        {name: Wealth, desc: "Fortune favours you; bats grow thicker skin.",        boon: [{stat: luck, add: 0.05}, {stat: egg_luck, add: 0.02}],
                     bane: [{enemy: {defense: 4}}]}
-    last_stand:    {name: Last Stand,    boon: [{stat: floor_save, add: 0.05}],
+    last_stand:    {name: Last Stand, desc: "Birds may survive the floor, but fight worse.",    boon: [{stat: floor_save, add: 0.05}],
                     bane: [{stat: damage_mult, pct: -5}, {stat: fear_duration_mult, pct: 8}]}
 

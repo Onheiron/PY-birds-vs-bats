@@ -2,7 +2,8 @@
 
 While ``state.choice.active`` is set the session does not advance (the game
 clock holds, as in a pause) and the keys move between the options, which are
-listed top to bottom: UP / DOWN select, ENTER takes. A pact offer also
+listed top to bottom: UP / DOWN select, ENTER takes. An egg can also be
+rerolled (R) or skipped (S) a few times per run (cards.rerolls / cards.skips). A pact offer also
 has a last option to refuse.
 
 An offer is a dict: {'kind': 'egg' | 'pact', 'title', 'rarity', 'cards': [...],
@@ -64,6 +65,50 @@ def offer_pact(boss_number, rng=random):
     )
 
 
+def _allowance(name):
+    """Rerolls or skips left this run (starting from cards.rerolls / cards.skips)."""
+    value = getattr(state.choice, name)
+    if value is None:
+        from src.core import constants
+
+        value = int(getattr(getattr(constants, 'cards', None), name, 3))
+        setattr(state.choice, name, value)
+    return value
+
+
+def rerolls_left():
+    return _allowance('rerolls')
+
+
+def skips_left():
+    return _allowance('skips')
+
+
+def reroll(rng=random):
+    """New cards for the egg on screen (an egg only; uses one reroll)."""
+    offer = state.choice.active
+    if offer is None or offer['kind'] != 'egg' or rerolls_left() <= 0:
+        return False
+    state.choice.rerolls -= 1
+    offer['cards'] = cards.roll_offer(offer['rarity'], rng)
+    offer['index'] = 0
+    events.emit('choice_rerolled', offer=offer)
+    return True
+
+
+def skip():
+    """Leave the egg on screen without taking anything (uses one skip)."""
+    offer = state.choice.active
+    if offer is None or offer['kind'] != 'egg' or skips_left() <= 0:
+        return False
+    state.choice.skips -= 1
+    state.choice.active = None
+    events.emit('choice_made', offer=offer, card=dict(REFUSE, id='skip', name='Skip'))
+    if state.choice.queue:
+        _open(state.choice.queue.pop(0))
+    return True
+
+
 def move(step):
     offer = state.choice.active
     if offer:
@@ -88,10 +133,14 @@ def pick(index=None):
 
 
 def handle_key(key):
-    """Keys while a choice is on screen: UP / DOWN move, ENTER takes."""
+    """Keys while a choice is on screen: UP / DOWN move, ENTER takes, R rerolls, S skips."""
     if key == 'UP':
         move(-1)
     elif key == 'DOWN':
         move(1)
     elif key == 'ENTER':
         pick()
+    elif key in ('R', 'r'):
+        reroll()
+    elif key in ('S', 's'):
+        skip()

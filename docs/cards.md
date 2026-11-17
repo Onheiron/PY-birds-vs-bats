@@ -50,11 +50,11 @@ Card effects are written for a common card and multiplied by
 ## Cards
 
 - **stat**: a permanent bonus for the whole flock.
-- **boost**: a strong bonus for 20 seconds.
-- **powerup**: tailwind, wide cursor or timelapse (stronger at higher rarity).
+- **boost**: a strong bonus for 20 seconds of game time.
+- **powerup**: tailwind, wide cursor or timelapse; rarer ones last longer and are stronger.
 - **training**: XP for every bird.
 - **cursed** (☠): a big bonus with a drawback.
-- **flock**: a flock stat (more choices per egg, luckier drops).
+- **nest** (flock): a flock stat (more choices per egg, luck, prestige, rerolls).
 - **bird** (⬯): hatch a bird of that rarity, only while a lane is free (a full
   flock gets no bird cards); White, Orange and Gold only if none is alive.
   The bird comes from the egg tables `eggs.rarity_candidates`: common
@@ -62,42 +62,65 @@ Card effects are written for a common card and multiplied by
   Rock, rare Clockwork / Cookie / Stealth / Twister, epic White / Orange / Gold,
   legendary Dinosaur / Glitch, mythical Rainbow.
 
-| Card | Kind | Rarities | At its lowest rarity | At its highest |
-|---|---|---|---|---|
-| Sharp Beaks | stat | common – mythical | +6% damage | +42% damage |
-| Hollow Bones | stat | common – mythical | +1.5 rising speed | +10.5 rising speed |
-| Feather Brake | stat | common – mythical | −1.5 falling speed | −10.5 falling speed |
-| Keen Eyes | stat | common – mythical | +3% crit chance | +21% crit chance |
-| Heavy Blows | stat | common – mythical | +0.15 crit damage | +1.05 crit damage |
-| Brave Hearts | stat | common – mythical | +6% fear resistance | +42% fear resistance |
-| Steady Nerves | stat | common – mythical | −6% fear duration | −42% fear duration |
-| Piercing Talons | stat | common – mythical | +2 armor pierce | +14 armor pierce |
-| Bat Hunter | stat | common – mythical | +6% damage vs bats | +42% damage vs bats |
-| Lumberjack | stat | common – mythical | +8% damage vs obstacles | +56% damage vs obstacles |
-| Giant Slayer | stat | uncommon – mythical | +12.8% damage vs elites | +56% damage vs elites |
-| Wide Wings | stat | common – mythical | +0.5 pickup radius | +3.5 pickup radius |
-| Lucky Feather | stat | common – mythical | +2% luck | +14% luck |
-| Quick Study | stat | common – mythical | +6% XP | +42% XP |
-| Show-off | stat | common – mythical | +5% score | +35% score |
-| Lasting Powers | stat | common – mythical | +8% power duration | +56% power duration |
-| Potent Powers | stat | common – mythical | +8% power strength | +56% power strength |
-| Safety Net | stat | rare – mythical | +4.8% floor save | +14% floor save |
-| Second Wind | stat | legendary – mythical | +1 power use per ascent | +1 power use per ascent |
-| Frenzy | boost | common – mythical | +40% damage for 20 s | +280% damage for 20 s |
-| Fearless | boost | common – mythical | +25% fear immunity for 20 s | +175% fear immunity for 20 s |
-| Jet Stream | boost | common – mythical | +8 rising speed for 20 s | +56 rising speed for 20 s |
-| Golden Hour | boost | common – mythical | +40% score for 20 s | +280% score for 20 s |
-| Tailwind | powerup | common – epic | Tailwind: the flock rises faster | Tailwind: the flock rises faster |
-| Wide Cursor | powerup | common – epic | Wide cursor: bounce more lanes at once | Wide cursor: bounce more lanes at once |
-| Timelapse | powerup | common – epic | Timelapse: the game slows down | Timelapse: the game slows down |
-| Training | training | common – mythical | +20 XP to every bird | +140 XP to every bird |
-| Glass Wings | cursed | uncommon – mythical | +24% damage; +3.2 falling speed | +105% damage; +14 falling speed |
-| Heavy Crown | cursed | uncommon – mythical | +24% score; −3.2 rising speed | +105% score; −14 rising speed |
-| Reckless | cursed | uncommon – mythical | +9.6% crit chance; +16% fear duration | +42% crit chance; +70% fear duration |
-| Blood Price | cursed | rare – mythical | +48% power strength; +36% impact stun | +140% power strength; +105% impact stun |
-| Gambler's Luck | cursed | rare – mythical | +12% luck; −0.96 pickup radius | +35% luck; −2.8 pickup radius |
-| Wider Nest | flock | epic – mythical | +1 choice per egg | +1 choice per egg |
-| Lucky Nest | flock | rare – mythical | +4.8% rarer drops | +14% rarer drops |
+| Card | Kind | Duration | Rarities | What it does | At its lowest rarity | At its highest |
+|---|---|---|---|---|---|---|
+| **Sharp Beaks** | Flock bonus | Permanent | common – mythical | Every bird hits harder. | +6% damage | +42% damage |
+| **Hollow Bones** | Flock bonus | Permanent | common – mythical | Birds climb faster. | +1.5 rising speed | +10.5 rising speed |
+| **Feather Brake** | Flock bonus | Permanent | common – mythical | Birds fall more slowly: more time to bounce them. | −1.5 falling speed | −10.5 falling speed |
+| **Keen Eyes** | Flock bonus | Permanent | common – mythical | More critical hits. | +3% crit chance | +21% crit chance |
+| **Heavy Blows** | Flock bonus | Permanent | common – mythical | Critical hits hurt more. | +0.15 crit damage | +1.05 crit damage |
+| **Brave Hearts** | Flock bonus | Permanent | common – mythical | Scared birds fall less fast. | +6% fear resistance | +42% fear resistance |
+| **Steady Nerves** | Flock bonus | Permanent | common – mythical | Scares wear off sooner. | −6% fear duration | −42% fear duration |
+| **Piercing Talons** | Flock bonus | Permanent | common – mythical | Ignore part of the armor of bats and barriers. | +2 armor pierce | +14 armor pierce |
+| **Bat Hunter** | Flock bonus | Permanent | common – mythical | More damage against bats. | +6% damage vs bats | +42% damage vs bats |
+| **Lumberjack** | Flock bonus | Permanent | common – mythical | More damage against obstacles. | +8% damage vs obstacles | +56% damage vs obstacles |
+| **Giant Slayer** | Flock bonus | Permanent | uncommon – mythical | More damage against elites and bosses. | +12.8% damage vs elites | +56% damage vs elites |
+| **Wide Wings** | Flock bonus | Permanent | common – mythical | Birds collect eggs from farther away. | +0.5 pickup radius | +3.5 pickup radius |
+| **Lucky Feather** | Flock bonus | Permanent | common – mythical | An egg a bird collects may turn one rarity rarer. | +2% lucky finds (a collected egg turns rarer) | +14% lucky finds (a collected egg turns rarer) |
+| **Quick Study** | Flock bonus | Permanent | common – mythical | Birds earn more XP from hits and kills. | +6% XP | +42% XP |
+| **Show-off** | Flock bonus | Permanent | common – mythical | More points. | +5% score | +35% score |
+| **Lasting Powers** | Flock bonus | Permanent | common – mythical | Powers last longer. | +8% power duration | +56% power duration |
+| **Potent Powers** | Flock bonus | Permanent | common – mythical | Powers hit harder. | +8% power strength | +56% power strength |
+| **Safety Net** | Flock bonus | Permanent | rare – mythical | A bird reaching the floor may bounce back instead. | +4.8% floor save | +14% floor save |
+| **Second Wind** | Flock bonus | Permanent | legendary – mythical | Every bird can fire its power once more per ascent. | +1 power use per ascent | +1 power use per ascent |
+| **Frenzy** | Boost | 20 s | common – mythical | A short burst of damage. | +40% damage | +280% damage |
+| **Fearless** | Boost | 20 s | common – mythical | Bats may fail to scare the flock. | +25% fear immunity | +175% fear immunity |
+| **Jet Stream** | Boost | 20 s | common – mythical | The flock shoots up. | +8 rising speed | +56 rising speed |
+| **Golden Hour** | Boost | 20 s | common – mythical | More points for a while. | +40% score | +280% score |
+| **Tailwind** | Power-up | 10 s | common – epic | A wind that lifts the whole flock. | Rising birds +10 speed<br>Falling birds −10 speed | Rising birds +30 speed<br>Falling birds −30 speed |
+| **Wide Cursor** | Power-up | 10 s | common – epic | The cursor covers more lanes. | Bounce 3 lanes with one press | Bounce 5 lanes with one press |
+| **Timelapse** | Power-up | 2 s | common – epic | Slow time down to catch falling birds. | The game runs 1.5× slower | The game runs 2× slower |
+| **Training** | Training | Instant | common – mythical | XP for every bird right now. | +20 XP to every bird | +140 XP to every bird |
+| **Glass Wings** | Cursed | Permanent | uncommon – mythical | Much more damage, but birds fall faster. | +24% damage<br>+3.2 falling speed | +105% damage<br>+14 falling speed |
+| **Heavy Crown** | Cursed | Permanent | uncommon – mythical | Much more score, but birds rise more slowly. | +24% score<br>−3.2 rising speed | +105% score<br>−14 rising speed |
+| **Reckless** | Cursed | Permanent | uncommon – mythical | More crits, but scares last longer. | +9.6% crit chance<br>+16% fear duration | +42% crit chance<br>+70% fear duration |
+| **Blood Price** | Cursed | Permanent | rare – mythical | Stronger powers, but hitting things stuns longer. | +48% power strength<br>+36% impact stun | +140% power strength<br>+105% impact stun |
+| **Gambler's Luck** | Cursed | Permanent | rare – mythical | Luckier finds, but a smaller pickup range. | +12% lucky finds (a collected egg turns rarer)<br>−0.96 pickup radius | +35% lucky finds (a collected egg turns rarer)<br>−2.8 pickup radius |
+| **Four-leaf Clover** | Nest | Permanent | common – mythical | Luck: enemies drop rarer eggs. | +0.4% luck (rarer drops) | +2.8% luck (rarer drops) |
+| **Fame** | Nest | Permanent | common – mythical | Fixed prestige for the flock: more score, rarer drops. | +0.4 prestige | +2.8 prestige |
+| **Legend** | Nest | Permanent | epic – mythical | Multiplies the whole prestige of the flock. | +17.5% prestige | +35% prestige |
+| **Second Chance** | Nest | Permanent | rare – mythical | One more egg reroll for this run. | +1 egg reroll this run | +1 egg reroll this run |
+| **Escape Hatch** | Nest | Permanent | uncommon – rare | One more egg skip for this run. | +1 egg skip this run | +1 egg skip this run |
+| **Wider Nest** | Nest | Permanent | epic – mythical | Every egg offers one more card. | +1 choice per egg | +1 choice per egg |
+| **Lucky Nest** | Nest | Permanent | rare – mythical | Enemies drop rarer eggs. | +1.92% luck (rarer drops) | +5.6% luck (rarer drops) |
+
+### Luck and prestige
+
+- **Luck** (`egg_luck`, flock stat, at most 25%): the chance that an enemy
+  drops an egg one rarity higher. Raised by Four-leaf Clover, Lucky Nest and
+  some pacts. It changes drop rarities only.
+- **Lucky finds** (`luck`, bird stat): the chance that an egg a bird collects
+  turns one rarity higher (Glitch, Gold, Rainbow, Lucky Feather...).
+- **Prestige** multiplies the score *and* pushes drops towards rarer eggs. It
+  is `(1 + the prestige of every living bird + prestige_bonus) × prestige_mult`:
+  **Fame** adds fixed prestige, the rarer **Legend** multiplies it.
+
+### Reroll and skip
+
+Each run starts with **3 rerolls** (R: new cards for the same egg) and
+**3 skips** (S: leave the egg, take nothing), shown under the cards
+(`cards.rerolls`, `cards.skips`). Second Chance and Escape Hatch give one more.
+Pacts cannot be rerolled; they have Refuse instead.
 
 ## Pacts
 
@@ -108,22 +131,22 @@ for bosses 1–6), so the pacts of later bosses are more extreme. Banes can also
 change every bat that spawns from then on (more HP, defence, fear) or bring
 more elites.
 
-| Pact | After boss | Boon (×1) | Bane (×1) |
-|---|:-:|---|---|
-| Blood Oath | 1, 2, 5 | +15% damage | +2 falling speed |
-| Featherweight | 1, 2 | +3 rising speed | +20% impact stun |
-| Greedy Nest | 1, 3 | +8% rarer drops | +10% bat HP |
-| Thick Skin | 1 | +10% fear resistance | −1.5 rising speed |
-| Glass Cannon | 1, 3, 6 | +8% crit chance; +0.3 crit damage | +15% fear duration |
-| Hunter's Moon | 2, 4 | +20% damage vs elites; +3% rarer drops | +3% elite bats |
-| Iron Will | 2, 4 | +8% fear immunity | −6% damage |
-| War Drums | 2, 4, 6 | +15% power strength; +15% power duration | +10% bat fear |
-| Tempest | 2, 4 | +3 rising speed | +3 falling speed |
-| Bat Plague | 3, 5, 6 | +20% XP; +15% score | +12% bat HP; +3% elite bats |
-| Reaper | 3, 4, 6 | +5 armor pierce | −0.3 pickup radius |
-| Midas | 3, 5, 6 | +25% score; +3% luck | −8% damage |
-| Wealth | 4, 5 | +5% luck; +4% rarer drops | +4 bat defence |
-| Last Stand | 5, 6 | +5% floor save | −5% damage; +8% fear duration |
+| Pact | After boss | What it does | Boon (×1) | Bane (×1) |
+|---|:-:|---|---|---|
+| **Blood Oath** | 1, 2, 5 | Strike harder, fall faster. | +15% damage | +2 falling speed |
+| **Featherweight** | 1, 2 | Climb faster, but impacts stun longer. | +3 rising speed | +20% impact stun |
+| **Greedy Nest** | 1, 3 | Rarer eggs, tougher bats. | +4% luck (rarer drops) | +10% bat HP |
+| **Thick Skin** | 1 | Braver birds that climb more slowly. | +10% fear resistance | −1.5 rising speed |
+| **Glass Cannon** | 1, 3, 6 | Deadly crits, longer scares. | +8% crit chance<br>+0.3 crit damage | +15% fear duration |
+| **Hunter's Moon** | 2, 4 | Hunt elites: more of them, better drops. | +20% damage vs elites<br>+1.5% luck (rarer drops) | +3% elite bats |
+| **Iron Will** | 2, 4 | Ignore scares, hit softer. | +8% fear immunity | −6% damage |
+| **War Drums** | 2, 4, 6 | Stronger, longer powers; scarier bats. | +15% power strength<br>+15% power duration | +10% bat fear |
+| **Tempest** | 2, 4 | Everything moves faster, up and down. | +3 rising speed | +3 falling speed |
+| **Bat Plague** | 3, 5, 6 | More XP and score from tougher, more numerous elites. | +20% XP<br>+15% score | +12% bat HP<br>+3% elite bats |
+| **Reaper** | 3, 4, 6 | Cut through armor, reach less far. | +5 armor pierce | −0.3 pickup radius |
+| **Midas** | 3, 5, 6 | Gold and luck at the cost of damage. | +25% score<br>+3% lucky finds (a collected egg turns rarer) | −8% damage |
+| **Wealth** | 4, 5 | Fortune favours you; bats grow thicker skin. | +5% lucky finds (a collected egg turns rarer)<br>+2% luck (rarer drops) | +4 bat defence |
+| **Last Stand** | 5, 6 | Birds may survive the floor, but fight worse. | +5% floor save | −5% damage<br>+8% fear duration |
 
 ## Simulator
 

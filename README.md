@@ -112,6 +112,8 @@ Distance does not advance while a boss is alive.
   (more with the right cards; ↑/↓ to choose, ENTER to take): permanent flock bonuses, short boosts,
   power-ups, cursed cards with a drawback, or a new bird while a lane is free.
   An egg has at least one card of its rarity and the others are close to it.
+  Three rerolls (R) and three skips (S) per run; cards can also raise luck
+  (rarer drops) and prestige.
 - **Pacts:** after every boss you may accept one of its pacts, a permanent
   bonus with a permanent drawback, stronger for later bosses, or refuse.
   `docs/cards.md` lists every card and pact.

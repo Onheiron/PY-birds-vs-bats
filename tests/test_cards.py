@@ -168,3 +168,53 @@ def test_a_choice_survives_save_and_load(tmp_path, monkeypatch):
         sim.state.choice.active = None
         assert save_manager.load_game(1)
         assert [c['name'] for c in sim.state.choice.active['cards']] == names
+
+
+def test_rerolls_and_skips_are_limited_per_run():
+    with Simulation(seed=6, key_rate=0) as sim:
+        for _ in range(3):
+            choices.offer_egg('rare', random.Random(1))
+            before = [c['id'] for c in sim.state.choice.active['cards']]
+            sim.step(key='R')
+            assert sim.state.choice.active is not None
+            sim.step(key='S')
+            assert sim.state.choice.active is None
+            assert before
+        assert choices.rerolls_left() == 0 and choices.skips_left() == 0
+        choices.offer_egg('rare', random.Random(1))
+        sim.step(key='R')
+        sim.step(key='S')
+        assert sim.state.choice.active is not None, 'no skips left: the egg stays until a card is taken'
+
+
+def test_prestige_cards_add_and_multiply_prestige():
+    with Simulation(seed=6, key_rate=0):
+        from src.engine.progression import compute_prestige
+
+        base = compute_prestige()
+        stats.add_modifier('flock', 'prestige_bonus', add=2)
+        assert compute_prestige() == base + 2
+        stats.add_modifier('flock', 'prestige_mult', mul=1.5)
+        assert compute_prestige() == (base + 2) * 1.5
+
+
+def test_every_card_shows_kind_duration_and_effects():
+    with Simulation(seed=6, key_rate=0):
+        for card_id, entry in cards._catalog().items():
+            low = cards._as_dict(entry).get('min_rarity', 'common')
+            info = cards.card_info(cards._make_card(card_id, entry, low))
+            assert info['kind'] and info['duration'] and info['text'] and info['lines'], card_id
+        tailwind = cards.card_info(cards._make_card('tailwind', cards._catalog()['tailwind'], 'common'))
+        assert tailwind['duration'] == '10 s'
+
+
+def test_power_ups_last_their_seconds_of_game_time():
+    with Simulation(seed=6, key_rate=0) as sim:
+        from src.engine import clock
+        from src.engine.logic.loot import apply_powerup
+
+        apply_powerup('tailwind')
+        start = clock.now()
+        while sim.state.powerups.tailwind_active and clock.now() - start < 30:
+            sim.step(key=None)
+        assert 9.5 < clock.now() - start < 10.6

@@ -171,10 +171,10 @@ def _new_spells():
 def _new_powerups():
     return SimpleNamespace(
         wide_cursor_active=False,
-        wide_cursor_frames=0,
+        wide_cursor_until=0.0,  # game-clock time it ends
         wide_cursor_lanes=1,
         tailwind_active=False,
-        tailwind_frames=0,
+        tailwind_until=0.0,  # game-clock time it ends
         tailwind_up_bonus=0,
         tailwind_down_penalty=0,
         # Timelapse effect (slows game tick)
@@ -232,6 +232,9 @@ def _new_choice():
         active=None,
         # Choices waiting their turn (an egg picked up during a pact, two eggs at once...)
         queue=[],
+        # Egg offers that can still be rerolled / skipped this run (cards.rerolls / cards.skips)
+        rerolls=None,
+        skips=None,
     )
 
 
