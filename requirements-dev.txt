@@ -1,0 +1,6 @@
+# Development: tests, linting and standalone builds
+-r requirements.txt
+pytest>=7.4
+pytest-cov>=4.1
+ruff>=0.6
+pyinstaller>=6.0

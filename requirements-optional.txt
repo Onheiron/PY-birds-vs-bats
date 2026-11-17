@@ -1,0 +1,6 @@
+# Optional features: the game runs without them.
+# Sound effects and dynamic music
+numpy>=1.24
+sounddevice>=0.4
+# Online leaderboard and telemetry (also needs a Firebase service account)
+firebase-admin>=6.0

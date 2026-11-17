@@ -1,23 +1,8 @@
-[project]
-name = "bvb"
-description = "BVB - Bird vs Bat: a terminal arcade roguelike"
-readme = "README.md"
-requires-python = ">=3.9"
-dynamic = ["version"]
-dependencies = [
-    "pyyaml>=6.0",
-    "jsonschema>=4.0",
-]
-
-[project.optional-dependencies]
-audio = ["numpy>=1.24", "sounddevice>=0.4"]
-leaderboard = ["firebase-admin>=6.0", "requests>=2.20"]
-dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.6"]
-build = ["pyinstaller>=6.0"]
+# Tooling configuration. Dependencies live in requirements*.txt.
 
 [tool.ruff]
 line-length = 120
-target-version = "py39"
+target-version = "py310"
 extend-exclude = ["build", "dist"]
 
 [tool.ruff.lint]
@@ -36,6 +21,7 @@ select = [
 ignore = [
     "SIM102",  # nested ifs often mirror the game rules more clearly
     "SIM108",  # ternaries are not always more readable
+    "B905",    # zip() over lists that are equal-length by construction
     "RET505",  # elif/else after return keeps rule tables symmetrical
 ]
 

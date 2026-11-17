@@ -1,7 +1,7 @@
 """Boss lifecycle: spawn conditions, dispatch and collisions."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 from src.core import constants, state
 from src.engine.birds import reset_bird_power, set_ball_vy

@@ -13,7 +13,7 @@ try:
 
     if not _backend.is_audio_available():
         _backend = None
-except ImportError:
+except (ImportError, OSError):
     _backend = None
 
 _last_bird_sync_frame = 0

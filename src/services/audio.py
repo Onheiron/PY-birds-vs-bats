@@ -12,7 +12,7 @@ import numpy as np
 try:
     import sounddevice as sd
     AUDIO_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError):  # OSError: PortAudio library not installed
     AUDIO_AVAILABLE = False
 
 # Audio settings

@@ -4,13 +4,13 @@ import contextlib
 import os
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 # module state
 _app = None
 _db = None
-_user_id: Optional[str] = None
-_service_account_path: Optional[str] = None
+_user_id: str | None = None
+_service_account_path: str | None = None
 
 # Hard-coded Firebase project/app name as requested
 DEFAULT_PROJECT = 'birds-vs-bats'
@@ -41,7 +41,7 @@ def get_or_create_local_user_id() -> str:
         return _user_id
 
 
-def init_from_env(service_account_path: Optional[str] = None) -> bool:
+def init_from_env(service_account_path: str | None = None) -> bool:
     # initialise firebase-admin and firestore client
     # This function prefers a service account JSON if present next to the
     # module, otherwise it will attempt to initialize with the default
@@ -153,11 +153,11 @@ def sign_in_anonymous():
 def send_score(
     name: str,
     score: int,
-    time_played_seconds: Optional[int] = None,
-    time_played: Optional[str] = None,
-    version: Optional[str] = None,
-    avg_ppm: Optional[float] = None,
-) -> Optional[dict[str, Any]]:
+    time_played_seconds: int | None = None,
+    time_played: str | None = None,
+    version: str | None = None,
+    avg_ppm: float | None = None,
+) -> dict[str, Any] | None:
     global _db
     if _db is None:
         # best-effort: do nothing if Firestore client not available
@@ -281,7 +281,7 @@ def sync_achievements(achievements: dict[str, Any]):
             continue
 
 
-def log_event(name: str, params: Optional[dict[str, Any]] = None) -> Optional[dict[str, Any]]:
+def log_event(name: str, params: dict[str, Any] | None = None) -> dict[str, Any] | None:
     global _db
     if _db is None:
         return None
