@@ -64,6 +64,20 @@ class GameProcess:
                 break
         raise AssertionError(f'{text!r} never appeared. stderr: {self.stderr()}\n{self.screen.text()}')
 
+    def wait_exit(self, timeout=15):
+        """Wait for the process to end, draining its output meanwhile.
+
+        A pty has a small buffer (about 1 KB on macOS): if nobody reads it, the
+        game blocks writing its last frames and never gets to exit.
+        """
+        deadline = time.time() + timeout
+        while self.process.poll() is None and time.time() < deadline:
+            self.pump(0.1)
+        self.pump(0.2)
+        if self.process.poll() is None:
+            raise AssertionError(f'game did not exit within {timeout}s\n{self.screen.text()}')
+        return self.process.returncode
+
     def send(self, keys):
         os.write(self.master, keys.encode())
 
@@ -109,8 +123,7 @@ def test_play_a_session_and_quit_cleanly(game):
     game.pump(0.3)
 
     game.send('q')
-    assert game.process.wait(timeout=10) == 0, game.stderr()
-    game.pump(0.3)
+    assert game.wait_exit() == 0, game.stderr()
     # Terminal handed back as it was: cursor visible, alternate screen left
     assert game.raw.rstrip().endswith('\033[?25h\033[?1049l')
     assert 'Traceback' not in game.stderr()
@@ -119,7 +132,7 @@ def test_play_a_session_and_quit_cleanly(game):
 def test_quit_from_title_screen(game):
     game.wait_for('NEW GAME')
     game.send('\x03')  # Ctrl+C arrives as a key in raw mode
-    assert game.process.wait(timeout=10) == 0
+    assert game.wait_exit() == 0, game.stderr()
 
 
 def test_unknown_config_reports_a_clear_error(tmp_path):

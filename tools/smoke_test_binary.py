@@ -67,7 +67,15 @@ def play_in_pty(binary, cwd):
             process.stderr.read().decode(errors='replace') if process.poll() else output[-400:]
         )
         os.write(master, b'\x03')
-        assert process.wait(timeout=30) == 0
+        # Keep draining the pty: with a full buffer the game blocks and cannot exit
+        exit_deadline = time.time() + 30
+        while process.poll() is None and time.time() < exit_deadline:
+            if select.select([master], [], [], 0.1)[0]:
+                try:
+                    os.read(master, 65536)
+                except OSError:
+                    break
+        assert process.wait(timeout=5) == 0
     finally:
         if process.poll() is None:
             process.kill()
