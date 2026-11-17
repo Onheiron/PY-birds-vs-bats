@@ -60,7 +60,7 @@ the rules found.
 | What | Before | Now | Why |
 |---|---|---|---|
 | Boss HP per world (`combat.boss_hp_per_world`) | none | +50% per world after the first (×3.5 in the last) | later bosses were trivial |
-| World-2 boss (`wind_boss.hp`) | 3,000 | WIND_HP | the second world is the first wall |
+| World-2 boss (`wind_boss.hp`) | 3,000 | 6,000 | the second world is the first wall |
 | XP from moving (`progression.move_xp_factor`) | ×1 | ×0.3 | grades and evolutions came within minutes |
 | Bat HP per level (`bat_enemy.level_hp_multiplier`) | 0 | +5% per level | a slight late-game ramp |
 | Red shot (`power_damage`) | 10, +10 per shooter | 30, +20 per shooter | shots did nothing |
@@ -72,7 +72,35 @@ gold buys permanent upgrades.
 
 ## 4. Result
 
-RESULT_TABLE
+Without upgrades (32 games per bot, up to 30 minutes):
+
+| Bot | Past world 1 | Past world 2 | Past world 3 |
+|---|:-:|:-:|:-:|
+| expert | 100% | 53% (was 85%) | 22% |
+| average | 88% | 6% (was 22%) | 0% |
+
+World-2 boss HP turned out to matter little (4,500 → 7,500 HP: expert 59% →
+50%): the wall is its wind and the bats of the second world, not its HP.
+
+**Campaigns** (12 average players, 10 runs each, upgrades bought with the
+gold between runs, `--buy balanced`):
+
+| Run | Median level | Past world 2 | Past world 3 | Gold earned | Upgrade levels owned |
+|---|:-:|:-:|:-:|:-:|:-:|
+| 1 | 6 | 8% | 0% | 38 | 4 |
+| 2 | 6 | 25% | 8% | 47 | 6 |
+| 3 | 6 | 17% | 0% | 56 | 8 |
+| 4 | 7 | 50% | 17% | 67 | 13 |
+| 5 | 7.5 | 67% | 8% | 101 | 15 |
+| 7 | 7 | 58% | 17% | 83 | 21 |
+| 10 | 8.5 | 67% | 8% | 98 | 28 |
+
+Every average player passed world 2 by their 4th run on median, 7 of 12
+reached world 4 within 10 runs, none world 5: the second world is a wall at
+first, the upgrades open it, and the later worlds stay a long-term goal (the
+full tree costs 3,515 gold, ~40 runs of an average player). An expert player
+earns about twice the gold per run and reached world 6 by run 7 on median
+(campaign measured with the world-2 boss at 4,500).
 
 ## 5. Further proposals (not applied)
 
