@@ -4,22 +4,13 @@ import random
 from collections import Counter
 from contextlib import contextmanager
 
-from src.core import constants, state
+from src.core import state
 from src.engine import events
 from src.engine.progression import compute_prestige
 
 RARITIES = ('common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical')
 # Drops rolled on the rarity tables (Orange eggs and Cookie crumbs are fixed)
 ENEMY_SOURCES = ('bat', 'mini_bat', 'boss')
-
-
-def egg_rarities():
-    """egg type -> rarity, from the egg tables of the configuration."""
-    table = {}
-    for rarity, eggs in (constants.eggs.rarity_candidates or {}).items():
-        for egg in eggs if isinstance(eggs, dict) else vars(eggs):
-            table.setdefault(egg, rarity)
-    return table
 
 
 def prestige_now():
@@ -35,10 +26,10 @@ class RunStats:
     def __init__(self, config, milestones):
         self.config = config
         self.milestones = milestones
-        self.egg_rarity = egg_rarities()
         self.drops = []  # (seconds, source, rarity, loot type)
         self.collected = []  # (rarity, loot type)
-        self.hatched = []  # (seconds, egg, rarity)
+        self.hatched = []  # (seconds, egg, rarity of its drop, source of its drop)
+        self._drop_source = {}  # id(loot) -> source
         self.lost = Counter()
         self.kills = Counter()
         self.bosses = {}  # boss type -> {'spawned': s, 'defeated': s or None}
@@ -55,12 +46,16 @@ class RunStats:
 
     def _on_loot_dropped(self, loot, source):
         self.drops.append((self._now(), source, loot.get('rarity', 'common'), loot['type']))
+        self._drop_source[id(loot)] = source
 
     def _on_loot_collected(self, loot, bird):
         self.collected.append((loot.get('rarity', 'common'), loot['type']))
 
-    def _on_bird_hatched(self, bird, egg):
-        self.hatched.append((self._now(), egg, self.egg_rarity.get(egg, '?')))
+    def _on_bird_hatched(self, bird, egg, loot):
+        loot = loot or {}
+        rarity = loot.get('rarity', '?')
+        source = self._drop_source.get(id(loot), '?')
+        self.hatched.append((self._now(), egg, rarity, source))
 
     def _on_bird_lost(self, bird, color, cause):
         self.lost[cause] += 1
@@ -135,7 +130,7 @@ class RunStats:
         egg_drops = Counter(
             rarity for _t, src, rarity, loot in self.drops if src in ENEMY_SOURCES and loot.endswith('_egg')
         )
-        hatched = Counter(rarity for _t, _egg, rarity in self.hatched)
+        hatched = Counter(rarity for _t, _egg, rarity, src in self.hatched if src in ENEMY_SOURCES)
         minutes = self.seconds / 60
         return {
             'seed': self.config.seed,
@@ -154,7 +149,8 @@ class RunStats:
             'egg_drops_by_rarity': {r: egg_drops.get(r, 0) for r in RARITIES},
             'collected': len(self.collected),
             'hatched_by_rarity': {r: hatched.get(r, 0) for r in RARITIES},
-            'hatched': [egg for _t, egg, _r in self.hatched],
+            'hatched': [egg for _t, egg, _r, _src in self.hatched],
+            'hatched_from_orange': sum(1 for *_rest, src in self.hatched if src == 'orange'),
             'birds_lost': dict(self.lost),
             'kills': dict(self.kills),
             'bosses': self.bosses,

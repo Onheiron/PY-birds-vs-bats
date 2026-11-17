@@ -17,7 +17,7 @@ Events and their fields:
   loot_dropped      loot, source
   loot_collected    loot, bird
   bird_lost         bird, color, cause
-  bird_hatched      bird, egg
+  bird_hatched      bird, egg, loot (the collected egg)
   level_up          level
   boss_spawned      boss_type
   boss_defeated     boss_type

@@ -231,7 +231,7 @@ def report(results):
     for rarity in RARITIES:
         row(f'  {rarity} eggs', lambda r, k=rarity: mean([x['egg_drops_by_rarity'][k] for x in r]), '{:.2f}')
 
-    section('Eggs hatched per game (egg rarity per the config tables)')
+    section('Eggs hatched per game, by the rarity of the drop they came from')
     for rarity in RARITIES:
         row(f'  {rarity}', lambda r, k=rarity: mean([x['hatched_by_rarity'][k] for x in r]), '{:.2f}')
     for rarity in RARITIES[2:]:
@@ -240,6 +240,8 @@ def report(results):
             lambda r, k=rarity: 100 * mean([x['hatched_by_rarity'][k] > 0 for x in r]),
             '{:.0f}%',
         )
+
+    row('  Orange re-hatching its own egg', lambda r: mean([x['hatched_from_orange'] for x in r]), '{:.2f}')
 
     section('Birds hatched (all games)')
     totals = {n: Counter(egg for x in results[n]['runs'] for egg in x['hatched']) for n in names}

@@ -74,7 +74,7 @@ def _apply_loot_effect(loot, collector_idx):
 
     if loot_type.endswith('_egg'):
         # Eggs hatch a new bird
-        _spawn_bird_from_egg(loot_type)
+        _spawn_bird_from_egg(loot_type, loot)
     elif loot_type == 'cookie_crumb':
         xp_val = loot.get('xp', 0)
         if xp_val > 0 and state.birds.colors[collector_idx] != COOKIE:
@@ -88,8 +88,8 @@ def _apply_loot_effect(loot, collector_idx):
                 break
 
 
-def _spawn_bird_from_egg(egg_type):
-    """Hatch an egg into the first free bird slot."""
+def _spawn_bird_from_egg(egg_type, loot=None):
+    """Hatch an egg (the collected ``loot``) into the first free bird slot."""
     bird_type = get_bird_type_from_egg(egg_type)
     if bird_type is None:
         return
@@ -122,7 +122,7 @@ def _spawn_bird_from_egg(egg_type):
                 max_charge = getattr(constants.rainbow, 'max_charge', 100)
                 state.special.rainbow_charge[idx] = max_charge
                 state.special.rainbow_last_decay[idx] = clock.now()
-            events.emit('bird_hatched', bird=idx, egg=egg_type)
+            events.emit('bird_hatched', bird=idx, egg=egg_type, loot=loot)
             break
 
 
