@@ -229,7 +229,7 @@ def _recover_orange_bird(bird_idx, lane):
     state.birds.y[bird_idx] = constants.layout.starting_line
     set_ball_vy(bird_idx, -1)
     reset_bird_power(bird_idx)
-    state.birds.speeds[bird_idx] = 5
+    state.birds.speeds[bird_idx] = bird_types.get_default_speed('ORANGE')
 
     # Remove the orange egg loot item
     for loot in state.items.loot_items[:]:

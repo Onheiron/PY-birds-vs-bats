@@ -47,7 +47,7 @@ from src.engine.logic.effects import (
     update_spell_effects,
 )
 from src.engine.logic.flowers import update_obstacle_flowers
-from src.engine.logic.loot import check_loot_collection
+from src.engine.logic.loot import check_loot_collection, restore_orange_eggs
 from src.engine.logic.mini_bats import check_bird_mini_bat_collision, update_mini_bats
 from src.engine.logic.portals import update_portals
 from src.engine.logic.scoring import update_score_tick
@@ -158,6 +158,7 @@ SYSTEMS = (
     System('purple charging', Phase.EFFECTS, update_purple_charging),
     System('portals', Phase.EFFECTS, update_portals),
     System('despawn', Phase.CLEANUP, despawn_old_entities),
+    System('orange eggs', Phase.CLEANUP, restore_orange_eggs),
     System('boss outcome', Phase.CLEANUP, _BossWatch()),
     System('dynamic music', Phase.CLEANUP, sync_active_birds),
 )

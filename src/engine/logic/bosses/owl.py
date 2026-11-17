@@ -283,13 +283,13 @@ def _owl_cast_terror(boss, spells_cfg):
     available_lanes = list(range(num_lanes))
     random.shuffle(available_lanes)
 
-    # Assign each living bird a UNIQUE lane from the shuffled list
-    for i, bird_idx in enumerate(living_birds):
-        if i < len(available_lanes):
-            new_lane = available_lanes[i]
-            state.birds.random_lanes[bird_idx] = new_lane
-            state.birds.home_lanes[bird_idx] = new_lane  # ALSO update home lane!
-            state.birds.cols[bird_idx] = constants.layout.lane_positions[new_lane]
+    # Assign each living bird a UNIQUE lane from the shuffled list; the empty
+    # slots take the lanes left over, so every lane keeps exactly one slot
+    lost_birds = [i for i in range(constants.layout.num_balls) if state.birds.lost[i]]
+    for new_lane, bird_idx in zip(available_lanes, living_birds + lost_birds):
+        state.birds.random_lanes[bird_idx] = new_lane
+        state.birds.home_lanes[bird_idx] = new_lane  # ALSO update home lane!
+        state.birds.cols[bird_idx] = constants.layout.lane_positions[new_lane]
 
 
 def _owl_cast_ominous_wind(boss, spells_cfg):

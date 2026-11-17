@@ -38,6 +38,12 @@ def check_loot_collection():
 
             loot_type = loot['type']
 
+            # A dormant Orange's own egg is not loot: only UP on its lane wakes it.
+            # (With a pickup radius over 3, birds in the next lane used to take it,
+            # leaving the Orange asleep forever in a lane that looked occupied.)
+            if loot_type == 'orange_egg':
+                continue
+
             # COOKIE birds can't collect cookie crumbs
             if loot_type == 'cookie_crumb' and bird_color == COOKIE:
                 continue
@@ -220,3 +226,28 @@ def _apply_timelapse_power(loot_type):
     state.powerups.timelapse_end_time = clock.now() + duration
     state.powerups.timelapse_slowdown = slowdown
     events.emit('power_used', power='timelapse', lane=None)
+
+
+def restore_orange_eggs():
+    """Every dormant Orange has its egg on its lane: put back one that went missing.
+
+    Without its egg a dormant Orange can never wake or die, and its lane looks
+    taken while nothing is drawn in it.
+    """
+    from src.engine.birds import is_orange_egg_state
+
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i] or not is_orange_egg_state(i):
+            continue
+        x = constants.layout.lane_positions[state.birds.random_lanes[i]]
+        if any(loot['type'] == 'orange_egg' and loot['x_pos'] == x for loot in state.items.loot_items):
+            continue
+        state.items.loot_items.append(
+            {
+                'x_pos': x,
+                'y_pos': constants.layout.starting_line,
+                'type': 'orange_egg',
+                'rarity': 'epic',
+                'spawn_ts': clock.now(),
+            }
+        )

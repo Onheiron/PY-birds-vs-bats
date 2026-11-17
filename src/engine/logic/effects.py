@@ -224,9 +224,23 @@ def _execute_exile_swap(exile):
         return
 
     if empty_lane is not None:
-        # Swap bird A to empty lane
+        # Swap bird A with the empty slot that owns that lane, so every lane keeps one slot
+        owner = next(
+            (
+                j
+                for j in range(constants.layout.num_balls)
+                if j != bird_a_idx and state.birds.random_lanes[j] == empty_lane
+            ),
+            None,
+        )
+        old_lane = state.birds.random_lanes[bird_a_idx]
         state.birds.random_lanes[bird_a_idx] = empty_lane
+        state.birds.home_lanes[bird_a_idx] = empty_lane
         state.birds.cols[bird_a_idx] = constants.layout.lane_positions[empty_lane]
+        if owner is not None:
+            state.birds.random_lanes[owner] = old_lane
+            state.birds.home_lanes[owner] = old_lane
+            state.birds.cols[owner] = constants.layout.lane_positions[old_lane]
     elif bird_b_idx is not None and not state.birds.lost[bird_b_idx]:
         # Swap lanes between bird A and bird B
         lane_a = state.birds.random_lanes[bird_a_idx]
