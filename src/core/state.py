@@ -278,6 +278,10 @@ def _new_settings():
         background_enabled=True,
         parallax_enabled=True,
         accessibility_enabled=False,
+        # Cursor assists (off by default): moving onto a lane bounces its falling
+        # birds (bounce_on_enter) or acts as UP on it, bounce or power (trigger_on_enter)
+        bounce_on_enter=False,
+        trigger_on_enter=False,
         # Difficulty: 0=EASY, 1=NORMAL, 2=HARD, 3=HELL
         difficulty=1,
         # Key bindings (can be remapped)

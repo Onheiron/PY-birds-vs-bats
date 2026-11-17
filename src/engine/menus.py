@@ -310,7 +310,11 @@ def _controls_items():
         Item(name, 'binding', (lambda control=control: binding_display(control)), rebind=control)
         for name, control in REBINDABLE_CONTROLS
     ]
-    return items + [_back_item()]
+    assists = [
+        _option('BOUNCE ON ENTER', 'bounce_on_enter'),
+        _option('TRIGGER ON ENTER', 'trigger_on_enter'),
+    ]
+    return items + assists + [_back_item()]
 
 
 def _save_items():

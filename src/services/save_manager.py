@@ -149,6 +149,8 @@ def save_default_settings():
         'background_enabled': state.settings.background_enabled,
         'parallax_enabled': state.settings.parallax_enabled,
         'accessibility_enabled': state.settings.accessibility_enabled,
+        'bounce_on_enter': state.settings.bounce_on_enter,
+        'trigger_on_enter': state.settings.trigger_on_enter,
         'difficulty': state.settings.difficulty,
         'key_bindings': state.settings.key_bindings,
     }
@@ -184,6 +186,9 @@ def load_default_settings():
             state.settings.parallax_enabled = data['parallax_enabled']
         if 'accessibility_enabled' in data:
             state.settings.accessibility_enabled = data['accessibility_enabled']
+        for assist in ('bounce_on_enter', 'trigger_on_enter'):
+            if assist in data:
+                setattr(state.settings, assist, bool(data[assist]))
         if 'difficulty' in data:
             state.settings.difficulty = data['difficulty']
         if 'key_bindings' in data:

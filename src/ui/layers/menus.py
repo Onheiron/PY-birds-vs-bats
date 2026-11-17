@@ -6,7 +6,7 @@ is all that differs between the pause menu (right panel) and the title screen
 (centered overlay).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from src.core import constants, state
 from src.engine import menus
@@ -172,7 +172,12 @@ def draw_screen(fb, style, screen, selected):
     if screen.content:
         draw_page(fb, style, screen.content)
         return
-    lines = [item_text(item, style) for item in screen.items()]
+    items = screen.items()
+    # Long option names push every option value of the screen to the same column
+    longest = max((len(item.name) + 1 for item in items if item.kind == 'option'), default=0)
+    if longest > style.label_width:
+        style = replace(style, label_width=longest)
+    lines = [item_text(item, style) for item in items]
     draw_box(fb, style, screen.title, lines, selected, screen_hint(screen))
 
 

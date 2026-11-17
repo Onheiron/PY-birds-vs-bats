@@ -32,11 +32,18 @@ def handle_pause():
 
 
 def handle_movement(direction):
-    """Handle LEFT/RIGHT cursor movement."""
+    """Handle LEFT/RIGHT cursor movement (and the cursor assists of the CONTROLS menu)."""
+    before = state.player.lane
     if direction == 'LEFT':
         state.player.lane = max(0, state.player.lane - 1)
     elif direction == 'RIGHT':
         state.player.lane = min(constants.layout.num_lanes - 1, state.player.lane + 1)
+    if state.player.lane == before:
+        return
+    if state.settings.trigger_on_enter:
+        handle_bounce()
+    elif state.settings.bounce_on_enter:
+        handle_bounce(falling_only=True)
 
 
 def handle_swap():
@@ -130,13 +137,15 @@ def _execute_swap():
     state.player.selected_lane = None
 
 
-def handle_bounce():
+def handle_bounce(falling_only=False):
     """Handle UP key for bouncing birds.
 
     Processes ALL birds in the affected lanes (multiple birds can be in same lane due to portals).
+    ``falling_only`` (bounce on enter) leaves rising birds and dormant eggs alone.
     """
     # Record last UP press time (for Purple hold-to-charge)
-    state.special.last_up_time = clock.now()
+    if not falling_only:
+        state.special.last_up_time = clock.now()
 
     lanes = get_affected_lanes()
 
@@ -146,6 +155,8 @@ def handle_bounce():
 
         for bird_idx in birds_in_lane:
             if state.birds.lost[bird_idx]:
+                continue
+            if falling_only and state.birds.vy[bird_idx] != 1:
                 continue
 
             bird_color = state.birds.colors[bird_idx]
