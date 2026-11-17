@@ -370,7 +370,9 @@ def draw_loot(fb):
                 # Rarity eggs: grey, green, blue, purple, yellow, white
                 from src.ui.layers.choice import RARITY_COLORS
 
-                char, color = '⬯', RARITY_COLORS.get(rarity, power_color)
+                # Hollow and filled in turn, so a dropped egg catches the eye
+                char = '⬯' if (state.game.frame_count // 4) % 2 == 0 else '⬮'
+                color = RARITY_COLORS.get(rarity, power_color)
             elif loot_type in loot_symbols:
                 char, color_name = loot_symbols[loot_type]
                 color = get_dynamic_color(color_name)

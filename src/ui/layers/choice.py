@@ -2,18 +2,20 @@
 
 from src.core import constants, state
 from src.engine import cards
-from src.entities.sprites import BLUE, DARK_GRAY, GREEN, PURPLE, RED, WHITE, YELLOW
-from src.ui.colors import MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
+from src.entities.sprites import GREEN, RED, YELLOW
+from src.ui.colors import MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR, apply_bold
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
-# Egg and card colours by rarity: grey, green, blue, purple, yellow, white
+# Egg and card colours by rarity: grey, green, blue, purple, yellow, white.
+# Bright, bold 256-colour shades: the biome backgrounds are dark greens and
+# greys, and the theme's own grey and green vanished into them.
 RARITY_COLORS = {
-    'common': DARK_GRAY,
-    'uncommon': GREEN,
-    'rare': BLUE,
-    'epic': PURPLE,
-    'legendary': YELLOW,
-    'mythical': WHITE,
+    'common': apply_bold('\033[38;5;252m'),
+    'uncommon': apply_bold('\033[38;5;83m'),
+    'rare': apply_bold('\033[38;5;39m'),
+    'epic': apply_bold('\033[38;5;201m'),
+    'legendary': apply_bold('\033[38;5;226m'),
+    'mythical': apply_bold('\033[38;5;231m'),
 }
 _KIND_TAGS = {'cursed': ' ☠', 'boost': ' ⏱', 'bird': ' ⬯', 'pact': ''}
 
