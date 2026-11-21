@@ -57,6 +57,8 @@ class RunStats:
         self.shots = Counter()  # 'RED +2' (bonus), 'PURPLE tier 3', 'hits'
         self.damage = Counter()  # 'contact', 'shot', 'dot', 'boss', 'kind RED'...
         self.lost_by_level = Counter()
+        self.deaths = []  # context of every bird lost (see _on_bird_lost)
+        self.boss_seconds = Counter()  # level -> seconds with a boss on screen
         self.offers = Counter()  # offer kind ('egg', 'pact') -> count
         self.decisions = []  # every card / pact taken, with its context (see decision_context)
         self.bosses = {}  # boss type -> {'spawned': s, 'defeated': s or None}
@@ -113,6 +115,11 @@ class RunStats:
     def _on_shot_hit(self, bird, kind, damage):
         self.shots['hits'] += 1
 
+    def _on_power_effect(self, bird, kind, effect, count):
+        self.powers[f'{kind} {effect}'] += count
+        if count == 0:
+            self.powers[f'{kind} {effect}: none'] += 1
+
     def _on_damage_dealt(self, bird, kind, source, target, amount):
         self.damage[source] += amount
         self.damage[f'kind {kind}'] += amount
@@ -122,6 +129,20 @@ class RunStats:
     def _on_bird_lost(self, bird, color, cause):
         self.lost[cause] += 1
         self.lost_by_level[state.game.level] += 1
+        special = state.special
+        self.deaths.append(
+            {
+                'level': state.game.level,
+                'cause': cause,
+                'gear': state.game.speed,
+                'scared': bird in special.scared_birds,
+                'stunned': bird in special.stunned_birds,
+                'boss': state.enemies.boss is not None,
+                'bats': len(state.enemies.bats) + len(state.enemies.mini_bats),
+                'obstacles': len(state.enemies.obstacles),
+                'alive': sum(1 for lost in state.birds.lost if not lost),
+            }
+        )
 
     def _on_bat_killed(self, bat, tier, killer):
         self.kills[f'bat tier {tier}'] += 1
@@ -153,6 +174,7 @@ class RunStats:
             'power_fired': self._on_power_fired,
             'shot_fired': self._on_shot_fired,
             'shot_hit': self._on_shot_hit,
+            'power_effect': self._on_power_effect,
             'damage_dealt': self._on_damage_dealt,
             'bird_lost': self._on_bird_lost,
             'bat_killed': self._on_bat_killed,
@@ -172,6 +194,8 @@ class RunStats:
     # ------------------------------------------------------------------ samples
 
     def sample(self, seconds):
+        if state.enemies.boss is not None and self.samples:
+            self.boss_seconds[state.game.level] += seconds - self.samples[-1][0]
         self.seconds = seconds
         game = state.game
         alive = sum(1 for lost in state.birds.lost if not lost)
@@ -201,6 +225,13 @@ class RunStats:
         }
 
     # ------------------------------------------------------------------ summary
+
+    def _level_seconds(self):
+        """Seconds spent at each level (from the samples)."""
+        out = Counter()
+        for (t0, level, *_r), (t1, *_s) in zip(self.samples, self.samples[1:]):
+            out[level] += t1 - t0
+        return dict(out)
 
     def _decision_outcomes(self):
         """Each decision with what followed it within DECISION_HORIZON seconds."""
@@ -260,6 +291,10 @@ class RunStats:
             'shots': dict(self.shots),
             'damage': dict(self.damage),
             'lost_by_level': dict(self.lost_by_level),
+            'deaths': self.deaths,
+            'boss_seconds': dict(self.boss_seconds),
+            'level_seconds': self._level_seconds(),
+            'curve': [(round(s[0], 1), s[1], s[4]) for s in self.samples],  # (seconds, level, birds alive)
             'eggs_opened': self.offers.get('egg', 0),
             'cards_by_kind': dict(Counter(kind for _o, kind, _r, _id in egg_picks)),
             'cards_by_rarity': {r: sum(1 for p in egg_picks if p[2] == r) for r in RARITIES},

@@ -25,6 +25,11 @@ def compute_gear_from_momentum(momentum):
     Gear controls game speed. Uses exponential progression.
     """
     max_gear = getattr(constants.speed, 'max_speed', 10)
+    # Each world can cap the gear (speed.max_gear_by_world): speed ramps up world by world
+    by_world = getattr(constants.speed, 'max_gear_by_world', None)
+    if by_world:
+        by_world = list(by_world)
+        max_gear = min(max_gear, int(by_world[min(max(1, state.game.level_group), len(by_world)) - 1]))
 
     gear = 1
     while momentum >= calculate_gear_threshold(gear + 1):

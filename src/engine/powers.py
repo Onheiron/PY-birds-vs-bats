@@ -12,7 +12,6 @@ from src.engine.birds import (
     reset_bird_power,
     set_ball_vy,
 )
-from src.engine.grades import compute_grade_from_xp
 from src.engine.logic.drops import drop_loot
 from src.engine.progression import hp_scale
 from src.entities.bird_types import BirdType, get_bird_type_by_color
@@ -60,6 +59,7 @@ def activate_bird_power(bird_idx):
 
 def _power_yellow(bird_idx, bird_lane):
     """Yellow power: bounce adjacent yellows, slow others."""
+    bounced = slowed = 0
     for adj_offset in [-1, 1]:
         adj_lane = bird_lane + adj_offset
         if not (0 <= adj_lane < constants.layout.num_lanes):
@@ -78,6 +78,7 @@ def _power_yellow(bird_idx, bird_lane):
                 continue
             set_ball_vy(adj_bird, -1)
             reset_bird_power(adj_bird)
+            bounced += 1
             # Cure scared blue birds nearby
             _cure_nearby_scared_blues(adj_lane)
         else:
@@ -85,10 +86,14 @@ def _power_yellow(bird_idx, bird_lane):
             state.special.speed_boosts[adj_bird] = -int(
                 3.0 * stats.bird(bird_idx, 'power_duration') / constants.timing.base_sleep
             )
+            slowed += 1
+    events.emit('power_effect', bird=bird_idx, kind='YELLOW', effect='bounced', count=bounced)
+    events.emit('power_effect', bird=bird_idx, kind='YELLOW', effect='slowed', count=slowed)
 
 
 def _cure_nearby_scared_blues(lane):
     """Cure scared blue birds in adjacent lanes."""
+    cured = 0
     for cross_offset in [-1, 1]:
         cross_lane = lane + cross_offset
         if not (0 <= cross_lane < constants.layout.num_lanes):
@@ -102,6 +107,9 @@ def _cure_nearby_scared_blues(lane):
                 and state.birds.vy[bi] == 1
             ):
                 del state.special.scared_birds[bi]
+                cured += 1
+    if cured:
+        events.emit('power_effect', bird=-1, kind='YELLOW', effect='blues cured', count=cured)
 
 
 def _power_red(bird_idx, bird_lane):
@@ -198,6 +206,7 @@ def _power_blue(bird_idx, _bird_lane=None):
 
 def _power_white(bird_idx, bird_lane):
     """White power: affect 4 adjacent lanes."""
+    bounced = relayed = 0
 
     for adj_offset in [-2, -1, 1, 2]:
         adj_lane = bird_lane + adj_offset
@@ -219,11 +228,14 @@ def _power_white(bird_idx, bird_lane):
                 continue
             set_ball_vy(adj_bird, -1)
             reset_bird_power(adj_bird)
+            bounced += 1
         elif state.birds.vy[adj_bird] == -1:  # Rising - activate power
-            label, _ = compute_grade_from_xp(state.birds.per_bird_xp[adj_bird])
-            adj_allowed = 2 if (label and label.startswith('A')) else 1
-            if allow_consume_power(adj_bird, adj_allowed):
+            adj_allowed = int(stats.bird(adj_bird, 'power_uses'))
+            if get_bird_type_by_color(adj_color) in RELAYED_BY_WHITE and allow_consume_power(adj_bird, adj_allowed):
                 _activate_adjacent_power(adj_bird, adj_lane)
+                relayed += 1
+    events.emit('power_effect', bird=bird_idx, kind='WHITE', effect='bounced', count=bounced)
+    events.emit('power_effect', bird=bird_idx, kind='WHITE', effect='relayed', count=relayed)
 
 
 def _activate_adjacent_power(adj_bird, adj_lane):

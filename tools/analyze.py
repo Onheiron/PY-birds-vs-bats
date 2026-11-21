@@ -351,6 +351,293 @@ def _table(effects, min_samples, limit=None):
     return '\n'.join(lines)
 
 
+# ---------------------------------------------------------------------- levels and powers
+
+
+def _simple_runs(args, formation=None):
+    from src.sim.bot import PROFILES
+    from src.sim.options import DIFFICULTIES
+    from src.sim.runner import RunConfig
+
+    configs = [
+        RunConfig(
+            seed=args.seed + k,
+            difficulty=DIFFICULTIES[args.difficulty],
+            skill=PROFILES[args.bot],
+            max_minutes=args.max_minutes,
+            formation=formation,
+        )
+        for k in range(args.runs)
+    ]
+    return play(configs, args.jobs or os.cpu_count() or 1)
+
+
+def levels(args):
+    setup()
+    runs = _simple_runs(args)
+    print(level_report(runs))
+
+
+def level_report(runs):
+    """Per level: time spent, birds lost per minute (outside / during boss fights), and what they had in common."""
+    minutes, boss_minutes = defaultdict(float), defaultdict(float)
+    deaths = defaultdict(list)
+    reached = defaultdict(int)
+    for r in runs:
+        for level, sec in r.get('level_seconds', {}).items():
+            minutes[int(level)] += sec / 60
+        for level, sec in r.get('boss_seconds', {}).items():
+            boss_minutes[int(level)] += sec / 60
+        for d in r.get('deaths', []):
+            deaths[d['level']].append(d)
+        for level in range(1, r['level'] + 1):
+            reached[level] += 1
+    lines = [f'# Difficulty by level ({len(runs)} games)\n']
+    lines.append(
+        '| Level | Games there | Minutes | Lost / min | outside boss | during boss | scared | stunned | '
+        'bats on screen | gear |'
+    )
+    lines.append('|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|')
+    for level in sorted(minutes):
+        ds = deaths.get(level, [])
+        total = minutes[level]
+        boss_t = boss_minutes.get(level, 0.0)
+        out_t = max(1e-9, total - boss_t)
+        in_boss = [d for d in ds if d['boss']]
+        out_boss = [d for d in ds if not d['boss']]
+
+        def share(key, ds=ds):
+            return f"{100 * sum(d[key] for d in ds) / len(ds):.0f}%" if ds else '-'
+
+        bats = f"{mean([d['bats'] for d in ds]):.1f}" if ds else '-'
+        gear = f"{mean([d['gear'] for d in ds]):.1f}" if ds else '-'
+        boss_rate = f'{len(in_boss) / boss_t:.2f}' if boss_t > 0.05 else '-'
+        lines.append(
+            f'| {level} | {reached[level]} | {total:.1f} | {len(ds) / max(total, 1e-9):.2f} | '
+            f'{len(out_boss) / out_t:.2f} | {boss_rate} | {share("scared")} | {share("stunned")} | {bats} | {gear} |'
+        )
+    lines.append('\n"scared" / "stunned": share of the birds lost that were scared (by a bat) or stunned (by an')
+    lines.append('obstacle) when they hit the floor; "bats on screen" and "gear" at the moment of the loss.')
+    return '\n'.join(lines)
+
+
+def powers(args):
+    setup()
+    formation = [b.strip().upper() for b in args.formation.split(',')] if args.formation else None
+    runs = _simple_runs(args, formation)
+    print(power_report(runs))
+
+
+def power_report(runs):
+    totals = defaultdict(float)
+    for r in runs:
+        for key, value in r.get('powers', {}).items():
+            totals[key] += value
+        for key, value in r.get('shots', {}).items():
+            totals[f'shots {key}'] += value
+    n = len(runs)
+    lines = [f'# How the powers are used ({n} games; per game)\n', '| Count | Per game |', '|---|--:|']
+    for key in sorted(totals):
+        lines.append(f'| {key.lower()} | {totals[key] / n:.2f} |')
+    return '\n'.join(lines)
+
+
+# ---------------------------------------------------------------------- cards (power-ups)
+
+
+def cards_analysis(args):
+    """What each power-up is worth over a run: cards taken early vs progress made later."""
+    setup()
+    from dataclasses import replace
+
+    from src.sim.bot import PROFILES
+    from src.sim.options import DIFFICULTIES
+    from src.sim.runner import RunConfig
+
+    skill = replace(PROFILES[args.bot], card_policy='random', pact_policy='refuse')
+    configs = [
+        RunConfig(
+            seed=args.seed + k, difficulty=DIFFICULTIES[args.difficulty], skill=skill, max_minutes=args.window * 2
+        )
+        for k in range(args.runs)
+    ]
+    runs = play(configs, args.jobs or os.cpu_count() or 1)
+    print(cards_report(runs, args.window * 60))
+    if args.json:
+        Path(args.json).write_text(json.dumps(runs, indent=1, default=str))
+
+
+def _level_at(curve, t):
+    """(level, birds alive, still playing) at second ``t`` of a run."""
+    last = None
+    for sec, level, alive in curve:
+        if sec > t:
+            break
+        last = (level, alive)
+    playing = bool(curve) and curve[-1][0] >= t
+    return (*(last or (1, 0)), playing)
+
+
+def _ridge(rows, targets, names, alpha=1.0):
+    """Ridge regression (pure Python): coefficients and their standard errors."""
+    k = len(names)
+    n = len(rows)
+    # Normal equations (X'X + alpha I) b = X'y, with an intercept (not penalised)
+    xtx = [[0.0] * (k + 1) for _ in range(k + 1)]
+    xty = [0.0] * (k + 1)
+    for row, y in zip(rows, targets):
+        x = [1.0] + row
+        for i in range(k + 1):
+            xty[i] += x[i] * y
+            for j in range(k + 1):
+                xtx[i][j] += x[i] * x[j]
+    for i in range(1, k + 1):
+        xtx[i][i] += alpha
+    inverse = _invert(xtx)
+    beta = [sum(inverse[i][j] * xty[j] for j in range(k + 1)) for i in range(k + 1)]
+    residuals = [y - (beta[0] + sum(b * v for b, v in zip(beta[1:], row))) for row, y in zip(rows, targets)]
+    sigma2 = sum(r * r for r in residuals) / max(1, n - k - 1)
+    se = [math.sqrt(max(0.0, sigma2 * inverse[i][i])) for i in range(k + 1)]
+    return {name: (beta[i + 1], se[i + 1]) for i, name in enumerate(names)}
+
+
+def _invert(matrix):
+    n = len(matrix)
+    a = [row[:] + [1.0 if i == j else 0.0 for j in range(n)] for i, row in enumerate(matrix)]
+    for col in range(n):
+        pivot = max(range(col, n), key=lambda r: abs(a[r][col]))
+        a[col], a[pivot] = a[pivot], a[col]
+        p = a[col][col] or 1e-12
+        a[col] = [v / p for v in a[col]]
+        for r in range(n):
+            if r != col and a[r][col]:
+                f = a[r][col]
+                a[r] = [v - f * w for v, w in zip(a[r], a[col])]
+    return [row[n:] for row in a]
+
+
+def _stat_amounts(decision):
+    """{stat: amount} a card adds (pct for multipliers, points otherwise), from the catalog."""
+    from src.engine import cards
+
+    card_id = decision['card']
+    entry = cards._catalog().get(card_id)
+    if entry is None:
+        return {}
+    card = cards._make_card(card_id, entry, decision['rarity'])
+    out = {}
+    for effect in card['effects'] + card['drawbacks']:
+        if 'stat' in effect and not effect.get('seconds'):
+            key = effect['stat'] + (' %' if 'pct' in effect else '')
+            out[key] = out.get(key, 0) + (effect['pct'] if 'pct' in effect else effect.get('add', 0))
+    return out
+
+
+def cards_report(runs, window):
+    """Cards taken in the first ``window`` seconds vs levels gained in the next ``window`` seconds."""
+    from src.engine import cards as card_module
+
+    early_runs = []
+    for r in runs:
+        curve = r.get('curve', [])
+        level_mid, alive_mid, playing = _level_at(curve, window)
+        if not playing:
+            continue
+        level_end, _alive, still = _level_at(curve, 2 * window)
+        if not still:
+            level_end = r['level']
+        taken = [d for d in r.get('decisions', []) if d['offer'] == 'egg' and d['t'] <= window]
+        early_runs.append((r, taken, level_mid, alive_mid, level_end - level_mid, r['end'] == 'game over'))
+    if len(early_runs) < 20:
+        return '(not enough games alive at the half-way point: run more)'
+
+    card_ids = sorted({d['card'] for _r, taken, *_ in early_runs for d in taken})
+    names = [f'card {c}' for c in card_ids] + ['eggs opened', 'level at half-time', 'birds at half-time']
+    rows, gains, deaths = [], [], []
+    stat_rows = []
+    for _r, taken, level_mid, alive_mid, gain, died in early_runs:
+        counts = defaultdict(float)
+        for d in taken:
+            # A rarer card counts more: weight = its rarity scale
+            counts[d['card']] += card_module.rarity_scale(d['rarity']) if not d['card'].startswith('bird:') else 1
+        rows.append([counts.get(c, 0.0) for c in card_ids] + [len(taken), level_mid, alive_mid])
+        gains.append(gain)
+        deaths.append(1.0 if died else 0.0)
+        amounts = defaultdict(float)
+        for d in taken:
+            for stat, value in _stat_amounts(d).items():
+                amounts[stat] += value
+        stat_rows.append(amounts)
+
+    fit = _ridge(rows, gains, names, alpha=2.0)
+    lines = [f'# Power-ups: what each is worth ({len(early_runs)} games alive at {window // 60} min)\n']
+    lines.append(f'Cards taken (at random) in the first {window // 60} minutes against the levels gained in the next')
+    lines.append(
+        f'{window // 60}; one "card" = one common copy (rarer copies count their rarity scale: an epic is 3.5).'
+    )
+    lines.append('The level reached, birds alive and eggs opened at half-time are held constant.\n')
+    lines.append('| Power-up | Levels per common copy | ± | Times taken |')
+    lines.append('|---|--:|--:|--:|')
+    taken_count = defaultdict(int)
+    for _r, taken, *_ in early_runs:
+        for d in taken:
+            taken_count[d['card']] += 1
+    ranked = sorted(((fit[f'card {c}'][0], c) for c in card_ids), reverse=True)
+    for _value, c in ranked:
+        b, se = fit[f'card {c}']
+        mark = ' *' if abs(b) > 2 * se else ''
+        lines.append(f'| {c}{mark} | {b:+.3f} | {se:.3f} | {taken_count[c]} |')
+
+    stats = sorted({k for row in stat_rows for k in row})
+    units = {
+        s: (
+            10
+            if s.endswith('%')
+            else 0.1
+            if s
+            in (
+                'crit_chance',
+                'fear_resist',
+                'fear_immunity',
+                'floor_save',
+                'luck',
+                'egg_luck',
+                'vs_bats',
+                'vs_obstacles',
+                'vs_elites',
+            )
+            else 1
+        )
+        for s in stats
+    }
+    srows = [
+        [row.get(s, 0.0) / units[s] for s in stats] + [base[-3], base[-2], base[-1]]
+        for row, base in zip(stat_rows, rows)
+    ]
+    sfit = _ridge(srows, gains, stats + ['eggs', 'level', 'alive'], alpha=2.0)
+    lines.append('\n## By stat (every card that raises it, added up)\n')
+    lines.append('| Stat | Unit | Levels per unit | ± |')
+    lines.append('|---|--:|--:|--:|')
+    for s in sorted(stats, key=lambda s: -sfit[s][0]):
+        b, se = sfit[s]
+        mark = ' *' if abs(b) > 2 * se else ''
+        unit = f'+{units[s]:g}%' if s.endswith('%') else f'+{units[s]:g}'
+        lines.append(f'| {s.replace(" %", "")}{mark} | {unit} | {b:+.3f} | {se:.3f} |')
+
+    # Stacking: levels gained by how much damage the flock got
+    lines.append('\n## Stacking (levels gained by total bonus taken)\n')
+    for s in [x for x in stats if sum(1 for row in stat_rows if row.get(x)) >= 20][:8]:
+        lo = [g for row, g in zip(stat_rows, gains) if row.get(s, 0.0) == 0]
+        mid = [g for row, g in zip(stat_rows, gains) if 0 < row.get(s, 0.0) <= units[s] * 2]
+        hi = [g for row, g in zip(stat_rows, gains) if row.get(s, 0.0) > units[s] * 2]
+        lines.append(
+            f'- **{s}**: none {mean(lo):.2f} ({len(lo)} games), up to 2 units {mean(mid):.2f} ({len(mid)}), '
+            f'more {mean(hi):.2f} ({len(hi)})'
+        )
+    lines.append('\n* = larger than twice its standard error. Rare cards are taken too seldom for a clear value.')
+    return '\n'.join(lines)
+
+
 # ---------------------------------------------------------------------- main
 
 
@@ -361,7 +648,7 @@ def main(argv=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest='analysis', required=True)
-    for name in ('factors', 'decisions'):
+    for name in ('factors', 'decisions', 'levels', 'powers', 'cards'):
         p = sub.add_parser(name)
         p.add_argument('--runs', type=int, default=120, help='games to play (default 120)')
         p.add_argument('--jobs', type=int, default=0, help='parallel processes (default: all CPUs)')
@@ -386,8 +673,15 @@ def main(argv=None):
     sub.choices['decisions'].add_argument(
         '--min-samples', type=int, default=15, help='times a card must be taken to be reported (default 15)'
     )
+    sub.choices['powers'].add_argument(
+        '--formation',
+        default='YELLOW,PATCHWORK,YELLOW,RED,PURPLE,RED,BLUE,WHITE,BLUE',
+        help='starting flock (default: one with every synergy)',
+    )
+    sub.choices['cards'].add_argument('--window', type=int, default=6, help='minutes of each half (default 6)')
     args = parser.parse_args(argv)
-    {'factors': factors, 'decisions': decisions}[args.analysis](args)
+    analyses = {'factors': factors, 'decisions': decisions, 'levels': levels, 'powers': powers, 'cards': cards_analysis}
+    analyses[args.analysis](args)
 
 
 if __name__ == '__main__':

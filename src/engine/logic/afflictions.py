@@ -18,7 +18,7 @@ and the kill, go to the bird that applied it.
 import random
 
 from src.core import constants, state
-from src.engine import clock, enemy_stats, stats
+from src.engine import clock, enemy_stats, events, stats
 from src.entities.bird_types import get_bird_type_by_color
 
 # Bird type -> (affliction, config section, state.special table, its power's boost table)
@@ -54,6 +54,8 @@ def try_afflict(bird_idx, target, is_boss=False):
         chance *= float(getattr(constants.combat, 'boss_affliction_factor', 0.33))
     if random.random() >= chance:
         return None
+    if bird_idx in boosts and now < boosts[bird_idx]:
+        events.emit('power_effect', bird=bird_idx, kind=kind, effect='boosted afflictions', count=1)
 
     entry = {'bat': target, 'owner': bird_idx, 'last_tick': now}
     if name == 'frozen':

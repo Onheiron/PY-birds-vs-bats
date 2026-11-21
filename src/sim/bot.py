@@ -71,6 +71,9 @@ class Skill:
     cull_others: bool = False  # let non-favourite birds fall to free lanes for eggs
     min_lives_to_cull: int = 3  # never let birds go on purpose with this many lives or fewer
     swap_slack: int = 45  # frames of slack a strategic swap needs before the next bird is due
+    # Powers
+    purple_charge: float = 2.0  # seconds a Purple charges before release (0 = fire at once)
+    red_battery: bool = True  # hold a Red shot until its shooter neighbours rise, unless the enemy is close
 
 
 PROFILES = {
@@ -311,6 +314,8 @@ class Bot:
                 useful = True
             elif bird_type in _ATTACK_POWERS:
                 useful = lane in enemy_lanes.get(i, ())
+                if useful and bird_type == BirdType.RED and self.skill.red_battery:
+                    useful = self._red_ready(i, lane)
             elif bird_type in _SUPPORT_POWERS:
                 reach = _SUPPORT_POWERS[bird_type]
                 useful = self._falling_neighbour(lane, reach)
@@ -321,6 +326,43 @@ class Bot:
                 if best is None or cost < best[0]:
                     best = (cost, lane)
         return best[1] if best else None
+
+    def _red_ready(self, i, lane):
+        """Fire a Red now? Yes if its shooter neighbours are rising, there are none, or the enemy is near."""
+        shooters = (BirdType.RED, BirdType.PURPLE, BirdType.PATCHWORK)
+        neighbours = [
+            j
+            for j in range(constants.layout.num_balls)
+            if not state.birds.lost[j]
+            and abs(state.birds.random_lanes[j] - lane) == 1
+            and get_bird_type_by_color(state.birds.colors[j]) in shooters
+        ]
+        if not neighbours or any(state.birds.vy[j] == -1 for j in neighbours):
+            return True
+        x = constants.layout.lane_positions[lane]
+        near = [
+            e for e in state.enemies.bats if abs(e['x_pos'] + 4 - x) <= 3 and 0 <= state.birds.y[i] - e['y_pos'] <= 6
+        ]
+        return bool(near)
+
+    def _purple_charge_key(self, slack):
+        """Keep a charging Purple charging (UP within 0.6 s) until it reaches purple_charge seconds."""
+        if self.skill.purple_charge <= 0:
+            return None
+        now = clock.now()
+        for i in range(constants.layout.num_balls):
+            if state.birds.lost[i] or state.special.purple_state[i] != 2:
+                continue
+            charged = now - state.special.purple_charge_started_frame[i]
+            if charged >= self.skill.purple_charge:
+                return None  # let it go: no more UP, it fires on release
+            if now - state.special.last_up_time < 0.35 or slack < self.skill.safety_frames * 3:
+                return None
+            lane = state.birds.random_lanes[i]
+            if lane in get_affected_lanes():
+                return self._bindings()[2]
+            return self._key_towards(lane, False)
+        return None
 
     def _enemy_lanes(self):
         """For each bird, the lanes where an enemy sits above it."""
@@ -477,6 +519,9 @@ class Bot:
                 self.plan = None
             else:
                 return self._swap_key()
+        charge = self._purple_charge_key(slack_min)
+        if charge is not None:
+            return charge
         if targets:
             slack, lane, _bird, _ready = min(targets)
             if slack <= self.skill.safety_frames:

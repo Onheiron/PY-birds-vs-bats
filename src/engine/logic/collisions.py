@@ -235,6 +235,8 @@ def check_bird_bat_collision():
 
             # Hit bat
             damage = calculate_bird_damage(i, 'elite' if bat.get('elite') else 'bat')
+            if state.special.speed_boosts.get(i, 0) > 0 and state.birds.colors[i] == BLUE:
+                events.emit('power_effect', bird=i, kind='BLUE', effect='sprint hits', count=1)
 
             # Defences and armor (armor is lowered by FROZEN/BLEEDING debuffs)
             if bird_color != ORANGE:
