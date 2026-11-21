@@ -232,18 +232,18 @@ bat_enemy:
       level_16_18: 0.20            # 20% - more common late game
   # Spawn rate per level range (frames between spawns)
   spawn_rate_by_level:
-    level_4_6: 200
-    level_7_9: 150
-    level_10_12: 100
-    level_13_15: 70
+    level_4_6: 150
+    level_7_9: 110
+    level_10_12: 85
+    level_13_15: 65
     level_16_18: 50
   # Max bats on screen per level range
   max_bats_by_level:
-    level_4_6: 1
-    level_7_9: 2
-    level_10_12: 3
-    level_13_15: 4
-    level_16_18: 5
+    level_4_6: 2
+    level_7_9: 3
+    level_10_12: 4
+    level_13_15: 5
+    level_16_18: 6
   # Tier weights per level range [tier1, tier2, tier3, tier4]
   # Note: Tier 0 (mini bats) spawn from obstacles, not directly - see mini_bat config
   tier_weights_by_level:
@@ -293,7 +293,7 @@ boss:
 wind_boss:
   level: 6                          # Which level this boss appears (2-3 = level 6)
   spawn_miles_before_transition: 1  # Spawn 1 mile before level end
-  hp: 6000                           # Slightly more HP than regular boss
+  hp: 4500                           # Slightly more HP than regular boss
   armor_reduction: 10
   # Animation timing
   anim_frames_per_step: 8           # Frames between animation steps
@@ -618,6 +618,9 @@ progression:
 speed:
   min_speed: 1                    # Starting speed level
   max_speed: 10                   # Maximum speed level (uses same score thresholds as old levels 1-10)
+  # Highest gear in each world: speed is the main source of difficulty, so it ramps up
+  # world by world (a slow first world to learn, a jump into the second)
+  max_gear_by_world: [5, 8, 8, 9, 10, 10]
   mph_per_level: 40               # Miles per hour per speed level (40 = 40mph at speed 1, 400mph at speed 10)
   starting_momentum: 100          # Initial momentum at game start
   momentum_gain_multiplier: 100.0 # Multiplier for momentum gain (higher = faster speed progression)

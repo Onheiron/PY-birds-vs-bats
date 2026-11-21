@@ -5301,6 +5301,12 @@
     },
     "speed": {
       "properties": {
+        "max_gear_by_world": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
         "max_speed": {
           "type": "number"
         },
