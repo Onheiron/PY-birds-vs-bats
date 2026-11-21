@@ -1725,6 +1725,9 @@
                 "speed": {
                   "type": "number"
                 },
+                "speed_damage": {
+                  "type": "number"
+                },
                 "vs_bats": {
                   "type": "number"
                 },

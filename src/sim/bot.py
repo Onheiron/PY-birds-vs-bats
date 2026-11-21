@@ -13,8 +13,13 @@ How it plays:
 2. Height second. With no emergency it bounces the reachable falling bird
    nearest to the cursor, as early as possible: a flock that stays high
    builds momentum, gears and score.
-3. Powers when idle. It fires a rising bird's power when it helps (an enemy
-   ahead, a neighbour to bounce, a charge to refill) and nothing is urgent.
+3. Powers when they count. Bouncing a bird and pressing UP again fires its
+   power at once, so the question is when a power counts: a Blue or Red with an
+   enemy above (a Red once its shooter neighbours rise too), a Yellow or White
+   with falling neighbours. Powers under the cursor go before bounces that can
+   wait; powers that need travel only when nothing needs bouncing. A rising
+   White is a hub: one UP on it bounces every falling bird within two lanes,
+   so the bot goes to it when it is closer than the falling bird.
 4. Anticipation. Otherwise it waits under the bird that will start falling
    next, and tends to dormant Orange eggs and fading Rainbow birds.
 
@@ -293,39 +298,74 @@ class Bot:
         floor = constants.layout.height - 1
         return 1 + self.skill.bounce_from * (floor - 1)
 
-    def _power_target(self):
-        """Lane of a rising bird whose power is worth firing now, or None."""
+    def _power_useful(self, i, enemy_lanes):
+        """Would firing rising bird ``i``'s power count right now?"""
+        if state.birds.lost[i] or state.birds.vy[i] != -1:
+            return False
+        # A1 grades and above (or cards) give more than one use per ascent
+        if state.birds.power_uses[i] >= int(stats.bird(i, 'power_uses')):
+            return False
+        lane = state.birds.random_lanes[i]
+        if lane in state.spells.silenced_lanes or i in state.special.poisoned_birds:
+            return False
+        bird_type = get_bird_type_by_color(state.birds.colors[i])
+        if bird_type in _FREE_POWERS:
+            return True
+        if bird_type in _ATTACK_POWERS:
+            # Blue sprints and Red shoots only into an enemy; a Red waits for its battery
+            useful = lane in enemy_lanes.get(i, ())
+            if useful and bird_type == BirdType.RED and self.skill.red_battery:
+                useful = self._red_ready(i, lane)
+            return useful
+        if bird_type in _SUPPORT_POWERS:
+            return self._falling_neighbour(lane, _SUPPORT_POWERS[bird_type])
+        if bird_type == BirdType.CLOCKWORK:
+            return state.special.clockwork_charge.get(i, 3) < getattr(constants.clockwork, 'max_charge', 3)
+        return False
+
+    def _power_target(self, lanes=None):
+        """Lane of a rising bird whose power is worth firing now (only in ``lanes`` if given), or None."""
         if not self.skill.use_powers:
             return None
         best = None
         enemy_lanes = self._enemy_lanes()
         for i in range(constants.layout.num_balls):
-            if state.birds.lost[i] or state.birds.vy[i] != -1:
-                continue
-            # A1 grades and above (or cards) give more than one use per ascent
-            if state.birds.power_uses[i] >= int(stats.bird(i, 'power_uses')):
-                continue
             lane = state.birds.random_lanes[i]
-            if lane in state.spells.silenced_lanes or i in state.special.poisoned_birds:
+            if lanes is not None and lane not in lanes:
                 continue
-            bird_type = get_bird_type_by_color(state.birds.colors[i])
-            useful = False
-            if bird_type in _FREE_POWERS:
-                useful = True
-            elif bird_type in _ATTACK_POWERS:
-                useful = lane in enemy_lanes.get(i, ())
-                if useful and bird_type == BirdType.RED and self.skill.red_battery:
-                    useful = self._red_ready(i, lane)
-            elif bird_type in _SUPPORT_POWERS:
-                reach = _SUPPORT_POWERS[bird_type]
-                useful = self._falling_neighbour(lane, reach)
-            elif bird_type == BirdType.CLOCKWORK:
-                useful = state.special.clockwork_charge.get(i, 3) < getattr(constants.clockwork, 'max_charge', 3)
-            if useful:
+            if self._power_useful(i, enemy_lanes):
                 cost = self._travel_frames(lane)
                 if best is None or cost < best[0]:
                     best = (cost, lane)
         return best[1] if best else None
+
+    def _hub_lane(self, lane):
+        """A rising White whose power would bounce the bird in ``lane`` from closer by, or ``lane``.
+
+        One UP on the White bounces every falling bird within two lanes, so the
+        cursor need not travel to each of them.
+        """
+        if not self.skill.use_powers:
+            return lane
+        best, best_cost = lane, self._travel_frames(lane)
+        for i in range(constants.layout.num_balls):
+            if state.birds.lost[i] or state.birds.vy[i] != -1:
+                continue
+            if get_bird_type_by_color(state.birds.colors[i]) != BirdType.WHITE:
+                continue
+            white_lane = state.birds.random_lanes[i]
+            if abs(white_lane - lane) > 2 or white_lane == lane:
+                continue
+            if state.birds.power_uses[i] >= int(stats.bird(i, 'power_uses')):
+                continue
+            if white_lane in state.spells.silenced_lanes or i in state.special.poisoned_birds:
+                continue
+            cost = self._travel_frames(white_lane)
+            if cost < best_cost:
+                best, best_cost = white_lane, cost
+        if best != lane:
+            self.counts['white hub'] += 1
+        return best
 
     def _red_ready(self, i, lane):
         """Fire a Red now? Yes if its shooter neighbours are rising, there are none, or the enemy is near."""
@@ -525,19 +565,26 @@ class Bot:
         if targets:
             slack, lane, _bird, _ready = min(targets)
             if slack <= self.skill.safety_frames:
-                return self._key_towards(lane, True)
-            # Nothing urgent: a power if there is time for it...
+                return self._key_towards(self._hub_lane(lane), True)
+            # The second UP: a power under the cursor that counts now costs no travel
+            if slack > self.skill.key_interval + self.skill.safety_frames:
+                here = self._power_target(lanes=get_affected_lanes())
+                if here is not None:
+                    key = self._key_towards(here, True)
+                    if key is not None:
+                        return key
+            # Bounce the closest bird that has fallen far enough (falling birds first)
+            ready = [t for t in targets if t[3]]
+            if ready:
+                _slack, lane, _bird, _ready = min(ready, key=lambda t: (self._travel_frames(t[1]), t[0]))
+                return self._key_towards(self._hub_lane(lane), True)
+            # Nothing to bounce yet: a power worth the trip if there is plenty of time,
+            # else wait under the bird that will need the cursor first
             power_lane = self._power_target()
             if power_lane is not None and self._travel_frames(power_lane) * 2 + self.skill.safety_frames < slack:
                 key = self._key_towards(power_lane, True)
                 if key is not None:
                     return key
-            # ...else bounce the closest bird that has fallen far enough,
-            # or wait under the one that will need it first
-            ready = [t for t in targets if t[3]]
-            if ready:
-                _slack, lane, _bird, _ready = min(ready, key=lambda t: (self._travel_frames(t[1]), t[0]))
-                return self._key_towards(lane, True)
             return self._key_towards(lane, False)
 
         power_lane = self._power_target()

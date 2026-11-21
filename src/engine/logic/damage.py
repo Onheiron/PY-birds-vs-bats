@@ -7,9 +7,24 @@ from src.engine import bird_kinds, clock, enemy_stats, events, stats
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import choose_loot_type, roll_drop_rarity
 from src.engine.progression import add_score, award_xp, hp_scale
-from src.entities.sprites import BLUE, GLITCH, ORANGE
+from src.entities.sprites import GLITCH, ORANGE
 
 VS_STAT = {'bat': 'vs_bats', 'obstacle': 'vs_obstacles', 'elite': 'vs_elites'}
+
+
+def active_speed_boost(bird_idx):
+    """Speed points a bird gains right now from boosts (never from the gear)."""
+    special = state.special
+    boost = 0.0
+    if state.birds.vy[bird_idx] == -1:
+        boost += stats.bird(bird_idx, 'rise_speed_bonus') / 10
+        if special.sprint_until.get(bird_idx, 0) > clock.now():
+            boost += stats.bird(bird_idx, 'bounce_sprint') / 10
+        if special.speed_boosts.get(bird_idx, 0) > 0:
+            boost += 1
+        if state.powerups.tailwind_active:
+            boost += max(0, state.powerups.tailwind_up_bonus)
+    return max(0.0, boost)
 
 
 def calculate_bird_damage(bird_idx, target='bat'):
@@ -58,9 +73,9 @@ def calculate_bird_damage(bird_idx, target='bat'):
         stealth_tangible_boost = getattr(constants.combat, 'stealth_tangible_dmg_boost', 4)
         dmg_boost += stealth_tangible_boost
 
-    # Blue power gives speed boost
-    if bird_color == BLUE and state.birds.power_used[bird_idx]:
-        spd_boost += 1
+    # Active speed boosts count (not the gear: that is gear_bonus): the rise
+    # bonus, the sprint after a bounce, power boosts (Blue) and tailwinds
+    spd_boost += active_speed_boost(bird_idx)
 
     # Scared birds have speed nerf (optional - could be damage nerf)
     if bird_idx in state.special.scared_birds:
