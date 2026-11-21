@@ -50,7 +50,12 @@ def test_gear_thresholds_are_increasing_and_match_gear_lookup():
     assert progression.compute_gear_from_momentum(0) == 1
     assert progression.compute_gear_from_momentum(thresholds[0]) == 2
     assert progression.compute_gear_from_momentum(thresholds[0] - 1) == 1
-    assert progression.compute_gear_from_momentum(10**12) == 10
+    # The top gear depends on the world (speed.max_gear_by_world)
+    caps = list(constants.speed.max_gear_by_world)
+    for world in (1, 2, 6):
+        state.game.level_group = world
+        assert progression.compute_gear_from_momentum(10**12) == caps[world - 1]
+    state.game.level_group = 1
 
 
 def test_momentum_factor_is_negative_low_and_positive_high():
