@@ -1,7 +1,7 @@
 """Timed effects: power-ups, bird states, spells and enemy debuffs."""
 
 from src.core import constants, state
-from src.engine import clock, events, stats
+from src.engine import clock, events, stats, synergies
 from src.engine.birds import check_pending_transforms, reset_bird_power
 from src.engine.notifications import notify
 from src.engine.progression import hp_scale
@@ -319,6 +319,7 @@ def _fire_purple_projectile(bird_idx, charge_seconds):
             'owner': bird_idx,
             'speed': 4,
             'color': PURPLE,
+            'afflict': synergies.shot_afflictions(bird_idx),
         }
     )
 

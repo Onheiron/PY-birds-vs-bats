@@ -551,6 +551,15 @@ glitch:
     max: 6
     min: 1
   swap_chance: 0.003
+# Synergies between birds in neighbouring lanes (src/engine/synergies.py).
+# Patchwork counts as the partner of every synergy.
+synergies:
+  yellow_cures_blue_rows: 1    # a scared falling Blue is cured passing a rising Yellow this many rows away
+  phoenix_per_red: 0.05        # wake chance of the Phoenix egg added by each Red next to it
+  yellow_clockwork_charge: 1   # charge the Yellow power adds to a Clockwork next to it
+  twister_sprint: 4            # Blue sprint after a bounce added by each Twister next to it (x10 scale)
+  cookie_xp: 0.25              # XP share a Cookie gains from each Cookie next to it
+
 orange:
   recover_chance: 0.1
 

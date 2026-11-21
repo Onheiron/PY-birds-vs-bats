@@ -323,6 +323,13 @@ def _scare_neighbours(bird_idx, bat, seconds):
             scare_bird(j, seconds * enemy_stats.get(bat, 'fear_strength'))
 
 
+def _afflict_from_shot(proj, target, is_boss=False):
+    """Frosty / Poison next to the shooter: the shot freezes or poisons what it hits."""
+    for j in proj.get('afflict', ()):
+        if 0 <= j < len(state.birds.lost) and not state.birds.lost[j]:
+            afflictions.try_afflict(j, target, is_boss=is_boss, always=True)
+
+
 def check_projectile_collision():
     """Check projectile-enemy collisions."""
     for proj in state.special.red_projectiles[:]:
@@ -345,6 +352,8 @@ def check_projectile_collision():
 
                 if bat['hp'] <= 0:
                     handle_bat_death(bat, owner if owner is not None else 0)
+                else:
+                    _afflict_from_shot(proj, bat)
 
                 events.emit('shot_hit', bird=proj.get('owner'), kind=proj.get('color'), damage=proj.get('damage', 0))
 
@@ -483,6 +492,8 @@ def check_projectile_collision():
                 if boss['hp'] <= 0:
                     boss['state'] = 'dying'
                     play_sfx('boss_death')
+                else:
+                    _afflict_from_shot(proj, boss, is_boss=True)
 
                 events.emit('shot_hit', bird=proj.get('owner'), kind=proj.get('color'), damage=proj.get('damage', 0))
 

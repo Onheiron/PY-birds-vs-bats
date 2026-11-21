@@ -5342,6 +5342,26 @@
       },
       "type": "object"
     },
+    "synergies": {
+      "properties": {
+        "cookie_xp": {
+          "type": "number"
+        },
+        "phoenix_per_red": {
+          "type": "number"
+        },
+        "twister_sprint": {
+          "type": "number"
+        },
+        "yellow_clockwork_charge": {
+          "type": "number"
+        },
+        "yellow_cures_blue_rows": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "tailwind": {
       "properties": {
         "down_penalty": {

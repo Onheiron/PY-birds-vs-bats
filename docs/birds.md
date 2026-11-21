@@ -68,14 +68,31 @@ afflictions stack. Marks above the enemy: `*` frozen, `%` poisoned, `~` bleeding
 
 ## Synergies
 
-- **Yellow chain:** a Yellow's power bounces the falling Yellow and Patchwork
-  birds next to it, and every bird bounced this way cures the scared Blue
-  birds beside it.
-- **Red battery:** a Red's projectile gains +1 damage for each neighbour that
-  is a rising Red, Purple or Patchwork; line them up and fire while they climb.
-- **White relay:** a White fires the powers of the rising Yellow, Red and Blue
-  birds within two lanes, and bounces the falling ones, in one press. Relayed
-  powers cost those birds their own use.
+A synergy is "X next to Y does Z": neighbours are the birds in the lanes right
+next to a bird. **Patchwork counts as the partner of every synergy** (passive).
+Values are in `config.yml` `synergies` (code: `src/engine/synergies.py`).
+
+- **Yellow next to Yellow:** a Yellow's power bounces the falling Yellow (and
+  Patchwork) next to it. Pairs of Yellows at the edges keep the cursor in the
+  middle.
+- **Red / Purple next to Red:** a Red's shot gains damage for each neighbour
+  (left and right) that is a rising Red, Purple or Patchwork; fire while they
+  climb.
+- **Yellow next to Blue:** a scared Blue falling past a rising Yellow (at most
+  1 row apart) is no longer scared, so it can be bounced again.
+- **Red next to Phoenix:** each Red adds +5% to the chance that UP wakes the
+  dormant Phoenix egg (base 10%).
+- **Yellow next to Clockwork:** the Yellow power slows the falling Clockwork
+  like any other bird and adds 1 to its charge (never above the maximum).
+- **Twister next to Blue:** each Twister adds +4 to the Blue's sprint after a
+  bounce (faster, and more damage: speed damage counts active boosts).
+- **Frosty / Poison next to Red or Purple:** the shots freeze or poison what
+  they hit (contact hits are not affected).
+- **Cookie next to Cookie:** each Cookie neighbour adds +25% to the XP a
+  Cookie earns, so its crumbs (75% of its XP) carry more.
+- **White relay** (its power, not a synergy): a White fires the powers of the
+  rising Yellow, Red and Blue birds within two lanes, and bounces the falling
+  ones, in one press. Relayed powers cost those birds their own use.
 - **Cookie feeding:** Cookie crumbs pass XP to whichever bird flies through
   them: a way to rank up a weak bird.
 - **Twister lanes:** its tailwind lifts its neighbours too.

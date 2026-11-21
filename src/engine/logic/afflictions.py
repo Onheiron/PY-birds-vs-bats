@@ -38,15 +38,21 @@ def _value(section, key, default):
     return getattr(_cfg(section), key, default)
 
 
-def try_afflict(bird_idx, target, is_boss=False):
-    """Maybe put the bird's affliction on ``target`` (a bat or the boss) after a contact hit."""
+def try_afflict(bird_idx, target, is_boss=False, always=False):
+    """Maybe put the bird's affliction on ``target`` (a bat or the boss) after a contact hit.
+
+    ``always``: a shot carrying the affliction (Frosty / Poison next to a shooter)
+    applies it every time (against a boss, the boss factor still applies).
+    """
     kind = get_bird_type_by_color(state.birds.colors[bird_idx])
     if kind not in AFFLICTIONS:
         return None
     name, section, table, boost_table = AFFLICTIONS[kind]
     now = clock.now()
     boosts = getattr(state.special, boost_table)
-    if bird_idx in boosts and now < boosts[bird_idx]:
+    if always:
+        chance = 1.0
+    elif bird_idx in boosts and now < boosts[bird_idx]:
         chance = _value(section, 'boosted_chance', 0.60)
     else:
         chance = stats.bird(bird_idx, 'affliction_chance')

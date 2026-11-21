@@ -263,7 +263,10 @@ def award_xp(bird_idx, xp_amount):
     # Some birds learn faster (Cookie: ×1.5, Quick Study cards...). Fractions of a
     # point are kept for the next award, so small bonuses are not lost to rounding.
     carry = state.special.xp_carry
-    xp = max(0.0, float(xp_amount)) * stats.bird(bi, 'xp_gain') + carry.get(bi, 0.0)
+    from src.engine import synergies
+
+    gain = stats.bird(bi, 'xp_gain') + synergies.xp_bonus(bi)
+    xp = max(0.0, float(xp_amount)) * gain + carry.get(bi, 0.0)
     whole = int(xp)
     carry[bi] = xp - whole
     state.birds.per_bird_xp[bi] += whole

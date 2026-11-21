@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from src.core import state
-from src.engine import choices, enemy_stats, events, stats
+from src.engine import choices, enemy_stats, events, stats, synergies
 from src.engine.bat_ai import update_bat_positions
 from src.engine.glitch import update_glitch_chaos
 from src.engine.logic import afflictions
@@ -154,6 +154,7 @@ SYSTEMS = (
     System('power-up timers', Phase.EFFECTS, update_powerup_timers),
     System('bird states', Phase.EFFECTS, update_special_bird_states),
     System('spells', Phase.EFFECTS, update_spell_effects),
+    System('synergies', Phase.EFFECTS, synergies.cure_blues),
     System('enemy afflictions', Phase.EFFECTS, afflictions.update),
     System('purple charging', Phase.EFFECTS, update_purple_charging),
     System('portals', Phase.EFFECTS, update_portals),

@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, events, stats
+from src.engine import clock, events, stats, synergies
 from src.engine.birds import (
     allow_consume_power,
     check_pending_transforms,
@@ -16,7 +16,6 @@ from src.engine.logic.drops import drop_loot
 from src.engine.progression import hp_scale
 from src.entities.bird_types import BirdType, get_bird_type_by_color
 from src.entities.sprites import (
-    BLUE,
     GLITCH,
     PATCHWORK,
     PURPLE,
@@ -79,37 +78,29 @@ def _power_yellow(bird_idx, bird_lane):
             set_ball_vy(adj_bird, -1)
             reset_bird_power(adj_bird)
             bounced += 1
-            # Cure scared blue birds nearby
-            _cure_nearby_scared_blues(adj_lane)
         else:
             # Slow non-yellow bird
             state.special.speed_boosts[adj_bird] = -int(
                 3.0 * stats.bird(bird_idx, 'power_duration') / constants.timing.base_sleep
             )
             slowed += 1
+            # Yellow next to Clockwork: it also winds the Clockwork up
+            if get_bird_type_by_color(adj_color) == BirdType.CLOCKWORK:
+                _wind_clockwork(adj_bird, int(synergies.value('yellow_clockwork_charge', 1)))
     events.emit('power_effect', bird=bird_idx, kind='YELLOW', effect='bounced', count=bounced)
     events.emit('power_effect', bird=bird_idx, kind='YELLOW', effect='slowed', count=slowed)
 
 
-def _cure_nearby_scared_blues(lane):
-    """Cure scared blue birds in adjacent lanes."""
-    cured = 0
-    for cross_offset in [-1, 1]:
-        cross_lane = lane + cross_offset
-        if not (0 <= cross_lane < constants.layout.num_lanes):
-            continue
-        for bi in range(constants.layout.num_balls):
-            if (
-                state.birds.random_lanes[bi] == cross_lane
-                and not state.birds.lost[bi]
-                and state.birds.colors[bi] == BLUE
-                and bi in state.special.scared_birds
-                and state.birds.vy[bi] == 1
-            ):
-                del state.special.scared_birds[bi]
-                cured += 1
-    if cured:
-        events.emit('power_effect', bird=-1, kind='YELLOW', effect='blues cured', count=cured)
+def _wind_clockwork(bird_idx, amount):
+    """Add ``amount`` to a Clockwork's charge (never above the maximum)."""
+    cur = state.special.clockwork_charge.get(bird_idx, constants.clockwork.initial_charge)
+    if cur is None:
+        cur = constants.clockwork.initial_charge
+    newc = min(constants.clockwork.max_charge, cur + amount)
+    state.special.clockwork_charge[bird_idx] = newc
+    if newc > 0:
+        state.birds.speeds[bird_idx] = newc
+    events.emit('power_effect', bird=bird_idx, kind='YELLOW', effect='clockwork wound', count=1)
 
 
 def _power_red(bird_idx, bird_lane):
@@ -140,6 +131,7 @@ def _power_red(bird_idx, bird_lane):
             'owner': bird_idx,
             'speed': 1,
             'color': RED,
+            'afflict': synergies.shot_afflictions(bird_idx),
         }
     )
 

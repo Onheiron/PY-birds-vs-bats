@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, events, stats
+from src.engine import clock, events, stats, synergies
 from src.engine.birds import (
     check_pending_transforms,
     get_affected_lanes,
@@ -163,7 +163,7 @@ def handle_bounce(falling_only=False):
 
             # Handle orange egg recovery
             if bird_color == ORANGE and state.birds.speeds[bird_idx] == 0:
-                if random.random() >= constants.orange.recover_chance:
+                if random.random() >= synergies.phoenix_wake_chance(bird_idx):
                     continue
                 _recover_orange_bird(bird_idx, lane)
                 continue

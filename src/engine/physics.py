@@ -4,7 +4,7 @@ import math
 import random
 
 from src.core import constants, state
-from src.engine import clock, stats
+from src.engine import clock, stats, synergies
 from src.engine.birds import reset_bird_power, set_ball_vy
 from src.entities.sprites import CLOCKWORK, GLITCH
 
@@ -83,7 +83,7 @@ def update_bird_positions():
         if state.birds.vy[i] == -1:
             current_speed += stats.bird(i, 'rise_speed_bonus') / 10
             if state.special.sprint_until.get(i, 0) > clock.now():
-                current_speed += stats.bird(i, 'bounce_sprint') / 10
+                current_speed += (stats.bird(i, 'bounce_sprint') + synergies.blue_sprint(i)) / 10
         else:
             current_speed += stats.bird(i, 'fall_speed_bonus') / 10
 

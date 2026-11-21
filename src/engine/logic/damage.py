@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, enemy_stats, events, stats
+from src.engine import bird_kinds, clock, enemy_stats, events, stats, synergies
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import choose_loot_type, roll_drop_rarity
 from src.engine.progression import add_score, award_xp, hp_scale
@@ -19,7 +19,7 @@ def active_speed_boost(bird_idx):
     if state.birds.vy[bird_idx] == -1:
         boost += stats.bird(bird_idx, 'rise_speed_bonus') / 10
         if special.sprint_until.get(bird_idx, 0) > clock.now():
-            boost += stats.bird(bird_idx, 'bounce_sprint') / 10
+            boost += (stats.bird(bird_idx, 'bounce_sprint') + synergies.blue_sprint(bird_idx)) / 10
         if special.speed_boosts.get(bird_idx, 0) > 0:
             boost += 1
         if state.powerups.tailwind_active:

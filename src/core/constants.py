@@ -45,6 +45,7 @@ SECTIONS = (
     'berserk',
     'rock',
     'orange',
+    'synergies',
     'timelapse',
     'progression',
     'combat',

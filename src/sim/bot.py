@@ -69,7 +69,7 @@ class Skill:
     # Strategy (see src/sim/strategy.py)
     max_gear: int = 0  # swap to shed momentum above this gear (0 = never)
     brake_when_falling: int = 0  # ...or when this many birds fall at once (0 = never)
-    formation: str = 'none'  # 'red_battery', 'yellow_guard', 'white_center' or 'none'
+    formation: str = 'none'  # 'red_battery', 'yellow_guard', 'white_center', 'yellow_sides' or 'none'
     formation_every: int = 600  # frames between two formation swaps
     keep_birds: int = 9  # look after at most this many birds, let the others fall
     favorites: tuple = ()  # bird kinds to protect first and to hatch
