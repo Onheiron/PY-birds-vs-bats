@@ -127,7 +127,22 @@ Before this pass (wind softened, gear 10 everywhere) the average bot got
 past world 2 in 41–50% of first runs; now first runs stop at the world-2
 wall, as wanted, and an expert can still reach the end.
 
-CAMPAIGN
+Campaigns (\`tools/campaign.py --campaigns 12 --runs 12 --bot average\`):
+12 average players play 12 runs each, buying upgrades with their gold
+between runs.
+
+| Run | Median level | Past world 2 | Past world 3 | Past world 4 | Upgrade levels owned |
+|--:|--:|--:|--:|--:|--:|
+| 1 | 6 | 17% | 8% | 0% | 5 |
+| 3 | 6 | 33% | 25% | 8% | 12 |
+| 5 | 6 | 42% | 25% | 0% | 19.5 |
+| 6 | 8.5 | 67% | 25% | 8% | 23.5 |
+| 9 | 8 | 58% | 25% | 8% | 33 |
+| 12 | 10 | 75% | 58% | 25% | 39 |
+
+Every player gets past world 2 sooner or later (median: run 3–4) and
+world 3 (median: run 5–6); only a third reach world 5 within 12 runs. The
+first runs are hard, as asked, and gold makes a visible difference.
 
 ## 6. Further proposals (not applied)
 
