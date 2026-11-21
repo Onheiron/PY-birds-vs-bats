@@ -2814,14 +2814,6 @@
                 },
                 "effects": {
                   "items": {
-                    "properties": {
-                      "add": {
-                        "type": "number"
-                      },
-                      "stat": {
-                        "type": "string"
-                      }
-                    },
                     "type": "object"
                   },
                   "type": "array"
@@ -5894,14 +5886,6 @@
                 },
                 "effects": {
                   "items": {
-                    "properties": {
-                      "add": {
-                        "type": "number"
-                      },
-                      "stat": {
-                        "type": "string"
-                      }
-                    },
                     "type": "object"
                   },
                   "type": "array"
