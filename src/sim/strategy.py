@@ -36,6 +36,7 @@ STRATEGIES = {
     'yellow_guard': {'formation': 'yellow_guard'},
     'white_center': {'formation': 'white_center'},
     'yellow_sides': {'formation': 'yellow_sides'},
+    'auto_formation': {'formation': 'auto'},
     'few_birds': {'keep_birds': 5},
     'favorites': {'favorites': ('RED', 'PURPLE', 'WHITE', 'STEALTH'), 'cull_others': True},
     'adaptive': {'card_policy': 'adaptive', 'pact_policy': 'adaptive'},
@@ -126,16 +127,17 @@ def formation_score(lanes, formation):
             there = lanes.get(other)
             if there is None:
                 continue
-            battery = formation == 'red_battery' and here in _SHOOTERS and there in _SHOOTERS
-            guard = formation == 'yellow_guard' and here == 'BLUE' and there in _CHAIN
+            auto = formation == 'auto'
+            battery = (formation == 'red_battery' or auto) and here in _SHOOTERS and there in _SHOOTERS
+            guard = (formation == 'yellow_guard' or auto) and here == 'BLUE' and there in _CHAIN
             if battery or guard:
                 score += 1
         # Yellows in pairs at the edges bounce each other: the cursor can stay in the middle
-        if formation == 'yellow_sides' and here in _CHAIN and (lane <= 1 or lane >= n - 2):
+        if formation in ('yellow_sides', 'auto') and here in _CHAIN and (lane <= 1 or lane >= n - 2):
             score += 1 + sum(0.5 for other in (lane - 1, lane + 1) if lanes.get(other) in _CHAIN)
-        if formation == 'white_center' and here == 'WHITE':
+        if formation in ('white_center', 'auto') and here == 'WHITE':
             score += 3 - min(3, abs(lane - n // 2))
-        if formation == 'white_center' and here in ('YELLOW', 'RED', 'BLUE'):
+        if formation in ('white_center', 'auto') and here in ('YELLOW', 'RED', 'BLUE'):
             whites = [lane2 for lane2, k in lanes.items() if k == 'WHITE']
             score += 0.5 * sum(1 for w in whites if abs(w - lane) <= 2)
     return score

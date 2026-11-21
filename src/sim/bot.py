@@ -80,6 +80,9 @@ class Skill:
     purple_charge: float = 2.0  # seconds a Purple charges before release (0 = fire at once)
     red_battery: bool = True  # hold a Red shot until its shooter neighbours rise, unless the enemy is close
     power_travel: bool = True  # move the cursor just to fire a power (False: only powers under the cursor)
+    # Sweep: UP in every lane the cursor enters that has a falling bird, at any height
+    # (when there is time for it), instead of waiting for birds to fall below bounce_from
+    sweep: bool = False
 
 
 PROFILES = {
@@ -567,6 +570,12 @@ class Bot:
             slack, lane, _bird, _ready = min(targets)
             if slack <= self.skill.safety_frames:
                 return self._key_towards(self._hub_lane(lane), True)
+            # Sweep: a falling bird under the cursor gets its UP on the way
+            if self.skill.sweep and slack > self.skill.key_interval + self.skill.safety_frames:
+                cursor_lanes = set(get_affected_lanes())
+                if any(t[1] in cursor_lanes for t in targets) and not self._harmful_press():
+                    self.counts['sweep bounces'] += 1
+                    return self._bindings()[2]
             # The second UP: a power under the cursor that counts now costs no travel
             if slack > self.skill.key_interval + self.skill.safety_frames:
                 here = self._power_target(lanes=get_affected_lanes())
