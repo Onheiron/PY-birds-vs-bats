@@ -232,14 +232,14 @@ bat_enemy:
       level_16_18: 0.20            # 20% - more common late game
   # Spawn rate per level range (frames between spawns)
   spawn_rate_by_level:
-    level_4_6: 150
+    level_4_6: 90
     level_7_9: 110
     level_10_12: 85
     level_13_15: 65
     level_16_18: 50
   # Max bats on screen per level range
   max_bats_by_level:
-    level_4_6: 2
+    level_4_6: 4
     level_7_9: 3
     level_10_12: 4
     level_13_15: 5
@@ -248,7 +248,7 @@ bat_enemy:
   # Note: Tier 0 (mini bats) spawn from obstacles, not directly - see mini_bat config
   tier_weights_by_level:
     level_1_3: [0, 0, 0, 0]        # No bats yet
-    level_4_6: [70, 25, 5, 0]
+    level_4_6: [40, 35, 25, 0]
     level_7_9: [50, 35, 12, 3]
     level_10_12: [30, 40, 22, 8]
     level_13_15: [15, 35, 35, 15]
@@ -293,7 +293,7 @@ boss:
 wind_boss:
   level: 6                          # Which level this boss appears (2-3 = level 6)
   spawn_miles_before_transition: 1  # Spawn 1 mile before level end
-  hp: 4500                           # Slightly more HP than regular boss
+  hp: 6000                           # Slightly more HP than regular boss
   armor_reduction: 10
   # Animation timing
   anim_frames_per_step: 8           # Frames between animation steps
@@ -303,13 +303,13 @@ wind_boss:
     up_bonus_min: 2                 # Starting bonus at max_down
     up_bonus_max: 5                 # Max bonus at pull_up_4
     down_penalty_min: 2             # Starting penalty at max_down
-    down_penalty_max: 5             # Max penalty at pull_up_4
+    down_penalty_max: 4             # Max penalty at pull_up_4
   # Headwind: starts at max_up (frame 0), grows until push_down_4 (frame 4)
   headwind:
     up_penalty_min: 2               # Starting penalty at max_up
-    up_penalty_max: 4               # Max penalty at push_down_4
+    up_penalty_max: 3               # Max penalty at push_down_4
     down_bonus_min: 2               # Starting bonus at max_up
-    down_bonus_max: 5               # Max bonus at push_down_4
+    down_bonus_max: 4               # Max bonus at push_down_4
   # Movement settings
   descent_speed: 8
   oscillation_range: 2
@@ -497,7 +497,7 @@ obstacle:
     4: 270
   spawning:
     # Spawn rate formula: biome_base * (biome_decay ^ level_group) * (sublevel_decay ^ (sub_level-1))
-    biome_base: 40           # Base spawn rate
+    biome_base: 34           # Base spawn rate
     biome_decay: 0.85        # Multiplier per biome (lower = faster spawn in later biomes)
     sublevel_decay: 0.9      # Multiplier per sub-level (lower = faster spawn in later sub-levels)
     min_spawn_rate: 6        # Minimum frames between spawns
@@ -844,14 +844,14 @@ cards:
   # Effects: {stat, add} adds to a stat, {stat, pct} multiplies it by 1 + pct/100,
   # seconds makes it temporary, scale: false keeps the value at every rarity.
   catalog:
-    sharp_beaks:     {name: Sharp Beaks, desc: "Every bird hits harder.",     kind: stat, effects: [{stat: damage_mult, pct: 6}]}
-    hollow_bones:    {name: Hollow Bones, desc: "Birds climb faster.",    kind: stat, effects: [{stat: rise_speed_bonus, add: 1.5}]}
-    feather_brake:   {name: Feather Brake, desc: "Birds fall more slowly: more time to bounce them.",   kind: stat, effects: [{stat: fall_speed_bonus, add: -1.5}]}
+    sharp_beaks:     {name: Sharp Beaks, desc: "Every bird hits harder.",     kind: stat, effects: [{stat: damage_mult, pct: 8}]}
+    hollow_bones:    {name: Hollow Bones, desc: "Birds climb faster.",    kind: stat, effects: [{stat: rise_speed_bonus, add: 5}]}
+    feather_brake:   {name: Feather Brake, desc: "Birds fall more slowly: more time to bounce them.",   kind: stat, effects: [{stat: fall_speed_bonus, add: -4}]}
     keen_eyes:       {name: Keen Eyes, desc: "More critical hits.",       kind: stat, effects: [{stat: crit_chance, add: 0.03}]}
     heavy_blows:     {name: Heavy Blows, desc: "Critical hits hurt more.",     kind: stat, effects: [{stat: crit_damage, add: 0.15}]}
-    brave_hearts:    {name: Brave Hearts, desc: "Scared birds fall less fast.",    kind: stat, effects: [{stat: fear_resist, add: 0.06}]}
-    steady_nerves:   {name: Steady Nerves, desc: "Scares wear off sooner.",   kind: stat, effects: [{stat: fear_duration_mult, pct: -6}]}
-    piercing_talons: {name: Piercing Talons, desc: "Ignore part of the armor of bats and barriers.", kind: stat, effects: [{stat: armor_pierce, add: 2}]}
+    brave_hearts:    {name: Brave Hearts, desc: "Scared birds fall less fast.",    kind: stat, effects: [{stat: fear_resist, add: 0.1}]}
+    steady_nerves:   {name: Steady Nerves, desc: "Scares wear off sooner.",   kind: stat, effects: [{stat: fear_duration_mult, pct: -10}]}
+    piercing_talons: {name: Piercing Talons, desc: "Ignore part of the armor of bats and barriers.", kind: stat, effects: [{stat: armor_pierce, add: 3}]}
     bat_hunter:      {name: Bat Hunter, desc: "More damage against bats.",      kind: stat, effects: [{stat: vs_bats, add: 0.06}]}
     lumberjack:      {name: Lumberjack, desc: "More damage against obstacles.",      kind: stat, effects: [{stat: vs_obstacles, add: 0.08}]}
     giant_slayer:    {name: Giant Slayer, desc: "More damage against elites and bosses.",    kind: stat, effects: [{stat: vs_elites, add: 0.08}], min_rarity: uncommon}
@@ -866,16 +866,16 @@ cards:
                       min_rarity: legendary}
     frenzy:          {name: Frenzy, desc: "A short burst of damage.",          kind: boost, effects: [{stat: damage_mult, pct: 40, seconds: 20}]}
     fearless:        {name: Fearless, desc: "Bats may fail to scare the flock.",        kind: boost, effects: [{stat: fear_immunity, add: 0.25, seconds: 20}]}
-    jet_stream:      {name: Jet Stream, desc: "The flock shoots up.",      kind: boost, effects: [{stat: rise_speed_bonus, add: 8, seconds: 20}]}
+    jet_stream:      {name: Jet Stream, desc: "The flock shoots up.",      kind: boost, effects: [{stat: rise_speed_bonus, add: 20, seconds: 20}]}
     golden_hour:     {name: Golden Hour, desc: "More points for a while.",     kind: boost, effects: [{stat: score_mult, pct: 40, seconds: 20}]}
     tailwind:        {name: Tailwind, desc: "A wind that lifts the whole flock.",        kind: powerup, powerup: tailwind, max_rarity: epic}
     wide_cursor:     {name: Wide Cursor, desc: "The cursor covers more lanes.",     kind: powerup, powerup: wide_cursor, max_rarity: epic}
     timelapse:       {name: Timelapse, desc: "Slow time down to catch falling birds.",       kind: powerup, powerup: timelapse, max_rarity: epic}
-    training:        {name: Training, desc: "XP for every bird right now.",        kind: training, effects: [{xp: 20}]}
+    training:        {name: Training, desc: "XP for every bird right now.",        kind: training, effects: [{xp: 40}]}
     glass_wings:     {name: Glass Wings, desc: "Much more damage, but birds fall faster.",     kind: cursed, min_rarity: uncommon,
-                      effects: [{stat: damage_mult, pct: 15}], drawbacks: [{stat: fall_speed_bonus, add: 2}]}
+                      effects: [{stat: damage_mult, pct: 15}], drawbacks: [{stat: fall_speed_bonus, add: 4}]}
     heavy_crown:     {name: Heavy Crown, desc: "Much more score, but birds rise more slowly.",     kind: cursed, min_rarity: uncommon,
-                      effects: [{stat: score_mult, pct: 15}], drawbacks: [{stat: rise_speed_bonus, add: -2}]}
+                      effects: [{stat: score_mult, pct: 15}], drawbacks: [{stat: rise_speed_bonus, add: -4}]}
     reckless:        {name: Reckless, desc: "More crits, but scares last longer.",        kind: cursed, min_rarity: uncommon,
                       effects: [{stat: crit_chance, add: 0.06}], drawbacks: [{stat: fear_duration_mult, pct: 10}]}
     blood_price:     {name: Blood Price, desc: "Stronger powers, but hitting things stuns longer.",     kind: cursed, min_rarity: rare,
@@ -1024,9 +1024,9 @@ upgrades:
     giant_slayer:  {name: Giant Slayer,  branch: Talons,  desc: More damage to elites and bosses,
                     costs: [35, 60, 95], requires: {sharp_talons: 3}, effects: [{stat: vs_elites, add: 0.08}]}
     light_bones:   {name: Light Bones,   branch: Wings,   desc: Birds rise faster,
-                    costs: [15, 25, 40, 60, 90], effects: [{stat: rise_speed_bonus, add: 1.5}]}
+                    costs: [15, 25, 40, 60, 90], effects: [{stat: rise_speed_bonus, add: 4}]}
     air_brakes:    {name: Air Brakes,    branch: Wings,   desc: Birds fall more slowly,
-                    costs: [20, 35, 55, 85], requires: {light_bones: 1}, effects: [{stat: fall_speed_bonus, add: -1.5}]}
+                    costs: [20, 35, 55, 85], requires: {light_bones: 1}, effects: [{stat: fall_speed_bonus, add: -3}]}
     encore:        {name: Encore,        branch: Wings,   desc: One more power per ascent,
                     costs: [250], requires: {air_brakes: 3}, effects: [{stat: power_uses, add: 1}]}
     steady:        {name: Steady,        branch: Nerve,   desc: Scared birds fall less fast,
