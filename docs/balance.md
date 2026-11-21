@@ -127,7 +127,7 @@ Before this pass (wind softened, gear 10 everywhere) the average bot got
 past world 2 in 41–50% of first runs; now first runs stop at the world-2
 wall, as wanted, and an expert can still reach the end.
 
-Campaigns (\`tools/campaign.py --campaigns 12 --runs 12 --bot average\`):
+Campaigns (`tools/campaign.py --campaigns 12 --runs 12 --bot average`):
 12 average players play 12 runs each, buying upgrades with their gold
 between runs.
 
