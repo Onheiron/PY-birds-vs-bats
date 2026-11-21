@@ -55,6 +55,34 @@ python3 game.py --bot expert --strategy yellow_guard
 The report has a "Strategy" section: swaps, brakes, formation swaps and
 birds let go per game.
 
+## Current results (bot that fires powers when they count)
+
+Default flock, 40 games per variant, 20 minutes of game time at most (mean
+level reached ± standard error):
+
+| Variant | Expert | Average |
+|---|--:|--:|
+| no strategy | 10.10 ± 0.47 | 6.47 ± 0.24 |
+| `sweep` (UP in every lane entered) | 7.12 ± 0.44 | 4.03 ± 0.31 |
+| `formation=auto` | 11.72 ± 0.19 | 7.97 ± 0.40 |
+| `max_gear=7` | 11.03 ± 0.02 | 9.60 ± 0.35 |
+| `brake_when_falling=4` | 8.25 ± 0.07 | 6.95 ± 0.40 |
+| auto formation + `max_gear=7` | 10.88 ± 0.08 | 10.50 ± 0.21 |
+| same, powers off | 10.93 ± 0.06 | 9.22 ± 0.36 |
+
+- **Sweeping hurts**: bouncing every falling bird the cursor passes, at any
+  height, bounces them near the top (row 4.6 of 30 on average, against 12
+  without sweeping), so they hit the ceiling and fall again sooner: 533
+  ceiling hits a minute against 165, 311 bounces a minute against 109. The
+  work triples and the bot cannot keep up. Letting a bird fall a third of the
+  way before bouncing it buys a long climb.
+- **The auto formation** (Yellow pairs at the edges, shooters side by side,
+  Blues next to Yellows, Whites in the middle) and **braking above gear 7**
+  both help; together they are the default of the expert and average
+  profiles. With braking the runs last the full 20 minutes, so the level is
+  capped by time.
+- **Powers** are worth +1.3 levels to the average bot with formation and brake.
+
 ## First results
 
 > These were measured before `tools/analyze.py` showed that the bot's

@@ -69,7 +69,9 @@ class Skill:
     # Strategy (see src/sim/strategy.py)
     max_gear: int = 0  # swap to shed momentum above this gear (0 = never)
     brake_when_falling: int = 0  # ...or when this many birds fall at once (0 = never)
-    formation: str = 'none'  # 'red_battery', 'yellow_guard', 'white_center', 'yellow_sides' or 'none'
+    formation: str = (
+        'none'  # 'auto' (every synergy), 'red_battery', 'yellow_guard', 'white_center', 'yellow_sides' or 'none'
+    )
     formation_every: int = 600  # frames between two formation swaps
     keep_birds: int = 9  # look after at most this many birds, let the others fall
     favorites: tuple = ()  # bird kinds to protect first and to hatch
@@ -88,10 +90,13 @@ class Skill:
 PROFILES = {
     # Frame-perfect, 60 keys per second: an upper bound on what the rules allow
     'perfect': Skill(),
-    # A very good human: 15 keys/s, 150 ms reactions, rare slips
-    'expert': Skill(key_interval=4, reaction_frames=9, miss_rate=0.02, safety_frames=10),
-    # A decent player: 10 keys/s, 250 ms reactions
-    'average': Skill(key_interval=6, reaction_frames=15, miss_rate=0.05, safety_frames=14),
+    # A very good human: 15 keys/s, 150 ms reactions, rare slips. Like a good player it
+    # arranges the flock for its synergies and swaps to brake above gear 7
+    'expert': Skill(key_interval=4, reaction_frames=9, miss_rate=0.02, safety_frames=10, formation='auto', max_gear=7),
+    # A decent player: 10 keys/s, 250 ms reactions; formation and brake as the expert
+    'average': Skill(
+        key_interval=6, reaction_frames=15, miss_rate=0.05, safety_frames=14, formation='auto', max_gear=7
+    ),
     # Someone learning: 6 keys/s, 400 ms reactions, no powers, no anticipation
     'novice': Skill(
         key_interval=10, reaction_frames=24, miss_rate=0.1, use_powers=False, anticipate=False, safety_frames=18
