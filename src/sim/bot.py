@@ -79,6 +79,7 @@ class Skill:
     # Powers
     purple_charge: float = 2.0  # seconds a Purple charges before release (0 = fire at once)
     red_battery: bool = True  # hold a Red shot until its shooter neighbours rise, unless the enemy is close
+    power_travel: bool = True  # move the cursor just to fire a power (False: only powers under the cursor)
 
 
 PROFILES = {
@@ -580,14 +581,14 @@ class Bot:
                 return self._key_towards(self._hub_lane(lane), True)
             # Nothing to bounce yet: a power worth the trip if there is plenty of time,
             # else wait under the bird that will need the cursor first
-            power_lane = self._power_target()
+            power_lane = self._power_target() if self.skill.power_travel else None
             if power_lane is not None and self._travel_frames(power_lane) * 2 + self.skill.safety_frames < slack:
                 key = self._key_towards(power_lane, True)
                 if key is not None:
                     return key
             return self._key_towards(lane, False)
 
-        power_lane = self._power_target()
+        power_lane = self._power_target(lanes=None if self.skill.power_travel else get_affected_lanes())
         if power_lane is not None:
             key = self._key_towards(power_lane, True)
             if key is not None:
