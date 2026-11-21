@@ -354,6 +354,15 @@ def _table(effects, min_samples, limit=None):
 # ---------------------------------------------------------------------- levels and powers
 
 
+def _overrides(args):
+    from src.sim.options import merge, parse_assignments
+
+    out = {}
+    for item in getattr(args, 'set', []):
+        out = merge(out, parse_assignments(item))
+    return out
+
+
 def _simple_runs(args, formation=None):
     from src.sim.bot import PROFILES
     from src.sim.options import DIFFICULTIES
@@ -366,6 +375,7 @@ def _simple_runs(args, formation=None):
             skill=PROFILES[args.bot],
             max_minutes=args.max_minutes,
             formation=formation,
+            overrides=_overrides(args),
         )
         for k in range(args.runs)
     ]
@@ -457,7 +467,11 @@ def cards_analysis(args):
     skill = replace(PROFILES[args.bot], card_policy='random', pact_policy='refuse')
     configs = [
         RunConfig(
-            seed=args.seed + k, difficulty=DIFFICULTIES[args.difficulty], skill=skill, max_minutes=args.window * 2
+            seed=args.seed + k,
+            difficulty=DIFFICULTIES[args.difficulty],
+            skill=skill,
+            max_minutes=args.window * 2,
+            overrides=_overrides(args),
         )
         for k in range(args.runs)
     ]
@@ -657,6 +671,7 @@ def main(argv=None):
         p.add_argument('--difficulty', default='adventure')
         p.add_argument('--max-minutes', type=float, default=12.0, help='game-time limit per run (default 12)')
         p.add_argument('--json', metavar='FILE', help='write the raw data to this file')
+        p.add_argument('--set', action='append', default=[], metavar='KEY=VALUE', help='configuration override')
     sub.choices['factors'].add_argument(
         '--factor',
         action='append',
