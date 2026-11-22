@@ -88,9 +88,12 @@ class Skill:
     purple_charge: float = 2.0  # seconds a Purple charges before release (0 = fire at once)
     red_battery: bool = True  # hold a Red shot until its shooter neighbours rise, unless the enemy is close
     power_travel: bool = True  # move the cursor just to fire a power (False: only powers under the cursor)
-    # Sweep: UP in every lane the cursor enters that has a falling bird, at any height
-    # (when there is time for it), instead of waiting for birds to fall below bounce_from
+    # Sweep: UP on every falling bird under the cursor, at any height. With two hands it
+    # costs the moving hand nothing (arrow + UP is one decision); with one hand it is
+    # done only when there is time for it
     sweep: bool = False
+    # Keys of a combo played without looking (the SPACE, arrows, SPACE of a swap): frames apart
+    combo_interval: int = 4
 
 
 PROFILES = {
@@ -99,10 +102,12 @@ PROFILES = {
     # Key rates are what a human keeps up for a whole game, not bursts.
     # A very good player: 7.5 keys/s, 200 ms reactions, rare slips. It arranges the
     # flock for its synergies and swaps to brake above gear 7
-    'expert': Skill(key_interval=8, reaction_frames=12, miss_rate=0.02, safety_frames=12, formation='auto', max_gear=7),
+    'expert': Skill(
+        key_interval=8, reaction_frames=12, miss_rate=0.02, safety_frames=12, formation='auto', max_gear=7, sweep=True
+    ),
     # A decent player: 5 keys/s, 300 ms reactions; formation and brake as the expert
     'average': Skill(
-        key_interval=12, reaction_frames=18, miss_rate=0.05, safety_frames=16, formation='auto', max_gear=7
+        key_interval=12, reaction_frames=18, miss_rate=0.05, safety_frames=16, formation='auto', max_gear=7, sweep=True
     ),
     # Someone learning: 3 keys/s, 450 ms reactions, no powers, no anticipation
     'novice': Skill(
@@ -639,31 +644,49 @@ class Bot:
             return None
         return self._key_towards(lane, press)
 
+    def _sweep_up(self):
+        """Is there a falling bird under the cursor to bounce? (any height: the cursor is there)"""
+        if self.plan is not None or self._harmful_press():
+            return False
+        cursor_lanes = set(get_affected_lanes())
+        return any(t[1] in cursor_lanes for t in self._urgent_targets())
+
     def press(self):
-        """Keys pressed this frame (at most one per hand, respecting the key rate)."""
+        """Keys pressed this frame, respecting the key rate of each hand.
+
+        With two hands, the UP hand bounces whatever falls under the cursor while
+        the other hand moves it (sweep: arrow + UP is one decision, not two).
+        Swaps are a combo (SPACE, arrows, SPACE) played at ``combo_interval``.
+        """
         self.frame += 1
         self.cooldown = max(0, self.cooldown - 1)
         self.up_cooldown = max(0, self.up_cooldown - 1)
         up = self._bindings()[2]
         two_hands = self.skill.two_hands and state.choice.active is None
-        if self.cooldown > 0 and not (two_hands and self.up_cooldown == 0):
-            return []
-        plan = self.plan
-        key = self.decide()
-        if key is None:
-            return []
-        if two_hands and key == up:
-            if self.up_cooldown > 0:
-                return []
+        keys = []
+        if two_hands and self.skill.sweep and self.up_cooldown == 0 and self._sweep_up():
+            keys.append(up)
             self.up_cooldown = self.skill.key_interval
-        else:
-            if self.cooldown > 0:
-                self.plan = plan  # the moving hand is busy: the key waits
-                return []
-            self.cooldown = self.skill.key_interval
-            if not two_hands:
-                self.up_cooldown = self.cooldown
-        self.keys_pressed += 1
-        if self.rng.random() < self.skill.miss_rate:
-            return []  # fumbled the key: time spent, nothing happens
-        return [key]
+            self.counts['sweep bounces'] += 1
+        if self.cooldown == 0 or (two_hands and self.up_cooldown == 0):
+            plan = self.plan
+            key = self.decide()
+            if key is not None:
+                if two_hands and key == up:
+                    if self.up_cooldown == 0:
+                        keys.append(up)
+                        self.up_cooldown = self.skill.key_interval
+                elif self.cooldown == 0:
+                    keys.append(key)
+                    combo = self.plan is not None or plan is not None
+                    self.cooldown = self.skill.combo_interval if combo else self.skill.key_interval
+                    if not two_hands:
+                        self.up_cooldown = self.cooldown
+                else:
+                    self.plan = plan  # the moving hand is busy: the key waits
+        pressed = []
+        for key in keys:
+            self.keys_pressed += 1
+            if self.rng.random() >= self.skill.miss_rate:
+                pressed.append(key)  # else: fumbled the key, time spent, nothing happens
+        return pressed
