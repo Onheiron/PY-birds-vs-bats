@@ -36,11 +36,6 @@ def compute_gear_from_momentum(momentum):
         gear += 1
         if gear >= max_gear:
             break
-    # ...and set a floor that swaps cannot brake below (speed.min_gear_by_world)
-    floors = getattr(constants.speed, 'min_gear_by_world', None)
-    if floors:
-        floors = list(floors)
-        gear = max(gear, min(max_gear, int(floors[min(max(1, state.game.level_group), len(floors)) - 1])))
     return gear
 
 

@@ -180,12 +180,6 @@ def _armored_armor(tier):
     return _node(table, tier) or 0
 
 
-def card_scaling():
-    """HP multiplier from the power-ups taken this run (combat.hp_per_card per card)."""
-    per_card = float(getattr(constants.combat, 'hp_per_card', 0.0) or 0.0)
-    return 1.0 + per_card * getattr(state.game, 'cards_taken', 0)
-
-
 def equip_bat(bat, affixes=()):
     """Give a freshly built bat its stats (tier, kinds, elite affixes) and scale its HP."""
     extra = {'armor': _armored_armor(bat['tier'])} if bat.get('armored') else None
@@ -193,7 +187,7 @@ def equip_bat(bat, affixes=()):
         bat['elite'] = True
         bat['affixes'] = list(affixes)
     bat['stats'] = resolve('bats', bat['tier'], bat_kinds(bat), affixes, elite=bool(affixes), extra=extra)
-    hp_mult = get(bat, 'hp_mult') * card_scaling()
+    hp_mult = get(bat, 'hp_mult')
     if hp_mult != 1:
         bat['hp'] = bat['max_hp'] = max(1, int(bat['hp'] * hp_mult))
     return bat
@@ -202,7 +196,7 @@ def equip_bat(bat, affixes=()):
 def equip_obstacle(obstacle):
     """Give a freshly built obstacle its stats and scale its HP."""
     obstacle['stats'] = resolve('obstacles', obstacle.get('tier', 1))
-    hp_mult = get(obstacle, 'hp_mult') * card_scaling()
+    hp_mult = get(obstacle, 'hp_mult')
     if hp_mult != 1:
         obstacle['hp'] = max(1, int(obstacle['hp'] * hp_mult))
     return obstacle

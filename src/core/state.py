@@ -205,7 +205,6 @@ def _new_game():
         game_over=False,
         quit_requested=False,  # True quando l'utente esce con Q/CTRL+C
         swaps_used=0,
-        cards_taken=0,  # power-up cards picked this run (enemies grow with them: combat.hp_per_card)
         paused=False,
         frame_count=0,
         start_time=None,
