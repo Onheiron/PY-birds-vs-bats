@@ -448,6 +448,7 @@ def roll_offer(egg_rarity, rng=random):
 
 def apply_card(card):
     """Do what the picked card says."""
+    state.game.cards_taken += 1
     source = f"card:{card['id']}"
     if card['kind'] == 'bird':
         from src.engine.logic.loot import hatch_bird

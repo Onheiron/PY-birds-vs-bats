@@ -517,6 +517,7 @@ def _build_game_dict():
         'miles': state.game.miles,
         'lives': state.game.lives,
         'swaps_used': state.game.swaps_used,
+        'cards_taken': state.game.cards_taken,
         'frame_count': state.game.frame_count,
         'meta_applied': getattr(state.game, 'meta_applied', False),
         'game_time': clock.now(),
@@ -689,6 +690,7 @@ def _restore_game_state(data):
         'miles',
         'lives',
         'swaps_used',
+        'cards_taken',
         'frame_count',
         'meta_applied',
     ]:

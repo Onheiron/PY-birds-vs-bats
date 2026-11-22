@@ -79,8 +79,11 @@ def convert_boss_to_obstacle(boss):
 
 
 def scaled_hp(hp):
-    """A boss's HP × combat.boss_hp_mult, × (1 + boss_hp_per_world × worlds after the first)."""
+    """A boss's HP × combat.boss_hp_mult, × (1 + boss_hp_per_world × worlds after the first),
+    × the power-ups taken (combat.hp_per_card)."""
     per_world = float(getattr(constants.combat, 'boss_hp_per_world', 0.0))
     world = max(1, state.game.level_group)
     mult = float(getattr(constants.combat, 'boss_hp_mult', 1.0)) * (1 + per_world * (world - 1))
-    return max(1, int(hp * mult))
+    from src.engine.enemy_stats import card_scaling
+
+    return max(1, int(hp * mult * card_scaling()))

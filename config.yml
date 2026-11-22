@@ -42,6 +42,9 @@ timing:
 combat:
   # HP and damage are on a ×10 scale: XP from damage and score from kills divide by this
   hp_scale: 10
+  # Enemies grow with the power-ups taken: bats, obstacles and bosses get
+  # × (1 + hp_per_card × cards picked this run) HP
+  hp_per_card: 0.0
   # Every boss's HP is multiplied by this (one knob for all of them)
   boss_hp_mult: 1.0
   # ...and grows by this share per world after the first (0.5: ×3.5 in the last world)
@@ -630,6 +633,8 @@ speed:
   # Highest gear in each world: speed is the main source of difficulty, so it ramps up
   # world by world (a slow first world to learn, a jump into the second)
   max_gear_by_world: [5, 9, 9, 9, 10, 10]
+  # Lowest gear in each world: swaps (which shed momentum) cannot brake below it
+  min_gear_by_world: [1, 1, 1, 1, 1, 1]
   mph_per_level: 40               # Miles per hour per speed level (40 = 40mph at speed 1, 400mph at speed 10)
   starting_momentum: 100          # Initial momentum at game start
   momentum_gain_multiplier: 115.0 # Multiplier for momentum gain (higher = faster speed progression)
