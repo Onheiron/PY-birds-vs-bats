@@ -125,9 +125,21 @@ can be added in `bird_stats.type_growth`.
 
 Bats and obstacles have stats too (`src/engine/enemy_stats.py`), resolved once
 when they spawn and stored in the enemy's `stats` field. Layers, from the
-`enemy_stats` config section: `defaults` → `tiers.<n>` → `kinds.<armored|diver|spellcaster>`
-(bats only) → elite stats and affixes. Flat stats add up (+), multipliers multiply (×).
-Armored bats also get `bat_enemy.armored.damage_reduction_by_tier` as armor.
+`enemy_stats` config section:
+
+`defaults` → `tiers.<n>` → `kinds.<kind>` → `worlds.<w>` (its own stats, then
+its `tiers.<n>` and `kinds.<kind>`) → elite stats → `elite_kinds.<kind>` → affixes.
+
+Flat stats add up (+), multipliers multiply (×). Every number of every kind
+(abilities included) is a stat, so each can change world by world
+(`worlds.<w>`) and for the elites of a kind (`elite_kinds.<kind>`). Armored bats
+also get `bat_enemy.armored.armor_by_tier` as armor.
+
+Bat kinds: armored, diver, spellcaster, healer, bomber, plague, necromancer
+(`src/engine/bat_ai.py`, `src/engine/logic/bat_abilities.py`). Which kinds
+appear, how often, how many bats and of which tiers is set per world in
+`bat_enemy.worlds`. Obstacle kinds (emerging, stalactite, peak, stone) come
+from the world hazards (`hazards` section, `src/engine/hazards.py`) and from bombers.
 
 | Stat | Default | Combines | Meaning |
 |---|:-:|:-:|---|
@@ -142,6 +154,36 @@ Armored bats also get `bat_enemy.armored.damage_reduction_by_tier` as armor.
 | `fear_radius` | 0 | + | lanes on each side also scared on contact |
 | `speed` | 1 | × | horizontal speed multiplier |
 | `descent_interval` | 5 | + | ticks per row while descending to its height |
+| `move_step` | 2 | + | columns per horizontal move |
+| `linger` | 60 | + | seconds on screen before it flies away |
+| `fear_push` | 1 | + | extra fall speed (speed points) of a bird it scares |
+| `ability_chance` | 0 | + | chance per second to use its ability when ready |
+| `ability_interval` | 0 | + | seconds before its ability is ready again |
+| `dive_rows` | 10 | + | diver: rows of a dive |
+| `dive_interval` | 2 | + | diver: ticks per row while diving |
+| `dive_stun` | 1.5 | + | diver: seconds it stays stunned after a dive |
+| `return_interval` | 6 | + | diver: ticks per row while climbing back |
+| `dive_push` | 1 | + | diver: extra fall speed of a bird that hits it mid-dive |
+| `dive_push_time` | 0.5 | + | diver: seconds that push lasts |
+| `spells` | 1 | + | spellcaster: spells known (silence, repugnant wind, exile) |
+| `cast_time` | 0.5 | + | spellcaster: seconds of casting before the spell lands |
+| `silence_time` | 3 | + | spellcaster: seconds of silence |
+| `wind_time` | 3 | + | spellcaster: seconds of repugnant wind |
+| `wind_push` | 1 | + | spellcaster: fall speed added and rise speed removed by its wind |
+| `heal_pct` | 0 | + | healer: share of max HP healed on the bats around it |
+| `heal_range` | 0 | + | healer: columns its healing reaches |
+| `stone_hp` | 0 | + | bomber: HP of a dropped stone |
+| `stone_interval` | 0 | + | bomber: ticks per row of a falling stone |
+| `stone_stun` | 0 | + | bomber: seconds a stone stuns the bird it hits |
+| `plague_time` | 0 | + | plague: seconds before the infection kills the bird |
+| `plague_presses` | 0 | + | plague: UP presses that cure it |
+| `plague_spread` | 0 | + | plague: chance per second to infect the bird in a lane next to it |
+| `zombies` | 0 | + | necromancer: zombie birds it keeps at most |
+| `zombie_fear` | 0 | + | necromancer: seconds its zombies scare a bird |
+| `stun` | 1 | + | seconds it stuns a bird that hits it |
+| `knock` | 0 | + | extra fall speed of a bird that hits it |
+| `knock_time` | 0 | + | seconds that extra fall speed lasts |
+| `fall_interval` | 5 | + | ticks per row while falling |
 | `xp_mult` | 1 | × | multiplier on kill XP |
 | `score_mult` | 1 | × | multiplier on kill score |
 | `loot_rarity_bonus` | 0 | + | rarity steps added to its drop |
@@ -277,30 +319,54 @@ grade). The values live in `config.yml` under `bird_stats.types`,
 
 #### Bats
 
-| Enemy | HP | Defence | Contact def | Projectile def | Armor | Dmg taken × | Regen/s | Fear × | Fear radius | Speed × | Descent | XP × | Score × | Drop + |
-|:--|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Mini bat T0 | 160 | 0 | 0 | 0 | 0 | 1 | 0 | 1.2 | 0 | 1 | 5 | 1 | 1 | 0 |
-| Bat T1 | 240 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 1 | 0 |
-| Bat T2 | 480 | 1 | 0 | 0 | 0 | 1 | 0 | 1.1 | 0 | 1 | 5 | 1 | 1 | 0 |
-| Bat T3 | 960 | 2 | 0 | 0 | 0 | 1 | 5 | 1.2 | 0 | 1 | 5 | 1 | 1 | 0 |
-| Bat T4 | 1920 | 4 | 0 | 0 | 0 | 1 | 10 | 1.3 | 0 | 0.9 | 5 | 1 | 1 | 0 |
-| Armored T2 | 624 | 1 | 0 | -5 | 10 | 1 | 0 | 1.32 | 0 | 0.6 | 6 | 1.3 | 1.3 | 0 |
-| Armored T3 | 1248 | 2 | 0 | -5 | 10 | 1 | 5 | 1.44 | 0 | 0.6 | 6 | 1.3 | 1.3 | 0 |
-| Armored T4 | 2496 | 4 | 0 | -5 | 20 | 1 | 10 | 1.56 | 0 | 0.54 | 6 | 1.3 | 1.3 | 0 |
-| Diver T1 | 192 | 0 | -3 | 0 | 0 | 1 | 0 | 1.3 | 0 | 1.3 | 5 | 1.2 | 1 | 0 |
-| Diver T2 | 384 | 1 | -3 | 0 | 0 | 1 | 0 | 1.43 | 0 | 1.3 | 5 | 1.2 | 1 | 0 |
-| Diver T3 | 768 | 2 | -3 | 0 | 0 | 1 | 5 | 1.56 | 0 | 1.3 | 5 | 1.2 | 1 | 0 |
-| Diver T4 | 1536 | 4 | -3 | 0 | 0 | 1 | 10 | 1.69 | 0 | 1.17 | 5 | 1.2 | 1 | 0 |
-| Spellcaster T2 | 336 | 1 | -2 | 5 | 0 | 1 | 0 | 1.65 | 1 | 0.9 | 5 | 1.4 | 1.4 | 0 |
-| Spellcaster T3 | 672 | 2 | -2 | 5 | 0 | 1 | 5 | 1.8 | 1 | 0.9 | 5 | 1.4 | 1.4 | 0 |
-| Spellcaster T4 | 1344 | 4 | -2 | 5 | 0 | 1 | 10 | 1.95 | 1 | 0.81 | 5 | 1.4 | 1.4 | 0 |
+| Enemy | HP | Defence | Contact def | Projectile def | Armor | Dmg taken × | Regen/s | Fear × | Fear radius | Speed × | Descent | Fear push | Stays (s) | Stun (s) | Knock | Fall (ticks/row) | XP × | Score × | Drop + |
+|:--|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| Mini bat T0 | 160 | 0 | 0 | 0 | 0 | 1 | 0 | 1.2 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
+| Bat T1 | 240 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
+| Bat T2 | 480 | 1 | 0 | 0 | 0 | 1 | 0 | 1.1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
+| Bat T3 | 960 | 2 | 0 | 0 | 0 | 1 | 5 | 1.2 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
+| Bat T4 | 1920 | 4 | 0 | 0 | 0 | 1 | 10 | 1.3 | 0 | 0.9 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
+| Armored T2 | 624 | 1 | 0 | -5 | 0 | 1 | 0 | 1.32 | 0 | 0.6 | 6 | 2 | 150 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Armored T3 | 1248 | 2 | 0 | -5 | 0 | 1 | 5 | 1.44 | 0 | 0.6 | 6 | 2 | 150 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Armored T4 | 2496 | 4 | 0 | -5 | 0 | 1 | 10 | 1.56 | 0 | 0.54 | 6 | 2 | 150 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Diver T1 | 192 | 0 | -3 | 0 | 0 | 1 | 0 | 1.3 | 0 | 1.3 | 5 | 1 | 60 | 1 | 0 | 5 | 1.2 | 1 | 0 |
+| Diver T2 | 384 | 1 | -3 | 0 | 0 | 1 | 0 | 1.43 | 0 | 1.3 | 5 | 1 | 60 | 1 | 0 | 5 | 1.2 | 1 | 0 |
+| Diver T3 | 768 | 2 | -3 | 0 | 0 | 1 | 5 | 1.56 | 0 | 1.3 | 5 | 1 | 60 | 1 | 0 | 5 | 1.2 | 1 | 0 |
+| Diver T4 | 1536 | 4 | -3 | 0 | 0 | 1 | 10 | 1.69 | 0 | 1.17 | 5 | 1 | 60 | 1 | 0 | 5 | 1.2 | 1 | 0 |
+| Spellcaster T2 | 336 | 1 | -2 | 5 | 0 | 1 | 0 | 1.65 | 1 | 0.9 | 5 | 1 | 60 | 1 | 0 | 5 | 1.4 | 1.4 | 0 |
+| Spellcaster T3 | 672 | 2 | -2 | 5 | 0 | 1 | 5 | 1.8 | 1 | 0.9 | 5 | 1 | 60 | 1 | 0 | 5 | 1.4 | 1.4 | 0 |
+| Spellcaster T4 | 1344 | 4 | -2 | 5 | 0 | 1 | 10 | 1.95 | 1 | 0.81 | 5 | 1 | 60 | 1 | 0 | 5 | 1.4 | 1.4 | 0 |
+| Healer T2 | 384 | 1 | 0 | 0 | 0 | 1 | 0 | 0.88 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Healer T3 | 768 | 2 | 0 | 0 | 0 | 1 | 5 | 0.96 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Healer T4 | 1536 | 4 | 0 | 0 | 0 | 1 | 10 | 1.04 | 0 | 0.9 | 5 | 1 | 60 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Bomber T2 | 432 | 1 | 0 | 0 | 0 | 1 | 0 | 1.1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Bomber T3 | 864 | 2 | 0 | 0 | 0 | 1 | 5 | 1.2 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Bomber T4 | 1728 | 4 | 0 | 0 | 0 | 1 | 10 | 1.3 | 0 | 0.9 | 5 | 1 | 60 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Plague T2 | 432 | 1 | 0 | 0 | 0 | 1 | 0 | 1.1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Plague T3 | 864 | 2 | 0 | 0 | 0 | 1 | 5 | 1.2 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Plague T4 | 1728 | 4 | 0 | 0 | 0 | 1 | 10 | 1.3 | 0 | 0.9 | 5 | 1 | 60 | 1 | 0 | 5 | 1.3 | 1.3 | 0 |
+| Necromancer T3 | 1056 | 2 | 0 | 3 | 0 | 1 | 5 | 1.44 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1.5 | 1.5 | 0 |
+| Necromancer T4 | 2112 | 4 | 0 | 3 | 0 | 1 | 10 | 1.56 | 0 | 0.9 | 5 | 1 | 60 | 1 | 0 | 5 | 1.5 | 1.5 | 0 |
+
+#### Bat abilities (highest tier, world 1 values; worlds change them)
+
+| Kind | Ability stats |
+|:--|:-:|
+| Armored | armor 0; fear_push 2; linger 150; move_step 1 |
+| Diver | ability_chance 0.2; ability_interval 0; dive_rows 10; dive_interval 2; dive_stun 1.5; return_interval 6; dive_push 1; dive_push_time 0.5 |
+| Spellcaster | ability_chance 0.1; ability_interval 3; cast_time 0.5; spells 3; silence_time 5; wind_time 4.5; wind_push 1 |
+| Healer | ability_chance 1; ability_interval 3; heal_pct 0.1; heal_range 12 |
+| Bomber | ability_chance 0.5; ability_interval 4; stone_hp 30; stone_interval 2; stone_stun 0.5 |
+| Plague | plague_time 15; plague_presses 3; plague_spread 0.05 |
+| Necromancer | ability_chance 0.25; ability_interval 5; zombies 2; zombie_fear 1.5 |
 
 #### Obstacles
 
-| Enemy | HP | Defence | Contact def | Projectile def | Armor | Dmg taken × | Regen/s | Fear × | Fear radius | Speed × | Descent | XP × | Score × | Drop + |
-|:--|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Tree T1 | 50 (+10%/level) | 0 | 0 | -3 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 1 | 0 |
-| Rock T2 | 80 (+10%/level) | 3 | 0 | 3 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 1 | 0 |
-| Cloud T3 | 160 (+10%/level) | 0 | 0 | 5 | 0 | 1.2 | 0 | 1 | 0 | 1 | 5 | 1 | 1 | 0 |
-| Barrier T4 | 320 (+10%/level) | 2 | 0 | 0 | 8 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 1 | 0 |
-
+| Enemy | HP | Defence | Contact def | Projectile def | Armor | Dmg taken × | Regen/s | Fear × | Fear radius | Speed × | Descent | Fear push | Stays (s) | Stun (s) | Knock | Fall (ticks/row) | XP × | Score × | Drop + |
+|:--|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| Tree T1 | 50 (+10%/level) | 0 | 0 | -3 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
+| Rock T2 | 80 (+10%/level) | 3 | 0 | 3 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
+| Cloud T3 | 160 (+10%/level) | 0 | 0 | 5 | 0 | 1.2 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
+| Barrier T4 | 320 (+10%/level) | 2 | 0 | 0 | 8 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
+| Stalactite (T1 base) | 50 (+10%/level) | 0 | 0 | -3 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 2 | 1 | 1 | 0 |
+| Peak (T4 base) | 640 (+10%/level) | 2 | 0 | 0 | 23 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 2 | 5 | 1 | 1 | 0 |

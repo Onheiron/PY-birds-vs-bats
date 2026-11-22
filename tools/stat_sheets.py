@@ -97,6 +97,11 @@ ENEMY_COLUMNS = [
     ('fear_radius', 'Fear radius'),
     ('speed', 'Speed ×'),
     ('descent_interval', 'Descent'),
+    ('fear_push', 'Fear push'),
+    ('linger', 'Stays (s)'),
+    ('stun', 'Stun (s)'),
+    ('knock', 'Knock'),
+    ('fall_interval', 'Fall (ticks/row)'),
     ('xp_mult', 'XP ×'),
     ('score_mult', 'Score ×'),
     ('loot_rarity_bonus', 'Drop +'),
@@ -160,22 +165,34 @@ def enemy_sheets():
             ('Armored', 'armored', [2, 3, 4]),
             ('Diver', 'diver', [1, 2, 3, 4]),
             ('Spellcaster', 'spellcaster', [2, 3, 4]),
+            ('Healer', 'healer', [2, 3, 4]),
+            ('Bomber', 'bomber', [2, 3, 4]),
+            ('Plague', 'plague', [2, 3, 4]),
+            ('Necromancer', 'necromancer', [3, 4]),
         ]
+        ability_rows = []
         for label, kind, tiers in kinds:
             for tier in tiers:
                 bat = {'tier': tier, 'hp': hp_of(bat_hp, tier), 'max_hp': hp_of(bat_hp, tier)}
                 if kind:
-                    bat[kind] = True
+                    bat['kind'] = kind
                 enemy_stats.equip_bat(bat)
                 row = [f'{label} T{tier}']
                 for name, _ in ENEMY_COLUMNS:
                     row.append(str(bat['max_hp']) if name == 'hp' else fmt(name, enemy_stats.get(bat, name)))
                 rows.append(row)
+                if kind and tier == tiers[-1]:
+                    used = [n for n in ABILITY_STATS.get(kind, ())]
+                    ability_rows.append([label] + ['; '.join(f'{n} {fmt(n, enemy_stats.get(bat, n))}' for n in used)])
         obs_rows = []
         names = {1: 'Tree', 2: 'Rock', 3: 'Cloud', 4: 'Barrier'}
-        for tier in (1, 2, 3, 4):
-            obstacle = enemy_stats.equip_obstacle({'tier': tier, 'hp': hp_of(constants.obstacle.hp_by_tier, tier)})
-            row = [f'{names[tier]} T{tier}']
+        specials = [(None, tier) for tier in (1, 2, 3, 4)] + [('stalactite', 1), ('peak', 4)]
+        for kind, tier in specials:
+            obstacle = {'tier': tier, 'hp': hp_of(constants.obstacle.hp_by_tier, tier)}
+            if kind:
+                obstacle['kind'] = kind
+            enemy_stats.equip_obstacle(obstacle)
+            row = [f'{kind.title()} (T{tier} base)' if kind else f'{names[tier]} T{tier}']
             for name, _ in ENEMY_COLUMNS:
                 if name == 'hp':
                     row.append(f"{obstacle['hp']} (+10%/level)")
@@ -183,7 +200,43 @@ def enemy_sheets():
                     row.append(fmt(name, enemy_stats.get(obstacle, name)))
             obs_rows.append(row)
     header = ['Enemy'] + [label for _, label in ENEMY_COLUMNS]
-    return '#### Bats\n\n' + table(header, rows) + '\n\n#### Obstacles\n\n' + table(header, obs_rows)
+    return (
+        '#### Bats\n\n'
+        + table(header, rows)
+        + '\n\n#### Bat abilities (highest tier, world 1 values; worlds change them)\n\n'
+        + table(['Kind', 'Ability stats'], ability_rows)
+        + '\n\n#### Obstacles\n\n'
+        + table(header, obs_rows)
+    )
+
+
+# The ability stats each kind uses
+ABILITY_STATS = {
+    'armored': ('armor', 'fear_push', 'linger', 'move_step'),
+    'diver': (
+        'ability_chance',
+        'ability_interval',
+        'dive_rows',
+        'dive_interval',
+        'dive_stun',
+        'return_interval',
+        'dive_push',
+        'dive_push_time',
+    ),
+    'spellcaster': (
+        'ability_chance',
+        'ability_interval',
+        'cast_time',
+        'spells',
+        'silence_time',
+        'wind_time',
+        'wind_push',
+    ),
+    'healer': ('ability_chance', 'ability_interval', 'heal_pct', 'heal_range'),
+    'bomber': ('ability_chance', 'ability_interval', 'stone_hp', 'stone_interval', 'stone_stun'),
+    'plague': ('plague_time', 'plague_presses', 'plague_spread'),
+    'necromancer': ('ability_chance', 'ability_interval', 'zombies', 'zombie_fear'),
+}
 
 
 def main():

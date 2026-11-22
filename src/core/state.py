@@ -130,6 +130,8 @@ def _new_enemies():
         right_panel_barrier_timer=0,
         # Mountain Range cloud banks (foreground fog)
         cloud_banks=[],
+        zombies=[],  # necromancers' zombie birds (src/engine/logic/bat_abilities.py)
+        bat_uid=0,  # last id given to a bat
         cloud_spawn_timer=0,
         # Boss state (end of biome bosses)
         boss=None,  # None or dict with boss data

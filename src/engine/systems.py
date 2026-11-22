@@ -24,7 +24,7 @@ from src.core import state
 from src.engine import choices, enemy_stats, events, hazards, stats, synergies
 from src.engine.bat_ai import update_bat_positions
 from src.engine.glitch import update_glitch_chaos
-from src.engine.logic import afflictions
+from src.engine.logic import afflictions, bat_abilities
 from src.engine.logic.bosses.director import (
     check_bird_boss_collision,
     check_bird_meteor_collision,
@@ -152,6 +152,7 @@ SYSTEMS = (
     System('bird states', Phase.EFFECTS, update_special_bird_states),
     System('spells', Phase.EFFECTS, update_spell_effects),
     System('synergies', Phase.EFFECTS, synergies.cure_blues),
+    System('bat abilities', Phase.EFFECTS, bat_abilities.update),
     System('enemy afflictions', Phase.EFFECTS, afflictions.update),
     System('purple charging', Phase.EFFECTS, update_purple_charging),
     System('portals', Phase.EFFECTS, update_portals),

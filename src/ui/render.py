@@ -13,6 +13,7 @@ from src.ui.layers.enemies import (
     draw_obstacles,
     draw_portals,
     draw_projectiles,
+    draw_zombies,
 )
 from src.ui.layers.hazards import draw_hazards
 from src.ui.layers.hud import (
@@ -56,6 +57,7 @@ def render_game():
     draw_boss(fb)  # Boss rendered BEFORE bats so bats appear in front
     draw_bats(fb)
     draw_mini_bats(fb)
+    draw_zombies(fb)
     draw_loot(fb)
     draw_projectiles(fb)
     draw_birds(fb)

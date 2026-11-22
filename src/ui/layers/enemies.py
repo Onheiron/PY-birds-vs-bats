@@ -1,7 +1,7 @@
 """Obstacles, flowers, portals, bats, loot and projectiles."""
 
 from src.core import constants, state
-from src.engine import hazards
+from src.engine import clock, hazards
 from src.engine.progression import hp_scale
 from src.entities.sprites import (
     ARMORED_BAT_FRAME_1,
@@ -189,6 +189,24 @@ def draw_portals(fb):
                             fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, PORTAL_COLOR)
 
 
+# Badge of the special bat kinds (src/engine/logic/bat_abilities.py)
+KIND_BADGES = {
+    'healer': ('+', GREEN),
+    'bomber': ('o', YELLOW),
+    'plague': ('¤', GREEN),
+    'necromancer': ('†', PURPLE),
+}
+
+
+def draw_zombies(fb):
+    """Necromancers' zombie birds: grey birds bouncing by themselves."""
+    for zombie in state.enemies.zombies:
+        y = zombie['y']
+        if 0 <= y < constants.layout.height:
+            x = constants.layout.lane_positions[zombie['lane']]
+            fb.put(GAME_X_OFFSET + x, y + HEADER_HEIGHT, '@', DARK_GRAY)
+
+
 def draw_bats(fb):
     """Render bats to framebuffer."""
 
@@ -250,6 +268,14 @@ def draw_bats(fb):
                                 ):
                                     char_color = BAT_ARMOR
                         fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, char_color)
+
+        # New kinds: a badge in the middle of the bat (healer flashes while healing)
+        badge = KIND_BADGES.get(bat.get('kind'))
+        if badge and 0 <= bat['y_pos'] < constants.layout.height:
+            char, color = badge
+            if bat.get('kind') == 'healer' and clock.now() < bat.get('healing_until', 0):
+                char = '✚'
+            fb.put(GAME_X_OFFSET + bat['x_pos'] + 4, bat['y_pos'] + HEADER_HEIGHT, char, apply_bold(color))
 
         # Render debuff indicators above bat (using flower-like symbols)
         bat_id = id(bat)

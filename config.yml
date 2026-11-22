@@ -128,16 +128,18 @@ bat_enemy:
     - {max_bats: 3, spawn_interval: 110, tiers: [65, 30, 5, 0],   kinds: {diver: 0.08},
        height: [3, 8],   dive_height: [0.08, 0.25], mini_bat: 0.20}
     - {max_bats: 4, spawn_interval: 95,  tiers: [45, 35, 17, 3],
-       kinds: {armored: 0.08, diver: 0.10, spellcaster: 0.06},
+       kinds: {armored: 0.08, diver: 0.10, spellcaster: 0.06, healer: 0.06},
        height: [5, 12],  dive_height: [0.10, 0.30], mini_bat: 0.30}
     - {max_bats: 4, spawn_interval: 85,  tiers: [30, 40, 22, 8],
-       kinds: {armored: 0.10, diver: 0.12, spellcaster: 0.08},
+       kinds: {armored: 0.10, diver: 0.12, spellcaster: 0.08, healer: 0.06, bomber: 0.08, plague: 0.06},
        height: [8, 16],  dive_height: [0.12, 0.35], mini_bat: 0.40}
     - {max_bats: 5, spawn_interval: 70,  tiers: [15, 35, 35, 15],
-       kinds: {armored: 0.15, diver: 0.12, spellcaster: 0.10},
+       kinds: {armored: 0.15, diver: 0.12, spellcaster: 0.10, healer: 0.08, bomber: 0.10, plague: 0.08,
+               necromancer: 0.05},
        height: [10, 20], dive_height: [0.15, 0.40], mini_bat: 0.50}
     - {max_bats: 6, spawn_interval: 55,  tiers: [5, 25, 45, 25],
-       kinds: {armored: 0.20, diver: 0.14, spellcaster: 0.12},
+       kinds: {armored: 0.20, diver: 0.14, spellcaster: 0.12, healer: 0.08, bomber: 0.10, plague: 0.10,
+               necromancer: 0.08},
        height: [12, 23], dive_height: [0.18, 0.45], mini_bat: 0.60}
   # Lowest tier of each kind
   kind_min_tier: {armored: 2, diver: 1, spellcaster: 2, healer: 2, bomber: 2, plague: 2, necromancer: 3}
@@ -704,6 +706,21 @@ enemy_stats:
       spellcaster: {hp_mult: 0.7, projectile_defense: 5, contact_defense: -2, speed: 0.9,
                     fear_strength: 1.5, fear_radius: 1, xp_mult: 1.4, score_mult: 1.4,
                     ability_chance: 0.1, ability_interval: 3.0}
+      # Heals the bats around it: heal_pct of their max HP, within heal_range columns
+      healer:      {hp_mult: 0.8, fear_strength: 0.8, xp_mult: 1.3, score_mult: 1.3,
+                    ability_chance: 1.0, ability_interval: 3.0, heal_pct: 0.10, heal_range: 12}
+      # Drops stones: stone_hp HP, a row every stone_interval ticks, stone_stun s stun
+      bomber:      {hp_mult: 0.9, xp_mult: 1.3, score_mult: 1.3,
+                    ability_chance: 0.5, ability_interval: 4.0, stone_hp: 30, stone_interval: 2,
+                    stone_stun: 0.5}
+      # Infects: death after plague_time s unless cured with plague_presses UP;
+      # every second an infected bird may infect a neighbour (plague_spread)
+      plague:      {hp_mult: 0.9, xp_mult: 1.3, score_mult: 1.3,
+                    plague_time: 15.0, plague_presses: 3, plague_spread: 0.05}
+      # Raises zombie birds in empty lanes (zombies at most), which scare
+      # falling neighbours for zombie_fear s
+      necromancer: {hp_mult: 1.1, projectile_defense: 3, fear_strength: 1.2, xp_mult: 1.5, score_mult: 1.5,
+                    ability_chance: 0.25, ability_interval: 5.0, zombies: 2, zombie_fear: 1.5}
     # Changes world by world: flat stats for every bat, or per tier / per kind
     worlds:
       3: {kinds: {spellcaster: {spells: -2, ability_chance: 0.05}}}   # silence only
@@ -711,7 +728,9 @@ enemy_stats:
       5: {kinds: {spellcaster: {ability_chance: 0.15}}}
       6: {kinds: {spellcaster: {ability_chance: 0.20}}}
     # What an elite of a kind gets on top of the elite stats
-    elite_kinds: {}
+    elite_kinds:
+      necromancer: {zombies: 1}          # 3 zombies
+      healer:      {heal_pct: 0.05}      # heals 15%
   obstacles:
     defaults: {}
     tiers:
@@ -724,6 +743,7 @@ enemy_stats:
       emerging:   {}                                  # rises out of the ground mid-screen
       stalactite: {fall_interval: -3}                 # falls a row every 2 ticks
       peak:       {hp_mult: 2.0, armor: 15, knock: 2, knock_time: 1.0}   # knocks birds down hard
+      stone:      {}                                  # dropped by bombers (their stone_* stats)
     worlds:
       5: {tiers: {2: {hp_mult: 1.5, defense: 3}}}     # Void Cave: hard rocks
 

@@ -40,7 +40,9 @@ ENEMY_STATS = {
     'move_step': (2, 'columns per horizontal move'),
     'linger': (60, 'seconds on screen before it flies away'),
     'fear_push': (1, 'extra fall speed (speed points) of a bird it scares'),
-    # Abilities (each kind uses the ones it has)
+    # Abilities (each kind uses the ones it has). The stats of the newer kinds
+    # (healer, bomber, plague, necromancer, peaks) start from 0, so the value
+    # set in their kind is the value they have
     'ability_chance': (0.0, 'chance per second to use its ability when ready'),
     'ability_interval': (0.0, 'seconds before its ability is ready again'),
     'dive_rows': (10, 'diver: rows of a dive'),
@@ -55,19 +57,19 @@ ENEMY_STATS = {
     'wind_time': (3.0, 'spellcaster: seconds of repugnant wind'),
     'wind_push': (1, 'spellcaster: fall speed added and rise speed removed by its wind'),
     'heal_pct': (0.0, 'healer: share of max HP healed on the bats around it'),
-    'heal_range': (12, 'healer: columns its healing reaches'),
-    'stone_hp': (30, 'bomber: HP of a dropped stone'),
-    'stone_interval': (2, 'bomber: ticks per row of a falling stone'),
-    'stone_stun': (0.5, 'bomber: seconds a stone stuns the bird it hits'),
-    'plague_time': (15.0, 'plague: seconds before the infection kills the bird'),
-    'plague_presses': (3, 'plague: UP presses that cure it'),
+    'heal_range': (0, 'healer: columns its healing reaches'),
+    'stone_hp': (0, 'bomber: HP of a dropped stone'),
+    'stone_interval': (0, 'bomber: ticks per row of a falling stone'),
+    'stone_stun': (0.0, 'bomber: seconds a stone stuns the bird it hits'),
+    'plague_time': (0.0, 'plague: seconds before the infection kills the bird'),
+    'plague_presses': (0, 'plague: UP presses that cure it'),
     'plague_spread': (0.0, 'plague: chance per second to infect the bird in a lane next to it'),
     'zombies': (0, 'necromancer: zombie birds it keeps at most'),
-    'zombie_fear': (1.5, 'necromancer: seconds its zombies scare a bird'),
+    'zombie_fear': (0.0, 'necromancer: seconds its zombies scare a bird'),
     # Obstacles (and dropped stones)
     'stun': (1.0, 'seconds it stuns a bird that hits it'),
     'knock': (0, 'extra fall speed of a bird that hits it'),
-    'knock_time': (1.0, 'seconds that extra fall speed lasts'),
+    'knock_time': (0.0, 'seconds that extra fall speed lasts'),
     'fall_interval': (5, 'ticks per row while falling'),
     # Rewards
     'xp_mult': (1.0, 'multiplier on kill XP'),
@@ -289,6 +291,8 @@ def make_bat(tier, kind, x_pos, y_pos, target_y, hp, affixes=(), **extra):
         'spellcaster': kind == 'spellcaster',
     }
     bat.update(extra)
+    state.enemies.bat_uid += 1
+    bat['uid'] = state.enemies.bat_uid
     equip_bat(bat, affixes)
     if kind == 'diver':
         bat.update(diver_state='flying', diver_home_y=target_y, dive_start_y=None, stun_end_time=None)

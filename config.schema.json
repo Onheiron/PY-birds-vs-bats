@@ -3719,7 +3719,24 @@
               "type": "object"
             },
             "elite_kinds": {
-              "properties": {},
+              "properties": {
+                "healer": {
+                  "properties": {
+                    "heal_pct": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "necromancer": {
+                  "properties": {
+                    "zombies": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
               "type": "object"
             },
             "kinds": {
@@ -3759,6 +3776,35 @@
                   },
                   "type": "object"
                 },
+                "bomber": {
+                  "properties": {
+                    "ability_chance": {
+                      "type": "number"
+                    },
+                    "ability_interval": {
+                      "type": "number"
+                    },
+                    "hp_mult": {
+                      "type": "number"
+                    },
+                    "score_mult": {
+                      "type": "number"
+                    },
+                    "stone_hp": {
+                      "type": "number"
+                    },
+                    "stone_interval": {
+                      "type": "number"
+                    },
+                    "stone_stun": {
+                      "type": "number"
+                    },
+                    "xp_mult": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
                 "diver": {
                   "properties": {
                     "ability_chance": {
@@ -3774,6 +3820,90 @@
                       "type": "number"
                     },
                     "speed": {
+                      "type": "number"
+                    },
+                    "xp_mult": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "healer": {
+                  "properties": {
+                    "ability_chance": {
+                      "type": "number"
+                    },
+                    "ability_interval": {
+                      "type": "number"
+                    },
+                    "fear_strength": {
+                      "type": "number"
+                    },
+                    "heal_pct": {
+                      "type": "number"
+                    },
+                    "heal_range": {
+                      "type": "number"
+                    },
+                    "hp_mult": {
+                      "type": "number"
+                    },
+                    "score_mult": {
+                      "type": "number"
+                    },
+                    "xp_mult": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "necromancer": {
+                  "properties": {
+                    "ability_chance": {
+                      "type": "number"
+                    },
+                    "ability_interval": {
+                      "type": "number"
+                    },
+                    "fear_strength": {
+                      "type": "number"
+                    },
+                    "hp_mult": {
+                      "type": "number"
+                    },
+                    "projectile_defense": {
+                      "type": "number"
+                    },
+                    "score_mult": {
+                      "type": "number"
+                    },
+                    "xp_mult": {
+                      "type": "number"
+                    },
+                    "zombie_fear": {
+                      "type": "number"
+                    },
+                    "zombies": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "plague": {
+                  "properties": {
+                    "hp_mult": {
+                      "type": "number"
+                    },
+                    "plague_presses": {
+                      "type": "number"
+                    },
+                    "plague_spread": {
+                      "type": "number"
+                    },
+                    "plague_time": {
+                      "type": "number"
+                    },
+                    "score_mult": {
                       "type": "number"
                     },
                     "xp_mult": {
@@ -3870,6 +4000,10 @@
                       "type": "number"
                     }
                   },
+                  "type": "object"
+                },
+                "stone": {
+                  "properties": {},
                   "type": "object"
                 }
               },

@@ -5,7 +5,7 @@ import time as time
 
 from src.core import constants, state
 from src.engine import bird_kinds, clock, enemy_stats
-from src.engine.logic import afflictions
+from src.engine.logic import afflictions, bat_abilities
 from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
 
@@ -60,8 +60,8 @@ def update_bat_positions():
             bat['y_pos'] += 1
 
 
-# Kind -> ability run every tick (new kinds add theirs here)
-ABILITIES = {}
+# Kind -> ability run every tick
+ABILITIES = bat_abilities.ABILITIES
 
 
 def _update_diver_bat(bat):

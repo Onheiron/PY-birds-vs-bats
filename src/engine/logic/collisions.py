@@ -5,7 +5,7 @@ import random
 from src.core import constants, state
 from src.engine import bird_kinds, clock, enemy_stats, events, hazards, stats
 from src.engine.birds import check_pending_transforms, reset_bird_power, scare_bird, set_ball_vy, stun_bird
-from src.engine.logic import afflictions
+from src.engine.logic import afflictions, bat_abilities
 from src.engine.logic.damage import calculate_bird_damage, handle_bat_death
 from src.engine.logic.drops import drop_loot
 from src.engine.logic.flowers import apply_flower_collision_effect
@@ -268,6 +268,9 @@ def check_bird_bat_collision():
                 fear = scared_duration * enemy_stats.get(bat, 'fear_strength')
                 scare_bird(i, fear, enemy_stats.get(bat, 'fear_push'))
                 _scare_neighbours(i, bat, scared_duration)
+            # Plague bats infect the bird that touches them
+            if 'plague' in enemy_stats.bat_kinds(bat):
+                bat_abilities.infect(i, bat)
 
             # A bird that hits a diver mid-dive is pushed down faster for a moment
             if is_diver and diver_state == 'diving':
