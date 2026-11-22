@@ -141,6 +141,7 @@ class Bot:
         self.rng = random.Random(seed)
         self.cooldown = 0
         self.up_cooldown = 0  # the UP hand, when playing with two hands
+        self.chasing = None  # the bird the cursor is running for
         self.fall_seen = {}  # bird -> frame it was first seen falling
         self.frame = 0
         self.keys_pressed = 0
@@ -580,7 +581,24 @@ class Bot:
         if charge is not None:
             return charge
         if targets:
-            slack, lane, _bird, _ready = min(targets)
+            # Triage: a bird that can no longer be reached is not the one to run for
+            savable = [t for t in targets if t[0] >= 0]
+            slack, lane, bird, _ready = min(savable or targets)
+            # Stick to the bird it is running for unless another is clearly more urgent:
+            # switching back and forth between two birds saves neither
+            current = [t for t in savable if t[2] == self.chasing]
+            if current and current[0][0] <= slack + self.skill.safety_frames:
+                slack, lane, bird, _ready = current[0]
+            self.chasing = bird
+            # A bird under the cursor that has fallen far enough gets its UP now, unless
+            # that UP is the last moment to set off for a savable bird elsewhere
+            cursor_lanes = set(get_affected_lanes())
+            here = [t for t in targets if t[1] in cursor_lanes and t[3]]
+            if here and not self._harmful_press():
+                margin = self.skill.key_interval + self.skill.safety_frames
+                last_call = [t for t in savable if t[1] not in cursor_lanes and t[0] < margin]
+                if not last_call:
+                    return self._bindings()[2]
             if slack <= self.skill.safety_frames:
                 return self._key_towards(self._hub_lane(lane), True)
             # Sweep: a falling bird under the cursor gets its UP on the way

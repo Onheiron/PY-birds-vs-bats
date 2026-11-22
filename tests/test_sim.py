@@ -33,7 +33,8 @@ def test_perfect_bot_keeps_the_flock_alive_early_on():
 def test_bot_respects_its_key_rate(name):
     skill = PROFILES[name]
     summary = run(RunConfig(seed=2, skill=skill, max_minutes=1)).summary()
-    assert 0 < summary['keys_per_second'] <= 60 / skill.key_interval + 0.01
+    hands = 2 if skill.two_hands else 1  # moves and UP each at the key rate
+    assert 0 < summary['keys_per_second'] <= hands * 60 / skill.key_interval + 0.01
 
 
 def test_better_players_last_longer():
