@@ -449,6 +449,36 @@ glitch:
     max: 6
     min: 1
   swap_chance: 0.003
+# =============================================================================
+# WORLD HAZARDS (src/engine/hazards.py)
+# =============================================================================
+# Each hazard is set per world (1 to 6); a world without an entry has none.
+hazards:
+  # Gusts on a few adjacent lanes: tailwind (climb faster, fall slower) with
+  # chance tail_chance, else headwind; strength in speed points
+  winds:
+    1: {interval: [12, 20], lanes: [2, 4], duration: 5.0, tail_chance: 1.0, strength: 1}
+    6: {interval: [6, 10],  lanes: [2, 4], duration: 6.0, tail_chance: 0.5, strength: 1}
+  # A share of obstacles rise out of the ground at a height between rows
+  # (share of the screen); for warning seconds they are bubbles, not solid
+  emerging:
+    3: {share: 0.25, rows: [0.35, 0.70], warning: 1.0, look: mud}
+    5: {share: 0.25, rows: [0.35, 0.70], warning: 1.0, look: dark}
+  # Only light_radius lanes around the cursor can be seen (and Clockwork lanes);
+  # a killed bat drops a firefly with firefly_drop chance: light for firefly_light s
+  darkness:
+    5: {light_radius: 1, clockwork_light: true, firefly_drop: 0.15, firefly_light: 8.0}
+  # Every interval seconds a lane cracks at the top for warning seconds, then a
+  # stalactite (hp) falls down it (its stats: enemy_stats.obstacles.kinds.stalactite)
+  stalactites:
+    5: {interval: [6, 10], warning: 1.0, hp: 40}
+  # Share of obstacles that are peaks (enemy_stats.obstacles.kinds.peak)
+  peaks:
+    6: {share: 0.25}
+  # Low cloud banks drifting down over the birds
+  fog:
+    6: {max: 3, interval: [80, 150], width: [8, 16], height: [2, 4], fall_interval: 8}
+
 # Synergies between birds in neighbouring lanes (src/engine/synergies.py).
 # Patchwork counts as the partner of every synergy.
 synergies:
@@ -689,6 +719,13 @@ enemy_stats:
       2: {defense: 3, projectile_defense: 3}          # rock
       3: {damage_taken: 1.2, projectile_defense: 5}   # cloud: soft, but shots pass through
       4: {armor: 8, defense: 2}                       # barrier
+    # Kinds from the world hazards (hazards section) and from bombers
+    kinds:
+      emerging:   {}                                  # rises out of the ground mid-screen
+      stalactite: {fall_interval: -3}                 # falls a row every 2 ticks
+      peak:       {hp_mult: 2.0, armor: 15, knock: 2, knock_time: 1.0}   # knocks birds down hard
+    worlds:
+      5: {tiers: {2: {hp_mult: 1.5, defense: 3}}}     # Void Cave: hard rocks
 
 # =============================================================================
 # ELITE BATS

@@ -79,6 +79,10 @@ def _apply_loot_effect(loot, collector_idx):
     elif loot_type.endswith('_egg'):
         # Bird eggs (an Orange's own egg) hatch a new bird
         _spawn_bird_from_egg(loot_type, loot)
+    elif loot_type == 'firefly':
+        from src.engine import hazards
+
+        hazards.collect_firefly()
     elif loot_type == 'cookie_crumb':
         xp_val = loot.get('xp', 0)
         if xp_val > 0 and state.birds.colors[collector_idx] != COOKIE:

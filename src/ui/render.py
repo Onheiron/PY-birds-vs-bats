@@ -14,6 +14,7 @@ from src.ui.layers.enemies import (
     draw_portals,
     draw_projectiles,
 )
+from src.ui.layers.hazards import draw_hazards
 from src.ui.layers.hud import (
     draw_center_of_mass,
     draw_floor_and_cursor,
@@ -60,6 +61,7 @@ def render_game():
     draw_birds(fb)
     draw_bird_status_indicators(fb)  # poisoned / bleeding / frozen / stunned, above the birds
     draw_cloud_banks(fb)  # Mountain Range foreground clouds (on top of birds)
+    draw_hazards(fb)  # lane winds, darkness (over everything but the cursor), stalactite cracks
     draw_floor_and_cursor(fb)
     draw_footer(fb)
     draw_choice_overlay(fb)

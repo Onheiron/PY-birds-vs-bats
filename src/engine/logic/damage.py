@@ -115,6 +115,9 @@ def handle_bat_death(bat, killer_bird_idx):
 
     # Bats spawned by bosses NEVER drop loot (general rule)
     if not bat.get('from_boss'):
+        from src.engine import hazards
+
+        hazards.maybe_drop_firefly(bat['x_pos'] + 4, bat['y_pos'])
         # Drop loot at closest lane
         bat_center_x = bat['x_pos'] + 4
         closest_lane = min(

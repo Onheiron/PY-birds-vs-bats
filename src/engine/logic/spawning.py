@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, enemy_stats, events
+from src.engine import clock, enemy_stats, events, hazards
 from src.engine.birds import check_pending_transforms
 from src.engine.logic.flowers import maybe_add_flower_to_obstacle
 from src.engine.logic.helpers import get_obstacle_lanes
@@ -130,6 +130,12 @@ def spawn_obstacle():
         'sprite': sprite,  # Sprite specifica (variante + flip)
         'flipped': flipped,
     }
+    # World hazards: obstacles that emerge mid-screen, peaks
+    kind = hazards.obstacle_kind()
+    if kind:
+        obstacle['kind'] = kind
+        if kind == 'emerging':
+            hazards.place_emerging(obstacle)
     state.enemies.spawn_queue.append({'type': 'obstacle', 'data': enemy_stats.equip_obstacle(obstacle)})
 
 
@@ -201,61 +207,6 @@ def process_spawn_queue():
             tier = item['data'].get('tier', 1)
             tier_names = {1: 'BASIC', 2: 'FAST', 3: 'DIVE', 4: 'BOSS'}
             save_manager.discover_bat(tier_names.get(tier, 'BASIC'))
-
-
-def spawn_cloud_bank():
-    """Spawn cloud banks for Mountain Range biome (level group 6)."""
-    # Only spawn in Mountain Range biome
-    if state.game.level_group != 6:
-        state.enemies.cloud_banks = []  # Clear clouds when leaving biome
-        return
-
-    state.enemies.cloud_spawn_timer -= 1
-    if state.enemies.cloud_spawn_timer > 0:
-        return
-
-    # Spawn rate - clouds spawn occasionally
-    state.enemies.cloud_spawn_timer = random.randint(80, 150)
-
-    # Max clouds on screen
-    if len(state.enemies.cloud_banks) >= 3:
-        return
-
-    # Cloud spans multiple lanes
-    width = random.randint(8, 16)
-    x_pos = random.randint(0, constants.layout.width - width)
-
-    # Cloud height (2-4 rows)
-    height = random.randint(2, 4)
-
-    # Start above screen
-    y_pos = -height
-
-    state.enemies.cloud_banks.append(
-        {
-            'x_pos': x_pos,
-            'y_pos': y_pos,
-            'width': width,
-            'height': height,
-            'opacity': random.choice([0.3, 0.5, 0.7]),  # Varying opacity
-        }
-    )
-
-
-def update_cloud_banks():
-    """Move cloud banks down and remove off-screen ones."""
-    if state.game.level_group != 6:
-        return
-
-    # Move clouds down (slower than obstacles)
-    if state.game.frame_count % 8 == 0:
-        for cloud in state.enemies.cloud_banks:
-            cloud['y_pos'] += 1
-
-    # Remove clouds that are off screen
-    state.enemies.cloud_banks = [
-        cloud for cloud in state.enemies.cloud_banks if cloud['y_pos'] < constants.layout.height + 5
-    ]
 
 
 def despawn_old_entities():

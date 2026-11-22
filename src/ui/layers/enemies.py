@@ -1,6 +1,7 @@
 """Obstacles, flowers, portals, bats, loot and projectiles."""
 
 from src.core import constants, state
+from src.engine import hazards
 from src.engine.progression import hp_scale
 from src.entities.sprites import (
     ARMORED_BAT_FRAME_1,
@@ -10,6 +11,7 @@ from src.entities.sprites import (
     BAT_FRAME_2,
     BOSS_DEAD,
     CYAN,
+    DARK_GRAY,
     DIVER_BAT_DIVE,
     DIVER_BAT_FRAME_1,
     DIVER_BAT_FRAME_2,
@@ -97,6 +99,17 @@ def draw_obstacles(fb):
             start_lane = obs['lane']
             center_x = constants.layout.lane_positions[start_lane]
             x_offset = sprite_width // 2
+
+            # Still emerging (hazards.emerging): only bubbles, or dim specks in the dark
+            if hazards.is_emerging(obs):
+                bubble = '·' if obs.get('look') == 'dark' else ('o' if state.game.frame_count // 6 % 2 else '°')
+                line = sprite[-1]
+                y_pos = obs['y_pos'] + len(sprite) - 1
+                if 0 <= y_pos < constants.layout.height:
+                    for i, char in enumerate(line):
+                        if char != ' ' and i % 2 == 0:
+                            fb.put(GAME_X_OFFSET + center_x - x_offset + i, y_pos + HEADER_HEIGHT, bubble, DARK_GRAY)
+                continue
 
             for line_idx, line in enumerate(sprite):
                 y_pos = obs['y_pos'] + line_idx
@@ -345,6 +358,7 @@ def draw_loot(fb):
         'orange_egg': ('⬯', 'ORANGE'),
         'cookie_egg': ('⬯', 'COOKIE'),
         'cookie_crumb': ('•', 'COOKIE'),
+        'firefly': ('✦', 'YELLOW'),
         'dinosaur_egg': ('⬯', 'DINOSAUR'),
         'glitch_egg': ('⬯', 'GLITCH'),
         'purple_egg': ('⬯', 'PURPLE'),

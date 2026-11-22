@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from src.core import state
-from src.engine import choices, enemy_stats, events, stats, synergies
+from src.engine import choices, enemy_stats, events, hazards, stats, synergies
 from src.engine.bat_ai import update_bat_positions
 from src.engine.glitch import update_glitch_chaos
 from src.engine.logic import afflictions
@@ -55,9 +55,7 @@ from src.engine.logic.spawning import (
     despawn_old_entities,
     process_spawn_queue,
     spawn_bat,
-    spawn_cloud_bank,
     spawn_obstacle,
-    update_cloud_banks,
 )
 from src.engine.physics import (
     update_bird_positions,
@@ -143,9 +141,8 @@ SYSTEMS = (
     # No regular enemies while a boss is on screen
     System('obstacle spawn', Phase.SPAWN, spawn_obstacle, when=no_boss),
     System('bat spawn', Phase.SPAWN, spawn_bat, when=no_boss),
-    System('cloud bank spawn', Phase.SPAWN, spawn_cloud_bank),
     System('spawn queue', Phase.SPAWN, process_spawn_queue),
-    System('cloud banks', Phase.ACT, update_cloud_banks),
+    System('world hazards', Phase.ACT, hazards.update),
     System('mini bats act', Phase.ACT, update_mini_bats),
     System('obstacle flowers', Phase.ACT, update_obstacle_flowers),
     System('boss', Phase.ACT, update_boss),

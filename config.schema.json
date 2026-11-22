@@ -3841,8 +3841,64 @@
               "properties": {},
               "type": "object"
             },
+            "kinds": {
+              "properties": {
+                "emerging": {
+                  "properties": {},
+                  "type": "object"
+                },
+                "peak": {
+                  "properties": {
+                    "armor": {
+                      "type": "number"
+                    },
+                    "hp_mult": {
+                      "type": "number"
+                    },
+                    "knock": {
+                      "type": "number"
+                    },
+                    "knock_time": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "stalactite": {
+                  "properties": {
+                    "fall_interval": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
             "tiers": {
               "additionalProperties": {
+                "type": "object"
+              },
+              "type": "object"
+            },
+            "worlds": {
+              "additionalProperties": {
+                "properties": {
+                  "tiers": {
+                    "additionalProperties": {
+                      "properties": {
+                        "defense": {
+                          "type": "number"
+                        },
+                        "hp_mult": {
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "object"
+                  }
+                },
                 "type": "object"
               },
               "type": "object"
@@ -3931,6 +3987,146 @@
         },
         "swap_chance": {
           "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "hazards": {
+      "properties": {
+        "darkness": {
+          "additionalProperties": {
+            "properties": {
+              "clockwork_light": {
+                "type": "boolean"
+              },
+              "firefly_drop": {
+                "type": "number"
+              },
+              "firefly_light": {
+                "type": "number"
+              },
+              "light_radius": {
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "emerging": {
+          "additionalProperties": {
+            "properties": {
+              "look": {
+                "type": "string"
+              },
+              "rows": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "share": {
+                "type": "number"
+              },
+              "warning": {
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "fog": {
+          "additionalProperties": {
+            "properties": {
+              "fall_interval": {
+                "type": "number"
+              },
+              "height": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "interval": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "max": {
+                "type": "number"
+              },
+              "width": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "peaks": {
+          "additionalProperties": {
+            "properties": {
+              "share": {
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "stalactites": {
+          "additionalProperties": {
+            "properties": {
+              "hp": {
+                "type": "number"
+              },
+              "interval": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "warning": {
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "winds": {
+          "additionalProperties": {
+            "properties": {
+              "duration": {
+                "type": "number"
+              },
+              "interval": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "lanes": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "strength": {
+                "type": "number"
+              },
+              "tail_chance": {
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
         }
       },
       "type": "object"

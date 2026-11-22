@@ -153,6 +153,17 @@ def _new_items():
 # ============================================================================
 # SPELL EFFECTS STATE (from spellcaster bats)
 # ============================================================================
+def _new_hazards():
+    return SimpleNamespace(
+        # World hazards (src/engine/hazards.py)
+        lane_winds={},  # lane -> {'end', 'tail', 'strength'}
+        next_wind=None,
+        stalactite_warnings=[],  # [{'lane', 'falls_at'}]
+        next_stalactite=None,
+        light_until=0.0,  # firefly light in the dark world
+    )
+
+
 def _new_spells():
     return SimpleNamespace(
         # Silence spell - lanes where bird powers are disabled
@@ -322,6 +333,7 @@ special = _new_special()
 enemies = _new_enemies()
 items = _new_items()
 spells = _new_spells()
+hazards = _new_hazards()
 powerups = _new_powerups()
 game = _new_game()
 player = _new_player()
@@ -340,6 +352,7 @@ _SESSION_FACTORIES = (
     (enemies, _new_enemies),
     (items, _new_items),
     (spells, _new_spells),
+    (hazards, _new_hazards),
     (powerups, _new_powerups),
     (game, _new_game),
     (player, _new_player),

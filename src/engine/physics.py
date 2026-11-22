@@ -4,7 +4,7 @@ import math
 import random
 
 from src.core import constants, state
-from src.engine import clock, stats, synergies
+from src.engine import clock, enemy_stats, hazards, stats, synergies
 from src.engine.birds import reset_bird_power, set_ball_vy
 from src.entities.sprites import CLOCKWORK, GLITCH
 
@@ -149,6 +149,14 @@ def update_bird_positions():
                 elif wind_down > 0:  # Tailwind: nerf down
                     current_speed = max(1, current_speed - wind_down)
 
+        # World winds on this lane (hazards.winds): tailwind or headwind
+        rise_wind, fall_wind = hazards.lane_wind(bird_lane)
+        if rise_wind or fall_wind:
+            if state.birds.vy[i] == -1:
+                current_speed = max(1, current_speed + rise_wind)
+            else:
+                current_speed = max(1, current_speed + fall_wind)
+
         # Apply repugnant wind (reverse tailwind from spellcaster bats)
         if bird_lane in state.spells.repugnant_wind_lanes:
             wind_info = state.spells.repugnant_wind_lanes[bird_lane]
@@ -260,8 +268,10 @@ def update_obstacle_positions():
                 state.enemies.obstacles.remove(obs)
             continue
 
-        # Obstacles move at speed 1 (every 5 frames)
-        if state.game.frame_count % 5 == 0:
+        # Obstacles fall one row every fall_interval ticks (5); emerging ones wait
+        if hazards.is_emerging(obs):
+            continue
+        if state.game.frame_count % max(1, int(enemy_stats.get(obs, 'fall_interval'))) == 0:
             obs['y_pos'] += 1
 
         # Remove if reached floor or starting line

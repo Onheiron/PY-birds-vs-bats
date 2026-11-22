@@ -46,6 +46,7 @@ SECTIONS = (
     'rock',
     'orange',
     'synergies',
+    'hazards',
     'timelapse',
     'progression',
     'combat',

@@ -201,8 +201,8 @@ def draw_background(fb):
 
 def draw_cloud_banks(fb):
     """Render Mountain Range cloud banks (foreground fog that obscures game area)."""
-    # Only render in Mountain Range biome
-    if state.game.level_group != 6:
+    # Only where the world has fog (hazards.fog)
+    if not state.enemies.cloud_banks:
         return
 
     # Cloud color - semi-transparent white/gray

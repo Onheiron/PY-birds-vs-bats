@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, enemy_stats, events, stats
+from src.engine import bird_kinds, clock, enemy_stats, events, hazards, stats
 from src.engine.birds import check_pending_transforms, reset_bird_power, scare_bird, set_ball_vy, stun_bird
 from src.engine.logic import afflictions
 from src.engine.logic.damage import calculate_bird_damage, handle_bat_death
@@ -147,6 +147,8 @@ def check_bird_obstacle_collision():
             continue
 
         for obs in state.enemies.obstacles[:]:
+            if hazards.is_emerging(obs):
+                continue  # still rising out of the ground: not solid yet
             # Check if bird lane is within obstacle's lanes
             obs_lanes = get_obstacle_lanes(obs)
             if bird_lane not in obs_lanes and not obs_lanes.intersection(bird_kinds.covered_lanes(i)):
@@ -193,8 +195,14 @@ def check_bird_obstacle_collision():
                 play_sfx('destroy')
             else:
                 set_ball_vy(i, 1)
-                # Stunned (cannot bounce) and falling fast for a second
-                stun_bird(i, 1.0)
+                # Stunned (cannot bounce) for the obstacle's stun seconds; peaks also knock it down
+                stun_bird(i, enemy_stats.get(obs, 'stun'))
+                knock = enemy_stats.get(obs, 'knock')
+                if knock:
+                    state.special.dive_fall_boosts[i] = {
+                        'frames': int(enemy_stats.get(obs, 'knock_time') / constants.timing.base_sleep),
+                        'speed': knock,
+                    }
                 if bird_color == BLUE:
                     reset_bird_power(i)
                 play_sfx('hit')
@@ -349,6 +357,8 @@ def check_projectile_collision():
 
         # Check obstacle collision
         for obs in state.enemies.obstacles[:]:
+            if hazards.is_emerging(obs):
+                continue
             # Check if projectile lane is within obstacle's lanes
             obs_lanes = get_obstacle_lanes(obs)
             if proj['lane'] not in obs_lanes:
@@ -496,6 +506,8 @@ def check_bat_obstacle_collision():
         bat_bottom = bat['y_pos'] + 1
 
         for obs in state.enemies.obstacles[:]:
+            if hazards.is_emerging(obs):
+                continue
             # Calcola l'area occupata dall'ostacolo (multi-lane)
             tier = obs.get('tier', 1)
             lane_width = OBSTACLE_LANE_WIDTH.get(tier, 1)
