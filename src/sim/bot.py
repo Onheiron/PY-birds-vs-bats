@@ -90,16 +90,17 @@ class Skill:
 PROFILES = {
     # Frame-perfect, 60 keys per second: an upper bound on what the rules allow
     'perfect': Skill(),
-    # A very good human: 15 keys/s, 150 ms reactions, rare slips. Like a good player it
-    # arranges the flock for its synergies and swaps to brake above gear 7
-    'expert': Skill(key_interval=4, reaction_frames=9, miss_rate=0.02, safety_frames=10, formation='auto', max_gear=7),
-    # A decent player: 10 keys/s, 250 ms reactions; formation and brake as the expert
+    # Key rates are what a human keeps up for a whole game, not bursts.
+    # A very good player: 7.5 keys/s, 200 ms reactions, rare slips. It arranges the
+    # flock for its synergies and swaps to brake above gear 7
+    'expert': Skill(key_interval=8, reaction_frames=12, miss_rate=0.02, safety_frames=12, formation='auto', max_gear=7),
+    # A decent player: 5 keys/s, 300 ms reactions; formation and brake as the expert
     'average': Skill(
-        key_interval=6, reaction_frames=15, miss_rate=0.05, safety_frames=14, formation='auto', max_gear=7
+        key_interval=12, reaction_frames=18, miss_rate=0.05, safety_frames=16, formation='auto', max_gear=7
     ),
-    # Someone learning: 6 keys/s, 400 ms reactions, no powers, no anticipation
+    # Someone learning: 3 keys/s, 450 ms reactions, no powers, no anticipation
     'novice': Skill(
-        key_interval=10, reaction_frames=24, miss_rate=0.1, use_powers=False, anticipate=False, safety_frames=18
+        key_interval=20, reaction_frames=27, miss_rate=0.1, use_powers=False, anticipate=False, safety_frames=20
     ),
 }
 

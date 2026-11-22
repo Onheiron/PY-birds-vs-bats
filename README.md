@@ -265,8 +265,8 @@ python3 tools/simulate.py --runs 40
 python3 tools/simulate.py --runs 60 --bot perfect --variant "base:" --variant "slower: speed.mph_per_level=30"
 ```
 
-- `--bot` picks a player: `perfect` (60 keys/s, instant), `expert` (15 keys/s,
-  150 ms reactions), `average`, `novice`; `--bot-set key_interval=3` adjusts one trait.
+- `--bot` picks a player: `perfect` (60 keys/s, instant), `expert` (7.5 keys/s,
+  200 ms reactions), `average` (5 keys/s), `novice` (3 keys/s); `--bot-set key_interval=3` adjusts one trait.
 - `--set section.key=value` changes the configuration, `--variant` compares
   several configurations on the same seeds, `--base FILE` starts from another
   config, `--difficulty`, `--start-level`, `--formation RED,RED,...` set up the game.
