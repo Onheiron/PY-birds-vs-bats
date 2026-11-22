@@ -52,11 +52,8 @@ combat:
   obstacle_destroy_xp_per_tier: 5    # XP = tier * this value
   obstacle_destroy_score_per_tier: 50  # Score = tier * this value
   bat_destroy_xp_per_tier: 5         # XP = tier * this value
-  # Scared effect duration (seconds)
+  # Scared effect duration (seconds); how much faster a scared bird falls is the bat's fear_push
   scared_duration: 2.0
-  # Speed boost duration when hit by high tier bat (seconds)
-  speed_boost_duration: 2.0
-  speed_boost_min_tier: 3            # Minimum bat tier to trigger speed boost
   # Damage formula: ((gear - gear_offset) * gear_coeff + dmg) * spd
   damage_formula:
     gear_offset: 3
@@ -72,7 +69,6 @@ loot:
   # Glitch bird special loot interactions
   glitch_ignore_chance: 0.05         # Chance to ignore loot
   # Despawn times (seconds)
-  bat_despawn_time: 60
   loot_despawn_time: 30
   # Gold bird score per tick
   gold_bird_score_per_tick: 100
@@ -108,7 +104,7 @@ eggs:
     mythical:
       rainbow_egg: 100
 bat_enemy:
-  # Bat HP grows by this share per level above 1 (0.08: +80% at level 11)
+  # Bat HP grows by this share per level above 1 (0.05: +85% at level 18)
   level_hp_multiplier: 0.05
   hp_by_tier:
     0: 160      # Mini bat (tier 0) - hides in obstacles
@@ -116,151 +112,53 @@ bat_enemy:
     2: 480
     3: 960
     4: 1920
-  # Mini bat (tier 0) spawn settings - spawns from tier 3+ obstacles
+  # Everything a world spawns. One entry per world (1 to 6):
+  #   max_bats: bats on screen at most; spawn_interval: ticks between two spawns
+  #   tiers: weights of tiers 1..4
+  #   kinds: chance that a bat is of that kind (one kind at most, if its tier
+  #          reaches kind_min_tier); the rest are plain bats
+  #   height: rows where bats settle [min, max]; dive_height: where divers
+  #          settle, as a share of the screen [min, max]
+  #   mini_bat: chance that hitting a tier-3+ obstacle lets a mini bat out
+  # The stats of each kind (abilities included) are in enemy_stats.bats, and
+  # can change world by world in enemy_stats.bats.worlds.
+  worlds:
+    - {max_bats: 0, spawn_interval: 0,   tiers: [0, 0, 0, 0],     kinds: {},
+       height: [3, 8],   dive_height: [0.05, 0.20], mini_bat: 0.10}
+    - {max_bats: 3, spawn_interval: 110, tiers: [65, 30, 5, 0],   kinds: {diver: 0.08},
+       height: [3, 8],   dive_height: [0.08, 0.25], mini_bat: 0.20}
+    - {max_bats: 4, spawn_interval: 95,  tiers: [45, 35, 17, 3],
+       kinds: {armored: 0.08, diver: 0.10, spellcaster: 0.06},
+       height: [5, 12],  dive_height: [0.10, 0.30], mini_bat: 0.30}
+    - {max_bats: 4, spawn_interval: 85,  tiers: [30, 40, 22, 8],
+       kinds: {armored: 0.10, diver: 0.12, spellcaster: 0.08},
+       height: [8, 16],  dive_height: [0.12, 0.35], mini_bat: 0.40}
+    - {max_bats: 5, spawn_interval: 70,  tiers: [15, 35, 35, 15],
+       kinds: {armored: 0.15, diver: 0.12, spellcaster: 0.10},
+       height: [10, 20], dive_height: [0.15, 0.40], mini_bat: 0.50}
+    - {max_bats: 6, spawn_interval: 55,  tiers: [5, 25, 45, 25],
+       kinds: {armored: 0.20, diver: 0.14, spellcaster: 0.12},
+       height: [12, 23], dive_height: [0.18, 0.45], mini_bat: 0.60}
+  # Lowest tier of each kind
+  kind_min_tier: {armored: 2, diver: 1, spellcaster: 2, healer: 2, bomber: 2, plague: 2, necromancer: 3}
+  # Armor of armored bats, by tier
+  armored:
+    armor_by_tier: {2: 10, 3: 10, 4: 20}
+  # Mini bats (tier 0) hide in tier 3+ obstacles; the chance is the world's mini_bat
   mini_bat:
     min_level: 2                   # Minimum game level for mini bats to spawn (1-18)
     min_obstacle_tier: 3           # Minimum obstacle tier that can hide mini bats
     min_y_fraction: 0.25           # Obstacle must be at least this far down screen (0.0=top, 1.0=bottom)
     anim_frames_per_step: 2        # Animation speed
-    # Spawn probability per level range (chance when tier 3+ obstacle is hit)
-    spawn_probability_by_level:
-      level_1_3: 1              # 10% - rare at early levels
-      level_4_6: 0.20              # 20%
-      level_7_9: 0.30              # 30%
-      level_10_12: 0.40            # 40%
-      level_13_15: 0.50            # 50%
-      level_16_18: 0.60            # 60% - common at high levels
-  # Jumpscare bat settings - rare mini bat variant with scary face attack
+  # A share of mini bats are jumpscares: out of the obstacle, a scary face
+  # scares the birds in affected_lanes lanes for fear_duration seconds
   jumpscare_bat:
-    spawn_chance: 1                # 15% chance to spawn jumpscare instead of mini bat
+    spawn_chance: 0.15             # Share of mini bats that are jumpscares
     visible_duration: 3.0          # Seconds to stay visible before hiding again
     scary_face_duration: 0.5       # Seconds to show scary face
     fear_duration: 2.0             # Base fear duration in seconds
-    affected_lanes: 3              # Number of lanes affected by scary face (centered on bat)    random_scream_chance: 0.02     # 2% chance per frame to do random scream while active  # Armored bat settings - heavier variant that appears from tier 2+
-  armored:
-    min_tier: 2                    # Only tier 2+ bats can be armored
-    despawn_time: 150              # 2.5 minutes (normal is 60s)
-    movement_range_mult: 0.7       # Move 30% less distance
-    # Damage reduction per tier (subtracted from damage)
-    damage_reduction_by_tier:
-      2: 10
-      3: 10
-      4: 20
-    # Additional scare effect when hit by armored bat
-    scare_speed_bonus: 1           # +1 speed boost
-    scare_bonus_duration: 1.0      # 1 second extra
-    # Spawn probability per level range (chance that a tier 2+ bat spawns armored)
-    spawn_probability_by_level:
-      level_1_3: 0.00              # No bats yet
-      level_4_6: 0.05              # 5% - very rare early
-      level_7_9: 0.10              # 10%
-      level_10_12: 0.15            # 15%
-      level_13_15: 0.20            # 20%
-      level_16_18: 0.25            # 25% - more common late game
-  # Diver bat settings - bats that dive down at high speed
-  diver:
-    min_tier: 1                    # All tiers can be divers
-    # Y position range (fraction of screen height) - stays in upper half
-    # Early levels: closer to ceiling, later levels: closer to middle
-    y_range_by_level:
-      level_1_3: {min: 0.05, max: 0.20}   # Very high (5-20% from top)
-      level_4_6: {min: 0.08, max: 0.25}   # High (8-25%)
-      level_7_9: {min: 0.10, max: 0.30}   # Upper (10-30%)
-      level_10_12: {min: 0.12, max: 0.35} # Upper-mid (12-35%)
-      level_13_15: {min: 0.15, max: 0.40} # Mid-upper (15-40%)
-      level_16_18: {min: 0.18, max: 0.45} # Closer to middle (18-45%)
-    # Dive settings
-    dive_probability_per_second: 0.20    # 20% chance per second to start dive
-    dive_speed: 2                        # Moves down every N frames (faster than obstacles)
-    dive_distance: 10                    # Max rows to dive before returning
-    # Stun settings (after dive ends)
-    stun_duration: 1.5                   # Seconds stunned after dive
-    return_speed: 6                      # Frames between return steps (slower rise)
-    # Collision effect during dive
-    dive_boost_speed: 1                  # +1 fall speed when hit during dive
-    dive_boost_duration: 0.5             # Duration of boost effect
-    # Spawn probability per level range (chance that a bat spawns as diver)
-    spawn_probability_by_level:
-      level_1_3: 0.00              # No bats yet
-      level_4_6: 0.08              # 8% - rare early
-      level_7_9: 0.12              # 12%
-      level_10_12: 0.16            # 16%
-      level_13_15: 0.20            # 20%
-      level_16_18: 0.25            # 25% - common late game
-  # Spellcaster bat settings - bats that cast spells
-  spellcaster:
-    min_tier: 2                    # Only tier 2+ bats can be spellcasters
-    # Number of spells known by tier
-    spells_by_tier:
-      2: 1                         # Tier 2: knows 1 spell (silence)
-      3: 2                         # Tier 3: knows 2 spells (silence, repugnant wind)
-      4: 3                         # Tier 4: knows all 3 spells
-    # Spell cast probability per second (increases with level)
-    cast_probability_by_level:
-      level_1_3: 0.00
-      level_4_6: 0.10              # 10% per second
-      level_7_9: 0.15              # 15%
-      level_10_12: 0.20            # 20%
-      level_13_15: 0.25            # 25%
-      level_16_18: 0.30            # 30%
-    # Cooldown between spell casts (seconds)
-    cast_cooldown: 3.0
-    # Casting animation duration (seconds)
-    casting_duration: 0.5
-    # Spell durations by tier (seconds)
-    silence:
-      duration_by_tier:
-        2: 3.0
-        3: 4.0
-        4: 5.0
-    repugnant_wind:
-      duration_by_tier:
-        3: 3.0
-        4: 4.5
-      speed_boost: 1               # +1 fall speed
-      speed_nerf: 1                # -1 rise speed
-    exile:
-      # No duration - instant effect
-      swap_delay: 0.3              # Seconds before swap happens
-    # Spawn probability per level range (chance that a tier 2+ bat spawns as spellcaster)
-    spawn_probability_by_level:
-      level_1_3: 0.00              # No bats yet
-      level_4_6: 0.05              # 5% - very rare early
-      level_7_9: 0.08              # 8%
-      level_10_12: 0.12            # 12%
-      level_13_15: 0.15            # 15%
-      level_16_18: 0.20            # 20% - more common late game
-  # Spawn rate per level range (frames between spawns)
-  spawn_rate_by_level:
-    level_4_6: 90
-    level_7_9: 110
-    level_10_12: 85
-    level_13_15: 65
-    level_16_18: 50
-  # Max bats on screen per level range
-  max_bats_by_level:
-    level_4_6: 4
-    level_7_9: 3
-    level_10_12: 4
-    level_13_15: 5
-    level_16_18: 6
-  # Tier weights per level range [tier1, tier2, tier3, tier4]
-  # Note: Tier 0 (mini bats) spawn from obstacles, not directly - see mini_bat config
-  tier_weights_by_level:
-    level_1_3: [0, 0, 0, 0]        # No bats yet
-    level_4_6: [40, 35, 25, 0]
-    level_7_9: [50, 35, 12, 3]
-    level_10_12: [30, 40, 22, 8]
-    level_13_15: [15, 35, 35, 15]
-    level_16_18: [5, 25, 45, 25]
-  # Target Y position ranges per level (how close bats fly to birds)
-  target_y_by_level:
-    level_4_6: {min: 3, max: 8}
-    level_7_9: {min: 5, max: 12}
-    level_10_12: {min: 8, max: 16}
-    level_13_15: {min: 10, max: 20}
-    level_16_18: {min: 12, max: 23}
-# Boss configuration - end of biome bosses
+    affected_lanes: 3              # Number of lanes affected by scary face (centered on bat)
+    random_scream_chance: 0.02     # Chance per frame to scream again while visible
 boss:
   # HP for the boss (high HP, requires sustained effort)
   hp: 1000
@@ -755,8 +653,7 @@ bird_stats:
 # Resolved when an enemy spawns: defaults, then per tier, then per kind
 # (armored / diver / spellcaster), then elite stats and affixes. Flat stats
 # add up; hp_mult, damage_taken, fear_strength, speed, xp_mult and
-# score_mult multiply. Armored bats also get bat_enemy.armored
-# .damage_reduction_by_tier as armor.
+# score_mult multiply. Armored bats also get bat_enemy.armored.armor_by_tier as armor.
 enemy_stats:
   bats:
     defaults: {}
@@ -765,14 +662,26 @@ enemy_stats:
       0: {defense: 0, fear_strength: 1.2}             # jumpscares are scarier
       1: {}
       2: {defense: 1, fear_strength: 1.1}
-      3: {defense: 2, fear_strength: 1.2, regen: 5}
-      4: {defense: 4, fear_strength: 1.3, regen: 10, speed: 0.9}
+      3: {defense: 2, fear_strength: 1.2, regen: 5, spells: 1, silence_time: 1.0}
+      4: {defense: 4, fear_strength: 1.3, regen: 10, speed: 0.9, spells: 2, silence_time: 2.0,
+          wind_time: 1.5}
+    # Each kind: its toughness, and the numbers of its ability (see the stat list in docs/stats.md)
     kinds:
-      armored:     {hp_mult: 1.3, projectile_defense: -5, speed: 0.6, descent_interval: 1,
-                    fear_strength: 1.2, xp_mult: 1.3, score_mult: 1.3}
-      diver:       {hp_mult: 0.8, contact_defense: -3, speed: 1.3, fear_strength: 1.3, xp_mult: 1.2}
+      armored:     {hp_mult: 1.3, projectile_defense: -5, speed: 0.6, descent_interval: 1, move_step: -1,
+                    linger: 90, fear_push: 1, fear_strength: 1.2, xp_mult: 1.3, score_mult: 1.3}
+      diver:       {hp_mult: 0.8, contact_defense: -3, speed: 1.3, fear_strength: 1.3, xp_mult: 1.2,
+                    ability_chance: 0.2}
       spellcaster: {hp_mult: 0.7, projectile_defense: 5, contact_defense: -2, speed: 0.9,
-                    fear_strength: 1.5, fear_radius: 1, xp_mult: 1.4, score_mult: 1.4}
+                    fear_strength: 1.5, fear_radius: 1, xp_mult: 1.4, score_mult: 1.4,
+                    ability_chance: 0.1, ability_interval: 3.0}
+    # Changes world by world: flat stats for every bat, or per tier / per kind
+    worlds:
+      3: {kinds: {spellcaster: {spells: -2, ability_chance: 0.05}}}   # silence only
+      4: {kinds: {spellcaster: {ability_chance: 0.10}}}
+      5: {kinds: {spellcaster: {ability_chance: 0.15}}}
+      6: {kinds: {spellcaster: {ability_chance: 0.20}}}
+    # What an elite of a kind gets on top of the elite stats
+    elite_kinds: {}
   obstacles:
     defaults: {}
     tiers:

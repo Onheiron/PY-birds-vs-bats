@@ -9,255 +9,145 @@ from src.engine.logic import afflictions
 from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
 
+def per_tick(chance_per_second):
+    """A chance per second turned into a chance per tick."""
+    return chance_per_second * getattr(constants.timing, 'base_sleep', 0.033)
+
+
+def _move_horizontally(bat):
+    """Fly sideways: ``move_step`` columns every few ticks (fewer with a higher speed stat)."""
+    speed = enemy_stats.get(bat, 'speed')
+    interval = 3 if speed == 1 else max(1, int(3 / speed + 1e-9))
+    if state.game.frame_count % interval:
+        return
+    step = max(1, int(enemy_stats.get(bat, 'move_step')))
+    next_x = bat['x_pos'] + bat['direction'] * step
+    if _check_bat_can_move(bat, next_x):
+        bat['x_pos'] = next_x
+        if bat['x_pos'] <= 0:
+            bat['x_pos'] = 0
+            bat['direction'] = 1
+        elif bat['x_pos'] >= constants.layout.width - 8:
+            bat['x_pos'] = constants.layout.width - 8
+            bat['direction'] = -1
+    else:
+        bat['direction'] *= -1
+
+
 def update_bat_positions():
-    """Update positions of all bats (horizontal wave + vertical descent)."""
-
+    """Update positions of all bats (horizontal wave + vertical descent) and their abilities."""
     for bat in state.enemies.bats[:]:
-        is_armored = bat.get('armored', False)
-        is_diver = bat.get('diver', False)
-        is_spellcaster = bat.get('spellcaster', False)
-
         # Frozen bats move at a fraction of their speed
         slow = afflictions.slow_factor(bat)
         if slow < 1 and state.game.frame_count % max(1, round(1 / slow)) != 0:
             continue
 
-        # Handle diver bat behavior
-        if is_diver:
+        kinds = enemy_stats.bat_kinds(bat)
+        _move_horizontally(bat)
+        if 'diver' in kinds:
             _update_diver_bat(bat)
-            continue  # Diver bats have their own movement logic
-
-        # Handle spellcaster bat behavior (still moves normally but can cast)
-        if is_spellcaster:
+            continue  # divers handle their own height
+        if 'spellcaster' in kinds:
             _update_spellcaster_bat(bat)
-            # Continue with normal movement below
+        for kind in kinds:
+            ability = ABILITIES.get(kind)
+            if ability:
+                ability(bat)
 
-        # Get movement modifiers for armored bats
-        # Normal: 2 columns every 3 ticks; the speed stat changes how often it moves
-        speed = enemy_stats.get(bat, 'speed')
-        horiz_interval = 3 if speed == 1 else max(1, int(3 / speed + 1e-9))
-        move_distance = 2
-        if is_armored:
-            armored_cfg = getattr(constants.bat_enemy, 'armored', None)
-            if armored_cfg:
-                # Less distance per move
-                move_distance = max(1, int(2 * getattr(armored_cfg, 'movement_range_mult', 0.7)))
-
-        # Horizontal movement
-        if state.game.frame_count % horiz_interval == 0:
-            next_x = bat['x_pos'] + bat['direction'] * move_distance
-            can_move = _check_bat_can_move(bat, next_x)
-
-            if can_move:
-                bat['x_pos'] = next_x
-                # Bounce off walls
-                if bat['x_pos'] <= 0:
-                    bat['x_pos'] = 0
-                    bat['direction'] = 1
-                elif bat['x_pos'] >= constants.layout.width - 8:
-                    bat['x_pos'] = constants.layout.width - 8
-                    bat['direction'] = -1
-            else:
-                bat['direction'] *= -1
-
-        # Vertical descent (same speed as obstacles; armored bats are slower)
+        # Vertical descent to its height
         vert_interval = max(1, int(enemy_stats.get(bat, 'descent_interval')))
-        if state.game.frame_count % vert_interval == 0:
-            if bat['y_pos'] < bat['target_y']:
-                bat['y_pos'] += 1
+        if state.game.frame_count % vert_interval == 0 and bat['y_pos'] < bat['target_y']:
+            bat['y_pos'] += 1
+
+
+# Kind -> ability run every tick (new kinds add theirs here)
+ABILITIES = {}
 
 
 def _update_diver_bat(bat):
-    """Update diver bat behavior: flying, diving, stunned, returning."""
-
-    diver_cfg = getattr(constants.bat_enemy, 'diver', None)
-    if diver_cfg is None:
-        return
-
+    """Diver: flying, diving (dive_rows rows, one every dive_interval ticks), stunned, returning."""
     diver_state = bat.get('diver_state', 'flying')
-
-    # Normal horizontal movement (same as regular bats)
-    horiz_interval = 3
-    move_distance = 2
-
-    if state.game.frame_count % horiz_interval == 0:
-        next_x = bat['x_pos'] + bat['direction'] * move_distance
-        can_move = _check_bat_can_move(bat, next_x)
-
-        if can_move:
-            bat['x_pos'] = next_x
-            if bat['x_pos'] <= 0:
-                bat['x_pos'] = 0
-                bat['direction'] = 1
-            elif bat['x_pos'] >= constants.layout.width - 8:
-                bat['x_pos'] = constants.layout.width - 8
-                bat['direction'] = -1
-        else:
-            bat['direction'] *= -1
-
-    # State-specific vertical movement
     if diver_state == 'flying':
-        # Descend to target Y if not there yet
-        if state.game.frame_count % 5 == 0:
+        if state.game.frame_count % max(1, int(enemy_stats.get(bat, 'descent_interval'))) == 0:
             if bat['y_pos'] < bat['target_y']:
                 bat['y_pos'] += 1
-
-        # Check if should start diving
-        dive_prob_per_sec = getattr(diver_cfg, 'dive_probability_per_second', 0.20)
-        base_sleep = getattr(constants.timing, 'base_sleep', 0.033)
-        dive_prob_per_frame = dive_prob_per_sec * base_sleep
-
-        if bat['y_pos'] >= bat['target_y'] and random.random() < dive_prob_per_frame:
+        ready = clock.now() >= bat.get('ability_ready', 0)
+        if (
+            ready
+            and bat['y_pos'] >= bat['target_y']
+            and random.random() < per_tick(enemy_stats.get(bat, 'ability_chance'))
+        ):
             bat['diver_state'] = 'diving'
             bat['dive_start_y'] = bat['y_pos']
 
     elif diver_state == 'diving':
-        # Fast descent (faster than obstacles)
-        dive_speed = getattr(diver_cfg, 'dive_speed', 2)
-        dive_distance = getattr(diver_cfg, 'dive_distance', 10)
-
-        if state.game.frame_count % dive_speed == 0:
+        if state.game.frame_count % max(1, int(enemy_stats.get(bat, 'dive_interval'))) == 0:
             bat['y_pos'] += 1
-
-        # Check if dive is complete
         dive_start = bat.get('dive_start_y', bat.get('diver_home_y', 5))
-        if bat['y_pos'] >= dive_start + dive_distance or bat['y_pos'] >= constants.layout.starting_line - 3:
-            # End dive, become stunned
+        if (
+            bat['y_pos'] >= dive_start + enemy_stats.get(bat, 'dive_rows')
+            or bat['y_pos'] >= constants.layout.starting_line - 3
+        ):
             bat['diver_state'] = 'stunned'
-            stun_duration = getattr(diver_cfg, 'stun_duration', 1.5)
-            bat['stun_end_time'] = clock.now() + stun_duration
+            bat['stun_end_time'] = clock.now() + enemy_stats.get(bat, 'dive_stun')
 
     elif diver_state == 'stunned':
-        # Wait for stun to end
-        stun_end = bat.get('stun_end_time', 0)
-        if clock.now() >= stun_end:
+        if clock.now() >= bat.get('stun_end_time', 0):
             bat['diver_state'] = 'returning'
 
     elif diver_state == 'returning':
-        # Slow rise back to home position
-        return_speed = getattr(diver_cfg, 'return_speed', 6)
-
-        if state.game.frame_count % return_speed == 0:
+        if state.game.frame_count % max(1, int(enemy_stats.get(bat, 'return_interval'))) == 0:
             home_y = bat.get('diver_home_y', bat['target_y'])
             if bat['y_pos'] > home_y:
                 bat['y_pos'] -= 1
             else:
-                # Back home, can fly again
                 bat['diver_state'] = 'flying'
                 bat['dive_start_y'] = None
+                bat['ability_ready'] = clock.now() + enemy_stats.get(bat, 'ability_interval')
 
 
 def _update_spellcaster_bat(bat):
-    """Update spellcaster bat behavior: casting spells."""
-
-    spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
-    if spellcaster_cfg is None:
-        return
-
-    spell_state = bat.get('spell_state', 'idle')
+    """Spellcaster: casts a known spell (ability_chance per second, ability_interval apart)."""
     now = clock.now()
-
-    # Check if currently casting
-    if spell_state == 'casting':
-        casting_end = bat.get('casting_end_time', 0)
-        if now >= casting_end:
-            # Casting finished, apply the spell effect
+    if bat.get('spell_state', 'idle') == 'casting':
+        if now >= bat.get('casting_end_time', 0):
             _apply_spell_effect(bat)
             bat['spell_state'] = 'idle'
-            # Set cooldown
-            cooldown = getattr(spellcaster_cfg, 'cast_cooldown', 3.0)
-            bat['spell_cooldown'] = now + cooldown
+            bat['spell_cooldown'] = now + enemy_stats.get(bat, 'ability_interval')
         return
-
-    # Check if on cooldown
     if now < bat.get('spell_cooldown', 0):
         return
-
-    # Check if should start casting (bat must be on screen and at target Y)
+    # On screen and at its height
     if bat['y_pos'] < 0 or bat['y_pos'] < bat['target_y']:
         return
-
-    # Get cast probability based on level
-    level = state.game.level
-    cast_prob_cfg = getattr(spellcaster_cfg, 'cast_probability_by_level', None)
-    if cast_prob_cfg:
-        if level <= 3:
-            cast_prob_per_sec = getattr(cast_prob_cfg, 'level_1_3', 0.0)
-        elif level <= 6:
-            cast_prob_per_sec = getattr(cast_prob_cfg, 'level_4_6', 0.10)
-        elif level <= 9:
-            cast_prob_per_sec = getattr(cast_prob_cfg, 'level_7_9', 0.15)
-        elif level <= 12:
-            cast_prob_per_sec = getattr(cast_prob_cfg, 'level_10_12', 0.20)
-        elif level <= 15:
-            cast_prob_per_sec = getattr(cast_prob_cfg, 'level_13_15', 0.25)
-        else:
-            cast_prob_per_sec = getattr(cast_prob_cfg, 'level_16_18', 0.30)
-    else:
-        cast_prob_per_sec = 0.15
-
-    # Convert to per-frame probability
-    base_sleep = getattr(constants.timing, 'base_sleep', 0.033)
-    cast_prob_per_frame = cast_prob_per_sec * base_sleep
-
-    if random.random() < cast_prob_per_frame:
-        # Start casting
+    if random.random() < per_tick(enemy_stats.get(bat, 'ability_chance')):
         bat['spell_state'] = 'casting'
-        casting_duration = getattr(spellcaster_cfg, 'casting_duration', 0.5)
-        bat['casting_end_time'] = now + casting_duration
-        # Choose a random spell from known spells
-        known_spells = bat.get('known_spells', ['silence'])
-        bat['current_spell'] = random.choice(known_spells)
+        bat['casting_end_time'] = now + enemy_stats.get(bat, 'cast_time')
+        bat['current_spell'] = random.choice(bat.get('known_spells', ['silence']))
 
 
 def _apply_spell_effect(bat):
-    """Apply the effect of the spell the bat just cast."""
-
+    """Apply the effect of the spell the bat just cast, on the lanes under it."""
     spell = bat.get('current_spell', 'silence')
     tier = bat.get('tier', 2)
-    spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
-    if spellcaster_cfg is None:
-        return
-
-    # Get lanes affected by this spell (based on bat position)
     affected_lanes = _get_bat_affected_lanes(bat)
     now = clock.now()
 
     if spell == 'silence':
-        # Disable powers in affected lanes
-        silence_cfg = getattr(spellcaster_cfg, 'silence', None)
-        duration_by_tier = getattr(silence_cfg, 'duration_by_tier', None) if silence_cfg else None
-        if duration_by_tier:
-            if isinstance(duration_by_tier, dict):
-                duration = duration_by_tier.get(tier, duration_by_tier.get(str(tier), 3.0))
-            else:
-                duration = getattr(duration_by_tier, str(tier), 3.0)
-        else:
-            duration = 3.0
-
+        # No powers in those lanes
+        duration = enemy_stats.get(bat, 'silence_time')
         for lane in affected_lanes:
             state.spells.silenced_lanes[lane] = {'end_time': now + duration, 'caster_tier': tier}
 
     elif spell == 'repugnant_wind':
-        # Reverse tailwind in affected lanes
-        wind_cfg = getattr(spellcaster_cfg, 'repugnant_wind', None)
-        duration_by_tier = getattr(wind_cfg, 'duration_by_tier', None) if wind_cfg else None
-        if duration_by_tier:
-            if isinstance(duration_by_tier, dict):
-                duration = duration_by_tier.get(tier, duration_by_tier.get(str(tier), 3.0))
-            else:
-                duration = getattr(duration_by_tier, str(tier), 3.0)
-        else:
-            duration = 3.0
-
-        speed_boost = getattr(wind_cfg, 'speed_boost', 1) if wind_cfg else 1
-        speed_nerf = getattr(wind_cfg, 'speed_nerf', 1) if wind_cfg else 1
-
+        # Reverse tailwind: faster falls, slower climbs
+        duration = enemy_stats.get(bat, 'wind_time')
+        push = enemy_stats.get(bat, 'wind_push')
         for lane in affected_lanes:
             state.spells.repugnant_wind_lanes[lane] = {
                 'end_time': now + duration,
-                'speed_boost': speed_boost,
-                'speed_nerf': speed_nerf,
+                'speed_boost': push,
+                'speed_nerf': push,
             }
 
     elif spell == 'exile':

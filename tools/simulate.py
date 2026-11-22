@@ -12,7 +12,7 @@ Examples:
   # A/B test of a config change, same seeds for both sides
   python3 tools/simulate.py --runs 60 \\
       --variant "base:" \\
-      --variant "fewer bats: bat_enemy.max_bats_by_level.level_16_18=3; bat_enemy.spawn_rate_by_level.level_16_18=80"
+      --variant "slower divers: enemy_stats.bats.kinds.diver.ability_chance=0.1"
 
   # A different player: 20 keys per second, slower reactions
   python3 tools/simulate.py --bot expert --bot-set key_interval=3 --bot-set reaction_frames=15

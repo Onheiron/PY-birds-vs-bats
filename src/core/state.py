@@ -52,6 +52,7 @@ def _new_special():
         red_projectiles=[],
         # Speed boosts
         speed_boosts={},
+        scared_push={},  # bird -> extra fall speed while scared (the scarer's fear_push)
         # Dive fall boosts (from diver bats in diving state)
         dive_fall_boosts={},
         # Bounce sprint: bird -> game time when it ends

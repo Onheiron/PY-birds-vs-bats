@@ -96,7 +96,8 @@ def update_bird_positions():
 
         # Apply scared speed boost when falling
         if i in state.special.scared_birds and state.birds.vy[i] == 1:
-            current_speed += 1 - stats.bird(i, 'fear_resist')
+            push = state.special.scared_push.get(i, 1)
+            current_speed += push * (1 - stats.bird(i, 'fear_resist'))
 
         # Apply dive fall boost when falling (from diver bats)
         if i in state.special.dive_fall_boosts and state.birds.vy[i] == 1:

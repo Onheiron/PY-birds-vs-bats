@@ -256,35 +256,17 @@ def check_bird_bat_collision():
             # Apply scared effect (unless stealth tangible or diver stunned/returning)
             is_stealth_tangible = bird_kinds.is_phased_in(i)
             if not is_stealth_tangible and not diver_no_scare:
-                bat_tier = bat.get('tier', 1)
                 scared_duration = getattr(constants.combat, 'scared_duration', 2.0)
-                scared = scare_bird(i, scared_duration * enemy_stats.get(bat, 'fear_strength'))
+                fear = scared_duration * enemy_stats.get(bat, 'fear_strength')
+                scare_bird(i, fear, enemy_stats.get(bat, 'fear_push'))
                 _scare_neighbours(i, bat, scared_duration)
-                speed_boost_min_tier = getattr(constants.combat, 'speed_boost_min_tier', 3)
-                if scared and bat_tier >= speed_boost_min_tier:
-                    speed_boost_duration = getattr(constants.combat, 'speed_boost_duration', 2.0)
-                    state.special.speed_boosts[i] = int(speed_boost_duration / constants.timing.base_sleep)
 
-                # Armored bats give additional scare speed boost
-                if bat.get('armored', False):
-                    armored_cfg = getattr(constants.bat_enemy, 'armored', None)
-                    if armored_cfg:
-                        armor_scare_bonus = getattr(armored_cfg, 'scare_speed_bonus', 1)
-                        armor_scare_duration = getattr(armored_cfg, 'scare_bonus_duration', 1.0)
-                        armor_scare_frames = int(armor_scare_duration / constants.timing.base_sleep)
-                        # Add to existing speed boost or create new one
-                        current_boost = state.special.speed_boosts.get(i, 0)
-                        state.special.speed_boosts[i] = max(current_boost, armor_scare_frames) + armor_scare_bonus
-
-            # Diver bats in diving state give fall speed boost
+            # A bird that hits a diver mid-dive is pushed down faster for a moment
             if is_diver and diver_state == 'diving':
-                diver_cfg = getattr(constants.bat_enemy, 'diver', None)
-                if diver_cfg:
-                    dive_boost_speed = getattr(diver_cfg, 'dive_boost_speed', 1)
-                    dive_boost_duration = getattr(diver_cfg, 'dive_boost_duration', 0.5)
-                    dive_boost_frames = int(dive_boost_duration / constants.timing.base_sleep)
-                    # Apply dive fall boost (separate from scared speed boost)
-                    state.special.dive_fall_boosts[i] = {'frames': dive_boost_frames, 'speed': dive_boost_speed}
+                state.special.dive_fall_boosts[i] = {
+                    'frames': int(enemy_stats.get(bat, 'dive_push_time') / constants.timing.base_sleep),
+                    'speed': enemy_stats.get(bat, 'dive_push'),
+                }
 
             # Knockback pushes the bat up (Rock: 2 rows while its power is active)
             push_rows = int(stats.bird(i, 'knockback'))
@@ -320,7 +302,7 @@ def _scare_neighbours(bird_idx, bat, seconds):
         if j == bird_idx or state.birds.lost[j]:
             continue
         if 0 < abs(state.birds.random_lanes[j] - lane) <= radius:
-            scare_bird(j, seconds * enemy_stats.get(bat, 'fear_strength'))
+            scare_bird(j, seconds * enemy_stats.get(bat, 'fear_strength'), enemy_stats.get(bat, 'fear_push'))
 
 
 def _afflict_from_shot(proj, target, is_boss=False):

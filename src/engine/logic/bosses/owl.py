@@ -334,49 +334,8 @@ def _owl_cast_evocation(boss, spells_cfg):
         if special_type == 'spellcaster' and tier < 2:
             special_type = 'diver'
 
-        bat = {
-            'x_pos': x_pos,
-            'y_pos': -2,  # Start above screen like normal bats
-            'direction': random.choice([-1, 1]),
-            'tier': tier,
-            'hp': hp,
-            'max_hp': hp,
-            'target_y': target_y,
-            'spawn_ts': clock.now(),
-            'from_owl_boss': True,
-            'armored': False,
-            'diver': False,
-            'spellcaster': False,
-        }
-
-        # Set special type with correct field names (same as spawn_bat)
-        if special_type == 'armored':
-            bat['armored'] = True
-        elif special_type == 'diver':
-            bat['diver'] = True
-            bat['diver_state'] = 'flying'
-            bat['diver_home_y'] = target_y
-            bat['dive_start_y'] = None
-            bat['stun_end_time'] = None
-        elif special_type == 'spellcaster':
-            bat['spellcaster'] = True
-            bat['spell_state'] = 'idle'
-            bat['spell_cooldown'] = 0
-            bat['casting_end_time'] = None
-            # Determine known spells based on tier
-            spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
-            spells_by_tier = getattr(spellcaster_cfg, 'spells_by_tier', None) if spellcaster_cfg else None
-            if spells_by_tier:
-                if isinstance(spells_by_tier, dict):
-                    num_spells = spells_by_tier.get(tier, spells_by_tier.get(str(tier), 1))
-                else:
-                    num_spells = getattr(spells_by_tier, str(tier), 1)
-            else:
-                num_spells = min(tier - 1, 3)
-            all_spells = ['silence', 'repugnant_wind', 'exile']
-            bat['known_spells'] = all_spells[:num_spells]
-
-        state.enemies.bats.append(enemy_stats.equip_bat(bat))
+        bat = enemy_stats.make_bat(tier, special_type, x_pos, -2, target_y, hp, from_owl_boss=True)
+        state.enemies.bats.append(bat)
 
 
 def _owl_cast_bend_space(boss, spells_cfg):

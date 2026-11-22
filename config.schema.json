@@ -1071,170 +1071,9 @@
       "properties": {
         "armored": {
           "properties": {
-            "damage_reduction_by_tier": {
+            "armor_by_tier": {
               "additionalProperties": {
                 "type": "number"
-              },
-              "type": "object"
-            },
-            "despawn_time": {
-              "type": "number"
-            },
-            "min_tier": {
-              "type": "number"
-            },
-            "movement_range_mult": {
-              "type": "number"
-            },
-            "scare_bonus_duration": {
-              "type": "number"
-            },
-            "scare_speed_bonus": {
-              "type": "number"
-            },
-            "spawn_probability_by_level": {
-              "properties": {
-                "level_10_12": {
-                  "type": "number"
-                },
-                "level_13_15": {
-                  "type": "number"
-                },
-                "level_16_18": {
-                  "type": "number"
-                },
-                "level_1_3": {
-                  "type": "number"
-                },
-                "level_4_6": {
-                  "type": "number"
-                },
-                "level_7_9": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            }
-          },
-          "type": "object"
-        },
-        "diver": {
-          "properties": {
-            "dive_boost_duration": {
-              "type": "number"
-            },
-            "dive_boost_speed": {
-              "type": "number"
-            },
-            "dive_distance": {
-              "type": "number"
-            },
-            "dive_probability_per_second": {
-              "type": "number"
-            },
-            "dive_speed": {
-              "type": "number"
-            },
-            "min_tier": {
-              "type": "number"
-            },
-            "return_speed": {
-              "type": "number"
-            },
-            "spawn_probability_by_level": {
-              "properties": {
-                "level_10_12": {
-                  "type": "number"
-                },
-                "level_13_15": {
-                  "type": "number"
-                },
-                "level_16_18": {
-                  "type": "number"
-                },
-                "level_1_3": {
-                  "type": "number"
-                },
-                "level_4_6": {
-                  "type": "number"
-                },
-                "level_7_9": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "stun_duration": {
-              "type": "number"
-            },
-            "y_range_by_level": {
-              "properties": {
-                "level_10_12": {
-                  "properties": {
-                    "max": {
-                      "type": "number"
-                    },
-                    "min": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "level_13_15": {
-                  "properties": {
-                    "max": {
-                      "type": "number"
-                    },
-                    "min": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "level_16_18": {
-                  "properties": {
-                    "max": {
-                      "type": "number"
-                    },
-                    "min": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "level_1_3": {
-                  "properties": {
-                    "max": {
-                      "type": "number"
-                    },
-                    "min": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "level_4_6": {
-                  "properties": {
-                    "max": {
-                      "type": "number"
-                    },
-                    "min": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "level_7_9": {
-                  "properties": {
-                    "max": {
-                      "type": "number"
-                    },
-                    "min": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                }
               },
               "type": "object"
             }
@@ -1255,6 +1094,9 @@
             "fear_duration": {
               "type": "number"
             },
+            "random_scream_chance": {
+              "type": "number"
+            },
             "scary_face_duration": {
               "type": "number"
             },
@@ -1262,6 +1104,32 @@
               "type": "number"
             },
             "visible_duration": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "kind_min_tier": {
+          "properties": {
+            "armored": {
+              "type": "number"
+            },
+            "bomber": {
+              "type": "number"
+            },
+            "diver": {
+              "type": "number"
+            },
+            "healer": {
+              "type": "number"
+            },
+            "necromancer": {
+              "type": "number"
+            },
+            "plague": {
+              "type": "number"
+            },
+            "spellcaster": {
               "type": "number"
             }
           },
@@ -1303,29 +1171,6 @@
             },
             "min_y_fraction": {
               "type": "number"
-            },
-            "spawn_probability_by_level": {
-              "properties": {
-                "level_10_12": {
-                  "type": "number"
-                },
-                "level_13_15": {
-                  "type": "number"
-                },
-                "level_16_18": {
-                  "type": "number"
-                },
-                "level_1_3": {
-                  "type": "number"
-                },
-                "level_4_6": {
-                  "type": "number"
-                },
-                "level_7_9": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
             }
           },
           "type": "object"
@@ -1350,168 +1195,6 @@
           },
           "type": "object"
         },
-        "spellcaster": {
-          "properties": {
-            "cast_cooldown": {
-              "type": "number"
-            },
-            "cast_probability_by_level": {
-              "properties": {
-                "level_10_12": {
-                  "type": "number"
-                },
-                "level_13_15": {
-                  "type": "number"
-                },
-                "level_16_18": {
-                  "type": "number"
-                },
-                "level_1_3": {
-                  "type": "number"
-                },
-                "level_4_6": {
-                  "type": "number"
-                },
-                "level_7_9": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "casting_duration": {
-              "type": "number"
-            },
-            "exile": {
-              "properties": {
-                "swap_delay": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "min_tier": {
-              "type": "number"
-            },
-            "repugnant_wind": {
-              "properties": {
-                "duration_by_tier": {
-                  "additionalProperties": {
-                    "type": "number"
-                  },
-                  "type": "object"
-                },
-                "speed_boost": {
-                  "type": "number"
-                },
-                "speed_nerf": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "silence": {
-              "properties": {
-                "duration_by_tier": {
-                  "additionalProperties": {
-                    "type": "number"
-                  },
-                  "type": "object"
-                }
-              },
-              "type": "object"
-            },
-            "spawn_probability_by_level": {
-              "properties": {
-                "level_10_12": {
-                  "type": "number"
-                },
-                "level_13_15": {
-                  "type": "number"
-                },
-                "level_16_18": {
-                  "type": "number"
-                },
-                "level_1_3": {
-                  "type": "number"
-                },
-                "level_4_6": {
-                  "type": "number"
-                },
-                "level_7_9": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "spells_by_tier": {
-              "additionalProperties": {
-                "type": "number"
-              },
-              "type": "object"
-            }
-          },
-          "type": "object"
-        },
-        "target_y_by_level": {
-          "properties": {
-            "level_10_12": {
-              "properties": {
-                "max": {
-                  "type": "number"
-                },
-                "min": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "level_13_15": {
-              "properties": {
-                "max": {
-                  "type": "number"
-                },
-                "min": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "level_16_18": {
-              "properties": {
-                "max": {
-                  "type": "number"
-                },
-                "min": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "level_4_6": {
-              "properties": {
-                "max": {
-                  "type": "number"
-                },
-                "min": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            },
-            "level_7_9": {
-              "properties": {
-                "max": {
-                  "type": "number"
-                },
-                "min": {
-                  "type": "number"
-                }
-              },
-              "type": "object"
-            }
-          },
-          "type": "object"
-        },
         "tier_weights_by_level": {
           "properties": {
             "level_10_12": {
@@ -1532,12 +1215,6 @@
               },
               "type": "array"
             },
-            "level_1_3": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
             "level_4_6": {
               "items": {
                 "type": "number"
@@ -1552,6 +1229,12 @@
             }
           },
           "type": "object"
+        },
+        "worlds": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -3684,12 +3367,6 @@
         "scared_duration": {
           "type": "number"
         },
-        "speed_boost_duration": {
-          "type": "number"
-        },
-        "speed_boost_min_tier": {
-          "type": "number"
-        },
         "stealth_tangible_dmg_boost": {
           "type": "number"
         }
@@ -4041,6 +3718,10 @@
               "properties": {},
               "type": "object"
             },
+            "elite_kinds": {
+              "properties": {},
+              "type": "object"
+            },
             "kinds": {
               "properties": {
                 "armored": {
@@ -4048,10 +3729,19 @@
                     "descent_interval": {
                       "type": "number"
                     },
+                    "fear_push": {
+                      "type": "number"
+                    },
                     "fear_strength": {
                       "type": "number"
                     },
                     "hp_mult": {
+                      "type": "number"
+                    },
+                    "linger": {
+                      "type": "number"
+                    },
+                    "move_step": {
                       "type": "number"
                     },
                     "projectile_defense": {
@@ -4071,6 +3761,9 @@
                 },
                 "diver": {
                   "properties": {
+                    "ability_chance": {
+                      "type": "number"
+                    },
                     "contact_defense": {
                       "type": "number"
                     },
@@ -4091,6 +3784,12 @@
                 },
                 "spellcaster": {
                   "properties": {
+                    "ability_chance": {
+                      "type": "number"
+                    },
+                    "ability_interval": {
+                      "type": "number"
+                    },
                     "contact_defense": {
                       "type": "number"
                     },
@@ -4122,6 +3821,12 @@
               "type": "object"
             },
             "tiers": {
+              "additionalProperties": {
+                "type": "object"
+              },
+              "type": "object"
+            },
+            "worlds": {
               "additionalProperties": {
                 "type": "object"
               },
@@ -4333,9 +4038,6 @@
     },
     "loot": {
       "properties": {
-        "bat_despawn_time": {
-          "type": "number"
-        },
         "glitch_ignore_chance": {
           "type": "number"
         },

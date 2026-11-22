@@ -1,9 +1,7 @@
 """Jelly Boss (Rotten Marshes)."""
 
-import random
-
 from src.core import constants, state
-from src.engine import clock
+from src.engine import clock, enemy_stats
 from src.engine.logic.bosses.common import get_boss_config, scaled_hp
 from src.engine.logic.drops import drop_loot
 from src.engine.loot_tables import choose_loot_type, roll_drop_rarity
@@ -146,145 +144,23 @@ def _update_jelly_bat_spawn_anim(boss):
 
 
 def _spawn_bat_from_jelly_boss(boss, anim):
-    """Spawn an actual bat from the jelly boss animation."""
-    # Choose a random bat type based on current level
-    level = state.game.level
-
-    # Get tier weights from config (same logic as spawn_bat)
-    tier_weights_cfg = getattr(constants.bat_enemy, 'tier_weights_by_level', None)
-    if level <= 6:
-        weights = getattr(tier_weights_cfg, 'level_4_6', [70, 25, 5, 0]) if tier_weights_cfg else [70, 25, 5, 0]
-    elif level <= 9:
-        weights = getattr(tier_weights_cfg, 'level_7_9', [50, 35, 12, 3]) if tier_weights_cfg else [50, 35, 12, 3]
-    elif level <= 12:
-        weights = getattr(tier_weights_cfg, 'level_10_12', [30, 40, 22, 8]) if tier_weights_cfg else [30, 40, 22, 8]
-    elif level <= 15:
-        weights = getattr(tier_weights_cfg, 'level_13_15', [15, 35, 35, 15]) if tier_weights_cfg else [15, 35, 35, 15]
-    else:
-        weights = getattr(tier_weights_cfg, 'level_16_18', [5, 25, 45, 25]) if tier_weights_cfg else [5, 25, 45, 25]
-    tier = random.choices([1, 2, 3, 4], weights=weights)[0]
-
-    # Get HP from config
-    bat_hp_by_tier = constants.bat_enemy.hp_by_tier
-    if isinstance(bat_hp_by_tier, dict):
-        hp = bat_hp_by_tier.get(tier, bat_hp_by_tier.get(str(tier), 20))
-    else:
-        hp = getattr(bat_hp_by_tier, str(tier), 20)
-
-    # Determine special bat types (same logic as spawn_bat)
-    armored = False
-    diver = False
-    spellcaster = False
-
-    # Check for diver (any tier)
-    diver_cfg = getattr(constants.bat_enemy, 'diver', None)
-    if diver_cfg:
-        min_diver_tier = getattr(diver_cfg, 'min_tier', 1)
-        if tier >= min_diver_tier:
-            diver_prob_cfg = getattr(diver_cfg, 'spawn_probability_by_level', None)
-            if diver_prob_cfg:
-                if level <= 3:
-                    diver_prob = getattr(diver_prob_cfg, 'level_1_3', 0.0)
-                elif level <= 6:
-                    diver_prob = getattr(diver_prob_cfg, 'level_4_6', 0.08)
-                elif level <= 9:
-                    diver_prob = getattr(diver_prob_cfg, 'level_7_9', 0.12)
-                elif level <= 12:
-                    diver_prob = getattr(diver_prob_cfg, 'level_10_12', 0.16)
-                elif level <= 15:
-                    diver_prob = getattr(diver_prob_cfg, 'level_13_15', 0.20)
-                else:
-                    diver_prob = getattr(diver_prob_cfg, 'level_16_18', 0.25)
-                diver = random.random() < diver_prob
-
-    # If not diver, check for spellcaster (tier 2+ only)
-    if not diver:
-        spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
-        if spellcaster_cfg:
-            min_spell_tier = getattr(spellcaster_cfg, 'min_tier', 2)
-            if tier >= min_spell_tier:
-                spell_prob_cfg = getattr(spellcaster_cfg, 'spawn_probability_by_level', None)
-                if spell_prob_cfg:
-                    if level <= 3:
-                        spell_prob = getattr(spell_prob_cfg, 'level_1_3', 0.0)
-                    elif level <= 6:
-                        spell_prob = getattr(spell_prob_cfg, 'level_4_6', 0.05)
-                    elif level <= 9:
-                        spell_prob = getattr(spell_prob_cfg, 'level_7_9', 0.08)
-                    elif level <= 12:
-                        spell_prob = getattr(spell_prob_cfg, 'level_10_12', 0.12)
-                    elif level <= 15:
-                        spell_prob = getattr(spell_prob_cfg, 'level_13_15', 0.15)
-                    else:
-                        spell_prob = getattr(spell_prob_cfg, 'level_16_18', 0.20)
-                    spellcaster = random.random() < spell_prob
-
-    # If not diver or spellcaster, check for armored (tier 2+ only)
-    if not diver and not spellcaster:
-        armored_cfg = getattr(constants.bat_enemy, 'armored', None)
-        if armored_cfg:
-            min_armor_tier = getattr(armored_cfg, 'min_tier', 2)
-            if tier >= min_armor_tier:
-                armor_prob_cfg = getattr(armored_cfg, 'spawn_probability_by_level', None)
-                if armor_prob_cfg:
-                    if level <= 3:
-                        armor_prob = getattr(armor_prob_cfg, 'level_1_3', 0.0)
-                    elif level <= 6:
-                        armor_prob = getattr(armor_prob_cfg, 'level_4_6', 0.05)
-                    elif level <= 9:
-                        armor_prob = getattr(armor_prob_cfg, 'level_7_9', 0.10)
-                    elif level <= 12:
-                        armor_prob = getattr(armor_prob_cfg, 'level_10_12', 0.15)
-                    elif level <= 15:
-                        armor_prob = getattr(armor_prob_cfg, 'level_13_15', 0.20)
-                    else:
-                        armor_prob = getattr(armor_prob_cfg, 'level_16_18', 0.25)
-                    armored = random.random() < armor_prob
-
-    # Create the bat at the animation position
-    bat_data = {
-        'x_pos': anim['x_pos'] - 4,  # Center the bat sprite
-        'y_pos': anim['y_pos'],
-        'direction': random.choice([-1, 1]),
-        'tier': tier,
-        'hp': hp,
-        'max_hp': hp,
-        'target_y': boss['y_pos'] + 8,  # Target below the boss
-        'spawn_ts': clock.now(),
-        'armored': armored,
-        'diver': diver,
-        'spellcaster': spellcaster,
-        'from_boss': True,  # Mark as spawned from boss (no loot drop)
-        'descending_past_boss': True,  # Still passing in front of boss
-    }
-
-    # Add diver-specific fields
-    if diver:
-        bat_data['diver_state'] = 'flying'
-        bat_data['diver_home_y'] = bat_data['target_y']
-        bat_data['dive_start_y'] = None
-        bat_data['stun_end_time'] = None
-
-    # Add spellcaster-specific fields
-    if spellcaster:
-        bat_data['spell_state'] = 'idle'
-        bat_data['spell_cooldown'] = 0
-        bat_data['casting_end_time'] = None
-        # Determine known spells based on tier
-        spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
-        spells_by_tier = getattr(spellcaster_cfg, 'spells_by_tier', None) if spellcaster_cfg else None
-        if spells_by_tier:
-            if isinstance(spells_by_tier, dict):
-                num_spells = spells_by_tier.get(tier, spells_by_tier.get(str(tier), 1))
-            else:
-                num_spells = getattr(spells_by_tier, str(tier), 1)
-        else:
-            num_spells = min(tier - 1, 3)
-        all_spells = ['silence', 'repugnant_wind', 'exile']
-        bat_data['known_spells'] = all_spells[:num_spells]
-
-    # Add to spawn queue
-    state.enemies.spawn_queue.append({'type': 'bat', 'data': bat_data})
+    """Spawn a bat from the jelly boss animation: tier and kind as the world's bats (bat_enemy.worlds)."""
+    world = enemy_stats.world_table()
+    tier = enemy_stats.roll_tier(world)
+    table = constants.bat_enemy.hp_by_tier
+    hp = table.get(tier, table.get(str(tier), 20)) if isinstance(table, dict) else getattr(table, str(tier), 20)
+    kind = enemy_stats.roll_kind(tier, world)
+    bat = enemy_stats.make_bat(
+        tier,
+        kind,
+        anim['x_pos'] - 4,  # centre the bat sprite
+        anim['y_pos'],
+        boss['y_pos'] + 8,  # below the boss
+        hp,
+        from_boss=True,  # no loot
+        descending_past_boss=True,  # still passing in front of the boss
+    )
+    state.enemies.spawn_queue.append({'type': 'bat', 'data': bat})
 
 
 def _convert_jelly_boss_to_obstacle(boss):

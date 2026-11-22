@@ -134,263 +134,46 @@ def spawn_obstacle():
 
 
 def spawn_bat():
-    """Potentially spawn a new bat."""
+    """Maybe spawn a bat, as the current world says (bat_enemy.worlds)."""
     state.enemies.bat_spawn_timer -= 1
     if state.enemies.bat_spawn_timer > 0:
         return
-
-    # Use milestone level (1-18) for spawning, not speed
-    level = state.game.level
-    if level < 4:  # Bats start at level 2-1 (milestone 4)
+    world = enemy_stats.world_table()
+    interval = int(world.get('spawn_interval', 0) or 0)
+    max_bats = int(world.get('max_bats', 0) or 0)
+    if interval <= 0 or max_bats <= 0:
+        state.enemies.bat_spawn_timer = 60  # no bats in this world: look again later
         return
-
-    # Get spawn rate from config
-    spawn_rates = getattr(constants.bat_enemy, 'spawn_rate_by_level', None)
-    if level <= 6:
-        base_spawn_rate = getattr(spawn_rates, 'level_4_6', 200) if spawn_rates else 200
-    elif level <= 9:
-        base_spawn_rate = getattr(spawn_rates, 'level_7_9', 150) if spawn_rates else 150
-    elif level <= 12:
-        base_spawn_rate = getattr(spawn_rates, 'level_10_12', 100) if spawn_rates else 100
-    elif level <= 15:
-        base_spawn_rate = getattr(spawn_rates, 'level_13_15', 70) if spawn_rates else 70
-    else:
-        base_spawn_rate = getattr(spawn_rates, 'level_16_18', 50) if spawn_rates else 50
-
-    state.enemies.bat_spawn_timer = base_spawn_rate
-
-    # Get max bats from config
-    max_bats_cfg = getattr(constants.bat_enemy, 'max_bats_by_level', None)
-    if level <= 6:
-        max_bats = getattr(max_bats_cfg, 'level_4_6', 1) if max_bats_cfg else 1
-    elif level <= 9:
-        max_bats = getattr(max_bats_cfg, 'level_7_9', 2) if max_bats_cfg else 2
-    elif level <= 12:
-        max_bats = getattr(max_bats_cfg, 'level_10_12', 3) if max_bats_cfg else 3
-    elif level <= 15:
-        max_bats = getattr(max_bats_cfg, 'level_13_15', 4) if max_bats_cfg else 4
-    else:
-        max_bats = getattr(max_bats_cfg, 'level_16_18', 5) if max_bats_cfg else 5
-
+    state.enemies.bat_spawn_timer = interval
     if len(state.enemies.bats) >= max_bats:
-        state.enemies.bat_spawn_timer = base_spawn_rate // 2
+        state.enemies.bat_spawn_timer = interval // 2
         return
 
-    # Get tier weights from config
-    tier_weights_cfg = getattr(constants.bat_enemy, 'tier_weights_by_level', None)
-    if level <= 6:
-        weights = getattr(tier_weights_cfg, 'level_4_6', [70, 25, 5, 0]) if tier_weights_cfg else [70, 25, 5, 0]
-    elif level <= 9:
-        weights = getattr(tier_weights_cfg, 'level_7_9', [50, 35, 12, 3]) if tier_weights_cfg else [50, 35, 12, 3]
-    elif level <= 12:
-        weights = getattr(tier_weights_cfg, 'level_10_12', [30, 40, 22, 8]) if tier_weights_cfg else [30, 40, 22, 8]
-    elif level <= 15:
-        weights = getattr(tier_weights_cfg, 'level_13_15', [15, 35, 35, 15]) if tier_weights_cfg else [15, 35, 35, 15]
-    else:
-        weights = getattr(tier_weights_cfg, 'level_16_18', [5, 25, 45, 25]) if tier_weights_cfg else [5, 25, 45, 25]
-    tier = random.choices([1, 2, 3, 4], weights=weights)[0]
-
-    # Get HP from config
-    bat_hp_by_tier = constants.bat_enemy.hp_by_tier
-    if isinstance(bat_hp_by_tier, dict):
-        hp = bat_hp_by_tier.get(tier, bat_hp_by_tier.get(str(tier), 20))
-    else:
-        hp = getattr(bat_hp_by_tier, str(tier), 20)
-    # Tougher bats in later levels
-    hp = int(hp * (1 + (level - 1) * float(getattr(constants.bat_enemy, 'level_hp_multiplier', 0.0))))
-
-    # Spawn position X
+    level = state.game.level
+    tier = enemy_stats.roll_tier(world)
+    hp = _bat_hp(tier, level)
     x_pos = random.randint(0, constants.layout.width - 8)
+    low, high = list(world.get('height') or [3, 8])
+    target_y = random.randint(int(low), max(int(low), min(int(high), constants.layout.starting_line - 3)))
+    kind = enemy_stats.roll_kind(tier, world)
+    if kind == 'diver':
+        # Divers keep high, to have room for their dive
+        low_f, high_f = list(world.get('dive_height') or [0.1, 0.3])
+        screen = constants.layout.starting_line
+        target_y = random.randint(max(1, int(screen * low_f)), max(2, int(screen * high_f)))
+    start_y = -(3 if kind == 'spellcaster' else 2) + 1  # spellcasters are 3 lines tall, others 2
+    bat = enemy_stats.make_bat(tier, kind, x_pos, start_y, target_y, hp, enemy_stats.roll_elite())
+    state.enemies.spawn_queue.append({'type': 'bat', 'data': bat})
 
-    # Get target Y from config
-    target_y_cfg = getattr(constants.bat_enemy, 'target_y_by_level', None)
-    if level <= 6:
-        y_range = getattr(target_y_cfg, 'level_4_6', None) if target_y_cfg else None
-        target_y_min = (
-            y_range.get('min', 3) if isinstance(y_range, dict) else (getattr(y_range, 'min', 3) if y_range else 3)
-        )
-        target_y_max = (
-            y_range.get('max', 8) if isinstance(y_range, dict) else (getattr(y_range, 'max', 8) if y_range else 8)
-        )
-    elif level <= 9:
-        y_range = getattr(target_y_cfg, 'level_7_9', None) if target_y_cfg else None
-        target_y_min = (
-            y_range.get('min', 5) if isinstance(y_range, dict) else (getattr(y_range, 'min', 5) if y_range else 5)
-        )
-        target_y_max = (
-            y_range.get('max', 12) if isinstance(y_range, dict) else (getattr(y_range, 'max', 12) if y_range else 12)
-        )
-    elif level <= 12:
-        y_range = getattr(target_y_cfg, 'level_10_12', None) if target_y_cfg else None
-        target_y_min = (
-            y_range.get('min', 8) if isinstance(y_range, dict) else (getattr(y_range, 'min', 8) if y_range else 8)
-        )
-        target_y_max = (
-            y_range.get('max', 16) if isinstance(y_range, dict) else (getattr(y_range, 'max', 16) if y_range else 16)
-        )
-    elif level <= 15:
-        y_range = getattr(target_y_cfg, 'level_13_15', None) if target_y_cfg else None
-        target_y_min = (
-            y_range.get('min', 10) if isinstance(y_range, dict) else (getattr(y_range, 'min', 10) if y_range else 10)
-        )
-        target_y_max = (
-            y_range.get('max', 20) if isinstance(y_range, dict) else (getattr(y_range, 'max', 20) if y_range else 20)
-        )
+
+def _bat_hp(tier, level):
+    """Base HP of a bat of ``tier`` at ``level`` (bat_enemy.hp_by_tier, + level_hp_multiplier per level)."""
+    table = constants.bat_enemy.hp_by_tier
+    if isinstance(table, dict):
+        hp = table.get(tier, table.get(str(tier), 20))
     else:
-        y_range = getattr(target_y_cfg, 'level_16_18', None) if target_y_cfg else None
-        target_y_min = (
-            y_range.get('min', 12) if isinstance(y_range, dict) else (getattr(y_range, 'min', 12) if y_range else 12)
-        )
-        target_y_max = (
-            y_range.get('max', 23)
-            if isinstance(y_range, dict)
-            else (getattr(y_range, 'max', 23) if y_range else constants.layout.starting_line - 5)
-        )
-
-    target_y = random.randint(target_y_min, min(target_y_max, constants.layout.starting_line - 3))
-
-    # Check if bat should be armored or diver (mutually exclusive)
-    armored = False
-    diver = False
-
-    # First check for diver (any tier)
-    diver_cfg = getattr(constants.bat_enemy, 'diver', None)
-    if diver_cfg:
-        min_diver_tier = getattr(diver_cfg, 'min_tier', 1)
-        if tier >= min_diver_tier:
-            diver_prob_cfg = getattr(diver_cfg, 'spawn_probability_by_level', None)
-            if diver_prob_cfg:
-                if level <= 3:
-                    diver_prob = getattr(diver_prob_cfg, 'level_1_3', 0.0)
-                elif level <= 6:
-                    diver_prob = getattr(diver_prob_cfg, 'level_4_6', 0.08)
-                elif level <= 9:
-                    diver_prob = getattr(diver_prob_cfg, 'level_7_9', 0.12)
-                elif level <= 12:
-                    diver_prob = getattr(diver_prob_cfg, 'level_10_12', 0.16)
-                elif level <= 15:
-                    diver_prob = getattr(diver_prob_cfg, 'level_13_15', 0.20)
-                else:
-                    diver_prob = getattr(diver_prob_cfg, 'level_16_18', 0.25)
-                diver = random.random() < diver_prob
-
-    # If not diver, check for spellcaster (tier 2+ only)
-    spellcaster = False
-    if not diver:
-        spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
-        if spellcaster_cfg:
-            min_spell_tier = getattr(spellcaster_cfg, 'min_tier', 2)
-            if tier >= min_spell_tier:
-                spell_prob_cfg = getattr(spellcaster_cfg, 'spawn_probability_by_level', None)
-                if spell_prob_cfg:
-                    if level <= 3:
-                        spell_prob = getattr(spell_prob_cfg, 'level_1_3', 0.0)
-                    elif level <= 6:
-                        spell_prob = getattr(spell_prob_cfg, 'level_4_6', 0.05)
-                    elif level <= 9:
-                        spell_prob = getattr(spell_prob_cfg, 'level_7_9', 0.08)
-                    elif level <= 12:
-                        spell_prob = getattr(spell_prob_cfg, 'level_10_12', 0.12)
-                    elif level <= 15:
-                        spell_prob = getattr(spell_prob_cfg, 'level_13_15', 0.15)
-                    else:
-                        spell_prob = getattr(spell_prob_cfg, 'level_16_18', 0.20)
-                    spellcaster = random.random() < spell_prob
-
-    # If not diver or spellcaster, check for armored (tier 2+ only)
-    if not diver and not spellcaster:
-        armored_cfg = getattr(constants.bat_enemy, 'armored', None)
-        if armored_cfg:
-            min_armor_tier = getattr(armored_cfg, 'min_tier', 2)
-            if tier >= min_armor_tier:
-                armor_prob_cfg = getattr(armored_cfg, 'spawn_probability_by_level', None)
-                if armor_prob_cfg:
-                    if level <= 3:
-                        armor_prob = getattr(armor_prob_cfg, 'level_1_3', 0.0)
-                    elif level <= 6:
-                        armor_prob = getattr(armor_prob_cfg, 'level_4_6', 0.05)
-                    elif level <= 9:
-                        armor_prob = getattr(armor_prob_cfg, 'level_7_9', 0.10)
-                    elif level <= 12:
-                        armor_prob = getattr(armor_prob_cfg, 'level_10_12', 0.15)
-                    elif level <= 15:
-                        armor_prob = getattr(armor_prob_cfg, 'level_13_15', 0.20)
-                    else:
-                        armor_prob = getattr(armor_prob_cfg, 'level_16_18', 0.25)
-                    armored = random.random() < armor_prob
-
-    # Diver bats have different Y position (upper half of screen)
-    final_target_y = target_y
-    if diver and diver_cfg:
-        y_range_cfg = getattr(diver_cfg, 'y_range_by_level', None)
-        if y_range_cfg:
-            if level <= 3:
-                y_frac = getattr(y_range_cfg, 'level_1_3', None)
-            elif level <= 6:
-                y_frac = getattr(y_range_cfg, 'level_4_6', None)
-            elif level <= 9:
-                y_frac = getattr(y_range_cfg, 'level_7_9', None)
-            elif level <= 12:
-                y_frac = getattr(y_range_cfg, 'level_10_12', None)
-            elif level <= 15:
-                y_frac = getattr(y_range_cfg, 'level_13_15', None)
-            else:
-                y_frac = getattr(y_range_cfg, 'level_16_18', None)
-
-            if y_frac:
-                min_frac = y_frac.get('min', 0.10) if isinstance(y_frac, dict) else getattr(y_frac, 'min', 0.10)
-                max_frac = y_frac.get('max', 0.30) if isinstance(y_frac, dict) else getattr(y_frac, 'max', 0.30)
-                screen_height = constants.layout.starting_line
-                y_min = int(screen_height * min_frac)
-                y_max = int(screen_height * max_frac)
-                final_target_y = random.randint(max(1, y_min), max(2, y_max))
-
-    # Spellcasters are 3 lines tall, others are 2
-    bat_sprite_height = 3 if spellcaster else 2
-    start_y = -bat_sprite_height + 1
-
-    bat_data = {
-        'x_pos': x_pos,
-        'y_pos': start_y,
-        'direction': random.choice([-1, 1]),
-        'tier': tier,
-        'hp': hp,
-        'max_hp': hp,
-        'target_y': final_target_y,
-        'spawn_ts': clock.now(),
-        'armored': armored,
-        'diver': diver,
-        'spellcaster': spellcaster,
-    }
-
-    # Add diver-specific fields
-    if diver:
-        bat_data['diver_state'] = 'flying'  # 'flying', 'diving', 'stunned', 'returning'
-        bat_data['diver_home_y'] = final_target_y  # Remember home position
-        bat_data['dive_start_y'] = None  # Y when dive started
-        bat_data['stun_end_time'] = None  # When stun ends
-
-    # Add spellcaster-specific fields
-    if spellcaster:
-        bat_data['spell_state'] = 'idle'  # 'idle', 'casting'
-        bat_data['spell_cooldown'] = 0  # Time until can cast again
-        bat_data['casting_end_time'] = None  # When casting animation ends
-        # Determine known spells based on tier
-        spellcaster_cfg = getattr(constants.bat_enemy, 'spellcaster', None)
-        spells_by_tier = getattr(spellcaster_cfg, 'spells_by_tier', None) if spellcaster_cfg else None
-        if spells_by_tier:
-            if isinstance(spells_by_tier, dict):
-                num_spells = spells_by_tier.get(tier, spells_by_tier.get(str(tier), 1))
-            else:
-                num_spells = getattr(spells_by_tier, str(tier), 1)
-        else:
-            num_spells = min(tier - 1, 3)  # Default: tier 2=1, tier 3=2, tier 4=3
-        # Spells in order: silence, repugnant_wind, exile
-        all_spells = ['silence', 'repugnant_wind', 'exile']
-        bat_data['known_spells'] = all_spells[:num_spells]
-
-    enemy_stats.equip_bat(bat_data, enemy_stats.roll_elite())
-    state.enemies.spawn_queue.append({'type': 'bat', 'data': bat_data})
+        hp = getattr(table, str(tier), 20)
+    return int(hp * (1 + (level - 1) * float(getattr(constants.bat_enemy, 'level_hp_multiplier', 0.0))))
 
 
 def process_spawn_queue():
@@ -479,15 +262,9 @@ def despawn_old_entities():
     """Remove entities that have been around too long."""
     now = clock.now()
 
-    # Bats despawn after configured time (armored bats stay longer)
-    bat_despawn = getattr(constants.loot, 'bat_despawn_time', 60)
-    armored_cfg = getattr(constants.bat_enemy, 'armored', None)
-    armored_despawn = getattr(armored_cfg, 'despawn_time', 150) if armored_cfg else 150
-
+    # Bats fly away after their linger stat (armored bats stay longer)
     for bat in state.enemies.bats[:]:
-        is_armored = bat.get('armored', False)
-        despawn_time = armored_despawn if is_armored else bat_despawn
-        if now - bat.get('spawn_ts', now) > despawn_time:
+        if now - bat.get('spawn_ts', now) > enemy_stats.get(bat, 'linger'):
             state.enemies.bats.remove(bat)
 
     # Loot despawn after configured time

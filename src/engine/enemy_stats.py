@@ -4,7 +4,11 @@ Stats are resolved once, when the enemy spawns, and stored in the enemy's
 ``stats`` dict (so they are saved with it). Layers, from the ``enemy_stats``
 section of config.yml:
 
-    default → per tier → per kind (armored, diver, spellcaster) → elite affixes
+    defaults → tiers.<n> → kinds.<kind> → worlds.<w> (its own stats, then its
+    tiers.<n> and kinds.<kind>) → elite stats → elite_kinds.<kind> → affixes
+
+so every number of every bat and obstacle can change world by world, and an
+elite of a kind can get more of what makes that kind special.
 
 Flat stats add up along the layers, multiplier stats (``MULTIPLIERS``)
 multiply. An enemy without a ``stats`` dict (boss minions, old saves) uses
@@ -33,6 +37,38 @@ ENEMY_STATS = {
     'fear_radius': (0, 'lanes on each side also scared on contact'),
     'speed': (1.0, 'horizontal speed multiplier'),
     'descent_interval': (5, 'ticks per row while descending to its height'),
+    'move_step': (2, 'columns per horizontal move'),
+    'linger': (60, 'seconds on screen before it flies away'),
+    'fear_push': (1, 'extra fall speed (speed points) of a bird it scares'),
+    # Abilities (each kind uses the ones it has)
+    'ability_chance': (0.0, 'chance per second to use its ability when ready'),
+    'ability_interval': (0.0, 'seconds before its ability is ready again'),
+    'dive_rows': (10, 'diver: rows of a dive'),
+    'dive_interval': (2, 'diver: ticks per row while diving'),
+    'dive_stun': (1.5, 'diver: seconds it stays stunned after a dive'),
+    'return_interval': (6, 'diver: ticks per row while climbing back'),
+    'dive_push': (1, 'diver: extra fall speed of a bird that hits it mid-dive'),
+    'dive_push_time': (0.5, 'diver: seconds that push lasts'),
+    'spells': (1, 'spellcaster: spells known (silence, repugnant wind, exile)'),
+    'cast_time': (0.5, 'spellcaster: seconds of casting before the spell lands'),
+    'silence_time': (3.0, 'spellcaster: seconds of silence'),
+    'wind_time': (3.0, 'spellcaster: seconds of repugnant wind'),
+    'wind_push': (1, 'spellcaster: fall speed added and rise speed removed by its wind'),
+    'heal_pct': (0.0, 'healer: share of max HP healed on the bats around it'),
+    'heal_range': (12, 'healer: columns its healing reaches'),
+    'stone_hp': (30, 'bomber: HP of a dropped stone'),
+    'stone_interval': (2, 'bomber: ticks per row of a falling stone'),
+    'stone_stun': (0.5, 'bomber: seconds a stone stuns the bird it hits'),
+    'plague_time': (15.0, 'plague: seconds before the infection kills the bird'),
+    'plague_presses': (3, 'plague: UP presses that cure it'),
+    'plague_spread': (0.0, 'plague: chance per second to infect the bird in a lane next to it'),
+    'zombies': (0, 'necromancer: zombie birds it keeps at most'),
+    'zombie_fear': (1.5, 'necromancer: seconds its zombies scare a bird'),
+    # Obstacles (and dropped stones)
+    'stun': (1.0, 'seconds it stuns a bird that hits it'),
+    'knock': (0, 'extra fall speed of a bird that hits it'),
+    'knock_time': (1.0, 'seconds that extra fall speed lasts'),
+    'fall_interval': (5, 'ticks per row while falling'),
     # Rewards
     'xp_mult': (1.0, 'multiplier on kill XP'),
     'score_mult': (1.0, 'multiplier on kill score'),
@@ -70,10 +106,16 @@ def _apply(values, layer):
             values[name] = values.get(name, ENEMY_STATS[name][0]) + value
 
 
-def resolve(family, tier, kinds=(), affixes=(), elite=False, extra=None):
+def _flat(layer):
+    """The stats of a layer, without its nested ``tiers`` / ``kinds`` tables."""
+    return {k: v for k, v in _as_dict(layer).items() if k not in ('tiers', 'kinds')}
+
+
+def resolve(family, tier, kinds=(), affixes=(), elite=False, extra=None, world=None):
     """Stats of a new enemy of ``family`` ('bats' or 'obstacles'), as a dict of the non-default values.
 
     ``extra`` is one more flat/multiplier layer applied first (e.g. the armor of an armored bat).
+    ``world`` defaults to the current one (``state.game.level_group``).
     """
     cfg = _config(family)
     values = {}
@@ -82,12 +124,20 @@ def resolve(family, tier, kinds=(), affixes=(), elite=False, extra=None):
     _apply(values, _node(_node(cfg, 'tiers'), tier))
     for kind in kinds:
         _apply(values, _node(_node(cfg, 'kinds'), kind))
+    world_layer = _node(_node(cfg, 'worlds'), max(1, state.game.level_group) if world is None else world)
+    if world_layer is not None:
+        _apply(values, _flat(world_layer))
+        _apply(values, _node(_node(world_layer, 'tiers'), tier))
+        for kind in kinds:
+            _apply(values, _node(_node(world_layer, 'kinds'), kind))
     if family == 'bats':
         for layer in state.stats.enemy_layers:
             _apply(values, layer)
     elites = getattr(constants, 'elites', None)
     if elite:
         _apply(values, _node(elites, 'stats'))
+        for kind in kinds:
+            _apply(values, _node(_node(cfg, 'elite_kinds'), kind))
     for affix in affixes:
         _apply(values, _node(_node(_node(elites, 'affixes'), affix), 'stats'))
     return {name: value for name, value in values.items() if value != ENEMY_STATS[name][0]}
@@ -152,9 +202,15 @@ def affix_names(affixes):
     return ' '.join(str(_node(_node(table, a), 'name') or a.title()) for a in affixes)
 
 
+# Bat kinds, in the order their stat layers apply (a bat has at most one)
+BAT_KINDS = ('armored', 'diver', 'spellcaster', 'healer', 'bomber', 'plague', 'necromancer')
+
+
 def bat_kinds(bat):
-    """Kinds of a bat, in the order their stat layers apply."""
-    return [k for k in ('armored', 'diver', 'spellcaster') if bat.get(k)]
+    """Kinds of a bat (its ``kind``; older saves flag armored / diver / spellcaster)."""
+    if bat.get('kind'):
+        return [bat['kind']]
+    return [k for k in BAT_KINDS if bat.get(k)]
 
 
 def regenerate():
@@ -174,10 +230,73 @@ def regenerate():
 
 
 def _armored_armor(tier):
-    """Armor of an armored bat of ``tier`` (``bat_enemy.armored.damage_reduction_by_tier``)."""
+    """Armor of an armored bat of ``tier`` (``bat_enemy.armored.armor_by_tier``)."""
     armored_cfg = getattr(constants.bat_enemy, 'armored', None)
-    table = _node(armored_cfg, 'damage_reduction_by_tier')
+    table = _node(armored_cfg, 'armor_by_tier')
     return _node(table, tier) or 0
+
+
+def world_table(world=None):
+    """The ``bat_enemy.worlds`` entry of a world (default: the current one), as a dict."""
+    worlds = list(getattr(constants.bat_enemy, 'worlds', None) or [])
+    if not worlds:
+        return {}
+    w = max(1, state.game.level_group if world is None else world)
+    return _as_dict(worlds[min(w, len(worlds)) - 1])
+
+
+def roll_tier(world):
+    weights = list(world.get('tiers') or [1, 0, 0, 0])
+    if not any(weights):
+        weights = [1, 0, 0, 0]
+    return random.choices([1, 2, 3, 4], weights=weights)[0]
+
+
+def roll_kind(tier, world):
+    """The kind of a new bat of ``tier`` in ``world`` (None: a plain bat). One random draw."""
+    chances = _as_dict(world.get('kinds'))
+    min_tiers = _as_dict(getattr(constants.bat_enemy, 'kind_min_tier', None))
+    r = random.random()
+    total = 0.0
+    for kind in BAT_KINDS:
+        chance = float(chances.get(kind, 0) or 0)
+        if chance <= 0 or tier < int(min_tiers.get(kind, 1)):
+            continue
+        total += chance
+        if r < total:
+            return kind
+    return None
+
+
+SPELLS = ('silence', 'repugnant_wind', 'exile')
+
+
+def make_bat(tier, kind, x_pos, y_pos, target_y, hp, affixes=(), **extra):
+    """A new bat of ``tier`` and ``kind`` (None: plain), equipped with its stats."""
+    bat = {
+        'x_pos': x_pos,
+        'y_pos': y_pos,
+        'direction': random.choice([-1, 1]),
+        'tier': tier,
+        'hp': hp,
+        'max_hp': hp,
+        'target_y': target_y,
+        'spawn_ts': clock.now(),
+        'kind': kind,
+        # Flags older code (and old saves) look at
+        'armored': kind == 'armored',
+        'diver': kind == 'diver',
+        'spellcaster': kind == 'spellcaster',
+    }
+    bat.update(extra)
+    equip_bat(bat, affixes)
+    if kind == 'diver':
+        bat.update(diver_state='flying', diver_home_y=target_y, dive_start_y=None, stun_end_time=None)
+    elif kind == 'spellcaster':
+        bat.update(spell_state='idle', spell_cooldown=0, casting_end_time=None)
+        known = max(1, min(len(SPELLS), int(get(bat, 'spells'))))
+        bat['known_spells'] = list(SPELLS[:known])
+    return bat
 
 
 def equip_bat(bat, affixes=()):
@@ -195,7 +314,8 @@ def equip_bat(bat, affixes=()):
 
 def equip_obstacle(obstacle):
     """Give a freshly built obstacle its stats and scale its HP."""
-    obstacle['stats'] = resolve('obstacles', obstacle.get('tier', 1))
+    kinds = [obstacle['kind']] if obstacle.get('kind') else []
+    obstacle['stats'] = resolve('obstacles', obstacle.get('tier', 1), kinds)
     hp_mult = get(obstacle, 'hp_mult')
     if hp_mult != 1:
         obstacle['hp'] = max(1, int(obstacle['hp'] * hp_mult))

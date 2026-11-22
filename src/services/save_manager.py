@@ -612,6 +612,7 @@ def _restore_special(special, data):
     # Dicts with int keys (convert string keys back to int)
     for key in [
         'speed_boosts',
+        'scared_push',
         'dinosaur_up_presses',
         'scared_birds',
         'stunned_birds',

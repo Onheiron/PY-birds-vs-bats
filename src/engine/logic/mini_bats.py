@@ -176,27 +176,8 @@ def try_spawn_mini_bat_on_hit(obstacle):
             state.enemies.mini_bats.append(hidden_bat)
         return True
 
-    # Random chance to spawn new mini bat - probability scales by level
-    level = state.game.level
-    spawn_prob_cfg = getattr(mini_bat_cfg, 'spawn_probability_by_level', None)
-
-    if spawn_prob_cfg:
-        # Get probability for current level range
-        if level <= 3:
-            spawn_prob = getattr(spawn_prob_cfg, 'level_1_3', 0.10)
-        elif level <= 6:
-            spawn_prob = getattr(spawn_prob_cfg, 'level_4_6', 0.20)
-        elif level <= 9:
-            spawn_prob = getattr(spawn_prob_cfg, 'level_7_9', 0.30)
-        elif level <= 12:
-            spawn_prob = getattr(spawn_prob_cfg, 'level_10_12', 0.40)
-        elif level <= 15:
-            spawn_prob = getattr(spawn_prob_cfg, 'level_13_15', 0.50)
-        else:
-            spawn_prob = getattr(spawn_prob_cfg, 'level_16_18', 0.60)
-    else:
-        # Fallback to old single value
-        spawn_prob = getattr(mini_bat_cfg, 'spawn_probability', 0.3)
+    # Chance to let a new mini bat out: the world's mini_bat (bat_enemy.worlds)
+    spawn_prob = float(enemy_stats.world_table().get('mini_bat', 0.0) or 0.0)
 
     if random.random() < spawn_prob:
         # Check if this should be a jumpscare bat instead

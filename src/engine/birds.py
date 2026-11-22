@@ -64,11 +64,15 @@ def _resists_fear(bird_idx):
     return immunity > 0 and random.random() < immunity
 
 
-def scare_bird(bird_idx, seconds):
-    """Scare a bird for ``seconds`` (its fear stats apply). False if it shrugged it off."""
+def scare_bird(bird_idx, seconds, push=1):
+    """Scare a bird for ``seconds`` (its fear stats apply). False if it shrugged it off.
+
+    ``push``: how much faster (speed points) it falls while scared (the scarer's fear_push).
+    """
     if _resists_fear(bird_idx):
         return False
     state.special.scared_birds[bird_idx] = get_scared_frames(bird_idx, seconds)
+    state.special.scared_push[bird_idx] = push
     return True
 
 
@@ -78,6 +82,7 @@ def scare_bird_ticks(bird_idx, ticks):
         return False
     mult = stats.bird(bird_idx, 'fear_duration_mult')
     state.special.scared_birds[bird_idx] = ticks if mult == 1 else max(1, int(ticks * mult))
+    state.special.scared_push[bird_idx] = 1
     return True
 
 

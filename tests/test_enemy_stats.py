@@ -79,3 +79,51 @@ def test_elites_spawn_by_biome_chance(monkeypatch):
         process_spawn_queue()
         assert state.enemies.bats and state.enemies.bats[-1]['elite']
         assert len(state.enemies.bats[-1]['affixes']) == 2
+
+
+# --------------------------------------------------------------------- world tables and layers
+
+
+def test_the_first_world_has_no_bats_but_mini_bats_at_ten_percent():
+    with Simulation(seed=1, key_rate=0) as sim:
+        sim.state.game.level_group = 1
+        world = enemy_stats.world_table()
+        assert world['max_bats'] == 0 and world['mini_bat'] == 0.10
+        sim.state.enemies.bat_spawn_timer = 1
+        spawn_bat()
+        assert not sim.state.enemies.spawn_queue
+
+
+def test_kinds_respect_their_lowest_tier():
+    with Simulation(seed=1, key_rate=0):
+        world = {'kinds': {'armored': 1.0}}
+        assert enemy_stats.roll_kind(1, world) is None  # armored from tier 2
+        assert enemy_stats.roll_kind(2, world) == 'armored'
+
+
+def test_armored_bats_linger_longer_and_push_scared_birds_down_harder():
+    with Simulation(seed=1, key_rate=0):
+        b = enemy_stats.make_bat(2, 'armored', 10, 5, 5, 480)
+        assert enemy_stats.get(b, 'linger') == 150
+        assert enemy_stats.get(b, 'fear_push') == 2
+        assert enemy_stats.get(b, 'armor') == 10
+
+
+def test_world_layers_change_a_kind_world_by_world():
+    with Simulation(seed=1, key_rate=0) as sim:
+        sim.state.game.level_group = 3
+        caster = enemy_stats.make_bat(4, 'spellcaster', 10, 5, 5, 1920)
+        assert caster['known_spells'] == ['silence']  # world 3: silence only
+        sim.state.game.level_group = 6
+        caster = enemy_stats.make_bat(4, 'spellcaster', 10, 5, 5, 1920)
+        assert caster['known_spells'] == ['silence', 'repugnant_wind', 'exile']
+        assert abs(enemy_stats.get(caster, 'ability_chance') - 0.3) < 1e-9
+
+
+def test_elites_of_a_kind_get_their_kind_layer(monkeypatch):
+    with Simulation(seed=1, key_rate=0):
+        monkeypatch.setattr(constants.enemy_stats.bats, 'elite_kinds', {'diver': {'dive_rows': 5}}, raising=False)
+        plain = enemy_stats.make_bat(2, 'diver', 10, 5, 5, 480)
+        elite = enemy_stats.make_bat(2, 'diver', 10, 5, 5, 480, affixes=['swift'])
+        assert enemy_stats.get(plain, 'dive_rows') == 10
+        assert enemy_stats.get(elite, 'dive_rows') == 15
