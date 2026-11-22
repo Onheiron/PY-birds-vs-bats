@@ -31,13 +31,21 @@ def record_bot_game(seed=7, frames=60 * 90):
         state.game.start_time = state.game.last_mile_update = clock.tick()
         record = recorder.Recorder(init_time, state.game.start_time, profile)
         bot = Bot(PROFILES['expert'], seed=seed)
+        pause_keys = {}
         session = loop.Session()
-        for _ in range(frames):
+        for n in range(frames):
             # Real frames are not exactly 1/60 s apart
-            clock_now[0] += 1 / 60 + (0.004 if len(record.times) % 7 == 0 else 0)
-            now = clock.tick()
-            keys = bot.press()
-            record.frame(now, keys)
+            clock_now[0] += 1 / 60 + (0.004 if n % 7 == 0 else 0)
+            # A pause now and then: P, some frames (and minutes) later P again
+            if n % 1500 == 700 and state.choice.active is None and not state.game.paused:
+                pause_keys[n] = ['p']
+                pause_keys[n + 400] = ['p']
+            if n % 1500 == 900:
+                clock_now[0] += 120  # two minutes away from the keyboard, paused
+            held = state.game.paused or state.choice.active is not None
+            now = clock.tick(held)
+            keys = pause_keys.pop(n, None) or ([] if state.game.paused else bot.press())
+            record.frame(now, keys, held)
             for key in keys:
                 input_handler.process_input(key)
             session.step()
@@ -55,6 +63,14 @@ def test_a_replay_ends_exactly_like_the_recorded_game():
     assert data['keys'], 'the bot pressed keys'
     runner.replay(data)
     assert (state.game.level, int(state.game.score), state.game.miles, state.game.lives) == result
+
+
+def test_pauses_are_not_recorded():
+    data, _result = record_bot_game(frames=60 * 60)
+    times = data['times']
+    # Several pauses of two minutes each, yet the recording spans about a minute
+    assert times[-1] - times[0] < 70
+    assert len(times) < 60 * 60
 
 
 def test_games_loaded_from_a_save_are_not_recorded():

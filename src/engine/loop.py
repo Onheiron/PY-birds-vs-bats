@@ -106,9 +106,10 @@ def run_session():
 
     try:
         while not state.game.game_over:
-            now = frame_time.tick()
+            held = state.game.paused or state.choice.active is not None
+            now = frame_time.tick(held)
             keys = read_keys()
-            record.frame(now, keys)
+            record.frame(now, keys, held)
             for key in keys:
                 input_handler.process_input(key)
 

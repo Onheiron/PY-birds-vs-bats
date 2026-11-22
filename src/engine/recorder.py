@@ -7,7 +7,8 @@ the time of every frame and the keys pressed in it.
 The play loop shows the game one time per frame: while a frame is processed,
 ``time.time()`` returns the time the frame started (``FrameTime``), so the
 keys, the physics and the timers of one frame all see the same instant, and
-the replay can give them that instant again.
+the replay can give them that instant again. Pauses and card choices are left
+out: the time stands still there and only the frames with keys are kept.
 
 Recordings go to ~/.bvb/recordings/ as gzipped JSON. Only games started from
 scratch are recorded (a game loaded from a save cannot be replayed from its seed).
@@ -40,14 +41,25 @@ def recordings_dir():
 
 
 class FrameTime:
-    """``time.time`` replacement: the start time of the current frame."""
+    """``time.time`` replacement: the start time of the current frame.
+
+    While the game is held (paused, or a card choice on screen) the time stands
+    still: the wall time spent there is left out, so a recording holds no pauses.
+    """
 
     def __init__(self, real=time.time):
         self.real = real
+        self.held_total = 0.0  # wall seconds spent held
         self.now = real()
+        self._last_real = self.now
 
-    def tick(self):
-        self.now = self.real()
+    def tick(self, held=False):
+        real = self.real()
+        if held:
+            self.held_total += real - self._last_real
+        else:
+            self.now = real - self.held_total
+        self._last_real = real
         return self.now
 
     def __call__(self):
@@ -74,7 +86,10 @@ class Recorder:
         self.times = []  # time of every frame
         self.keys = []  # [frame, [keys]] for the frames with keys
 
-    def frame(self, now, keys):
+    def frame(self, now, keys, held=False):
+        """One frame. A held frame without keys changes nothing in the game: not kept."""
+        if held and not keys:
+            return
         if keys:
             self.keys.append([len(self.times), list(keys)])
         self.times.append(now)
