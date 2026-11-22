@@ -250,6 +250,7 @@ def _new_player():
 def _new_ui():
     return SimpleNamespace(
         show_xp_overlay=False,
+        last_recording=None,  # path of the recording of the last game (src/engine/recorder.py)
         # Parallax background layers (3 layers with different speeds)
         bg_offset=0,  # Slowest layer (original tree pattern)
         bg_mid_offset=0,  # Middle layer (∧ symbols, intermediate speed)
@@ -346,7 +347,7 @@ _SESSION_FACTORIES = (
 )
 
 # UI fields owned by the application rather than by a game: a new game keeps them
-_UI_KEPT_ACROSS_GAMES = ('show_title', 'menu_stack')
+_UI_KEPT_ACROSS_GAMES = ('show_title', 'menu_stack', 'last_recording')
 
 # Per-bird lists in ``special`` (one slot per bird) and their initial value
 _PURPLE_BIRD_LISTS = {

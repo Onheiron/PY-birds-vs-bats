@@ -124,8 +124,11 @@ def test_play_a_session_and_quit_cleanly(game):
 
     game.send('q')
     assert game.wait_exit() == 0, game.stderr()
-    # Terminal handed back as it was: cursor visible, alternate screen left
-    assert game.raw.rstrip().endswith('\033[?25h\033[?1049l')
+    # Terminal handed back as it was: cursor visible, alternate screen left;
+    # then, on the normal screen, where the game was recorded
+    restored, _, after = game.raw.rpartition('\033[?25h\033[?1049l')
+    assert restored
+    assert 'Last game recorded:' in after
     assert 'Traceback' not in game.stderr()
 
 

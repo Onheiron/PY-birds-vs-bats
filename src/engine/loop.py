@@ -4,10 +4,11 @@ The loop renders at a fixed 60 FPS so input stays responsive, while physics
 and game logic advance every N frames, N shrinking as the gear goes up.
 """
 
+import copy
 import time
 
 from src.core import state
-from src.engine import clock, events, input_handler, menus, meta, progression, systems
+from src.engine import clock, events, input_handler, menus, meta, progression, recorder, systems
 from src.engine.timing import FrameClock, frames_per_update
 from src.entities.bird_types import get_bird_type_by_color
 from src.services import save_manager, sound
@@ -84,9 +85,16 @@ def run_session():
     # Game state was initialised by the title menu (NEW GAME, CONTINUE or LOAD)
     if state.meta.profile is None:
         state.meta.profile = save_manager.load_profile()
+    init_time = state.game.start_time  # when state.init dealt the flock
+    profile = copy.deepcopy(state.meta.profile)
     meta.start_run()
-    state.game.start_time = time.time()
-    state.game.last_mile_update = time.time()
+
+    # One instant per frame (see src/engine/recorder.py): what makes a replay exact
+    real_time = time.time
+    frame_time = recorder.FrameTime(real_time)
+    time.time = frame_time
+    state.game.start_time = state.game.last_mile_update = frame_time.tick()
+    record = recorder.Recorder(init_time, state.game.start_time, profile)
 
     save_manager.load_discovery()
     _discover_current_birds()
@@ -98,7 +106,10 @@ def run_session():
 
     try:
         while not state.game.game_over:
-            for key in read_keys():
+            now = frame_time.tick()
+            keys = read_keys()
+            record.frame(now, keys)
+            for key in keys:
                 input_handler.process_input(key)
 
             session.step()
@@ -113,8 +124,10 @@ def run_session():
         # Ctrl+C is a deliberate exit
         state.game.quit_requested = True
     finally:
+        time.time = real_time
         # Game over, quit or back to the title: the run's gold goes to the profile
         meta.end_run()
+        state.ui.last_recording = record.save()
 
 
 def run_game():

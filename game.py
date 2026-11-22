@@ -53,6 +53,11 @@ def main():
         sound.cleanup()
         optional.close_firebase()
         terminal.cleanup()
+    from src.core import state
+
+    if state.ui.last_recording:
+        print(f'Last game recorded: {state.ui.last_recording}')
+        print('Replay it and compare it with the bot: python3 tools/replay.py --bot expert')
 
 
 if __name__ == '__main__':

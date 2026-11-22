@@ -243,6 +243,22 @@ change speed (x0.25 to x16), `B` takes over the controls and gives them back,
 `P` opens the pause menu, `Q` quits. A watched game is the same game the
 simulator plays for that seed and those options.
 
+### Recording and replaying your games
+
+Every game started with NEW GAME is recorded when it ends, in
+`~/.bvb/recordings/` (seed, difficulty, configuration, settings, upgrades,
+the time of every frame and every key). Replaying one runs the very same game
+again, headless, and compares it with the bot on the same seed:
+
+```bash
+python3 tools/replay.py --list
+python3 tools/replay.py --bot expert --bot average
+```
+
+The report shows keys per second (moves and UP apart), the time between a
+move and the next UP, how far birds had fallen when bounced, swaps, powers
+and how birds were lost. Games loaded from a save are not recorded.
+
 ### Balance simulator
 
 Bot strategies (braking with swaps, formations, fewer birds, favourite

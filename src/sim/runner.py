@@ -134,6 +134,68 @@ def _play(config, virtual):
     return stats
 
 
+class _Replayer:
+    """Plays the keys of a recording back, frame by frame (stands in for the bot)."""
+
+    def __init__(self, keys):
+        self.by_frame = dict(keys)
+        self.frame = 0
+        self.keys_pressed = 0
+        self.counts = {}
+
+    def press(self):
+        keys = self.by_frame.get(self.frame, [])
+        self.frame += 1
+        self.keys_pressed += len(keys)
+        return keys
+
+
+def replay(data):
+    """Play a recording (src/engine/recorder.py) again, exactly; returns its RunStats.
+
+    The result matches the recorded one when the game code and the
+    configuration are the same as when it was recorded.
+    """
+    _quiet_services()
+    virtual = _VirtualTime(data['init_time'])
+    real_time = time.time
+    time.time = virtual
+    try:
+        constants.configure(data['difficulty'], base=data['config'])
+        state.init(data['seed'])
+        for key, value in data['settings'].items():
+            setattr(state.settings, key, copy.deepcopy(value))
+        state.meta.profile = copy.deepcopy(data['profile'])
+        meta.start_run()
+        state.ui.show_title = False
+        state.ui.menu_stack = []
+        times = data['times']
+        virtual.now = times[0] if times else data['start_time']
+        state.game.start_time = state.game.last_mile_update = data['start_time']
+
+        config = RunConfig(seed=data['seed'], difficulty=data['difficulty'], skill=None)
+        stats = RunStats(config, progression.get_level_milestones())
+        player = _Replayer(data['keys'])
+        session = loop.Session()
+        end = 'end of recording'
+        with stats.recording():
+            for frame, now in enumerate(times):
+                virtual.now = now
+                stats.seconds = now - data['start_time']
+                for key in player.press():
+                    input_handler.process_input(key)
+                session.step()
+                if frame % int(config.sample_seconds / FRAME_DT) == 0:
+                    stats.sample(stats.seconds)
+                if state.game.game_over:
+                    end = 'game over'
+                    break
+        stats.finish(end, stats.seconds, player)
+        return stats
+    finally:
+        time.time = real_time
+
+
 def constants_merge(base, extra):
     from src.core.config import deep_merge
 
