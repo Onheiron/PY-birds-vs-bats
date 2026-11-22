@@ -77,6 +77,9 @@ def start_game(config, now):
     state.settings.difficulty = config.difficulty
     # Settings outlive a game: start every simulated game with the cursor assists off
     state.settings.bounce_on_enter = state.settings.trigger_on_enter = False
+    assist = getattr(config.skill, 'assist', 'none')
+    state.settings.bounce_on_enter = assist == 'bounce'
+    state.settings.trigger_on_enter = assist == 'trigger'
     # Meta progression: the run starts with the upgrades of the given profile
     state.meta.profile = copy.deepcopy(config.profile) if config.profile else meta.new_profile()
     meta.start_run()

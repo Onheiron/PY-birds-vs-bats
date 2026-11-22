@@ -47,6 +47,12 @@ class Skill:
     """How well the bot plays."""
 
     key_interval: int = 1  # frames between two key presses (1 = 60 keys/s)
+    # Two hands: LEFT/RIGHT with one, UP with the other, each at key_interval, so an
+    # UP right after a move costs no extra time. False: one stream of keys
+    two_hands: bool = True
+    # Cursor assist of the CONTROLS menu the bot plays with: 'none', 'bounce'
+    # (entering a lane bounces its falling birds) or 'trigger' (entering a lane acts as UP)
+    assist: str = 'none'
     reaction_frames: int = 0  # frames before it notices that a bird started falling
     miss_rate: float = 0.0  # chance that a press does nothing
     use_powers: bool = True
@@ -134,6 +140,7 @@ class Bot:
         self.skill = skill or PROFILES['expert']
         self.rng = random.Random(seed)
         self.cooldown = 0
+        self.up_cooldown = 0  # the UP hand, when playing with two hands
         self.fall_seen = {}  # bird -> frame it was first seen falling
         self.frame = 0
         self.keys_pressed = 0
@@ -615,15 +622,29 @@ class Bot:
         return self._key_towards(lane, press)
 
     def press(self):
-        """Keys pressed this frame (at most one, respecting the key rate)."""
+        """Keys pressed this frame (at most one per hand, respecting the key rate)."""
         self.frame += 1
-        if self.cooldown > 0:
-            self.cooldown -= 1
+        self.cooldown = max(0, self.cooldown - 1)
+        self.up_cooldown = max(0, self.up_cooldown - 1)
+        up = self._bindings()[2]
+        two_hands = self.skill.two_hands and state.choice.active is None
+        if self.cooldown > 0 and not (two_hands and self.up_cooldown == 0):
             return []
+        plan = self.plan
         key = self.decide()
         if key is None:
             return []
-        self.cooldown = self.skill.key_interval - 1
+        if two_hands and key == up:
+            if self.up_cooldown > 0:
+                return []
+            self.up_cooldown = self.skill.key_interval
+        else:
+            if self.cooldown > 0:
+                self.plan = plan  # the moving hand is busy: the key waits
+                return []
+            self.cooldown = self.skill.key_interval
+            if not two_hands:
+                self.up_cooldown = self.cooldown
         self.keys_pressed += 1
         if self.rng.random() < self.skill.miss_rate:
             return []  # fumbled the key: time spent, nothing happens
