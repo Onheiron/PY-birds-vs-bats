@@ -64,7 +64,7 @@ with a boss.
 | ← / → | Move the cursor between lanes |
 | ↑ | Bounce the bird in the selected lane; if it is already rising, use its power (once per ascent) |
 | SPACE | Select a lane, then SPACE on another lane to swap the two birds (costs momentum) |
-| P / ESC | Pause menu: resume, restart, save, load, Birdpedia, settings |
+| P / ESC | Pause menu: resume, restart, save, load, Birdpedia, settings, FLOCK (every bird's stats: base, power-ups, total; the flock's stats and the cards taken) |
 | X | Toggle the XP overlay |
 | M | Mute / unmute audio |
 | Q / Ctrl+C | Quit |

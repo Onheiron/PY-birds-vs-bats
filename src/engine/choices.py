@@ -122,6 +122,15 @@ def pick(index=None):
         return None
     card = offer['cards'][offer['index'] if index is None else index]
     state.choice.active = None
+    if card['kind'] != 'refuse':
+        state.choice.taken.append(
+            {
+                'id': card.get('id'),
+                'name': card.get('name', card.get('id')),
+                'kind': card['kind'],
+                'rarity': card.get('rarity'),
+            }
+        )
     if card['kind'] == 'pact':
         cards.apply_pact(card)
     elif card['kind'] != 'refuse':

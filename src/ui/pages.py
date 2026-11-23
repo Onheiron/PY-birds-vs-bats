@@ -176,6 +176,12 @@ def page(content_type):
 
     if content_type.startswith('achievements_'):
         return achievement_page(content_type)
+    if content_type.startswith('flock_'):
+        from src.ui import flock_pages
+
+        if content_type == 'flock_stats':
+            return flock_pages.flock_page()
+        return flock_pages.bird_page(int(content_type.rsplit('_', 1)[1]))
     return CONTENT.get(content_type, {'title': 'UNKNOWN', 'lines': []})
 
 

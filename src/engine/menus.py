@@ -265,6 +265,7 @@ def _pause_items():
         Item('LOAD', opens='load'),
         Item('BIRDPEDIA', opens='birdpedia'),
         Item('SETTINGS', opens='settings'),
+        Item('FLOCK', opens='flock'),
         Item('MAIN MENU', on_enter=_main_menu),
     ]
 
@@ -332,6 +333,14 @@ def _load_items():
         for slot in (0, 1, 2, 3)
     ]
     return slots + [_back_item()]
+
+
+def _flock_items():
+    """The FLOCK screen: a line per bird (its stat sheet) and the flock's stats."""
+    from src.ui import flock_pages
+
+    birds = [Item(flock_pages.bird_label(i), opens=f'flock_bird_{i}') for i in flock_pages.bird_slots()]
+    return birds + [Item('FLOCK STATS', opens='flock_stats'), _back_item()]
 
 
 def _birdpedia_items():
@@ -504,6 +513,9 @@ SCREENS = {
         Screen('save', 'SAVE GAME', _save_items, hint='select'),
         Screen('load', 'LOAD GAME', _load_items, hint='select'),
         Screen('birdpedia', 'BIRDPEDIA', _birdpedia_items, hint='select'),
+        Screen('flock', 'FLOCK', _flock_items, hint='select'),
+        _page('flock_stats', 'flock_stats'),
+        *[_page(f'flock_bird_{i}', f'flock_bird_{i}') for i in range(constants.layout.num_balls)],
         Screen('guide', 'GUIDE', _guide_items, hint='select'),
         _page('guide_howto', 'howto'),
         _page('guide_commands', 'commands'),

@@ -253,6 +253,8 @@ def _new_choice():
         # Egg offers that can still be rerolled / skipped this run (cards.rerolls / cards.skips)
         rerolls=None,
         skips=None,
+        # Cards and pacts taken this run: [{'id', 'name', 'kind', 'rarity'}] (the FLOCK menu lists them)
+        taken=[],
     )
 
 

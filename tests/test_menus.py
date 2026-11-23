@@ -64,8 +64,8 @@ def test_every_submenu_is_reachable_from_a_root():
 def test_cursor_wraps_and_back_returns_to_the_opening_item(sim):
     pause(sim)
     press_all(sim, ['UP'])
-    assert current() == ('pause', 6)  # wrapped to MAIN MENU
-    press_all(sim, ['UP', 'ENTER'])  # SETTINGS
+    assert current() == ('pause', 7)  # wrapped to MAIN MENU
+    press_all(sim, ['UP', 'UP', 'ENTER'])  # SETTINGS (above FLOCK)
     assert current() == ('settings', 0)
     press_all(sim, ['DOWN', 'DOWN', 'ENTER'])  # CONTROLS
     assert current() == ('controls', 0)
@@ -235,3 +235,22 @@ def _check_assists(sim, state, handle_movement):
     handle_movement('LEFT')
     handle_movement('RIGHT')
     assert state.birds.power_used[bird] or state.birds.power_uses[bird] > 0, 'trigger on enter fired the power'
+
+
+def test_the_flock_menu_shows_base_power_ups_and_total(sim):
+    from src.engine import stats
+    from src.ui import flock_pages
+
+    bird = flock_pages.bird_slots()[0]
+    stats.add_modifier(bird, 'fall_speed_bonus', add=-4, source='card:feather_brake')
+    sim.state.choice.taken.append({'id': 'feather_brake', 'name': 'Feather Brake', 'kind': 'stat', 'rarity': 'common'})
+    page = flock_pages.bird_page(bird)
+    row = next(line for line in page['lines'] if line.startswith('fall speed bonus'))
+    assert '-4' in row
+    flock = flock_pages.flock_page()
+    assert any('Feather Brake' in line for line in flock['lines'])
+    pause(sim)
+    press_all(sim, ['UP', 'UP', 'ENTER'])  # FLOCK (above MAIN MENU)
+    assert current() == ('flock', 0)
+    press_all(sim, ['ENTER'])
+    assert current()[0].startswith('flock_bird_')
