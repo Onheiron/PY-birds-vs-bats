@@ -478,7 +478,7 @@ hazards:
   # a killed bat drops a firefly with firefly_drop chance: light for firefly_light s
   darkness:
     5: {light_radius: 1, clockwork_light: true, firefly_drop: 0.15, firefly_light: 8.0}
-  # Every interval seconds a lane cracks at the top for warning seconds, then a
+  # Every interval seconds a lane cracks at the top for warning seconds, then a big white
   # stalactite (hp) falls down it (its stats: enemy_stats.obstacles.kinds.stalactite)
   stalactites:
     5: {interval: [6, 10], warning: 1.0, hp: 40}
@@ -764,7 +764,7 @@ enemy_stats:
     # Kinds from the world hazards (hazards section) and from bombers
     kinds:
       emerging:   {}                                  # rises out of the ground mid-screen
-      stalactite: {fall_interval: -3}                 # falls a row every 2 ticks
+      stalactite: {fall_interval: -2}                 # falls a row every 3 ticks
       peak:       {hp_mult: 2.0, armor: 15, knock: 2, knock_time: 1.0}   # knocks birds down hard
       stone:      {}                                  # dropped by bombers (their stone_* stats)
     worlds:

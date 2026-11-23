@@ -62,7 +62,7 @@ def test_the_cave_is_dark_but_around_the_cursor_and_fireflies_light_it():
         assert not hazards.dark()
 
 
-def test_stalactites_warn_then_fall_fast():
+def test_stalactites_warn_then_fall_from_the_top():
     with Simulation(seed=3, key_rate=0) as sim:
         in_world(sim, 5)
         sim.state.enemies.obstacles[:] = []
@@ -72,7 +72,7 @@ def test_stalactites_warn_then_fall_fast():
         game_state.hazards.stalactite_warnings[0]['falls_at'] = clock.now() - 1
         hazards.update()
         stalactite = [o for o in sim.state.enemies.obstacles if o.get('kind') == 'stalactite'][0]
-        assert enemy_stats.get(stalactite, 'fall_interval') == 2
+        assert enemy_stats.get(stalactite, 'fall_interval') == 3
 
 
 def test_peaks_are_hard_and_knock_birds_down():

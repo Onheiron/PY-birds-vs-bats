@@ -90,6 +90,8 @@ def draw_obstacles(fb):
             # Calculate color based on HP - dims biome color as obstacle takes damage
             max_hp = constants.obstacle.max_hp_by_tier.get(tier, obs.get('hp', 1))
             obs_color = apply_bold(dim_ansi_color(biome_base_color, obs.get('hp', 0), max_hp))
+            if obs.get('kind') == 'stalactite':
+                obs_color = apply_bold(WHITE)
 
             # Usa sprite salvata nell'ostacolo (variante + flip), o fallback a default bioma
             sprite = obs.get('sprite')

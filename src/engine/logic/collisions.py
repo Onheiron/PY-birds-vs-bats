@@ -159,7 +159,7 @@ def check_bird_obstacle_collision():
 
             # Check vertical proximity (consider sprite height)
             obs_tier = obs.get('tier', 1)
-            sprite_height = len(OBSTACLE_SPRITES.get(obs_tier, OBSTACLE_SPRITE_T1))
+            sprite_height = len(obs.get('sprite') or OBSTACLE_SPRITES.get(obs_tier, OBSTACLE_SPRITE_T1))
             if next_y < obs['y_pos'] - 1 or next_y > obs['y_pos'] + sprite_height:
                 continue
 
@@ -381,7 +381,7 @@ def check_projectile_collision():
 
             # Check vertical proximity (consider sprite height)
             obs_tier = obs.get('tier', 1)
-            sprite_height = len(OBSTACLE_SPRITES.get(obs_tier, OBSTACLE_SPRITE_T1))
+            sprite_height = len(obs.get('sprite') or OBSTACLE_SPRITES.get(obs_tier, OBSTACLE_SPRITE_T1))
             if proj['y_pos'] < obs['y_pos'] - 1 or proj['y_pos'] > obs['y_pos'] + sprite_height:
                 continue
 

@@ -148,7 +148,7 @@ def _update_stalactites(now):
             _drop_stalactite(warning['lane'], int(cfg.get('hp', 40)))
 
 
-STALACTITE_SPRITE = ['▼']
+STALACTITE_SPRITE = ['▀█▀', ' ▼ ']
 
 
 def _drop_stalactite(lane, hp):
@@ -157,11 +157,11 @@ def _drop_stalactite(lane, hp):
     obstacle = {
         'id': obstacle_id,
         'lane': lane,
-        'y_pos': 0,
+        'y_pos': -1,  # it comes down from the top edge
         'tier': 1,
         'kind': 'stalactite',
         'hp': hp,
-        'sprite_width': 1,
+        'sprite_width': 3,
         'sprite': STALACTITE_SPRITE,
         'flipped': False,
     }
