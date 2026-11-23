@@ -17,6 +17,18 @@ def _grade_thresholds(base, factor):
     return tuple(reversed(pairs))
 
 
+def grade_progress(xp):
+    """Share (0..1) of the way from the current grade to the next one (1 at S)."""
+    xp = float(xp)
+    base = float(constants.progression.xp_base)
+    factor = float(constants.progression.grade_exp_factor)
+    steps = [0] + [t for _label, t in reversed(_grade_thresholds(base, factor))]
+    for low, high in zip(steps, steps[1:]):
+        if xp < high:
+            return max(0.0, (xp - low) / max(1, high - low))
+    return 1.0
+
+
 def compute_grade_from_xp(xp):
     """Return (grade_label, color) tuple for given XP value."""
     xp = int(float(xp))

@@ -7,7 +7,7 @@ CHAR_ASPECT_RATIO = 2.0
 # Header and footer heights
 HEADER_HEIGHT = 4  # Header uses 4 rows (0-3), game area starts at row 4
 
-FOOTER_HEIGHT = 2  # Floor (1) + cursor row (1)
+FOOTER_HEIGHT = 3  # Floor (1) + cursor row (1) + grade bars (1)
 
 # Calculate total height in rows
 TOTAL_HEIGHT = HEADER_HEIGHT + constants.layout.height + FOOTER_HEIGHT

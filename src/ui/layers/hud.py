@@ -3,7 +3,7 @@
 from src.core import constants, state
 from src.engine import stats
 from src.engine.birds import get_affected_lanes
-from src.engine.grades import compute_grade_from_xp
+from src.engine.grades import compute_grade_from_xp, grade_progress
 from src.engine.progression import compute_prestige
 from src.entities.sprites import BLUE, DARK_GRAY, GREEN, RED, YELLOW, get_biome_name
 from src.ui.colors import (
@@ -20,6 +20,17 @@ from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, TOTAL_WIDTH
 _header_cache = RegionCache()
 
 
+def short_number(value):
+    """1-999 as is, then 1.455K, 100.233K, 1.200M, 3.5B... so it always fits its box."""
+    value = int(value)
+    if value < 1000:
+        return str(value)
+    for unit, size in (('K', 1e3), ('M', 1e6), ('B', 1e9), ('T', 1e12), ('Q', 1e15)):
+        if value < size * 1000 or unit == 'Q':
+            return f'{value / size:.3f}{unit}'
+    return str(value)
+
+
 def draw_header(fb):
     """Render header to framebuffer - 3 rows with graphical boxes.
 
@@ -31,7 +42,7 @@ def draw_header(fb):
         prestige_val = 1.0
     prestige_display = f"{prestige_val:.2f}x"
 
-    score_display = f"{int(state.game.score):,}"
+    score_display = short_number(state.game.score)
 
     # Lives display (hearts)
     lives_full = "♥" * state.game.lives
@@ -265,10 +276,27 @@ def draw_floor_and_cursor(fb):
         fb.put(GAME_X_OFFSET + sel_x + 2, floor_y + 1, ']', YELLOW)
 
 
+def draw_grade_bars(fb):
+    """Under each lane, the grade of its bird and a 2-cell bar of XP towards the next grade."""
+    y = constants.layout.height + HEADER_HEIGHT + 2
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i]:
+            continue
+        letter, _ = compute_grade_from_xp(state.birds.per_bird_xp[i])
+        color = grade_letter_color(letter, GREEN)
+        progress = grade_progress(state.birds.per_bird_xp[i])
+        filled = 2 if progress >= 1 else int(progress * 2 + 1e-9)
+        x = GAME_X_OFFSET + constants.layout.lane_positions[state.birds.random_lanes[i]] - 1
+        fb.put_string(x, y, letter[0], color)
+        for k in range(2):
+            fb.put(x + 1 + k, y, '▰' if k < filled else '▱', color if k < filled else DARK_GRAY)
+
+
 def draw_footer(fb):
-    """Render footer to framebuffer - only XP overlay when enabled."""
-    # Footer position: after floor and cursor
+    """Render footer: grade bars under the lanes, or the XP overlay when toggled (X key)."""
     footer_y = constants.layout.height + HEADER_HEIGHT + 2
+    if not state.ui.show_xp_overlay:
+        draw_grade_bars(fb)
 
     # Only show XP overlay if enabled (toggled with X key)
     if state.ui.show_xp_overlay:

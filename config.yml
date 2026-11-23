@@ -163,14 +163,14 @@ bat_enemy:
     random_scream_chance: 0.02     # Chance per frame to scream again while visible
 boss:
   # HP for the boss (high HP, requires sustained effort)
-  hp: 1000
+  hp: 2000
   # Armor reduction (subtracted from each hit)
   armor_reduction: 10
   # Scream attack settings
   scream:
-    probability_per_second: 0.15    # Chance per second to scream
+    probability_per_second: 0.225   # Chance per second to scream
     cooldown_seconds: 3.0           # Minimum time between screams
-    scare_duration: 1               # Fear effect duration (like tier 1 bat)
+    scare_duration: 1.5             # Fear effect duration (seconds)
   # Movement settings
   descent_speed: 8                  # Frames between descent steps
   oscillation_range: 2              # Max columns to move left/right (subtle movement)
