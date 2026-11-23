@@ -236,3 +236,42 @@ def test_power_ups_last_their_seconds_of_game_time():
         while sim.state.powerups.tailwind_active and clock.now() - start < 30:
             sim.step(key=None)
         assert 9.5 < clock.now() - start < 10.6
+
+
+def test_card_types_level_up_to_a_cap_and_a_run_follows_few_types():
+    with Simulation(seed=1, key_rate=0) as sim:
+        catalog = cards._catalog()
+        lasting = [cid for cid, e in catalog.items() if cards.limited(e)]
+        first = lasting[0]
+        for _ in range(cards.max_level()):
+            assert cards.can_take(first, catalog[first])
+            cards.took({'id': first, 'kind': _kind(catalog[first])})
+        assert not cards.can_take(first, catalog[first])  # maxed
+        for cid in lasting[1 : cards.max_types()]:
+            cards.took({'id': cid, 'kind': _kind(catalog[cid])})
+        others = [cid for cid in lasting if cid not in sim.state.choice.levels]
+        assert others and not any(cards.can_take(cid, catalog[cid]) for cid in others)  # 4 types followed
+        timed = [cid for cid, e in catalog.items() if _kind(e) == 'boost']
+        assert timed and all(cards.can_take(cid, catalog[cid]) for cid in timed)
+        # Offers only hold what can still be taken
+        for offer in offers('common', 50):
+            for card in offer:
+                if cards.limited(card):
+                    assert card['id'] in sim.state.choice.levels
+
+
+def test_no_eggs_when_nothing_is_left_to_offer():
+    from src.engine.logic.drops import drop_loot
+
+    with Simulation(seed=1, key_rate=0) as sim:
+        sim.state.choice.levels.update({cid: 99 for cid, e in cards._catalog().items() if cards.limited(e)})
+        assert not cards.anything_to_offer()  # all maxed, flock full
+        before = len(sim.state.items.loot_items)
+        drop_loot({'type': 'egg', 'x_pos': 5, 'y_pos': 5, 'rarity': 'common'}, 'bat')
+        assert len(sim.state.items.loot_items) == before
+        sim.state.birds.lost[0] = True  # a free slot: birds can be offered again
+        assert cards.anything_to_offer()
+
+
+def _kind(entry):
+    return (entry if isinstance(entry, dict) else vars(entry)).get('kind', 'stat')

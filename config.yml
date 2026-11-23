@@ -1051,5 +1051,9 @@ upgrades:
                     costs: [25, 45, 70], requires: {gold_digger: 2}, effects: [{rerolls: 1}]}
     skips:         {name: Skips,         branch: Fortune, desc: One more egg skip per run,
                     costs: [30, 55], requires: {rerolls: 1}, effects: [{skips: 1}]}
+    mastery:       {name: Mastery,       branch: Nest,    desc: Take each card type one more time,
+                    costs: [60, 110, 180, 280], requires: {extra_life: 1}, effects: [{stat: card_max_level, add: 1}]}
+    breadth:       {name: Breadth,       branch: Nest,    desc: Follow one more card type per run,
+                    costs: [90, 160, 260], requires: {mastery: 1}, effects: [{stat: card_types, add: 1}]}
     renown:        {name: Renown,        branch: Fortune, desc: Start with more prestige,
                     costs: [35, 55, 85, 130], requires: {lucky_eggs: 1}, effects: [{stat: prestige_bonus, add: 0.5}]}

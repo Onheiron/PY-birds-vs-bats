@@ -5805,6 +5805,48 @@
               },
               "type": "object"
             },
+            "breadth": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "requires": {
+                  "properties": {
+                    "mastery": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
             "encore": {
               "properties": {
                 "branch": {
@@ -6095,6 +6137,48 @@
                 "requires": {
                   "properties": {
                     "gold_digger": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "mastery": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "requires": {
+                  "properties": {
+                    "extra_life": {
                       "type": "number"
                     }
                   },

@@ -255,6 +255,8 @@ def _new_choice():
         skips=None,
         # Cards and pacts taken this run: [{'id', 'name', 'kind', 'rarity'}] (the FLOCK menu lists them)
         taken=[],
+        # Level of each card type followed this run: {card id: times taken} (see cards.card_levels)
+        levels={},
     )
 
 

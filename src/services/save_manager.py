@@ -353,6 +353,7 @@ def build_save_data():
             'rerolls': state.choice.rerolls,
             'skips': state.choice.skips,
             'taken': list(state.choice.taken),
+            'levels': dict(state.choice.levels),
         },
         'game': _build_game_dict(),
         'player': _build_player_dict(),
@@ -430,6 +431,7 @@ def apply_save_data(data):
         state.choice.rerolls = saved_choice.get('rerolls')
         state.choice.skips = saved_choice.get('skips')
         state.choice.taken[:] = saved_choice.get('taken', [])
+        state.choice.levels = dict(saved_choice.get('levels', {}))
         _restore_game_state(data.get('game', {}))
         _restore_player_state(data.get('player', {}))
         _restore_ui_state(data.get('ui', {}))

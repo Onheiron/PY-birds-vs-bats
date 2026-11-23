@@ -87,6 +87,8 @@ FLOCK_STATS = {
     'prestige_bonus': StatDef(0, 0, 999, 'prestige added to the flock (before prestige_mult)'),
     'prestige_mult': StatDef(1, 0.1, 100, 'multiplier on the whole prestige'),
     'elite_chance': StatDef(0, 0, 1, 'added to the chance that a bat spawns as an elite'),
+    'card_max_level': StatDef(6, 1, 10, 'times a card type can be taken in a run'),
+    'card_types': StatDef(4, 1, 7, 'different card types a run can follow'),
 }
 
 # Bird types cards and pacts leave alone

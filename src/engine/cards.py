@@ -322,6 +322,9 @@ def card_info(card):
         text = 'Keep things as they are.'
     else:
         text = card.get('desc', '')
+    if limited(card) and card.get('id'):
+        # Which level this pick reaches, of the most the run allows
+        duration = f"Lv {state.choice.levels.get(card['id'], 0) + 1}/{max_level()} · {duration}"
     return {
         'name': card['name'],
         'rarity': card['rarity'],
@@ -390,6 +393,50 @@ def _bird_candidates(rarity):
     return out
 
 
+# ---------------------------------------------------------------------------
+# Card levels: a card type can be taken card_max_level times a run, and a run
+# follows at most card_types types (flock stats: upgrades raise them). Timed
+# boosts, power-ups, training and birds are not limited.
+# ---------------------------------------------------------------------------
+
+UNLIMITED_KINDS = ('boost', 'powerup', 'training', 'bird', 'refuse', 'pact')
+
+
+def limited(entry_or_card):
+    return _as_dict(entry_or_card).get('kind', 'stat') not in UNLIMITED_KINDS
+
+
+def max_level():
+    return int(stats.flock('card_max_level'))
+
+
+def max_types():
+    return int(stats.flock('card_types'))
+
+
+def can_take(card_id, entry):
+    """Can a card of this type still be offered (below its max level; a new type only if there is room)?"""
+    if not limited(entry):
+        return True
+    levels = state.choice.levels
+    if card_id in levels:
+        return levels[card_id] < max_level()
+    return len(levels) < max_types()
+
+
+def took(card):
+    """Count a picked card towards its type's level."""
+    if limited(card) and card.get('id'):
+        state.choice.levels[card['id']] = state.choice.levels.get(card['id'], 0) + 1
+
+
+def anything_to_offer():
+    """Is there still a lasting card or a bird to offer? (else enemies drop no eggs)"""
+    if any(limited(e) and can_take(cid, e) for cid, e in _catalog().items()):
+        return True
+    return any(_bird_candidates(r) for r in RARITIES)
+
+
 def _roll_bird(rarity, taken, rng):
     """A bird card of ``rarity`` (a free slot and a bird of that rarity needed), or None."""
     birds = {b: w for b, w in _bird_candidates(rarity).items() if f'bird:{b}' not in taken}
@@ -414,7 +461,7 @@ def _roll_card(rarity, taken, rng):
     Mythical cards are birds only: power-ups stop at legendary.
     """
     cfg = _cfg('cards')
-    pool = [(cid, e) for cid, e in _catalog().items() if cid not in taken and _allowed(e, rarity)]
+    pool = [(cid, e) for cid, e in _catalog().items() if cid not in taken and _allowed(e, rarity) and can_take(cid, e)]
     if rarity == 'mythical':
         pool = []
     weights = [float(_as_dict(e).get('weight', 1)) for _, e in pool]

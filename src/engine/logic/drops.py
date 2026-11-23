@@ -23,6 +23,10 @@ def drop_loot(loot, source):
     upgraded by the flock's egg luck.
     """
     if loot['type'] == 'egg':
+        from src.engine import cards
+
+        if not cards.anything_to_offer():
+            return  # every card type maxed and no free slot: nothing to drop until something frees up
         chance = _drop_chance(source)
         if chance < 1 and random.random() >= chance:
             return

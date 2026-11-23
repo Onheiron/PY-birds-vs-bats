@@ -131,6 +131,7 @@ def pick(index=None):
                 'rarity': card.get('rarity'),
             }
         )
+    cards.took(card)
     if card['kind'] == 'pact':
         cards.apply_pact(card)
     elif card['kind'] != 'refuse':
