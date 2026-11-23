@@ -265,8 +265,6 @@ def update_zombies():
         for j in range(len(birds.colors)):
             if j == z or birds.lost[j] or j in zombies or j in info['passed'] or birds.vy[j] != 1:
                 continue
-            if j in state.special.scared_birds:
-                continue
             if abs(birds.random_lanes[j] - birds.random_lanes[z]) == 1 and abs(birds.y[j] - birds.y[z]) <= 1:
                 info['passed'].append(j)
                 scare_bird(j, info['fear'])

@@ -102,6 +102,7 @@ def test_a_zombie_scares_and_may_bite_a_falling_neighbour(monkeypatch):
         birds = game_state.birds
         birds.vy[2], birds.y[2] = -1, 10
         birds.vy[3], birds.y[3] = 1, 11
+        game_state.special.scared_birds[3] = 50  # already scared: it can still be bitten
         bat_abilities.update_zombies()
         assert 3 in game_state.special.scared_birds
         assert birds.colors[3] == ZOMBIE and not birds.lost[3]  # still in the flock
