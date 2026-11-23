@@ -616,8 +616,14 @@ def handle_key(key):
         return
 
     entry = state.ui.menu_stack[-1]
-    items = SCREENS[entry[0]].items()
+    screen = SCREENS[entry[0]]
+    items = screen.items()
 
+    if screen.content and key in ('UP', 'DOWN'):
+        # Text pages scroll (the view keeps the offset within the page)
+        scroll = state.ui.page_scroll
+        scroll[screen.content] = max(0, scroll.get(screen.content, 0) + (1 if key == 'DOWN' else -1))
+        return
     if key in ('UP', 'DOWN'):
         entry[1] = (entry[1] + (1 if key == 'DOWN' else -1)) % len(items)
     elif key in ('LEFT', 'RIGHT'):

@@ -246,7 +246,8 @@ def test_the_flock_menu_shows_base_power_ups_and_total(sim):
     sim.state.choice.taken.append({'id': 'feather_brake', 'name': 'Feather Brake', 'kind': 'stat', 'rarity': 'common'})
     page = flock_pages.bird_page(bird)
     row = next(line for line in page['lines'] if line.startswith('fall speed bonus'))
-    assert '-4' in row
+    base, now = (float(v) for v in row.split()[-2:])
+    assert now == base - 4
     flock = flock_pages.flock_page()
     assert any('Feather Brake' in line for line in flock['lines'])
     pause(sim)

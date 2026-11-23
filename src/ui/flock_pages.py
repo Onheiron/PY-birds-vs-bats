@@ -10,29 +10,20 @@ from src.engine import choices, stats
 from src.engine.grades import compute_grade_from_xp
 from src.engine.progression import compute_prestige
 
-GREEN = '\x1b[92m'
-RED = '\x1b[91m'
-RESET = '\x1b[0m'
-MAX_STAT_LINES = 17  # what fits on screen under the header
-
 
 def _num(value):
+    value = round(value, 2)
     if isinstance(value, float) and not value.is_integer():
         return f'{value:.2f}'.rstrip('0').rstrip('.')
     return str(int(value))
 
 
-def _delta(value):
-    if abs(value) < 1e-9:
-        return '    '
-    text = ('+' if value > 0 else '') + _num(round(value, 2))
-    return f'{GREEN if value > 0 else RED}{text:>5}{RESET}'
-
-
 def _row(name, base, now):
-    delta = now - base
-    label = name.replace('_', ' ')[:17]
-    return f'{label:<17}{_num(round(base, 2)):>6} {_delta(delta)} {_num(round(now, 2)):>6}'
+    """A stat line: name, base value, value now (fits the pause panel)."""
+    return f'{name.replace("_", " ")[:16]:<16}{_num(base):>6}{_num(now):>6}'
+
+
+HEADER = f'{"stat":<16}{"base":>6}{"now":>6}'
 
 
 def bird_page(i):
@@ -53,35 +44,44 @@ def bird_page(i):
     ):
         if i in table:
             status.append(flag)
-    lines = [
-        f'{kind}  grade {grade}  lane {birds.random_lanes[i] + 1}',
-        f'XP {int(birds.per_bird_xp[i])}' + (f'   {", ".join(status)}' if status else ''),
-        '',
-        f'{"stat":<17}{"base":>6} {"  ±  "} {"now":>6}',
-    ]
+    lines = [f'{kind} {grade}, lane {birds.random_lanes[i] + 1}', f'XP {int(birds.per_bird_xp[i])}']
+    if status:
+        lines.append(', '.join(status))
+    lines += ['', HEADER]
     changed, other = [], []
     for name, definition in stats.BIRD_STATS.items():
         base, now = stats.base(i, name), stats.bird(i, name)
         if abs(now - base) > 1e-9:
-            changed.append(_row(name, base, now))
+            changed.append(_row(name, base, now))  # power-ups first
         elif abs(base - definition.default) > 1e-9 or name in ('speed', 'damage'):
             other.append(_row(name, base, now))
-    rows = changed + other
-    if len(rows) > MAX_STAT_LINES:
-        rows = rows[: MAX_STAT_LINES - 1] + [f'... and {len(rows) - MAX_STAT_LINES + 1} more']
-    return {'title': f'FLOCK: {kind}', 'lines': lines + rows}
+    return {'title': f'FLOCK: {kind}', 'lines': lines + changed + other}
+
+
+def _flock_card_effects():
+    """Bird stats the cards and pacts change for every bird: (name, base, now) with base = default."""
+    totals = {}
+    for mod in state.stats.modifiers:
+        if mod['target'] == 'flock' and mod['stat'] in stats.BIRD_STATS:
+            add, mul = totals.get(mod['stat'], (0.0, 1.0))
+            totals[mod['stat']] = (add + mod.get('add', 0), mul * mod.get('mul', 1))
+    out = []
+    for name, (add, mul) in totals.items():
+        default = stats.BIRD_STATS[name].default
+        out.append((name, default, (default + add) * mul))
+    return out
 
 
 def flock_page():
-    lines = [f'{"stat":<17}{"base":>6} {"  ±  "} {"now":>6}']
+    lines = [HEADER]
     for name, definition in stats.FLOCK_STATS.items():
         lines.append(_row(name, definition.default, stats.flock(name)))
-    lines += [
-        f'{"prestige (total)":<17}{"":>6}       {_num(round(compute_prestige(), 2)):>6}',
-        '',
-        f'Rerolls left {choices.rerolls_left()}   skips left {choices.skips_left()}',
-        '',
-    ]
+    lines.append(f'{"prestige now":<16}{"":>6}{_num(compute_prestige()):>6}')
+    effects = _flock_card_effects()
+    if effects:
+        lines += ['', 'Every bird (cards, pacts):', HEADER]
+        lines += [_row(name, base, now) for name, base, now in effects]
+    lines += ['', f'Rerolls {choices.rerolls_left()}, skips {choices.skips_left()}', '']
     taken = state.choice.taken
     cards = [t for t in taken if t['kind'] != 'pact']
     pacts = [t for t in taken if t['kind'] == 'pact']
@@ -89,17 +89,10 @@ def flock_page():
     for card in cards:
         counts[card['name']] = counts.get(card['name'], 0) + 1
     lines.append(f'Cards taken: {len(cards)}')
-    names = [f'{name} x{n}' if n > 1 else name for name, n in sorted(counts.items(), key=lambda kv: -kv[1])]
-    line = ' '
-    for name in names:
-        if len(line) + len(name) + 2 > 36:
-            lines.append(line)
-            line = ' '
-        line += name + ', '
-    if line.strip():
-        lines.append(line.rstrip(', '))
-    lines.append(f'Pacts: {", ".join(p["name"] for p in pacts) or "none"}')
-    return {'title': 'FLOCK STATS', 'lines': lines[:24]}
+    lines += [f' {name} x{n}' if n > 1 else f' {name}' for name, n in sorted(counts.items(), key=lambda kv: -kv[1])]
+    lines.append('Pacts:' + ('' if pacts else ' none'))
+    lines += [f' {p["name"]}' for p in pacts]
+    return {'title': 'FLOCK STATS', 'lines': lines}
 
 
 def bird_label(i):

@@ -13,7 +13,7 @@ from src.engine import menus
 from src.entities.sprites import YELLOW
 from src.ui import pages
 from src.ui.colors import MENU_ARROW_COLOR, MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
-from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH, TOTAL_WIDTH
+from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH, TOTAL_HEIGHT, TOTAL_WIDTH
 
 HINTS = {
     'change': "↑↓ Navigate  ←→ Change  ⏎ Select",
@@ -21,7 +21,7 @@ HINTS = {
     'controls': "↑↓ Navigate  ⏎ Rebind  ESC Back",
     'rebinding': "Press new key...  ESC Cancel",
     'root': "↑↓ Navigate  ⏎ Select",
-    'page': "⏎ or ESC to go back",
+    'page': "↑↓ Scroll  ⏎ or ESC Back",
 }
 
 
@@ -126,15 +126,23 @@ def draw_page(fb, style, content):
     page = pages.page(content)
     lines = page['lines']
 
-    width = min(40, style.width + 10)
-    x = style.x - 5
+    in_panel = style.x >= GAME_X_OFFSET + constants.layout.width  # the pause menu, in the right panel
+    width = style.width if in_panel else min(40, style.width + 10)
+    x = style.x if in_panel else style.x - 5
     y = style.y
     inner = width - 2
     text_width = width - 4
 
+    # Long pages scroll: show what fits above the bottom of the screen
+    visible = max(4, TOTAL_HEIGHT - y - 7)
+    top = max(0, min(state.ui.page_scroll.get(content, 0), len(lines) - visible))
+    state.ui.page_scroll[content] = top
+    more_above, more_below = top > 0, top + visible < len(lines)
+    lines = lines[top : top + visible]
+
     # Blank the area first so the menu underneath does not show through
     for clear_y in range(y, y + len(lines) + 9):
-        fb.fill(x - 2, clear_y, width + 4)
+        fb.fill(x if in_panel else x - 2, clear_y, width if in_panel else width + 4)
 
     fb.put_string(x, y, "╔" + "═" * inner + "╗", MENU_BORDER_COLOR)
     y += 1
@@ -156,6 +164,10 @@ def draw_page(fb, style, content):
         y += 1
 
     fb.put_string(x, y, "╠" + "═" * inner + "╣", MENU_BORDER_COLOR)
+    if more_above:
+        fb.put(x + width - 1, style.y + 3, '▲', YELLOW)
+    if more_below:
+        fb.put(x + width - 1, y - 1, '▼', YELLOW)
     y += 1
     # The only option, always selected
     fb.put(x, y, '║', MENU_BORDER_COLOR)

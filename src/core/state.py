@@ -269,6 +269,7 @@ def _new_ui():
     return SimpleNamespace(
         show_xp_overlay=False,
         last_recording=None,  # path of the recording of the last game (src/engine/recorder.py)
+        page_scroll={},  # text page -> first line shown (long pages scroll with UP / DOWN)
         # Parallax background layers (3 layers with different speeds)
         bg_offset=0,  # Slowest layer (original tree pattern)
         bg_mid_offset=0,  # Middle layer (∧ symbols, intermediate speed)
