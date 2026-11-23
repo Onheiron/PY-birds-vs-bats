@@ -165,11 +165,18 @@ def replay(data):
     time.time = virtual
     try:
         constants.configure(data['difficulty'], base=data['config'])
-        state.init(data['seed'])
+        if data.get('save'):
+            # A continued game: start from the game it loaded, as it was when the session began
+            from src.services import save_manager
+
+            virtual.now = data['start_time']
+            save_manager.apply_save_data(copy.deepcopy(data['save']))
+        else:
+            state.init(data['seed'])
         for key, value in data['settings'].items():
             setattr(state.settings, key, copy.deepcopy(value))
         state.meta.profile = copy.deepcopy(data['profile'])
-        meta.start_run()
+        meta.start_run()  # the run counters (a continued game has its upgrades already)
         state.ui.show_title = False
         state.ui.menu_stack = []
         times = data['times']

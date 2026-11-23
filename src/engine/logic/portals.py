@@ -1,6 +1,5 @@
 """Cave portals (Void Cave biome)."""
 
-
 from src.core import constants, state
 
 

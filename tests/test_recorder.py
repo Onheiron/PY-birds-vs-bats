@@ -73,9 +73,44 @@ def test_pauses_are_not_recorded():
     assert len(times) < 60 * 60
 
 
-def test_games_loaded_from_a_save_are_not_recorded():
-    state.init(3)
-    state.game.frame_count = 500
-    record = recorder.Recorder(0.0, 0.0, {})
-    record.frame(1.0, ['UP'])
-    assert record.save() is None
+def test_a_continued_game_is_recorded_and_replays_exactly():
+    from src.services import save_manager
+
+    # A game played for a while and saved...
+    data, _ = record_bot_game(seed=21, frames=60 * 30)
+    assert save_manager.save_game(2)
+    # ...then continued: load the save, and record from there like game.py does
+    real_time = time.time
+    clock_now = [1_900_000_000.0]
+    clock = recorder.FrameTime(real=lambda: clock_now[0])
+    time.time = clock
+    try:
+        clock.tick()
+        assert save_manager.load_game(2)
+        state.ui.show_title = False
+        state.ui.menu_stack = []
+        init_time = state.game.start_time
+        profile = copy.deepcopy(state.meta.profile)
+        meta.start_run()
+        clock_now[0] += 0.5
+        state.game.start_time = state.game.last_mile_update = clock.tick()
+        record = recorder.Recorder(init_time, state.game.start_time, profile)
+        assert 'save' in record.header
+        bot = Bot(PROFILES['expert'], seed=5)
+        session = loop.Session()
+        for _ in range(60 * 40):
+            clock_now[0] += 1 / 60
+            now = clock.tick()
+            keys = bot.press()
+            record.frame(now, keys)
+            for key in keys:
+                input_handler.process_input(key)
+            session.step()
+            if state.game.game_over:
+                break
+        result = (state.game.level, int(state.game.score), state.game.miles, state.game.lives)
+        recording = json.loads(json.dumps(dict(record.header, times=record.times, keys=record.keys)))
+    finally:
+        time.time = real_time
+    runner.replay(recording)
+    assert (state.game.level, int(state.game.score), state.game.miles, state.game.lives) == result

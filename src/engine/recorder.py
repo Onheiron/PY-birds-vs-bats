@@ -10,8 +10,8 @@ keys, the physics and the timers of one frame all see the same instant, and
 the replay can give them that instant again. Pauses and card choices are left
 out: the time stands still there and only the frames with keys are kept.
 
-Recordings go to ~/.bvb/recordings/ as gzipped JSON. Only games started from
-scratch are recorded (a game loaded from a save cannot be replayed from its seed).
+Recordings go to ~/.bvb/recordings/ as gzipped JSON. A game continued from a
+save keeps a snapshot of the loaded game (``save``): its replay starts from there.
 """
 
 import copy
@@ -83,6 +83,10 @@ class Recorder:
             'init_time': init_time,
             'start_time': start_time,
         }
+        if not self.fresh:
+            from src.services import save_manager
+
+            self.header['save'] = save_manager.snapshot()
         self.times = []  # time of every frame
         self.keys = []  # [frame, [keys]] for the frames with keys
 
@@ -96,7 +100,7 @@ class Recorder:
 
     def save(self):
         """Write the recording; returns its path (None if nothing to save)."""
-        if not self.fresh or not self.times:
+        if not self.times:
             return None
         game = state.game
         data = dict(self.header)

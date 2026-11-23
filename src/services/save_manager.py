@@ -304,6 +304,11 @@ def checkpoint():
         save_game(0)
 
 
+def snapshot():
+    """The current game as save data, JSON-ready (recordings of continued games keep one)."""
+    return json.loads(json.dumps(build_save_data(), default=_json_serializer))
+
+
 def save_game(slot=0):
     """Save the current game state to a slot.
 
@@ -313,9 +318,22 @@ def save_game(slot=0):
     Returns:
         bool: True if save succeeded
     """
+    save_data = build_save_data()
 
-    # Build save data
-    save_data = {
+    # Write to file
+    path = get_save_path(slot)
+    try:
+        with open(path, 'w') as f:
+            json.dump(save_data, f, indent=2, default=_json_serializer)
+        return True
+    except OSError as e:
+        print(f"Save failed: {e}")
+        return False
+
+
+def build_save_data():
+    """Everything a save holds, as a dict."""
+    return {
         'version': SAVE_VERSION,
         'timestamp': datetime.now().isoformat(),
         'metadata': _build_metadata(),
@@ -334,22 +352,13 @@ def save_game(slot=0):
             'queue': list(state.choice.queue),
             'rerolls': state.choice.rerolls,
             'skips': state.choice.skips,
+            'taken': list(state.choice.taken),
         },
         'game': _build_game_dict(),
         'player': _build_player_dict(),
         'ui': _build_ui_dict(),
         'settings': _settings_to_dict(state.settings),
     }
-
-    # Write to file
-    path = get_save_path(slot)
-    try:
-        with open(path, 'w') as f:
-            json.dump(save_data, f, indent=2, default=_json_serializer)
-        return True
-    except OSError as e:
-        print(f"Save failed: {e}")
-        return False
 
 
 def load_game(slot):
@@ -369,11 +378,22 @@ def load_game(slot):
     try:
         with open(path) as f:
             data = json.load(f)
+        return apply_save_data(data)
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        print(f"Load failed: {e}")
+        return False
 
+
+def apply_save_data(data):
+    """Put the game in the state ``data`` (from build_save_data) describes. True if it could."""
+    try:
         # Verify version compatibility
         version = data.get('version', '1.0')
         if not _is_version_compatible(version):
             return False
+
+        # A clean state first: nothing of a previous game may linger
+        state.init(data.get('game_seed'))
 
         # Restore random state first
         if 'random_state' in data:
@@ -409,6 +429,7 @@ def load_game(slot):
         state.choice.queue[:] = saved_choice.get('queue', [])
         state.choice.rerolls = saved_choice.get('rerolls')
         state.choice.skips = saved_choice.get('skips')
+        state.choice.taken[:] = saved_choice.get('taken', [])
         _restore_game_state(data.get('game', {}))
         _restore_player_state(data.get('player', {}))
         _restore_ui_state(data.get('ui', {}))
@@ -428,7 +449,7 @@ def load_game(slot):
 
         return True
 
-    except (json.JSONDecodeError, KeyError, TypeError) as e:
+    except (KeyError, TypeError) as e:
         print(f"Load failed: {e}")
         return False
 
@@ -600,44 +621,16 @@ def _restore_birds(birds, data):
 
 
 def _restore_special(special, data):
-    """Restore special namespace from dict."""
-    # Lists
-    for key in [
-        'purple_state',
-        'purple_primed_frame',
-        'purple_charge_started_frame',
-        'purple_saved_vy',
-        'purple_miss_count',
-        'purple_just_fired_frames',
-        'purple_hold_counter',
-    ]:
-        if key in data:
-            setattr(special, key, data[key])
+    """Restore the special namespace: every saved field (dict keys that were bird indices back to ints)."""
 
-    # Simple values
-    for key in ['up_hold_counter', 'up_miss_counter']:
-        if key in data:
-            setattr(special, key, data[key])
+    def key(k):
+        return int(k) if isinstance(k, str) and k.lstrip('-').isdigit() else k
 
-    # Dicts with int keys (convert string keys back to int)
-    for key in [
-        'speed_boosts',
-        'scared_push',
-        'zombies',
-        'dinosaur_up_presses',
-        'scared_birds',
-        'stunned_birds',
-        'stealth_timers',
-        'stealth_prev_speeds',
-        'clockwork_charge',
-        'cookie_crumbs_made',
-    ]:
-        if key in data:
-            setattr(special, key, {int(k): v for k, v in data[key].items()})
-
-    # Lists of dicts
-    if 'red_projectiles' in data:
-        special.red_projectiles = data['red_projectiles']
+    for name, value in data.items():
+        if isinstance(value, dict):
+            setattr(special, name, {key(k): v for k, v in value.items()})
+        else:
+            setattr(special, name, value)
 
 
 def _restore_enemies(enemies, data, keep_ages=False):

@@ -257,7 +257,8 @@ python3 tools/replay.py --bot expert --bot average
 
 The report shows keys per second (moves and UP apart), the time between a
 move and the next UP, how far birds had fallen when bounced, swaps, powers
-and how birds were lost. Games loaded from a save are not recorded.
+and how birds were lost. Games continued with CONTINUE are recorded too: the
+recording keeps the loaded game and its replay starts from there.
 
 ### Balance simulator
 
