@@ -126,3 +126,21 @@ def test_the_bot_sees_what_the_player_sees_in_the_dark():
         bot.frame += 10
         bot._perceive()
         assert 8 in bot.view and bot.view[8][0] >= 20  # remembered, and guessed lower
+
+
+def test_a_portal_never_puts_two_birds_in_one_lane():
+    from src.engine.logic import portals
+
+    with Simulation(seed=3, key_rate=0) as sim:
+        birds = game_state.birds
+        for i in range(len(birds.colors)):
+            birds.random_lanes[i] = i
+            birds.lost[i] = False
+        sim.state.enemies.portals[:] = [
+            {'pair_id': 1, 'portal_idx': 0, 'lane': 2, 'y_pos': 10, 'height': 2, 'from_owl_boss': True},
+            {'pair_id': 1, 'portal_idx': 1, 'lane': 6, 'y_pos': 10, 'height': 2, 'from_owl_boss': True},
+        ]
+        birds.y[2], birds.vy[2] = 10, -1
+        portals._check_bird_portal_teleport()
+        lanes = [birds.random_lanes[i] for i in range(len(birds.colors)) if not birds.lost[i]]
+        assert birds.random_lanes[2] == 6 and len(set(lanes)) == len(lanes)

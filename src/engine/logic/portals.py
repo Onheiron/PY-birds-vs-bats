@@ -1,104 +1,19 @@
 """Cave portals (Void Cave biome)."""
 
-import random
 
 from src.core import constants, state
-
-
-def spawn_portal_pair():
-    """Spawn a pair of portals in the cave biome - FIXED positions, no scrolling."""
-    if state.game.level_group != 5:
-        return
-
-    state.enemies.portal_spawn_timer -= 1
-    if state.enemies.portal_spawn_timer > 0:
-        return
-
-    # Random spawn interval (rare)
-    state.enemies.portal_spawn_timer = random.randint(300, 500)
-
-    # Portal sprite is 5 wide, 3 tall
-    portal_width = 5
-    portal_height = 3
-
-    # Game area dimensions
-    game_height = constants.layout.height
-    num_lanes = constants.layout.num_lanes
-    lane_positions = constants.layout.lane_positions
-
-    # Pick two different lanes with at least 1 lane between them
-    max_attempts = 30
-    for _ in range(max_attempts):
-        lane1 = random.randint(0, num_lanes - 1)
-        lane2 = random.randint(0, num_lanes - 1)
-
-        # At least 2 lanes apart (so 1 lane in between)
-        if abs(lane1 - lane2) >= 2:
-            break
-    else:
-        return  # Couldn't find valid lanes
-
-    # Center portals on their lanes
-    x1 = lane_positions[lane1] - portal_width // 2
-    x2 = lane_positions[lane2] - portal_width // 2
-
-    # Random y positions - max 2/3 of screen height from top
-    max_y = (game_height * 2) // 3
-    y1 = random.randint(3, max_y - portal_height)
-    y2 = random.randint(3, max_y - portal_height)
-
-    # Create portal pair
-    pair_id = state.enemies.portal_pair_counter
-    state.enemies.portal_pair_counter += 1
-
-    # Duration: how long portals stay on screen (in frames)
-    duration = random.randint(200, 400)
-    expire_frame = state.game.frame_count + duration
-
-    portal_a = {
-        'x_pos': x1,
-        'y_pos': y1,
-        'pair_id': pair_id,
-        'portal_idx': 0,
-        'lane': lane1,
-        'width': portal_width,
-        'height': portal_height,
-        'expire_frame': expire_frame,
-    }
-
-    portal_b = {
-        'x_pos': x2,
-        'y_pos': y2,
-        'pair_id': pair_id,
-        'portal_idx': 1,
-        'lane': lane2,
-        'width': portal_width,
-        'height': portal_height,
-        'expire_frame': expire_frame,
-    }
-
-    state.enemies.portals.append(portal_a)
-    state.enemies.portals.append(portal_b)
 
 
 def update_portals():
     """Update portals - fixed position, handle teleportation/destruction.
 
-    Works for both biome 5 natural portals AND Owl Boss bend_space portals.
+    Portals come only from the Owl Boss's bend_space spell.
     """
-    # Check if we're in biome 5 OR if Owl Boss spawned portals
-    has_owl_boss_portals = any(p.get('from_owl_boss') for p in state.enemies.portals)
-
-    if state.game.level_group != 5 and not has_owl_boss_portals:
-        # Clear portals when not in cave biome and no owl boss portals
+    if not any(p.get('from_owl_boss') for p in state.enemies.portals):
         if state.enemies.portals:
             _return_birds_to_home_lanes()
             state.enemies.portals = []
         return
-
-    # Spawn new portal pairs (only in biome 5, not during owl boss)
-    if state.game.level_group == 5 and not has_owl_boss_portals:
-        spawn_portal_pair()
 
     # Remove expired portals - when a portal pair expires, return birds to home lanes
     expired_pairs = set()
@@ -203,6 +118,12 @@ def _check_bird_portal_teleport():
                 else:
                     # Going DOWN: exit BELOW the other portal
                     new_y = other_py + other_ph
+
+                # One bird per lane: a bird living in the exit lane takes this one's lane
+                for j in range(constants.layout.num_balls):
+                    if j != i and not state.birds.lost[j] and state.birds.random_lanes[j] == new_lane:
+                        state.birds.random_lanes[j] = bird_lane
+                        state.birds.cols[j] = constants.layout.lane_positions[bird_lane]
 
                 # Update bird position - teleport to new lane
                 # NOTE: home_lane is NOT changed! Bird keeps its original home lane.
