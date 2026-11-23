@@ -112,11 +112,14 @@ def check_bird_floor_collision():
             reset_bird_power(i)
             continue
 
-        # Bird dies
+        # Bird dies (a zombie a necromancer raised was never yours: no life lost)
         dead_color = state.birds.colors[i]
         state.birds.lost[i] = True
         state.birds.y[i] = constants.layout.height - 1
         state.birds.per_bird_xp[i] = 0
+        if bat_abilities.lost_raised_zombie(i):
+            events.emit('bird_lost', bird=i, color=dead_color, cause='zombie')
+            continue
         state.game.lives -= 1
         events.emit('bird_lost', bird=i, color=dead_color, cause='floor')
 
@@ -193,6 +196,8 @@ def check_bird_obstacle_collision():
                 handle_obstacle_destroyed(obs)
                 state.enemies.obstacles.remove(obs)
                 play_sfx('destroy')
+                if obs.get('blast'):
+                    bat_abilities.stone_blast(obs, bird=i)
             else:
                 set_ball_vy(i, 1)
                 # Stunned (cannot bounce) for the obstacle's stun seconds; peaks also knock it down
@@ -271,6 +276,13 @@ def check_bird_bat_collision():
             # Plague bats infect the bird that touches them
             if 'plague' in enemy_stats.bat_kinds(bat):
                 bat_abilities.infect(i, bat)
+            # Elite armored bats knock the bird down hard
+            knock = enemy_stats.get(bat, 'knock')
+            if knock and bat['hp'] > 0:
+                state.special.dive_fall_boosts[i] = {
+                    'frames': int(enemy_stats.get(bat, 'knock_time') / constants.timing.base_sleep),
+                    'speed': knock,
+                }
 
             # A bird that hits a diver mid-dive is pushed down faster for a moment
             if is_diver and diver_state == 'diving':
@@ -388,6 +400,8 @@ def check_projectile_collision():
                 score_per_tier = getattr(constants.combat, 'obstacle_destroy_score_per_tier', 50)
                 add_score(tier * score_per_tier)
                 state.enemies.obstacles.remove(obs)
+                if obs.get('blast'):
+                    bat_abilities.stone_blast(obs)
 
             events.emit('shot_hit', bird=proj.get('owner'), kind=proj.get('color'), damage=proj.get('damage', 0))
 

@@ -20,10 +20,10 @@ elite_kinds), so each can be tuned world by world:
 import random
 
 from src.core import constants, state
-from src.engine import clock, enemy_stats, events
-from src.engine.birds import scare_bird
-
-ZOMBIE_STEP_TICKS = 2  # a zombie moves a row every 2 ticks
+from src.engine import clock, enemy_stats, events, stats
+from src.engine.birds import reset_bird_power, scare_bird, set_ball_vy
+from src.entities.bird_types import BirdType, get_default_speed
+from src.entities.sprites import ZOMBIE
 
 
 def _per_tick(chance_per_second):
@@ -58,9 +58,10 @@ def healer(bat):
     for other in state.enemies.bats:
         if abs(other['x_pos'] + 4 - centre) > reach:
             continue
-        top = other.get('max_hp', other['hp'])
+        base = other.get('max_hp', other['hp'])
+        top = int(base * (1 + enemy_stats.get(bat, 'overheal')))  # elites heal above max HP
         if other['hp'] < top:
-            other['hp'] = min(top, other['hp'] + max(1, int(top * share)))
+            other['hp'] = min(top, other['hp'] + max(1, int(base * share)))
             healed += 1
     bat['healing_until'] = clock.now() + 0.5
     if healed:
@@ -93,11 +94,42 @@ def bomber(bat):
     # The bomber's stone numbers win over the generic stone kind
     stone['stats']['fall_interval'] = enemy_stats.get(bat, 'stone_interval')
     stone['stats']['stun'] = enemy_stats.get(bat, 'stone_stun')
+    if enemy_stats.get(bat, 'stone_blast'):
+        # Elite bombers: the stone explodes when broken
+        stone['blast'] = {
+            'push': enemy_stats.get(bat, 'blast_push'),
+            'time': enemy_stats.get(bat, 'blast_push_time'),
+            'fear': enemy_stats.get(bat, 'blast_fear'),
+        }
     state.enemies.obstacles.append(stone)
     events.emit('bat_ability', kind='bomber', count=1)
 
 
 # --------------------------------------------------------------------------- plague
+
+
+def stone_blast(stone, bird=None):
+    """A broken elite stone explodes in its lane: the bird that broke it (or, broken by a
+    shot, a bird in its lane at most 1 row away) is knocked down and scared."""
+    blast = stone['blast']
+    if bird is not None:
+        hit = [bird]
+    else:
+        hit = [
+            j
+            for j in range(len(state.birds.colors))
+            if not state.birds.lost[j]
+            and state.birds.random_lanes[j] == stone['lane']
+            and abs(state.birds.y[j] - stone['y_pos']) <= 1
+        ]
+    for j in hit:
+        set_ball_vy(j, 1)
+        state.special.dive_fall_boosts[j] = {
+            'frames': int(blast['time'] / constants.timing.base_sleep),
+            'speed': blast['push'],
+        }
+        scare_bird(j, blast['fear'])
+    events.emit('bat_ability', kind='stone blast', count=len(hit))
 
 
 def infect(bird, bat=None, source=None):
@@ -111,6 +143,17 @@ def infect(bird, bat=None, source=None):
             'presses': int(enemy_stats.get(bat, 'plague_presses')),
             'spread': enemy_stats.get(bat, 'plague_spread'),
         }
+        bleed = enemy_stats.get(bat, 'plague_bleed')
+        if bleed > 0 and bird not in special.bleeding_birds:
+            # Elite plague: it bleeds first (UP presses hurt), then turns to poison
+            special.bleeding_birds[bird] = {
+                'end_time': clock.now() + bleed,
+                'lives_needed': source['presses'],
+                'lives_lost': 0,
+                'then_plague': source,
+            }
+            events.emit('bat_ability', kind='plague', count=1)
+            return True
     special.poisoned_birds[bird] = {
         'death_time': clock.now() + source['time'],
         'cure_attempts_needed': source['presses'],
@@ -145,50 +188,96 @@ def spread_plague():
 
 
 def necromancer(bat):
+    """Raise a zombie bird in an empty lane (a lost bird's slot), up to ``zombies`` of its own."""
     if not _ready(bat) or random.random() >= _per_tick(enemy_stats.get(bat, 'ability_chance')):
         return
     _used(bat)
-    mine = [z for z in state.enemies.zombies if z['owner'] == bat.get('uid')]
+    zombies = state.special.zombies
+    mine = [i for i, z in zombies.items() if z.get('owner') == bat.get('uid') and not state.birds.lost[i]]
     if len(mine) >= int(enemy_stats.get(bat, 'zombies')):
         return
-    taken = {state.birds.random_lanes[i] for i in range(len(state.birds.colors)) if not state.birds.lost[i]}
-    taken |= {z['lane'] for z in state.enemies.zombies}
-    empty = [lane for lane in range(constants.layout.num_lanes) if lane not in taken]
-    if not empty:
+    birds = state.birds
+    taken = {birds.random_lanes[i] for i in range(len(birds.colors)) if not birds.lost[i]}
+    free = [i for i in range(len(birds.colors)) if birds.lost[i] and birds.random_lanes[i] not in taken]
+    if not free:
         return
-    state.enemies.zombies.append(
-        {
-            'lane': random.choice(empty),
-            'y': constants.layout.starting_line,
-            'vy': -1,
-            'owner': bat.get('uid'),
-            'fear': enemy_stats.get(bat, 'zombie_fear'),
-            'scared': [],
-        }
-    )
+    slot = random.choice(free)
+    birds.lost[slot] = False
+    stats.clear_bird(slot)
+    _make_zombie(slot)
+    birds.y[slot] = constants.layout.starting_line
+    set_ball_vy(slot, -1)
+    zombies[slot] = {
+        'raised': True,
+        'owner': bat.get('uid'),
+        'fear': enemy_stats.get(bat, 'zombie_fear'),
+        'bite': enemy_stats.get(bat, 'zombie_bite'),
+        'passed': [],
+        'vy': -1,
+    }
     events.emit('bat_ability', kind='necromancer', count=1)
 
 
+def _make_zombie(i):
+    birds = state.birds
+    birds.colors[i] = ZOMBIE
+    birds.speeds[i] = get_default_speed(BirdType.ZOMBIE)
+    birds.per_bird_xp[i] = 0
+    reset_bird_power(i)
+
+
+def _bite(j, zombie):
+    """A zombie's bite: bird ``j`` becomes a zombie too (still yours, but it scores nothing)."""
+    stats.clear_bird(j)
+    _make_zombie(j)
+    state.special.zombies[j] = {
+        'raised': False,
+        'owner': None,
+        'fear': zombie['fear'],
+        'bite': zombie['bite'],
+        'passed': [],
+        'vy': state.birds.vy[j],
+    }
+    events.emit('bat_ability', kind='zombie bite', count=1)
+
+
+def necromancer_alive():
+    return any('necromancer' in enemy_stats.bat_kinds(b) for b in state.enemies.bats)
+
+
 def update_zombies():
-    """Zombies bounce by themselves while their necromancer lives; they scare falling neighbours."""
-    owners = {b.get('uid') for b in state.enemies.bats}
-    state.enemies.zombies = [z for z in state.enemies.zombies if z['owner'] in owners]
-    if state.game.frame_count % ZOMBIE_STEP_TICKS:
+    """Zombie birds: they bounce by themselves while a necromancer lives (else you bounce
+    them); passing a falling bird in a lane next to theirs they scare it, and may bite it."""
+    zombies = state.special.zombies
+    birds = state.birds
+    for i in [i for i in zombies if birds.lost[i] or birds.colors[i] != ZOMBIE]:
+        del zombies[i]
+    if not zombies:
         return
-    for zombie in state.enemies.zombies:
-        zombie['y'] += zombie['vy']
-        if zombie['y'] <= 1:
-            zombie['vy'] = 1
-            zombie['scared'] = []  # a new pass
-        elif zombie['y'] >= constants.layout.starting_line:
-            zombie['vy'] = -1
-            zombie['scared'] = []
-        for j in range(len(state.birds.colors)):
-            if state.birds.lost[j] or j in zombie['scared'] or state.birds.vy[j] != 1:
+    alive = necromancer_alive()
+    for z, info in list(zombies.items()):  # a bite adds zombies
+        if info['vy'] != birds.vy[z]:
+            info['vy'] = birds.vy[z]
+            info['passed'] = []  # a new climb or fall
+        if alive and birds.vy[z] == 1 and birds.y[z] >= constants.layout.starting_line:
+            birds.y[z] = constants.layout.starting_line
+            set_ball_vy(z, -1)
+        for j in range(len(birds.colors)):
+            if j == z or birds.lost[j] or j in zombies or j in info['passed'] or birds.vy[j] != 1:
                 continue
-            if abs(state.birds.random_lanes[j] - zombie['lane']) == 1 and abs(state.birds.y[j] - zombie['y']) <= 1:
-                zombie['scared'].append(j)
-                scare_bird(j, zombie['fear'])
+            if j in state.special.scared_birds:
+                continue
+            if abs(birds.random_lanes[j] - birds.random_lanes[z]) == 1 and abs(birds.y[j] - birds.y[z]) <= 1:
+                info['passed'].append(j)
+                scare_bird(j, info['fear'])
+                if random.random() < info['bite']:
+                    _bite(j, info)
+
+
+def lost_raised_zombie(i):
+    """Was bird ``i`` a zombie a necromancer raised (never yours: losing it costs no life)?"""
+    zombie = state.special.zombies.get(i)
+    return bool(zombie and zombie.get('raised'))
 
 
 def update():

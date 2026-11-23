@@ -1894,6 +1894,29 @@
                 }
               },
               "type": "object"
+            },
+            "ZOMBIE": {
+              "properties": {
+                "damage": {
+                  "type": "number"
+                },
+                "pickup_radius": {
+                  "type": "number"
+                },
+                "prestige": {
+                  "type": "number"
+                },
+                "score_mult": {
+                  "type": "number"
+                },
+                "speed": {
+                  "type": "number"
+                },
+                "xp_gain": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"
@@ -3720,10 +3743,60 @@
             },
             "elite_kinds": {
               "properties": {
+                "armored": {
+                  "properties": {
+                    "armor": {
+                      "type": "number"
+                    },
+                    "knock": {
+                      "type": "number"
+                    },
+                    "knock_time": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "bomber": {
+                  "properties": {
+                    "blast_fear": {
+                      "type": "number"
+                    },
+                    "blast_push": {
+                      "type": "number"
+                    },
+                    "blast_push_time": {
+                      "type": "number"
+                    },
+                    "stone_blast": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "diver": {
+                  "properties": {
+                    "dive_wind": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
                 "healer": {
                   "properties": {
                     "heal_pct": {
                       "type": "number"
+                    },
+                    "worlds": {
+                      "additionalProperties": {
+                        "properties": {
+                          "overheal": {
+                            "type": "number"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "object"
                     }
                   },
                   "type": "object"
@@ -3731,6 +3804,25 @@
                 "necromancer": {
                   "properties": {
                     "zombies": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "plague": {
+                  "properties": {
+                    "plague_bleed": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "spellcaster": {
+                  "properties": {
+                    "double_cast": {
+                      "type": "number"
+                    },
+                    "spells": {
                       "type": "number"
                     }
                   },
@@ -3878,6 +3970,9 @@
                       "type": "number"
                     },
                     "xp_mult": {
+                      "type": "number"
+                    },
+                    "zombie_bite": {
                       "type": "number"
                     },
                     "zombie_fear": {

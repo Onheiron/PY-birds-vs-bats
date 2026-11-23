@@ -613,6 +613,7 @@ def _restore_special(special, data):
     for key in [
         'speed_boosts',
         'scared_push',
+        'zombies',
         'dinosaur_up_presses',
         'scared_birds',
         'stunned_birds',

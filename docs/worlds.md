@@ -36,7 +36,33 @@ Elites: 0, 3, 6, 9, 12, 15% (`elites.chance_by_biome`). Jumpscares are 15% of mi
 - **Healer** (tier 2+): heals the bats around it (`heal_pct` of max HP within `heal_range` columns) every `ability_interval` s. Badge `+`.
 - **Bomber** (tier 2+): drops stones: small obstacles that fall fast (`stone_interval` ticks per row) and stun briefly. Badge `o`.
 - **Plague** (tier 2+): a bird it touches is infected: it dies after `plague_time` s unless cured with `plague_presses` UP presses (3); every second it may infect a bird in a lane next to it (`plague_spread`, 5%), wherever it is. Badge `¤`.
-- **Necromancer** (tier 3+): raises zombie birds (`@`) in your empty lanes, `zombies` at most (2; elites 3). They bounce by themselves while it lives and scare a falling bird they pass in a lane next to theirs. Badge `†`.
+- **Necromancer** (tier 3+): raises zombie birds in your empty lanes (lost birds' slots), `zombies` at most (2). While a necromancer lives every zombie bounces by itself; then you bounce them, or let them fall. A zombie passing a falling bird in a lane next to its own scares it and, with `zombie_bite` chance (2%), turns it into a zombie. Badge `†`.
+
+### Zombie birds
+
+A zombie is a bird of your flock (type Zombie, grey-green): speed 2, damage 1,
+no score, prestige or XP, no power, collects no loot. Zombies stay for good;
+swap them apart to keep them from biting. One that hits the floor is lost; a
+zombie a necromancer raised costs no life (it was never yours), a bird that
+was bitten costs one as usual. While zombies hold slots, eggs cannot hatch
+birds into them.
+
+## Elites
+
+A bat becomes an elite with the world's chance (`elites.chance_by_biome`). A
+plain elite gets random affixes (Ironclad, Swift...); an elite of a special
+kind gets more of what its kind does instead (`enemy_stats.bats.elite_kinds`).
+Elites look like the others, with yellow ears.
+
+| Kind | Elite |
+|---|---|
+| Armored | +10 armor; a bird that hits it is knocked down hard (+3 fall speed for 0.5 s) |
+| Diver | headwind on its lane and the two beside it while it dives |
+| Spellcaster | knows every spell; 30% of casts are two spells at once (charging twice as long) |
+| Healer | heals 15%, and above max HP: +5% (world 3), +10%, +15%, +20% (world 6) |
+| Bomber | its stone explodes when broken, in its lane: the bird that broke it, or (broken by a shot) a bird at most 1 row away, is knocked down (+3 for 0.5 s) and scared 1.5 s |
+| Plague | the infection first bleeds for 3 s (every UP costs a life point, the 3rd kills), then turns to poison (3 UP to cure) |
+| Necromancer | 3 zombies |
 
 ## Hazards (`hazards`)
 

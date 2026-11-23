@@ -168,7 +168,8 @@ def spawn_bat():
         screen = constants.layout.starting_line
         target_y = random.randint(max(1, int(screen * low_f)), max(2, int(screen * high_f)))
     start_y = -(3 if kind == 'spellcaster' else 2) + 1  # spellcasters are 3 lines tall, others 2
-    bat = enemy_stats.make_bat(tier, kind, x_pos, start_y, target_y, hp, enemy_stats.roll_elite())
+    elite, affixes = enemy_stats.roll_elite(kind)
+    bat = enemy_stats.make_bat(tier, kind, x_pos, start_y, target_y, hp, affixes, elite=elite)
     state.enemies.spawn_queue.append({'type': 'bat', 'data': bat})
 
 
@@ -202,7 +203,11 @@ def process_spawn_queue():
         elif item['type'] == 'bat':
             state.enemies.bats.append(item['data'])
             if item['data'].get('elite'):
-                notify(enemy_stats.affix_names(item['data']['affixes']) + ' bat', title='Elite!')
+                bat = item['data']
+                name = (
+                    enemy_stats.affix_names(bat['affixes']) if bat.get('affixes') else str(bat.get('kind', '')).title()
+                )
+                notify(f'{name} bat', title='Elite!')
             # Track bat discovery by tier
             tier = item['data'].get('tier', 1)
             tier_names = {1: 'BASIC', 2: 'FAST', 3: 'DIVE', 4: 'BOSS'}

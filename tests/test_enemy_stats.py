@@ -77,8 +77,10 @@ def test_elites_spawn_by_biome_chance(monkeypatch):
         state.enemies.bat_spawn_timer = 0
         spawn_bat()
         process_spawn_queue()
-        assert state.enemies.bats and state.enemies.bats[-1]['elite']
-        assert len(state.enemies.bats[-1]['affixes']) == 2
+        bat = state.enemies.bats[-1]
+        assert bat['elite']
+        # Plain elites get 2 random affixes in world 6; special kinds get their elite behaviour instead
+        assert len(bat['affixes']) == (0 if bat.get('kind') else 2)
 
 
 # --------------------------------------------------------------------- world tables and layers

@@ -66,6 +66,16 @@ ENEMY_STATS = {
     'plague_spread': (0.0, 'plague: chance per second to infect the bird in a lane next to it'),
     'zombies': (0, 'necromancer: zombie birds it keeps at most'),
     'zombie_fear': (0.0, 'necromancer: seconds its zombies scare a bird'),
+    'zombie_bite': (0.0, 'necromancer: chance that a zombie passing a falling bird turns it into a zombie'),
+    # Elite behaviours (0 on regular bats; set in enemy_stats.bats.elite_kinds)
+    'double_cast': (0.0, 'spellcaster: chance to cast two spells at once (charging twice as long)'),
+    'dive_wind': (0, 'diver: headwind strength on its lane and the two beside it while it dives'),
+    'overheal': (0.0, 'healer: share above max HP it can heal bats to'),
+    'stone_blast': (0, 'bomber: 1 = its stones explode when broken'),
+    'blast_push': (0, 'bomber: extra fall speed of a bird caught in a stone blast'),
+    'blast_push_time': (0.0, 'bomber: seconds that push lasts'),
+    'blast_fear': (0.0, 'bomber: seconds a stone blast scares a bird'),
+    'plague_bleed': (0.0, 'plague: seconds the infection bleeds (UP presses hurt) before it turns to poison'),
     # Obstacles (and dropped stones)
     'stun': (1.0, 'seconds it stuns a bird that hits it'),
     'knock': (0, 'extra fall speed of a bird that hits it'),
@@ -109,8 +119,8 @@ def _apply(values, layer):
 
 
 def _flat(layer):
-    """The stats of a layer, without its nested ``tiers`` / ``kinds`` tables."""
-    return {k: v for k, v in _as_dict(layer).items() if k not in ('tiers', 'kinds')}
+    """The stats of a layer, without its nested ``tiers`` / ``kinds`` / ``worlds`` tables."""
+    return {k: v for k, v in _as_dict(layer).items() if k not in ('tiers', 'kinds', 'worlds')}
 
 
 def resolve(family, tier, kinds=(), affixes=(), elite=False, extra=None, world=None):
@@ -126,7 +136,8 @@ def resolve(family, tier, kinds=(), affixes=(), elite=False, extra=None, world=N
     _apply(values, _node(_node(cfg, 'tiers'), tier))
     for kind in kinds:
         _apply(values, _node(_node(cfg, 'kinds'), kind))
-    world_layer = _node(_node(cfg, 'worlds'), max(1, state.game.level_group) if world is None else world)
+    w = max(1, state.game.level_group) if world is None else world
+    world_layer = _node(_node(cfg, 'worlds'), w)
     if world_layer is not None:
         _apply(values, _flat(world_layer))
         _apply(values, _node(_node(world_layer, 'tiers'), tier))
@@ -139,7 +150,9 @@ def resolve(family, tier, kinds=(), affixes=(), elite=False, extra=None, world=N
     if elite:
         _apply(values, _node(elites, 'stats'))
         for kind in kinds:
-            _apply(values, _node(_node(cfg, 'elite_kinds'), kind))
+            layer = _node(_node(cfg, 'elite_kinds'), kind)
+            _apply(values, _flat(layer))
+            _apply(values, _node(_node(layer, 'worlds'), w))
     for affix in affixes:
         _apply(values, _node(_node(_node(elites, 'affixes'), affix), 'stats'))
     return {name: value for name, value in values.items() if value != ENEMY_STATS[name][0]}
@@ -184,11 +197,21 @@ def elite_chance():
     return min(1.0, float(table[min(group, len(table)) - 1]) + stats.flock('elite_chance'))
 
 
-def roll_elite():
-    """Affixes for a new bat: empty unless it rolled elite. Uses no randomness when the chance is 0."""
+def roll_elite(kind=None):
+    """(elite?, affixes) for a new bat of ``kind``. Uses no randomness when the chance is 0.
+
+    Plain elites get random affixes; an elite of a special kind gets its kind's
+    elite behaviour instead (enemy_stats.bats.elite_kinds).
+    """
     chance = elite_chance()
     if chance <= 0 or random.random() >= chance:
-        return []
+        return False, []
+    if kind:
+        return True, []
+    return True, _roll_affixes()
+
+
+def _roll_affixes():
     elites = constants.elites
     names = sorted(_as_dict(_node(elites, 'affixes')))
     if not names:
@@ -227,8 +250,9 @@ def regenerate():
         whole = int(pool)
         enemy['regen_pool'] = pool - whole
         enemy['regen_ts'] = now
-        if whole:
-            enemy['hp'] = min(enemy.get('max_hp', enemy['hp']), enemy['hp'] + whole)
+        top = enemy.get('max_hp', enemy['hp'])
+        if whole and enemy['hp'] < top:
+            enemy['hp'] = min(top, enemy['hp'] + whole)
 
 
 def _armored_armor(tier):
@@ -273,7 +297,7 @@ def roll_kind(tier, world):
 SPELLS = ('silence', 'repugnant_wind', 'exile')
 
 
-def make_bat(tier, kind, x_pos, y_pos, target_y, hp, affixes=(), **extra):
+def make_bat(tier, kind, x_pos, y_pos, target_y, hp, affixes=(), elite=None, **extra):
     """A new bat of ``tier`` and ``kind`` (None: plain), equipped with its stats."""
     bat = {
         'x_pos': x_pos,
@@ -293,7 +317,7 @@ def make_bat(tier, kind, x_pos, y_pos, target_y, hp, affixes=(), **extra):
     bat.update(extra)
     state.enemies.bat_uid += 1
     bat['uid'] = state.enemies.bat_uid
-    equip_bat(bat, affixes)
+    equip_bat(bat, affixes, elite)
     if kind == 'diver':
         bat.update(diver_state='flying', diver_home_y=target_y, dive_start_y=None, stun_end_time=None)
     elif kind == 'spellcaster':
@@ -303,13 +327,17 @@ def make_bat(tier, kind, x_pos, y_pos, target_y, hp, affixes=(), **extra):
     return bat
 
 
-def equip_bat(bat, affixes=()):
-    """Give a freshly built bat its stats (tier, kinds, elite affixes) and scale its HP."""
+def equip_bat(bat, affixes=(), elite=None):
+    """Give a freshly built bat its stats (tier, kinds, elite affixes) and scale its HP.
+
+    ``elite`` defaults to "has affixes" (an elite of a special kind has none).
+    """
     extra = {'armor': _armored_armor(bat['tier'])} if bat.get('armored') else None
-    if affixes:
+    elite = bool(affixes) if elite is None else elite
+    if elite:
         bat['elite'] = True
         bat['affixes'] = list(affixes)
-    bat['stats'] = resolve('bats', bat['tier'], bat_kinds(bat), affixes, elite=bool(affixes), extra=extra)
+    bat['stats'] = resolve('bats', bat['tier'], bat_kinds(bat), affixes, elite=elite, extra=extra)
     hp_mult = get(bat, 'hp_mult')
     if hp_mult != 1:
         bat['hp'] = bat['max_hp'] = max(1, int(bat['hp'] * hp_mult))

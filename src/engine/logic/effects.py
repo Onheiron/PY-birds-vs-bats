@@ -111,8 +111,12 @@ def update_special_bird_states():
         bleed_info = state.special.bleeding_birds[bird_idx]
         end_time = bleed_info.get('end_time', 0)
         if now >= end_time:
-            # Bleed expired - bird survives!
+            # Bleed expired - bird survives! (an elite plague's bleed turns to poison now)
             del state.special.bleeding_birds[bird_idx]
+            if bleed_info.get('then_plague') and not state.birds.lost[bird_idx]:
+                from src.engine.logic import bat_abilities
+
+                bat_abilities.infect(bird_idx, source=bleed_info['then_plague'])
 
     # ROCK boost cleanup - restore original speed when expired
     for bird_idx in list(state.special.rock_boosted.keys()):

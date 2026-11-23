@@ -199,15 +199,6 @@ KIND_BADGES = {
 }
 
 
-def draw_zombies(fb):
-    """Necromancers' zombie birds: grey birds bouncing by themselves."""
-    for zombie in state.enemies.zombies:
-        y = zombie['y']
-        if 0 <= y < constants.layout.height:
-            x = constants.layout.lane_positions[zombie['lane']]
-            fb.put(GAME_X_OFFSET + x, y + HEADER_HEIGHT, '@', DARK_GRAY)
-
-
 def draw_bats(fb):
     """Render bats to framebuffer."""
 

@@ -12,6 +12,7 @@ from src.entities.sprites import (
     COOKIE,
     GLITCH,
     RAINBOW,
+    ZOMBIE,
 )
 
 
@@ -26,8 +27,8 @@ def check_loot_collection():
         bird_color = state.birds.colors[i]
         bird_y = state.birds.y[i]
 
-        # STEALTH passes through unless tangible
-        if bird_kinds.is_intangible(i):
+        # STEALTH passes through unless tangible; zombies collect nothing
+        if bird_kinds.is_intangible(i) or bird_color == ZOMBIE:
             continue
 
         for loot in state.items.loot_items[:]:

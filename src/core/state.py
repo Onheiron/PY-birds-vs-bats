@@ -53,6 +53,7 @@ def _new_special():
         # Speed boosts
         speed_boosts={},
         scared_push={},  # bird -> extra fall speed while scared (the scarer's fear_push)
+        zombies={},  # zombie bird -> {'raised', 'owner', 'fear', 'bite', 'passed', 'vy'} (bat_abilities)
         # Dive fall boosts (from diver bats in diving state)
         dive_fall_boosts={},
         # Bounce sprint: bird -> game time when it ends
@@ -130,7 +131,6 @@ def _new_enemies():
         right_panel_barrier_timer=0,
         # Mountain Range cloud banks (foreground fog)
         cloud_banks=[],
-        zombies=[],  # necromancers' zombie birds (src/engine/logic/bat_abilities.py)
         bat_uid=0,  # last id given to a bat
         cloud_spawn_timer=0,
         # Boss state (end of biome bosses)

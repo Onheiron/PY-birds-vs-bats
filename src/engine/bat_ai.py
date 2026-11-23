@@ -83,6 +83,14 @@ def _update_diver_bat(bat):
     elif diver_state == 'diving':
         if state.game.frame_count % max(1, int(enemy_stats.get(bat, 'dive_interval'))) == 0:
             bat['y_pos'] += 1
+        # Elite divers bring a headwind with them
+        wind = enemy_stats.get(bat, 'dive_wind')
+        if wind:
+            lanes = _get_bat_affected_lanes(bat)
+            if lanes:
+                n = constants.layout.num_lanes
+                for lane in range(max(0, min(lanes) - 1), min(n, max(lanes) + 2)):
+                    state.hazards.lane_winds[lane] = {'end': clock.now() + 0.25, 'tail': False, 'strength': wind}
         dive_start = bat.get('dive_start_y', bat.get('diver_home_y', 5))
         if (
             bat['y_pos'] >= dive_start + enemy_stats.get(bat, 'dive_rows')
@@ -121,14 +129,26 @@ def _update_spellcaster_bat(bat):
     if bat['y_pos'] < 0 or bat['y_pos'] < bat['target_y']:
         return
     if random.random() < per_tick(enemy_stats.get(bat, 'ability_chance')):
+        known = bat.get('known_spells', ['silence'])
         bat['spell_state'] = 'casting'
-        bat['casting_end_time'] = now + enemy_stats.get(bat, 'cast_time')
-        bat['current_spell'] = random.choice(bat.get('known_spells', ['silence']))
+        if len(known) >= 2 and random.random() < enemy_stats.get(bat, 'double_cast'):
+            # Elite spellcasters: two spells at once, charged twice as long
+            bat['current_spells'] = random.sample(known, 2)
+            bat['casting_end_time'] = now + 2 * enemy_stats.get(bat, 'cast_time')
+        else:
+            bat['current_spells'] = [random.choice(known)]
+            bat['casting_end_time'] = now + enemy_stats.get(bat, 'cast_time')
+        bat['current_spell'] = bat['current_spells'][0]
 
 
 def _apply_spell_effect(bat):
-    """Apply the effect of the spell the bat just cast, on the lanes under it."""
-    spell = bat.get('current_spell', 'silence')
+    """Apply the spells the bat just cast (one, or two for a double cast)."""
+    for spell in bat.get('current_spells') or [bat.get('current_spell', 'silence')]:
+        _apply_spell(bat, spell)
+
+
+def _apply_spell(bat, spell):
+    """Apply one spell on the lanes under the bat."""
     tier = bat.get('tier', 2)
     affected_lanes = _get_bat_affected_lanes(bat)
     now = clock.now()

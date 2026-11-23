@@ -34,6 +34,8 @@ class BirdType:
     POISON = 'POISON'
     BERSERK = 'BERSERK'
     ROCK = 'ROCK'
+    # A bird a necromancer's zombie bit (or one it raised): weak, scores nothing
+    ZOMBIE = 'ZOMBIE'
 
 
 # ============================================================================
@@ -212,6 +214,15 @@ BIRD_TYPES = {
         'damage': 3,
         'description': 'Pushes enemies up 1 row on hit, power boosts to 2 rows + speed 3',
         'egg_type': 'rock_egg',
+    },
+    BirdType.ZOMBIE: {
+        'name': 'Zombie',
+        'display_name': 'Zombie',
+        'color': theme.get_color('birds', 'zombie', 65),
+        'speed': 2,
+        'damage': 1,
+        'description': 'Bounces by itself while a necromancer lives; may turn falling neighbours into zombies',
+        'egg_type': 'zombie_egg',  # never dropped
     },
 }
 

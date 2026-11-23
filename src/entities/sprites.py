@@ -42,6 +42,7 @@ FROSTY = theme.get_color('birds', 'frosty', 159)  # Cyan/ice blue
 POISON = theme.get_color('birds', 'poison', 118)  # Acid green
 BERSERK = theme.get_color('birds', 'berserk', 124)  # Dark red
 ROCK = theme.get_color('birds', 'rock', 94)  # Brown
+ZOMBIE = theme.get_color('birds', 'zombie', 65)  # Grey-green
 
 # Obstacle tiers
 OBSTACLE_TIER1 = theme.get_color('obstacles', 'tier1', 94)
@@ -86,6 +87,7 @@ _COLOR_MAP = {
     'POISON': ('birds', 'poison', 118),
     'BERSERK': ('birds', 'berserk', 124),
     'ROCK': ('birds', 'rock', 94),
+    'ZOMBIE': ('birds', 'zombie', 65),
     # Obstacle tiers
     'OBSTACLE_TIER1': ('obstacles', 'tier1', 94),
     'OBSTACLE_TIER2': ('obstacles', 'tier2', 100),
