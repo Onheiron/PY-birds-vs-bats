@@ -20,7 +20,7 @@ elite_kinds), so each can be tuned world by world:
 import random
 
 from src.core import constants, state
-from src.engine import clock, enemy_stats, events, stats
+from src.engine import clock, enemy_stats, events, fx, stats
 from src.engine.birds import reset_bird_power, scare_bird, set_ball_vy
 from src.entities.bird_types import BirdType, get_default_speed
 from src.entities.sprites import ZOMBIE
@@ -96,6 +96,7 @@ def bomber(bat):
     stone['stats']['stun'] = enemy_stats.get(bat, 'stone_stun')
     if enemy_stats.get(bat, 'stone_blast'):
         # Elite bombers: the stone explodes when broken
+        stone['sprite'] = ['●']  # it explodes: it looks different
         stone['blast'] = {
             'push': enemy_stats.get(bat, 'blast_push'),
             'time': enemy_stats.get(bat, 'blast_push_time'),
@@ -106,6 +107,10 @@ def bomber(bat):
 
 
 # --------------------------------------------------------------------------- plague
+
+
+def state_lane_x(lane):
+    return constants.layout.lane_positions[lane]
 
 
 def stone_blast(stone, bird=None):
@@ -129,6 +134,7 @@ def stone_blast(stone, bird=None):
             'speed': blast['push'],
         }
         scare_bird(j, blast['fear'])
+    fx.add(state_lane_x(stone['lane']), stone['y_pos'], '*', 'YELLOW', 0.3)
     events.emit('bat_ability', kind='stone blast', count=len(hit))
 
 
@@ -181,7 +187,9 @@ def spread_plague():
             and j not in state.special.poisoned_birds
         ]
         if near:
-            infect(random.choice(near), source=plague)
+            target = random.choice(near)
+            if infect(target, source=plague):
+                fx.at_bird(target, '¤', 'GREEN', 0.6)
 
 
 # --------------------------------------------------------------------------- necromancer
@@ -238,6 +246,7 @@ def _bite(j, zombie):
         'passed': [],
         'vy': state.birds.vy[j],
     }
+    fx.at_bird(j, '*', 'GREEN', 0.6)
     events.emit('bat_ability', kind='zombie bite', count=1)
 
 

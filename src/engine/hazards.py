@@ -44,11 +44,27 @@ def _between(pair, default):
 
 
 def update():
-    """Run every tick: winds, stalactites, fog."""
+    """Run every tick: world intro, winds, stalactites, fog."""
+    _announce_world()
     now = clock.now()
     _update_winds(now)
     _update_stalactites(now)
     _update_fog()
+
+
+def _announce_world():
+    """When a world starts, say what it brings (hazards.intro)."""
+    world = state.game.level_group
+    if state.hazards.world_seen == world:
+        return
+    state.hazards.world_seen = world
+    table = enemy_stats._as_dict(_section('intro'))
+    text = table.get(world, table.get(str(world)))
+    if text:
+        from src.engine.notifications import notify
+        from src.entities.sprites import get_biome_name
+
+        notify(str(text), title=f'{get_biome_name(world)}:')
 
 
 # --------------------------------------------------------------------------- winds

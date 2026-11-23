@@ -18,6 +18,7 @@ from src.entities.sprites import (
     DIVER_BAT_STUNNED,
     FLOWER_COLORS,
     FLOWER_GROWTH_FRAMES,
+    FROSTY,
     GREEN,
     JUMPSCARE_BAT_FRAME_1,
     JUMPSCARE_BAT_FRAME_2,
@@ -26,6 +27,7 @@ from src.entities.sprites import (
     MINI_BAT_FRAME_1,
     MINI_BAT_FRAME_2,
     OBSTACLE_SPRITE_T1,
+    POISON,
     PORTAL_COLOR,
     PORTAL_FRAME_1,
     PORTAL_FRAME_2,
@@ -190,6 +192,9 @@ def draw_portals(fb):
                             fb.put(GAME_X_OFFSET + x_pos, y_pos + HEADER_HEIGHT, char, PORTAL_COLOR)
 
 
+# Colour of a shot that carries a neighbour's affliction
+SHOT_COLORS = {FROSTY: 'CYAN', POISON: 'GREEN'}
+
 # Badge of the special bat kinds (src/engine/logic/bat_abilities.py)
 KIND_BADGES = {
     'healer': ('+', GREEN),
@@ -267,6 +272,12 @@ def draw_bats(fb):
                                     char_color = BAT_ARMOR
                         fb.put(GAME_X_OFFSET + bat['x_pos'] + i, y_pos + HEADER_HEIGHT, char, char_color)
 
+        # An elite spellcaster charging two spells shows two stars
+        if is_spellcaster and spell_state == 'casting' and len(bat.get('current_spells') or ()) == 2:
+            star = bat_sprite[0].find('*')
+            if star >= 0 and 0 <= bat['y_pos'] < constants.layout.height:
+                fb.put(GAME_X_OFFSET + bat['x_pos'] + star + 1, bat['y_pos'] + HEADER_HEIGHT, '*', PURPLE)
+
         # New kinds: a badge in the middle of the bat (healer flashes while healing)
         badge = KIND_BADGES.get(bat.get('kind'))
         if badge and 0 <= bat['y_pos'] < constants.layout.height:
@@ -281,6 +292,9 @@ def draw_bats(fb):
         if 0 <= indicator_y < constants.layout.height:
             indicator_x = bat['x_pos'] + 3  # Center above bat
             indicators = []
+            # Healed above its max HP (elite healers)
+            if bat.get('hp', 0) > bat.get('max_hp', bat.get('hp', 0)):
+                indicators.append(('+', GREEN))
             # FROZEN: snowflake (cyan) - ❄ or *
             if bat_id in state.special.frozen_enemies:
                 indicators.append(('*', CYAN))
@@ -440,4 +454,10 @@ def draw_projectiles(fb):
             else:
                 symbol = '⋅'  # Basic
             proj_color = proj.get('color', RED)
+            # Shots carrying a Frosty's freeze or a Poison's venom (synergy) take their colour
+            for j in proj.get('afflict', ()):
+                carried = state.birds.colors[j] if 0 <= j < len(state.birds.colors) else None
+                if carried in SHOT_COLORS:
+                    proj_color = get_dynamic_color(SHOT_COLORS[carried])
+                    break
             fb.put(GAME_X_OFFSET + proj['x_pos'], y_pos + HEADER_HEIGHT, symbol, proj_color)

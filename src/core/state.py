@@ -53,6 +53,7 @@ def _new_special():
         # Speed boosts
         speed_boosts={},
         scared_push={},  # bird -> extra fall speed while scared (the scarer's fear_push)
+        fx=[],  # short visual cues (src/engine/fx.py)
         zombies={},  # zombie bird -> {'raised', 'owner', 'fear', 'bite', 'passed', 'vy'} (bat_abilities)
         # Dive fall boosts (from diver bats in diving state)
         dive_fall_boosts={},
@@ -163,6 +164,7 @@ def _new_hazards():
         stalactite_warnings=[],  # [{'lane', 'falls_at'}]
         next_stalactite=None,
         light_until=0.0,  # firefly light in the dark world
+        world_seen=None,  # the world whose intro was shown
     )
 
 

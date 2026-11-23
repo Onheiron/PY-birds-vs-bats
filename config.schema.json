@@ -4297,6 +4297,12 @@
           },
           "type": "object"
         },
+        "intro": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
         "peaks": {
           "additionalProperties": {
             "properties": {

@@ -94,7 +94,8 @@ def cure_blues():
             if state.birds.vy[j] == -1 and counts_as(j, BirdType.YELLOW):
                 if abs(state.birds.y[j] - state.birds.y[i]) <= rows:
                     del scared[i]
-                    from src.engine import events
+                    from src.engine import events, fx
 
+                    fx.at_bird(i, '✓', 'GREEN', 0.6)
                     events.emit('power_effect', bird=j, kind='YELLOW', effect='blues cured', count=1)
                     break

@@ -456,6 +456,14 @@ glitch:
 # =============================================================================
 # Each hazard is set per world (1 to 6); a world without an entry has none.
 hazards:
+  # What each world brings, announced when it starts
+  intro:
+    1: "Tailwind gusts. Mini bats hide in big obstacles."
+    2: "Bats arrive, and divers."
+    3: "Obstacles rise from the marsh. Armored bats, spellcasters, healers."
+    4: "Flowers on obstacles. Bombers and plague bats."
+    5: "Darkness: catch fireflies. Stalactites, hard rocks, necromancers."
+    6: "Fog, peaks and shifting winds."
   # Gusts on a few adjacent lanes: tailwind (climb faster, fall slower) with
   # chance tail_chance, else headwind; strength in speed points
   winds:

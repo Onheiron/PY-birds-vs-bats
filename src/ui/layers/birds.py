@@ -27,6 +27,7 @@ from src.entities.sprites import (
     TWISTER,
     WHITE,
     YELLOW,
+    ZOMBIE,
 )
 from src.ui.colors import apply_bold, get_render_color
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
@@ -44,6 +45,20 @@ def draw_bird_status_indicators(fb):
     """
 
     now = clock.now()
+
+    # Birds knocked down (armored elites, peaks, blasts, dives): a trail above them
+    for bird_idx, boost in state.special.dive_fall_boosts.items():
+        if bird_idx < constants.layout.num_balls and not state.birds.lost[bird_idx] and boost.get('frames', 0) > 0:
+            y = state.birds.y[bird_idx] - 1
+            if 0 <= y < constants.layout.height:
+                fb.put(GAME_X_OFFSET + state.birds.cols[bird_idx], y + HEADER_HEIGHT, '¦', DARK_GRAY)
+
+    # Zombie birds: a z above the head
+    for bird_idx in state.special.zombies:
+        if bird_idx < constants.layout.num_balls and not state.birds.lost[bird_idx]:
+            y = state.birds.y[bird_idx] - 1
+            if 0 <= y < constants.layout.height:
+                fb.put(GAME_X_OFFSET + state.birds.cols[bird_idx], y + HEADER_HEIGHT, 'z', ZOMBIE)
 
     # Stunned birds get a lightning indicator with countdown
     for bird_idx in state.special.stunned_birds:
@@ -98,7 +113,9 @@ def draw_bird_status_indicators(fb):
 
             # Show poison indicator above bird (skull + time until death / presses to heal)
             if 0 <= bird_y - 1 < constants.layout.height and 0 <= bird_x < constants.layout.width:
-                indicator = f"☠{remaining_secs}s♥{cure_remaining}"
+                # The plague has its own sign (¤); flower poison a skull
+                sign = '¤' if poison_info.get('plague') else '☠'
+                indicator = f"{sign}{remaining_secs}s♥{cure_remaining}"
                 poison_color = "\033[1;32m"  # Bright green (poison)
                 start = bird_x - len(indicator) // 2  # centred over the bird
                 for i, c in enumerate(indicator):

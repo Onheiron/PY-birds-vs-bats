@@ -1,8 +1,10 @@
 """World hazards on screen: darkness, stalactite warnings, lane winds (src/engine/hazards.py)."""
 
+import math
+
 from src.core import constants, state
-from src.engine import hazards
-from src.entities.sprites import BLUE, RED, YELLOW
+from src.engine import clock, fx, hazards
+from src.entities.sprites import BLUE, RED, YELLOW, get_dynamic_color
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
 DARK_CELL = (' ', '')
@@ -37,18 +39,39 @@ def draw_stalactite_warnings(fb):
 
 
 def draw_lane_winds(fb):
-    """Tailwind (^, blue) and headwind (v, red) on the starting line under the windy lanes."""
+    """Windy lanes on the starting line, like a tailwind: its dashes turn into ^ (blue) or v (red)."""
     y = constants.layout.starting_line + HEADER_HEIGHT
     positions = constants.layout.lane_positions
+    n = constants.layout.num_lanes
     for lane, wind in state.hazards.lane_winds.items():
         char, color = ('^', BLUE) if wind['tail'] else ('v', RED)
         x = positions[lane]
-        for dx in (-2, 0, 2):
-            if 0 <= x + dx < constants.layout.width:
-                fb.put(GAME_X_OFFSET + x + dx, y, char, color)
+        start = x - 3 if lane > 0 else 0
+        end = x + 4 if lane < n - 1 else constants.layout.width
+        for col in range(max(0, start), min(constants.layout.width, end)):
+            if col % 2 == 0:  # where the line has its dashes
+                fb.put(GAME_X_OFFSET + col, y, char, color)
+
+
+def draw_fx(fb):
+    """Short cues from the game logic (src/engine/fx.py): a bite, a blast, a cure..."""
+    for cue in fx.live():
+        if 0 <= cue['row'] < constants.layout.height and 0 <= cue['col'] < constants.layout.width:
+            fb.put(GAME_X_OFFSET + cue['col'], cue['row'] + HEADER_HEIGHT, cue['char'], get_dynamic_color(cue['color']))
+
+
+def draw_firefly_light(fb):
+    """In the dark world, the seconds of firefly light left, top right of the play area."""
+    if hazards.setting('darkness') is None:
+        return
+    left = state.hazards.light_until - clock.now()
+    if left > 0:
+        fb.put_string(GAME_X_OFFSET + constants.layout.width - 6, HEADER_HEIGHT, f'✦ {math.ceil(left)}s', YELLOW)
 
 
 def draw_hazards(fb):
     draw_lane_winds(fb)
     draw_darkness(fb)
     draw_stalactite_warnings(fb)
+    draw_fx(fb)
+    draw_firefly_light(fb)
