@@ -61,10 +61,10 @@ BIRD_STATS = {
     'knockback': StatDef(0, 0, 10, 'rows a hit pushes a bat back up'),
     'impact_stun': StatDef(1.0, 0, 5, 'multiplier on the stun suffered when hitting something that survives'),
     # Fear
-    'fear_resist': StatDef(0, 0, 1, 'share of the fear fall-speed bonus ignored'),
+    'fear_resist': StatDef(0, 0, 0.6, 'share of the fear fall-speed bonus ignored (at most 60%)'),
     'fear_duration_mult': StatDef(1.0, 0, 5, 'multiplier on fear duration'),
     'fear_duration_cut': StatDef(0, 0, 10, 'seconds removed from fear (never below 1 s)'),
-    'fear_immunity': StatDef(0, 0, 1, 'chance to ignore a scare entirely'),
+    'fear_immunity': StatDef(0, 0, 0.5, 'chance to ignore a scare entirely (at most 50%)'),
     # Power
     'power_uses': StatDef(1, 0, 10, 'power activations per ascent'),
     'power_potency': StatDef(1.0, 0, 10, 'multiplier on power strength'),
@@ -88,6 +88,9 @@ FLOCK_STATS = {
     'prestige_mult': StatDef(1, 0.1, 100, 'multiplier on the whole prestige'),
     'elite_chance': StatDef(0, 0, 1, 'added to the chance that a bat spawns as an elite'),
 }
+
+# Bird types cards and pacts leave alone
+UNBOOSTED_TYPES = ('GOLD',)
 
 # Modifiers: {'target': bird index or 'flock', 'stat', 'add', 'mul', 'until', 'source'}
 _cache = {}
@@ -152,7 +155,11 @@ def base(i, name):
 
 def _modifier_terms(i, name):
     add, mul = 0.0, 1.0
+    # Cards and pacts do not touch the Gold bird (keeping it alive must stay a task)
+    unboosted = type_of(i) in UNBOOSTED_TYPES
     for mod in state.stats.modifiers:
+        if unboosted and str(mod.get('source', '')).startswith(('card:', 'pact:')):
+            continue
         if mod['stat'] == name and mod['target'] in (i, 'flock'):
             add += mod.get('add', 0)
             mul *= mod.get('mul', 1)

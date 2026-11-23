@@ -1567,6 +1567,9 @@
                 "damage": {
                   "type": "number"
                 },
+                "fall_speed_bonus": {
+                  "type": "number"
+                },
                 "luck": {
                   "type": "number"
                 },

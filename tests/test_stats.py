@@ -96,9 +96,10 @@ def test_fear_stats():
         stats.add_modifier(0, 'fear_duration_mult', mul=0.5)
         assert get_scared_frames(0, 2.0) < two_seconds
         stats.add_modifier(0, 'fear_immunity', add=1.0)
+        assert stats.bird(0, 'fear_immunity') == 0.5  # never fully immune
         state.special.scared_birds.pop(0, None)
-        assert not scare_bird(0, 2.0)
-        assert 0 not in state.special.scared_birds
+        results = [scare_bird(0, 2.0) for _ in range(200)]
+        assert 50 < sum(results) < 150  # about half the scares shrugged off
 
 
 def test_modifiers_survive_save_and_load(tmp_path, monkeypatch):
@@ -115,3 +116,21 @@ def test_modifiers_survive_save_and_load(tmp_path, monkeypatch):
         assert stats.bird(2, 'luck') == before + 0.5
         mod = sim.state.stats.modifiers[0]
         assert mod['target'] == 2 and mod['until'] > clock.now()
+
+
+def test_cards_and_pacts_leave_the_gold_bird_alone():
+    from src.entities.sprites import GOLD
+
+    with Simulation(seed=1, key_rate=0) as sim:
+        sim.state.birds.colors[0] = GOLD
+        before = stats.bird(0, 'fall_speed_bonus')
+        stats.add_modifier('flock', 'fall_speed_bonus', add=-10, source='card:feather_brake')
+        assert stats.bird(0, 'fall_speed_bonus') == before
+        stats.add_modifier('flock', 'fall_speed_bonus', add=-1, source='upgrade:air_brakes')
+        assert stats.bird(0, 'fall_speed_bonus') == before - 1  # upgrades still count
+
+
+def test_fear_resistance_is_capped():
+    with Simulation(seed=1, key_rate=0):
+        stats.add_modifier('flock', 'fear_resist', add=5, source='card:brave_hearts')
+        assert stats.bird(0, 'fear_resist') == 0.6

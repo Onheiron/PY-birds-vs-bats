@@ -71,7 +71,7 @@ loot:
   # Despawn times (seconds)
   loot_despawn_time: 30
   # Gold bird score per tick
-  gold_bird_score_per_tick: 100
+  gold_bird_score_per_tick: 40
 notifications:
   duration_seconds: 3.0
   max_stack: 3
@@ -652,8 +652,8 @@ bird_stats:
     WHITE:     {speed: 40, damage: 20, power_duration: 1.2, fear_resist: 0.4, vs_elites: 0.2,
                 pickup_radius: 3, prestige: 3, score_mult: 1.5, weight: 1.2}
     ORANGE:    {speed: 50, damage: 999, fear_immunity: 0.5, impact_stun: 0, prestige: 3, score_mult: 0.5}
-    GOLD:      {speed: 58, damage: 2, luck: 0.15, pickup_radius: 4, prestige: 3, score_mult: 10.0,
-                weight: 0.7}   # Gold scores a flat amount (loot.gold_bird_score_per_tick)
+    GOLD:      {speed: 58, damage: 2, fall_speed_bonus: 3, luck: 0.15, pickup_radius: 4, prestige: 3, score_mult: 10.0,
+                weight: 0.7}   # Gold scores a flat amount (loot.gold_bird_score_per_tick); cards and pacts skip it
     COOKIE:    {speed: 29, damage: 9, xp_gain: 1.5, pickup_radius: 3, fear_duration_mult: 1.1, prestige: 2}
     STEALTH:   {speed: 31, damage: 75, crit_chance: 0.2, crit_damage: 2.5, armor_pierce: 5, vs_elites: 0.3,
                 prestige: 2, score_mult: 1.2, weight: 0.9}
