@@ -72,7 +72,14 @@ def roll_drop_rarity(source, tier=1):
     if shift:
         weights = [w * (1 + shift * i) for i, w in enumerate(weights)]
     prestige = compute_prestige() * float(getattr(cards_cfg, 'prestige_scale', 1.0))
-    return random.choices(RARITIES, weights=adjust_rarity_weights(weights, prestige))[0]
+    rarity = random.choices(RARITIES, weights=adjust_rarity_weights(weights, prestige))[0]
+    if rarity == 'mythical':
+        # Mythical cards are birds only: without a free slot for one, the egg is legendary
+        from src.engine import cards
+
+        if not cards._bird_candidates('mythical'):
+            rarity = 'legendary'
+    return rarity
 
 
 def choose_loot_type(rarity):

@@ -2005,6 +2005,12 @@
     },
     "cards": {
       "properties": {
+        "bird_chance_by_free_slots": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
         "bird_weight": {
           "type": "number"
         },

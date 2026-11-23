@@ -390,10 +390,33 @@ def _bird_candidates(rarity):
     return out
 
 
+def _roll_bird(rarity, taken, rng):
+    """A bird card of ``rarity`` (a free slot and a bird of that rarity needed), or None."""
+    birds = {b: w for b, w in _bird_candidates(rarity).items() if f'bird:{b}' not in taken}
+    if not birds:
+        return None
+    names = sorted(birds)
+    bird_type = rng.choices(names, weights=[birds[n] for n in names])[0]
+    return {
+        'id': f'bird:{bird_type}',
+        'name': f'{bird_type.title()} Egg',
+        'kind': 'bird',
+        'rarity': rarity,
+        'bird': bird_type,
+        'effects': [],
+        'drawbacks': [],
+    }
+
+
 def _roll_card(rarity, taken, rng):
-    """One card of ``rarity`` not already in ``taken`` (ids), or None."""
+    """One card of ``rarity`` not already in ``taken`` (ids), or None.
+
+    Mythical cards are birds only: power-ups stop at legendary.
+    """
     cfg = _cfg('cards')
     pool = [(cid, e) for cid, e in _catalog().items() if cid not in taken and _allowed(e, rarity)]
+    if rarity == 'mythical':
+        pool = []
     weights = [float(_as_dict(e).get('weight', 1)) for _, e in pool]
     birds = {b: w for b, w in _bird_candidates(rarity).items() if f'bird:{b}' not in taken}
     if birds:
@@ -405,18 +428,18 @@ def _roll_card(rarity, taken, rng):
         return None
     card_id, entry = rng.choices(pool, weights=weights)[0]
     if card_id == 'bird':
-        names = sorted(birds)
-        bird_type = rng.choices(names, weights=[birds[n] for n in names])[0]
-        return {
-            'id': f'bird:{bird_type}',
-            'name': f'{bird_type.title()} Egg',
-            'kind': 'bird',
-            'rarity': rarity,
-            'bird': bird_type,
-            'effects': [],
-            'drawbacks': [],
-        }
+        return _roll_bird(rarity, taken, rng)
     return _make_card(card_id, entry, rarity)
+
+
+def _bird_wanted(rng):
+    """Should this egg offer a bird? (cards.bird_chance_by_free_slots: 1 free slot, 2, 3 or more)"""
+    free = free_slots()
+    if free <= 0:
+        return False
+    table = _list(getattr(_cfg('cards'), 'bird_chance_by_free_slots', None)) or [0.6, 0.6, 1.0]
+    chance = float(table[min(free, len(table)) - 1])
+    return chance >= 1 or rng.random() < chance
 
 
 def other_slot_rarity(egg_rarity, rng):
@@ -443,6 +466,13 @@ def roll_offer(egg_rarity, rng=random):
         if card:
             cards.append(card)
             taken.add(card['id'])
+    # With free slots in the flock, an egg offers a bird often (always with 3 or more)
+    if cards and not any(c['kind'] == 'bird' for c in cards) and _bird_wanted(rng):
+        for r in RARITIES[RARITIES.index(egg_rarity) :: -1]:
+            bird = _roll_bird(r, taken, rng)
+            if bird:
+                cards[-1] = bird
+                break
     return cards
 
 

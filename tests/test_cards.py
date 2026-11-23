@@ -16,7 +16,7 @@ def offers(rarity, n=300):
 
 def test_an_egg_guarantees_one_card_of_its_rarity():
     with Simulation(seed=1, key_rate=0):
-        for rarity in RARITIES:
+        for rarity in RARITIES[:-1]:  # mythical cards are birds only (see below)
             for offer in offers(rarity, 50):
                 assert len(offer) == 3
                 # At least one card of the egg's rarity (the others can even be rarer)
@@ -25,6 +25,24 @@ def test_an_egg_guarantees_one_card_of_its_rarity():
                     (RARITIES.index(c['rarity']) for c in offer), reverse=True
                 ), 'rarest first'
                 assert len({c['id'] for c in offer}) == 3, 'no duplicate cards'
+
+
+def test_mythical_cards_are_birds_only():
+    with Simulation(seed=1, key_rate=0) as sim:
+        assert all(c['rarity'] != 'mythical' for o in offers('mythical', 50) for c in o)  # no free slot
+        sim.state.birds.lost[0] = True
+        mythical = [c for o in offers('mythical', 50) for c in o if c['rarity'] == 'mythical']
+        assert mythical and all(c['kind'] == 'bird' for c in mythical)
+
+
+def test_free_slots_bring_bird_eggs():
+    with Simulation(seed=1, key_rate=0) as sim:
+        for i in (0, 1, 2):
+            sim.state.birds.lost[i] = True
+        assert all(any(c['kind'] == 'bird' for c in o) for o in offers('common', 100))
+        sim.state.birds.lost[1] = sim.state.birds.lost[2] = False
+        share = sum(any(c['kind'] == 'bird' for c in o) for o in offers('common', 300)) / 300
+        assert share >= 0.6
 
 
 def test_rarer_eggs_never_offer_much_commoner_cards():

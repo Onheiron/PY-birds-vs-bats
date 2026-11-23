@@ -155,7 +155,7 @@ bat_enemy:
   # A share of mini bats are jumpscares: out of the obstacle, a scary face
   # scares the birds in affected_lanes lanes for fear_duration seconds
   jumpscare_bat:
-    spawn_chance: 0.15             # Share of mini bats that are jumpscares
+    spawn_chance: 0.35             # Share of mini bats that are jumpscares
     visible_duration: 3.0          # Seconds to stay visible before hiding again
     scary_face_duration: 0.5       # Seconds to show scary face
     fear_duration: 2.0             # Base fear duration in seconds
@@ -493,7 +493,7 @@ hazards:
 # Patchwork counts as the partner of every synergy.
 synergies:
   yellow_cures_blue_rows: 1    # a scared falling Blue is cured passing a rising Yellow this many rows away
-  phoenix_per_red: 0.05        # wake chance of the Phoenix egg added by each Red next to it
+  phoenix_per_red: 0.03        # wake chance of the Phoenix egg added by each Red next to it
   yellow_clockwork_charge: 1   # charge the Yellow power adds to a Clockwork next to it
   twister_sprint: 4            # Blue sprint after a bounce added by each Twister next to it (x10 scale)
   cookie_xp: 0.25              # XP share a Cookie gains from each Cookie next to it
@@ -835,6 +835,8 @@ cards:
   # Rerolls (R: new cards for the same egg) and skips (S: take nothing) per run
   rerolls: 3
   skips: 3
+  # Chance that an egg offers at least one bird, with 1, 2, 3+ free slots in the flock
+  bird_chance_by_free_slots: [0.6, 0.6, 1.0]
   # Weight of "hatch a bird" among the cards of a rarity, while a lane is free
   bird_weight: 3
   # kind: stat (permanent, whole flock) | boost (temporary) | powerup | training |
