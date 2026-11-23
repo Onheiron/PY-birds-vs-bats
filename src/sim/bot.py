@@ -172,7 +172,7 @@ class Bot:
         self.chasing = None  # the bird the cursor is running for
         self.view = {}  # bird -> (y, vy) it sees or remembers this frame
         self.memory = {}  # bird -> where it last saw it
-        self.lit = None  # lanes it can see in the dark this frame (None: no darkness)
+        self.lit = None  # darkness this frame: (lane, row) -> level (None: no darkness)
         self.fall_seen = {}  # bird -> frame it was first seen falling
         self.frame = 0
         self.keys_pressed = 0
@@ -682,7 +682,7 @@ class Bot:
 
     def _perceive(self):
         """What the bot sees this frame: what the player would (dark, fog), plus memory."""
-        self.lit = hazards.lit_lanes() if hazards.dark() else None
+        self.lit = hazards.darkness_levels()  # (lane, row) -> darkness, None in lit worlds
         self.view = {}
         horizon = self.skill.memory * 60
         for i in range(constants.layout.num_balls):
@@ -690,7 +690,7 @@ class Bot:
                 self.memory.pop(i, None)
                 continue
             y, vy = state.birds.y[i], state.birds.vy[i]
-            if y >= 999 or hazards.visible(state.birds.random_lanes[i], y, self.lit if self.lit is not None else set()):
+            if y >= 999 or hazards.visible(state.birds.random_lanes[i], y, self.lit):
                 self.view[i] = (y, vy)
                 self.memory[i] = (y, vy, self.frame, self._frames_per_cell(i))
                 continue
@@ -704,7 +704,7 @@ class Bot:
             self.view[i] = (min(constants.layout.height - 1, int(guess)), last_vy)
 
     def _sees(self, lane, y):
-        return hazards.visible(lane, y, self.lit if self.lit is not None else set())
+        return hazards.visible(lane, y, self.lit)
 
     def _y(self, i):
         return self.view[i][0]

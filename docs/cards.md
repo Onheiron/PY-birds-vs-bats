@@ -153,3 +153,17 @@ more elites.
 `tools/simulate.py` reports eggs opened, cards taken by rarity and kind, and
 pacts made. The bot picks with `card_policy` (`smart`, `first`, `random`) and
 `pact_policy` (`smart`, `refuse`, `random`), e.g. `--bot-set pact_policy=refuse`.
+
+## Card levels and types followed
+
+Each lasting card is a type with a level. Taking it again raises its level
+(with the bonus of the rarity found) up to `card_max_level` (6) times a run,
+and a run follows at most `card_types` (4) different types. Timed boosts,
+power-ups, training and bird eggs are not limited. When a type is maxed it is
+no longer offered; once a run follows its maximum of types only those come
+back. When nothing lasting is left to offer and the flock has no free slot,
+enemies drop no eggs until something frees up (a bird lost frees a slot).
+The upgrades **Mastery** (+1 level, up to 10) and **Breadth** (+1 type, up to
+7) raise the limits. Mythical cards are birds only; other cards stop at
+legendary. With free slots an egg offers a bird often: always with 3 or more
+free, 60% of the time with 1 or 2 (`cards.bird_chance_by_free_slots`).

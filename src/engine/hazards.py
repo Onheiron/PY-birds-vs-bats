@@ -207,40 +207,67 @@ def _drop_stalactite(lane, hp):
 # --------------------------------------------------------------------------- darkness
 
 
+BLACK = 3  # darkness level at which nothing can be seen
+
+
 def dark():
-    """Is the screen dark right now (a dark world and no firefly light)?"""
-    return setting('darkness') is not None and clock.now() >= state.hazards.light_until
+    """Is this a dark world? (fireflies only lift the darkness by a level)"""
+    return setting('darkness') is not None
+
+
+def _clockwork_lanes():
+    from src.entities.sprites import CLOCKWORK
+
+    return {
+        state.birds.random_lanes[i]
+        for i, color in enumerate(state.birds.colors)
+        if color == CLOCKWORK and not state.birds.lost[i]
+    }
+
+
+def darkness_levels():
+    """A function (lane, row) -> darkness level: 0 lit, 1 dim, 2 dark, 3+ black (None: not dark)."""
+    cfg = setting('darkness')
+    if cfg is None:
+        return None
+    cursor = state.player.lane
+    lights = {cursor}
+    if cfg.get('clockwork_light', True):
+        lights |= _clockwork_lanes()
+    lift = int(cfg.get('firefly_lift', 1)) if clock.now() < state.hazards.light_until else 0
+    top_rows = int(cfg.get('top_rows', 3))
+
+    def level(lane, row):
+        d = min(abs(lane - light) for light in lights) - lift
+        if 0 <= row < top_rows:
+            d += top_rows - row  # the top rows fade into the dark
+        return max(0, d)
+
+    return level
 
 
 def lit_lanes():
-    """Lanes that can be seen in the dark: around the cursor, and the Clockwork birds' lanes."""
-    cfg = setting('darkness') or {}
-    radius = int(cfg.get('light_radius', 1))
-    n = constants.layout.num_lanes
-    lanes = {lane for lane in range(state.player.lane - radius, state.player.lane + radius + 1) if 0 <= lane < n}
-    if cfg.get('clockwork_light', True):
-        from src.entities.sprites import CLOCKWORK
-
-        for i, color in enumerate(state.birds.colors):
-            if color == CLOCKWORK and not state.birds.lost[i]:
-                lanes.add(state.birds.random_lanes[i])
-    return lanes
+    """Lanes not fully dark (at mid-screen)."""
+    level = darkness_levels()
+    lanes = range(constants.layout.num_lanes)
+    if level is None:
+        return set(lanes)
+    row = constants.layout.height // 2
+    return {lane for lane in lanes if level(lane, row) < BLACK}
 
 
-def visible(lane, y, lit=None):
-    """Can a player see row ``y`` of ``lane``? Not in the dark outside the lit lanes, nor under fog.
+def visible(lane, y, levels=None):
+    """Can a player see row ``y`` of ``lane``? Not where it is black, nor under fog.
 
-    ``lit``: the lit lanes, when the caller already has them (None: work them out).
+    ``levels``: darkness_levels(), when the caller already has it.
     """
-    if dark():
-        if lane not in (lit if lit is not None else lit_lanes()):
-            return False
+    level = levels if levels is not None else darkness_levels()
+    if level is not None and level(lane, y) >= BLACK:
+        return False
     x = constants.layout.lane_positions[lane]
     for cloud in state.enemies.cloud_banks:
-        if (
-            cloud['x_pos'] <= x < cloud['x_pos'] + cloud['width']
-            and cloud['y_pos'] <= y < cloud['y_pos'] + cloud['height']
-        ):
+        across = cloud['x_pos'] <= x < cloud['x_pos'] + cloud['width']
+        if across and cloud['y_pos'] <= y < cloud['y_pos'] + cloud['height']:
             return False
     return True
 

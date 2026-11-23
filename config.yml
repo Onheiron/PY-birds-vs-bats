@@ -474,10 +474,11 @@ hazards:
   emerging:
     3: {share: 0.25, rows: [0.35, 0.70], warning: 1.0, look: mud}
     5: {share: 0.25, rows: [0.35, 0.70], warning: 1.0, look: dark}
-  # Only light_radius lanes around the cursor can be seen (and Clockwork lanes);
-  # a killed bat drops a firefly with firefly_drop chance: light for firefly_light s
+  # Light fades away from the cursor's lane (and Clockwork lanes): lit, dim, dark,
+  # then black; the top_rows rows fade into the dark too. A killed bat drops a
+  # firefly with firefly_drop chance: for firefly_light s the dark is firefly_lift levels lighter
   darkness:
-    5: {light_radius: 1, clockwork_light: true, firefly_drop: 0.15, firefly_light: 8.0}
+    5: {top_rows: 3, clockwork_light: true, firefly_drop: 0.15, firefly_light: 8.0, firefly_lift: 1}
   # Every interval seconds a lane cracks at the top for warning seconds, then a big white
   # stalactite (hp) falls down it (its stats: enemy_stats.obstacles.kinds.stalactite)
   stalactites:

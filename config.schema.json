@@ -4240,10 +4240,13 @@
               "firefly_drop": {
                 "type": "number"
               },
+              "firefly_lift": {
+                "type": "number"
+              },
               "firefly_light": {
                 "type": "number"
               },
-              "light_radius": {
+              "top_rows": {
                 "type": "number"
               }
             },

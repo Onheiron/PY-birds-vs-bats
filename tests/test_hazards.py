@@ -49,16 +49,22 @@ def test_emerging_obstacles_wait_mid_screen_and_do_not_block():
         assert obstacle['y_pos'] == y
 
 
-def test_the_cave_is_dark_but_around_the_cursor_and_fireflies_light_it():
+def test_the_cave_light_fades_from_the_cursor_and_fireflies_lift_it():
     with Simulation(seed=3, key_rate=0) as sim:
         in_world(sim, 5)
-        sim.state.player.lane = 4
-        assert hazards.dark()
-        assert {3, 4, 5} <= hazards.lit_lanes()
-        hazards.collect_firefly()
-        assert not hazards.dark()
-        in_world(sim, 4)
         game_state.hazards.light_until = 0
+        sim.state.player.lane = 4
+        for i in range(len(game_state.birds.colors)):
+            game_state.birds.colors[i] = game_state.birds.colors[0]  # no Clockwork lights
+        level = hazards.darkness_levels()
+        mid = sim.constants.layout.height // 2
+        assert [level(lane, mid) for lane in (4, 5, 6, 7)] == [0, 1, 2, 3]
+        assert level(4, 0) == 3 and level(4, 2) == 1  # the top rows fade into the dark
+        assert not hazards.visible(7, mid) and hazards.visible(6, mid)
+        hazards.collect_firefly()
+        level = hazards.darkness_levels()
+        assert [level(lane, mid) for lane in (4, 5, 6, 7, 8)] == [0, 0, 1, 2, 3]  # one level lighter
+        in_world(sim, 4)
         assert not hazards.dark()
 
 

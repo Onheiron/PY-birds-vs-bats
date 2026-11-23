@@ -18,17 +18,33 @@ def _column_lanes():
     ]
 
 
+DIM = '\033[2m'
+DARK = '\033[38;5;237m'
+
+
 def draw_darkness(fb):
-    """In a dark world only the lit lanes can be seen (drawn over everything but the cursor)."""
-    if not hazards.dark():
+    """The dark world: full light on the cursor's lane, dimmer beside it, darker, then black.
+
+    The top rows fade into the dark too; fireflies lift it by a level.
+    """
+    level = hazards.darkness_levels()
+    if level is None:
         return
-    lit = hazards.lit_lanes()
     lanes = _column_lanes()
-    dark_columns = [x for x in range(constants.layout.width) if lanes[x] not in lit]
     for y in range(constants.layout.height):
-        row = y + HEADER_HEIGHT
-        for x in dark_columns:
-            fb.put(GAME_X_OFFSET + x, row, *DARK_CELL)
+        row = fb.current[y + HEADER_HEIGHT]
+        for x in range(constants.layout.width):
+            d = level(lanes[x], y)
+            if d <= 0:
+                continue
+            col = GAME_X_OFFSET + x
+            char, color = row[col]
+            if d >= hazards.BLACK or char == ' ':
+                row[col] = DARK_CELL
+            elif d == 1:
+                row[col] = (char, DIM + color)
+            else:
+                row[col] = (char, DARK)
 
 
 def draw_stalactite_warnings(fb):

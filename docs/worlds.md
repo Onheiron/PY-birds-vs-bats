@@ -68,7 +68,7 @@ Elites look like the others, with yellow ears.
 
 - **Winds** (worlds 1 and 6): every 12–20 s (6–10 s) 2–4 adjacent lanes get tailwind (`^` on the starting line: climb faster, fall slower) for 5 s; in world 6 half are headwinds (`v`, the opposite).
 - **Emerging obstacles** (worlds 3 and 5): a quarter of the obstacles appear at 35–70% of the screen height, as bubbles for 1 s (not solid), then fall as usual.
-- **Darkness** (world 5): only the cursor's lane and the ones beside it can be seen, plus the lanes of Clockwork birds. Bats drop fireflies (`✦`, 15%): light everywhere for 8 s.
+- **Darkness** (world 5): full light on the cursor's lane (and Clockwork lanes), dimmer beside it, darker, then black; the top 3 rows fade into the dark. Bats drop fireflies (`✦`, 15%): for 8 s the dark is one level lighter.
 - **Stalactites** (world 5): every 6–10 s a lane cracks at the top for 1 s, then a stalactite falls down it fast.
 - **Hard rocks** (world 5): rocks have ×1.5 HP and +3 defence.
 - **Peaks** (world 6): a quarter of the obstacles are peaks: ×2 HP, +15 armor, and a bird that hits one falls faster for 1 s.
