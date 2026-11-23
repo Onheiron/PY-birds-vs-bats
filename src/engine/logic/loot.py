@@ -241,6 +241,16 @@ def restore_orange_eggs():
     """
     from src.engine.birds import is_orange_egg_state
 
+    # ...and drop an egg whose Phoenix is no longer asleep in that lane (lost, woken, moved)
+    asleep = {
+        constants.layout.lane_positions[state.birds.random_lanes[i]]
+        for i in range(constants.layout.num_balls)
+        if not state.birds.lost[i] and is_orange_egg_state(i)
+    }
+    state.items.loot_items[:] = [
+        loot for loot in state.items.loot_items if loot['type'] != 'orange_egg' or loot['x_pos'] in asleep
+    ]
+
     for i in range(constants.layout.num_balls):
         if state.birds.lost[i] or not is_orange_egg_state(i):
             continue

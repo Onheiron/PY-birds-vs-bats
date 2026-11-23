@@ -439,6 +439,13 @@ def draw_loot(fb):
                 color = WHITE
 
             fb.put(GAME_X_OFFSET + loot['x_pos'], y_pos + HEADER_HEIGHT, char, color)
+            # A Phoenix's egg: the seconds left to wake it, under it
+            if loot_type == 'orange_egg' and y_pos + 1 < constants.layout.height:
+                age = clock.now() - loot.get('spawn_ts', clock.now())
+                left = getattr(constants.loot, 'loot_despawn_time', 30) - age
+                text = str(max(0, int(left + 0.999)))
+                x = loot['x_pos'] - len(text) // 2
+                fb.put_string(GAME_X_OFFSET + x, y_pos + 1 + HEADER_HEIGHT, text, color)
 
 
 def draw_projectiles(fb):
