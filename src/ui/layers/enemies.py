@@ -18,7 +18,6 @@ from src.entities.sprites import (
     DIVER_BAT_STUNNED,
     FLOWER_COLORS,
     FLOWER_GROWTH_FRAMES,
-    GOLD,
     GREEN,
     JUMPSCARE_BAT_FRAME_1,
     JUMPSCARE_BAT_FRAME_2,
@@ -46,6 +45,8 @@ from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
 # Elite bats: a golden body that reddens with damage, and a diamond above them
 ELITE_RGB = (255, 190, 40)
+# The ears of the bat sprites (⋀⋀, or /\ under a spellcaster's star)
+EAR_CHARS = {'⋀', '/', '\\'}
 
 
 def draw_obstacles(fb):
@@ -220,8 +221,11 @@ def draw_bats(fb):
         spell_state = bat.get('spell_state', 'idle')
 
         # Apply bold modifier for foreground game elements
-        base_rgb = ELITE_RGB if bat.get('elite') else constants.colors.bats_base_rgb
-        bat_color = apply_bold(color_from_hp(base_rgb, bat_hp, bat_max))
+        bat_color = apply_bold(color_from_hp(constants.colors.bats_base_rgb, bat_hp, bat_max))
+        # Elites look like the others, with yellow ears
+        is_elite = bat.get('elite', False)
+        ear_color = apply_bold(color_from_hp(ELITE_RGB, bat_hp, bat_max)) if is_elite else bat_color
+        ear_line = 1 if is_spellcaster else 0
 
         # Choose sprite based on bat type and state
         if is_spellcaster:
@@ -251,6 +255,9 @@ def draw_bats(fb):
                 for i, char in enumerate(line):
                     if char != ' ':  # Solo caratteri non-spazio
                         char_color = bat_color
+                        ear = char in EAR_CHARS and (not is_spellcaster or i in (3, 4))  # not a caster's wings
+                        if is_elite and line_idx == ear_line and ear:
+                            char_color = ear_color
                         # Spellcaster star is colored differently when casting
                         if is_spellcaster and char == '*':
                             if spell_state == 'casting':
@@ -283,9 +290,6 @@ def draw_bats(fb):
         if 0 <= indicator_y < constants.layout.height:
             indicator_x = bat['x_pos'] + 3  # Center above bat
             indicators = []
-            # ELITE: a diamond (gold)
-            if bat.get('elite'):
-                indicators.append(('♦', GOLD))
             # FROZEN: snowflake (cyan) - ❄ or *
             if bat_id in state.special.frozen_enemies:
                 indicators.append(('*', CYAN))
