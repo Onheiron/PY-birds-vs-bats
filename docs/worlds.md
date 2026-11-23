@@ -48,4 +48,4 @@ Elites: 0, 3, 6, 9, 12, 15% (`elites.chance_by_biome`). Jumpscares are 15% of mi
 - **Peaks** (world 6): a quarter of the obstacles are peaks: ×2 HP, +15 armor, and a bird that hits one falls faster for 1 s.
 - **Fog** (world 6): cloud banks drifting down over the birds.
 
-The bot does not know about darkness and fog: it sees the whole screen.
+The bot sees what the player sees: in the dark only the lit lanes, nothing under fog. A bird out of sight is tracked for `memory` seconds (expert 3, average 1.5, novice 0.5) from where it was last seen going, then forgotten until seen again.

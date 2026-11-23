@@ -33,7 +33,7 @@ from collections import Counter
 from dataclasses import dataclass, replace
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, stats
+from src.engine import bird_kinds, clock, hazards, stats
 from src.engine.birds import get_affected_lanes
 from src.engine.logic.helpers import get_obstacle_lanes
 from src.engine.timing import frames_per_update
@@ -88,6 +88,9 @@ class Skill:
     purple_charge: float = 2.0  # seconds a Purple charges before release (0 = fire at once)
     red_battery: bool = True  # hold a Red shot until its shooter neighbours rise, unless the enemy is close
     power_travel: bool = True  # move the cursor just to fire a power (False: only powers under the cursor)
+    # Seconds it keeps track of a bird it cannot see any more (dark, fog), guessing
+    # where it is from where it last saw it going; then it forgets it until it sees it again
+    memory: float = 2.0
     # Sweep: UP on every falling bird under the cursor, at any height. With two hands it
     # costs the moving hand nothing (arrow + UP is one decision); with one hand it is
     # done only when there is time for it
@@ -98,20 +101,40 @@ class Skill:
 
 PROFILES = {
     # Frame-perfect, 60 keys per second: an upper bound on what the rules allow
-    'perfect': Skill(),
+    'perfect': Skill(memory=99.0),
     # Key rates are what a human keeps up for a whole game, not bursts.
     # A very good player: 7.5 keys/s, 200 ms reactions, rare slips. It arranges the
     # flock for its synergies and swaps to brake above gear 7
     'expert': Skill(
-        key_interval=8, reaction_frames=12, miss_rate=0.02, safety_frames=12, formation='auto', max_gear=7, sweep=True
+        key_interval=8,
+        reaction_frames=12,
+        miss_rate=0.02,
+        safety_frames=12,
+        formation='auto',
+        max_gear=7,
+        sweep=True,
+        memory=3.0,
     ),
     # A decent player: 5 keys/s, 300 ms reactions; formation and brake as the expert
     'average': Skill(
-        key_interval=12, reaction_frames=18, miss_rate=0.05, safety_frames=16, formation='auto', max_gear=7, sweep=True
+        key_interval=12,
+        reaction_frames=18,
+        miss_rate=0.05,
+        safety_frames=16,
+        formation='auto',
+        max_gear=7,
+        sweep=True,
+        memory=1.5,
     ),
     # Someone learning: 3 keys/s, 450 ms reactions, no powers, no anticipation
     'novice': Skill(
-        key_interval=20, reaction_frames=27, miss_rate=0.1, use_powers=False, anticipate=False, safety_frames=20
+        key_interval=20,
+        reaction_frames=27,
+        miss_rate=0.1,
+        use_powers=False,
+        anticipate=False,
+        safety_frames=20,
+        memory=0.5,
     ),
 }
 
@@ -147,6 +170,9 @@ class Bot:
         self.cooldown = 0
         self.up_cooldown = 0  # the UP hand, when playing with two hands
         self.chasing = None  # the bird the cursor is running for
+        self.view = {}  # bird -> (y, vy) it sees or remembers this frame
+        self.memory = {}  # bird -> where it last saw it
+        self.lit = None  # lanes it can see in the dark this frame (None: no darkness)
         self.fall_seen = {}  # bird -> frame it was first seen falling
         self.frame = 0
         self.keys_pressed = 0
@@ -223,16 +249,16 @@ class Bot:
         frames_per_second = 60
         spans = self._enemy_spans() if self.skill.dodge else {}
         for i in range(constants.layout.num_balls):
-            if state.birds.lost[i] or i in self.abandon:
-                continue
+            if state.birds.lost[i] or i in self.abandon or i not in self.view:
+                continue  # lost, let go, or out of sight and forgotten
             bird_type = get_bird_type_by_color(state.birds.colors[i])
-            falling = state.birds.vy[i] == 1
+            falling = self._vy(i) == 1
             poisoned = i in special.poisoned_birds
 
             if not falling and not poisoned:
                 self.fall_seen.pop(i, None)
                 continue
-            if state.birds.y[i] >= 999:
+            if self._y(i) >= 999:
                 continue  # dormant Orange egg: handled when idle
             if bird_type == BirdType.CLOCKWORK and falling and special.clockwork_charge.get(i, 1) > 0:
                 continue  # bounces by itself at the starting line
@@ -257,7 +283,7 @@ class Bot:
             deadline = float('inf')
             below, above = (None, False)
             if falling:
-                deadline = (floor - state.birds.y[i]) * self._frames_per_cell(i)
+                deadline = (floor - self._y(i)) * self._frames_per_cell(i)
                 if self.skill.dodge:
                     below, above = self._hazards(i, spans)
                     if below is not None:
@@ -276,7 +302,7 @@ class Bot:
             needed = self._travel_frames(lane) + presses * self.skill.key_interval
             # Worth bouncing early once it has fallen far enough or is about to pass an
             # enemy; not while an enemy above would stop it, unless time runs out
-            ready = not falling or poisoned or state.birds.y[i] >= self._bounce_line() or below is not None
+            ready = not falling or poisoned or self._y(i) >= self._bounce_line() or below is not None
             if ready and above:
                 ready = deadline - needed < self.skill.dodge_margin
             targets.append((deadline - needed, lane, i, ready))
@@ -323,7 +349,7 @@ class Bot:
 
     def _power_useful(self, i, enemy_lanes):
         """Would firing rising bird ``i``'s power count right now?"""
-        if state.birds.lost[i] or state.birds.vy[i] != -1:
+        if state.birds.lost[i] or self._vy(i) != -1:
             return False
         # A1 grades and above (or cards) give more than one use per ascent
         if state.birds.power_uses[i] >= int(stats.bird(i, 'power_uses')):
@@ -437,10 +463,18 @@ class Bot:
         if state.enemies.boss is not None:
             boss = state.enemies.boss
             enemies.append((boss.get('x_pos', 0) + 8, boss.get('y_pos', 0)))
+        # Only the enemies it can see
+        enemies = [
+            (ex, ey)
+            for ex, ey in enemies
+            if self._sees(min(range(len(positions)), key=lambda lane: abs(positions[lane] - ex)), ey)
+        ]
         for i in range(constants.layout.num_balls):
+            if i not in self.view:
+                continue
             lane = state.birds.random_lanes[i]
             x = positions[lane]
-            if any(abs(ex - x) <= 3 and ey < state.birds.y[i] for ex, ey in enemies):
+            if any(abs(ex - x) <= 3 and ey < self._y(i) for ex, ey in enemies):
                 lanes_by_bird[i] = (lane,)
         return lanes_by_bird
 
@@ -448,7 +482,7 @@ class Bot:
         for i, bird_lane in enumerate(state.birds.random_lanes):
             if state.birds.lost[i] or bird_lane == lane or abs(bird_lane - lane) > reach:
                 continue
-            if state.birds.vy[i] == 1:
+            if self._vy(i) == 1:
                 return True
         return False
 
@@ -467,9 +501,9 @@ class Bot:
             return None, False
         # The rising bird closest to the ceiling is the next one to fall
         rising = [
-            (state.birds.y[i] * self._frames_per_cell(i), state.birds.random_lanes[i])
-            for i in range(constants.layout.num_balls)
-            if not state.birds.lost[i] and state.birds.vy[i] == -1 and state.birds.y[i] < 999
+            (self._y(i) * self._frames_per_cell(i), state.birds.random_lanes[i])
+            for i in self.view
+            if not state.birds.lost[i] and self._vy(i) == -1 and self._y(i) < 999
         ]
         if rising:
             return min(rising)[1], False
@@ -644,6 +678,40 @@ class Bot:
             return None
         return self._key_towards(lane, press)
 
+    # ------------------------------------------------------------------ what it sees
+
+    def _perceive(self):
+        """What the bot sees this frame: what the player would (dark, fog), plus memory."""
+        self.lit = hazards.lit_lanes() if hazards.dark() else None
+        self.view = {}
+        horizon = self.skill.memory * 60
+        for i in range(constants.layout.num_balls):
+            if state.birds.lost[i]:
+                self.memory.pop(i, None)
+                continue
+            y, vy = state.birds.y[i], state.birds.vy[i]
+            if y >= 999 or hazards.visible(state.birds.random_lanes[i], y, self.lit if self.lit is not None else set()):
+                self.view[i] = (y, vy)
+                self.memory[i] = (y, vy, self.frame, self._frames_per_cell(i))
+                continue
+            seen = self.memory.get(i)
+            if seen is None or self.frame - seen[2] > horizon:
+                continue
+            last_y, last_vy, frame, per_cell = seen
+            guess = last_y + last_vy * (self.frame - frame) / max(1, per_cell)
+            if last_vy == -1 and guess < 1:
+                guess, last_vy = 2 - guess, 1  # it reached the ceiling and fell again
+            self.view[i] = (min(constants.layout.height - 1, int(guess)), last_vy)
+
+    def _sees(self, lane, y):
+        return hazards.visible(lane, y, self.lit if self.lit is not None else set())
+
+    def _y(self, i):
+        return self.view[i][0]
+
+    def _vy(self, i):
+        return self.view[i][1] if i in self.view else 0
+
     def _sweep_up(self):
         """Is there a falling bird under the cursor to bounce? (any height: the cursor is there)"""
         if self.plan is not None or self._harmful_press():
@@ -661,6 +729,7 @@ class Bot:
         self.frame += 1
         self.cooldown = max(0, self.cooldown - 1)
         self.up_cooldown = max(0, self.up_cooldown - 1)
+        self._perceive()
         up = self._bindings()[2]
         two_hands = self.skill.two_hands and state.choice.active is None
         keys = []

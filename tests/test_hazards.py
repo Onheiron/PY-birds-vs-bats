@@ -99,3 +99,30 @@ def test_fog_only_in_the_mountains():
         in_world(sim, 5)
         hazards.update()
         assert not sim.state.enemies.cloud_banks
+
+
+def test_the_bot_sees_what_the_player_sees_in_the_dark():
+    from dataclasses import replace
+
+    from src.sim.bot import PROFILES, Bot
+
+    with Simulation(seed=3, key_rate=0) as sim:
+        in_world(sim, 5)
+        game_state.hazards.light_until = 0
+        birds = game_state.birds
+        for i in range(len(birds.colors)):
+            birds.random_lanes[i] = i
+            birds.lost[i] = i != 8
+        sim.state.player.lane = 0
+        birds.y[8], birds.vy[8] = 20, 1  # falling, far from the light
+        bot = Bot(replace(PROFILES['expert'], memory=0.0))
+        bot._perceive()
+        assert 8 not in bot.view  # never seen: unknown
+        sim.state.player.lane = 7  # now its lane is lit
+        bot._perceive()
+        assert bot.view[8] == (20, 1)
+        sim.state.player.lane = 0
+        bot.skill = replace(bot.skill, memory=3.0)
+        bot.frame += 10
+        bot._perceive()
+        assert 8 in bot.view and bot.view[8][0] >= 20  # remembered, and guessed lower

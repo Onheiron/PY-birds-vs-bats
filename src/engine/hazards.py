@@ -175,6 +175,24 @@ def lit_lanes():
     return lanes
 
 
+def visible(lane, y, lit=None):
+    """Can a player see row ``y`` of ``lane``? Not in the dark outside the lit lanes, nor under fog.
+
+    ``lit``: the lit lanes, when the caller already has them (None: work them out).
+    """
+    if dark():
+        if lane not in (lit if lit is not None else lit_lanes()):
+            return False
+    x = constants.layout.lane_positions[lane]
+    for cloud in state.enemies.cloud_banks:
+        if (
+            cloud['x_pos'] <= x < cloud['x_pos'] + cloud['width']
+            and cloud['y_pos'] <= y < cloud['y_pos'] + cloud['height']
+        ):
+            return False
+    return True
+
+
 def maybe_drop_firefly(x_pos, y_pos):
     """A bat killed in a dark world may drop a firefly."""
     cfg = setting('darkness')
