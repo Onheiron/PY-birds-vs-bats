@@ -46,6 +46,7 @@ def _between(pair, default):
 def update():
     """Run every tick: world intro, winds, stalactites, fog."""
     _announce_world()
+    sink_overtaken_emerging()
     now = clock.now()
     _update_winds(now)
     _update_stalactites(now)
@@ -116,13 +117,48 @@ def obstacle_kind():
     return None
 
 
+def _highest_bird_row(lanes):
+    """Row of the highest living bird in ``lanes`` (None: none there)."""
+    rows = [
+        state.birds.y[i]
+        for i in range(constants.layout.num_balls)
+        if not state.birds.lost[i] and state.birds.random_lanes[i] in lanes and state.birds.y[i] < 999
+    ]
+    return min(rows) if rows else None
+
+
 def place_emerging(obstacle):
-    """Put an emerging obstacle mid-screen, not solid for the warning time."""
+    """Put an emerging obstacle mid-screen, above the birds of its lanes, not solid for the warning time.
+
+    Returns False when there is no room above those birds (it falls in from the top as usual).
+    """
+    from src.engine.logic.helpers import get_obstacle_lanes
+
     cfg = setting('emerging') or {}
     screen = constants.layout.starting_line
-    obstacle['y_pos'] = int(screen * _between(cfg.get('rows'), (0.35, 0.70)))
+    height = len(obstacle.get('sprite') or ['#'])
+    row = int(screen * _between(cfg.get('rows'), (0.35, 0.70)))
+    highest = _highest_bird_row(get_obstacle_lanes(obstacle))
+    if highest is not None:
+        row = min(row, highest - height - 1)  # always above the birds
+    if row < 2:
+        return False
+    obstacle['y_pos'] = row
     obstacle['emerge_until'] = clock.now() + float(cfg.get('warning', 1.0))
     obstacle['look'] = cfg.get('look', 'mud')
+    return True
+
+
+def sink_overtaken_emerging():
+    """An emerging obstacle a bird has climbed past sinks back: birds never end up above one."""
+    from src.engine.logic.helpers import get_obstacle_lanes
+
+    for obs in state.enemies.obstacles[:]:
+        if not is_emerging(obs):
+            continue
+        highest = _highest_bird_row(get_obstacle_lanes(obs))
+        if highest is not None and highest < obs['y_pos'] + len(obs.get('sprite') or ['#']):
+            state.enemies.obstacles.remove(obs)
 
 
 def is_emerging(obstacle):

@@ -227,6 +227,11 @@ def affix_names(affixes):
     return ' '.join(str(_node(_node(table, a), 'name') or a.title()) for a in affixes)
 
 
+def bat_width(bat):
+    """Columns a bat spans after its x_pos (armored bats are wider), for hits and spells."""
+    return 12 if bat.get('armored') else 8
+
+
 # Bat kinds, in the order their stat layers apply (a bat has at most one)
 BAT_KINDS = ('armored', 'diver', 'spellcaster', 'healer', 'bomber', 'plague', 'necromancer')
 

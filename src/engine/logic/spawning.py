@@ -132,10 +132,10 @@ def spawn_obstacle():
     }
     # World hazards: obstacles that emerge mid-screen, peaks
     kind = hazards.obstacle_kind()
+    if kind == 'emerging' and not hazards.place_emerging(obstacle):
+        kind = None  # no room above the birds: it falls in from the top
     if kind:
         obstacle['kind'] = kind
-        if kind == 'emerging':
-            hazards.place_emerging(obstacle)
     state.enemies.spawn_queue.append({'type': 'obstacle', 'data': enemy_stats.equip_obstacle(obstacle)})
 
 

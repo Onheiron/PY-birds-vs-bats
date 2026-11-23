@@ -178,7 +178,7 @@ def _apply_spell(bat, spell):
 def _get_bat_affected_lanes(bat):
     """Get the lanes affected by a bat's spell (based on bat position)."""
     bat_left = bat['x_pos']
-    bat_right = bat['x_pos'] + 8  # Bat sprite width
+    bat_right = bat['x_pos'] + enemy_stats.bat_width(bat)
 
     affected_lanes = []
     for lane_idx in range(constants.layout.num_lanes):
@@ -289,7 +289,7 @@ def _check_bat_can_move(bat, next_x):
         if other_bat is bat:
             continue
         other_left = other_bat['x_pos']
-        other_right = other_bat['x_pos'] + 8
+        other_right = other_bat['x_pos'] + enemy_stats.bat_width(other_bat)
         next_left = next_x
         next_right = next_x + 8
 

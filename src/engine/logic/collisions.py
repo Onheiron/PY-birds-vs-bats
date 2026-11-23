@@ -214,6 +214,38 @@ def check_bird_obstacle_collision():
             break
 
 
+def keep_birds_below_enemies():
+    """A bird never ends up above an obstacle or a bat.
+
+    Birds only collide while rising; an obstacle or a bat coming down onto a
+    falling bird used to pass through it, leaving the bird above. Now it pushes
+    the bird down below itself (the bird keeps falling).
+    """
+    floor = constants.layout.height - 1
+    for i in range(constants.layout.num_balls):
+        if state.birds.lost[i] or state.birds.vy[i] != 1 or bird_kinds.is_intangible(i):
+            continue
+        y = state.birds.y[i]
+        if y >= 999:
+            continue  # a dormant Phoenix egg
+        lane = state.birds.random_lanes[i]
+        lane_left, lane_right = bird_kinds.hit_span(i)
+        below = y
+        for obs in state.enemies.obstacles:
+            if obs.get('stationary') or hazards.is_emerging(obs) or lane not in get_obstacle_lanes(obs):
+                continue
+            height = len(obs.get('sprite') or OBSTACLE_SPRITES.get(obs.get('tier', 1), OBSTACLE_SPRITE_T1))
+            if obs['y_pos'] <= below <= obs['y_pos'] + height - 1:
+                below = obs['y_pos'] + height
+        for bat in state.enemies.bats:
+            if bat['x_pos'] + enemy_stats.bat_width(bat) < lane_left or bat['x_pos'] > lane_right:
+                continue
+            if bat['y_pos'] <= below <= bat['y_pos'] + 1:
+                below = bat['y_pos'] + 2
+        if below != y:
+            state.birds.y[i] = min(floor, below)
+
+
 def check_bird_bat_collision():
     """Check bird-bat collisions."""
     for i in range(constants.layout.num_balls):
@@ -234,7 +266,7 @@ def check_bird_bat_collision():
 
         for bat in state.enemies.bats[:]:
             bat_left = bat['x_pos']
-            bat_right = bat['x_pos'] + 8
+            bat_right = bat['x_pos'] + enemy_stats.bat_width(bat)
             bat_top = bat['y_pos']
             bat_bottom = bat['y_pos'] + 1
 
@@ -343,7 +375,7 @@ def check_projectile_collision():
         # Check bat collision
         for bat in state.enemies.bats[:]:
             bat_left = bat['x_pos']
-            bat_right = bat['x_pos'] + 8
+            bat_right = bat['x_pos'] + enemy_stats.bat_width(bat)
             bat_top = bat['y_pos']
             bat_bottom = bat['y_pos'] + 1
 
@@ -518,7 +550,7 @@ def check_bat_obstacle_collision():
     """Check bat-obstacle collisions (bats destroy obstacles)."""
     for bat in state.enemies.bats:
         bat_left = bat['x_pos']
-        bat_right = bat['x_pos'] + 8
+        bat_right = bat['x_pos'] + enemy_stats.bat_width(bat)
         bat_top = bat['y_pos']
         bat_bottom = bat['y_pos'] + 1
 

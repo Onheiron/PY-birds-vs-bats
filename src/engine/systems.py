@@ -39,6 +39,7 @@ from src.engine.logic.collisions import (
     check_bird_floor_collision,
     check_bird_obstacle_collision,
     check_projectile_collision,
+    keep_birds_below_enemies,
 )
 from src.engine.logic.effects import (
     update_powerup_timers,
@@ -140,6 +141,7 @@ SYSTEMS = (
     System('projectiles hit', Phase.COLLIDE, check_projectile_collision),
     System('loot pickup', Phase.COLLIDE, check_loot_collection),
     System('bat vs obstacle', Phase.COLLIDE, check_bat_obstacle_collision),
+    System('birds below enemies', Phase.COLLIDE, keep_birds_below_enemies),
     System('floor', Phase.COLLIDE, check_bird_floor_collision),
     # No regular enemies while a boss is on screen
     System('obstacle spawn', Phase.SPAWN, spawn_obstacle, when=no_boss),

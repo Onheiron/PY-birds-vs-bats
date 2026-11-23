@@ -144,3 +144,34 @@ def test_a_portal_never_puts_two_birds_in_one_lane():
         portals._check_bird_portal_teleport()
         lanes = [birds.random_lanes[i] for i in range(len(birds.colors)) if not birds.lost[i]]
         assert birds.random_lanes[2] == 6 and len(set(lanes)) == len(lanes)
+
+
+def test_an_obstacle_coming_down_on_a_falling_bird_pushes_it_below():
+    from src.engine.logic.collisions import keep_birds_below_enemies
+
+    with Simulation(seed=3, key_rate=0) as sim:
+        birds = game_state.birds
+        for i in range(len(birds.colors)):
+            birds.random_lanes[i] = i
+            birds.lost[i] = i != 4
+        birds.y[4], birds.vy[4] = 12, 1
+        rock = enemy_stats.equip_obstacle(
+            {'id': 9, 'lane': 4, 'y_pos': 11, 'tier': 1, 'hp': 50, 'sprite': ['##', '##'], 'sprite_width': 2}
+        )
+        sim.state.enemies.obstacles[:] = [rock]
+        sim.state.enemies.bats[:] = []
+        keep_birds_below_enemies()
+        assert birds.y[4] == 13  # below the obstacle, never above
+
+
+def test_emerging_obstacles_appear_above_the_birds():
+    with Simulation(seed=3, key_rate=0) as sim:
+        in_world(sim, 3)
+        birds = game_state.birds
+        for i in range(len(birds.colors)):
+            birds.random_lanes[i] = i
+            birds.lost[i] = False
+            birds.y[i] = 8
+        obstacle = {'id': 1, 'lane': 4, 'y_pos': -2, 'tier': 1, 'hp': 50, 'sprite': ['##'], 'sprite_width': 2}
+        assert hazards.place_emerging(obstacle)
+        assert obstacle['y_pos'] + 1 < 8
