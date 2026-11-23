@@ -263,10 +263,11 @@ def draw_floor_and_cursor(fb):
             else:
                 color = fallback_cursor_color
 
-            # Render [^]
-            fb.put(GAME_X_OFFSET + x_pos, floor_y + 1, '[', color)
+            # [^] on the cursor's own lane (where swaps happen); ·^· on the others of a wide cursor
+            left, right = ('[', ']') if lane == state.player.lane else ('·', '·')
+            fb.put(GAME_X_OFFSET + x_pos, floor_y + 1, left, color)
             fb.put(GAME_X_OFFSET + x_pos + 1, floor_y + 1, '^', color)
-            fb.put(GAME_X_OFFSET + x_pos + 2, floor_y + 1, ']', color)
+            fb.put(GAME_X_OFFSET + x_pos + 2, floor_y + 1, right, color)
 
     # Selected lane indicator for swap - mostra [*]
     if state.player.selected_lane is not None:
