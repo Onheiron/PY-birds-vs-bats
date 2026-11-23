@@ -29,6 +29,10 @@ def handle_pause():
     state.game.paused = not state.game.paused
     msg = 'PAUSED' if state.game.paused else 'RESUMED'
     notify(msg)
+    if state.game.paused:
+        from src.services import save_manager
+
+        save_manager.checkpoint()
 
 
 def handle_movement(direction):

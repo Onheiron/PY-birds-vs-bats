@@ -126,6 +126,12 @@ def run_session():
         state.game.quit_requested = True
     finally:
         time.time = real_time
+        if not (state.game.lives <= 0):
+            # Quit or back to the title: keep the game for CONTINUE
+            was_title = state.ui.show_title
+            state.ui.show_title = False
+            save_manager.checkpoint()
+            state.ui.show_title = was_title
         # Game over, quit or back to the title: the run's gold goes to the profile
         meta.end_run()
         state.ui.last_recording = record.save()

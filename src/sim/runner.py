@@ -52,6 +52,9 @@ def _quiet_services():
     """No sound, no telemetry during simulations."""
     sound._backend = None
     optional.firebase_client = None
+    from src.services import save_manager
+
+    save_manager.checkpoints_enabled = False
 
 
 def run(config):

@@ -180,13 +180,19 @@ def test_save_and_load_through_the_pause_menu(sim):
 
 
 def test_loading_an_empty_slot_reports_it(sim):
+    pause(sim)  # pausing saves to the autosave slot...
     for slot in range(4):
-        save_manager.delete_save(slot)
-    pause(sim)
+        save_manager.delete_save(slot)  # ...so empty them all afterwards
     press_all(sim, ['DOWN'] * 3 + ['ENTER', 'ENTER'])  # LOAD > AUTO
     assert state.ui.notifications[0]['text'] == 'Slot is empty!'
     assert state.game.paused
     assert 'AUTO  (empty)' in sim.screen.text()
+
+
+def test_pausing_saves_the_game(sim):
+    save_manager.delete_save(0)
+    pause(sim)
+    assert save_manager.get_most_recent_save() == 0
 
 
 def test_main_menu_returns_to_the_title(sim):

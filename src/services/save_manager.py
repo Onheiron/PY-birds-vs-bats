@@ -294,6 +294,16 @@ def format_timestamp_display(iso_timestamp):
         return "???"
 
 
+# Checkpoint saves (pause, boss defeated, leaving the game); headless runs turn them off
+checkpoints_enabled = True
+
+
+def checkpoint():
+    """Save the game in the autosave slot at a moment worth coming back to."""
+    if checkpoints_enabled and not state.ui.show_title and state.game.lives > 0:
+        save_game(0)
+
+
 def save_game(slot=0):
     """Save the current game state to a slot.
 

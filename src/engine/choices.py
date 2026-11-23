@@ -136,6 +136,10 @@ def pick(index=None):
     elif card['kind'] != 'refuse':
         cards.apply_card(card)
     events.emit('choice_made', offer=offer, card=card)
+    if offer['kind'] == 'pact':
+        from src.services import save_manager
+
+        save_manager.checkpoint()  # a boss beaten and its pact settled
     if state.choice.queue:
         _open(state.choice.queue.pop(0))
     return card

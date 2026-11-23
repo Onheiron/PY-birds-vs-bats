@@ -65,6 +65,7 @@ from src.engine.physics import (
     update_projectile_positions,
     update_right_panel_barriers,
 )
+from src.services import save_manager
 from src.services.sound import sync_active_birds
 
 
@@ -111,8 +112,10 @@ class _BossWatch:
         if defeated and not self.defeated and self.boss_type is not None:
             events.emit('boss_defeated', boss_type=self.boss_type)
             self.boss_type = None
-            # Every biome boss offers a pact (see src/engine/cards.py)
+            # Every biome boss offers a pact (see src/engine/cards.py); save once it is settled
             choices.offer_pact(state.game.level_group)
+            if state.choice.active is None:
+                save_manager.checkpoint()
         self.defeated = defeated
 
 
