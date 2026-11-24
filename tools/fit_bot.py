@@ -218,7 +218,7 @@ def fit(measures):
         'memory': 2.0,
         'bounce_from': round(min(0.8, max(0.05, player['bounce height'])), 2),
         'max_gear': int(player['gear (mode)']),
-        'formation': 'learned' if lane_prefs(measures) else 'none',
+        'formation': 'player',  # the player's rules (strategy.player_formation_score)
         'lane_prefs': lane_prefs(measures),
         'formation_every': 60,
         'idle_up_rate': round(player['idle UP/s'], 2),

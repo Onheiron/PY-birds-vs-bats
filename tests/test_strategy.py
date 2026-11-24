@@ -78,3 +78,18 @@ def test_the_learned_formation_puts_kinds_where_the_player_keeps_them():
             'YELLOW',
         ]
         assert strategy.formation_score(target, 'learned', prefs) == 9
+
+
+def test_the_player_formation_follows_the_players_rules():
+    from src.sim import strategy
+    from tests.harness import Simulation
+
+    with Simulation(seed=1, key_rate=0):
+        wall = dict(enumerate(['YELLOW', 'YELLOW', 'BLUE', 'BLUE', 'RED', 'RED', 'RED', 'YELLOW', 'YELLOW']))
+        broken = dict(wall)
+        broken[5], broken[7] = broken[7], broken[5]  # a Red out of the wall
+        assert strategy.player_formation_score(wall) > strategy.player_formation_score(broken)
+        white = dict(enumerate(['YELLOW', 'YELLOW', 'WHITE', 'RED', 'RED', 'RED', 'BLUE', 'YELLOW', 'YELLOW']))
+        moved = dict(white)
+        moved[2], moved[1] = moved[1], moved[2]  # the White second from the edge
+        assert strategy.player_formation_score(white) > strategy.player_formation_score(moved)

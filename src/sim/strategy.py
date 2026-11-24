@@ -122,6 +122,8 @@ def formation_score(lanes, formation, prefs=None):
     (``prefs``: kind -> lanes from the middle, see tools/fit_bot.py).
     """
     n = constants.layout.num_lanes
+    if formation == 'player':
+        return player_formation_score(lanes, prefs)
     if formation == 'learned':
         target = learned_layout(lanes, prefs)
         return sum(1.0 for lane, k in lanes.items() if k is not None and target.get(lane) == k)
@@ -147,6 +149,56 @@ def formation_score(lanes, formation, prefs=None):
         if formation in ('white_center', 'auto') and here in ('YELLOW', 'RED', 'BLUE'):
             whites = [lane2 for lane2, k in lanes.items() if k == 'WHITE']
             score += 0.5 * sum(1 for w in whites if abs(w - lane) <= 2)
+    return score
+
+
+# Kinds whose afflictions ride on the shots of the Reds next to them
+_SHOT_EFFECTS = ('POISON', 'FROSTY', 'BERSERK')
+
+
+def player_formation_score(lanes, prefs=None):
+    """The player's formation rules (the 'me' bot), for any flock:
+
+    1. faster birds nearer the middle: the cursor travels less, on average, to save them;
+    2. Reds side by side: a wall of shots (a Patchwork counts, at the sides of the block);
+    3. Poison, Frosty, Berserk right beside the Red block: the outer shots carry their
+       affliction and the middle ones keep their full damage;
+    4. the White third from an edge: its power also bounces the two lanes beyond it;
+    5. at the edges the birds that need the cursor least: Clockwork (it bounces by
+       itself) and Yellows in pairs (they bounce each other);
+    6. ties broken by where the player usually keeps each kind (``prefs``).
+    """
+    from src.entities.bird_types import get_default_speed
+
+    n = constants.layout.num_lanes
+    middle = (n - 1) / 2
+    prefs = prefs or {}
+    kinds = [k for k in lanes.values() if k is not None]
+    if not kinds:
+        return 0.0
+    speeds = {k: get_default_speed(k) for k in set(kinds)}
+    fastest = max(speeds.values()) or 1
+    score = 0.0
+    for lane, k in lanes.items():
+        if k is None:
+            continue
+        distance = abs(lane - middle)
+        score -= speeds[k] / fastest * distance  # 1
+        left, right = lanes.get(lane - 1), lanes.get(lane + 1)
+        if k == 'RED':
+            score += 1.5 * sum(1 for other in (left, right) if other == 'RED')  # 2 (3 a pair)
+        if k == 'PATCHWORK' and 'RED' in (left, right):
+            score += 2.5  # it strengthens the Red beside it: one side of the wall is its
+        if k in _SHOT_EFFECTS and 'RED' in (left, right):
+            score += 2.0  # 3
+        if k == 'WHITE' and lane in (2, n - 3):
+            score += 3.0  # 4
+        if k == 'CLOCKWORK' and lane in (0, n - 1):
+            score += 2.0  # 5
+        if k == 'YELLOW' and (lane <= 1 or lane >= n - 2):
+            score += 1.0 + 0.5 * sum(1 for other in (left, right) if other == 'YELLOW')
+        if k in prefs:
+            score -= 0.05 * abs(distance - prefs[k])  # 6
     return score
 
 

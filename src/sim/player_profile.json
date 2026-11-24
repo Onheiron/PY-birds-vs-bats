@@ -9,7 +9,7 @@
     "memory": 2.0,
     "bounce_from": 0.23,
     "max_gear": 4,
-    "formation": "learned",
+    "formation": "player",
     "idle_up_rate": 0.52,
     "card_policy": "learned",
     "pact_policy": "learned",
