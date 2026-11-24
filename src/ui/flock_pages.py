@@ -7,8 +7,19 @@ is the value now.
 
 from src.core import constants, state
 from src.engine import choices, stats
-from src.engine.grades import compute_grade_from_xp
+from src.engine.grades import _GRADE_LABELS, compute_grade_from_xp, grade_progress
 from src.engine.progression import compute_prestige
+
+
+def xp_bar(xp, cells):
+    """▰▰▰▱▱: the way from the current grade to the next one."""
+    filled = int(grade_progress(xp) * cells + 1e-9)
+    return '▰' * filled + '▱' * (cells - filled)
+
+
+def _next_grade(grade):
+    order = ('D',) + tuple(_GRADE_LABELS)
+    return order[order.index(grade) + 1] if grade in order and grade != order[-1] else None
 
 
 def _num(value):
@@ -44,7 +55,14 @@ def bird_page(i):
     ):
         if i in table:
             status.append(flag)
-    lines = [f'{kind} {grade}, lane {birds.random_lanes[i] + 1}', f'XP {int(birds.per_bird_xp[i])}']
+    xp = birds.per_bird_xp[i]
+    nxt = _next_grade(grade)
+    progress = f'{int(grade_progress(xp) * 100)}% to {nxt}' if nxt else 'top grade'
+    lines = [
+        f'{kind} {grade}, lane {birds.random_lanes[i] + 1}',
+        f'XP {int(xp)}  {progress}',
+        xp_bar(xp, 20),
+    ]
     if status:
         lines.append(', '.join(status))
     lines += ['', HEADER]
@@ -102,7 +120,7 @@ def bird_label(i):
         lane = birds.random_lanes[i] + 1 if i < len(birds.random_lanes) else i + 1
         return f'{lane}. (lost)'
     grade, _ = compute_grade_from_xp(birds.per_bird_xp[i])
-    return f'{birds.random_lanes[i] + 1}. {stats.type_of(i) or "?"} {grade}'
+    return f'{birds.random_lanes[i] + 1}. {stats.type_of(i) or "?"} {grade} {xp_bar(birds.per_bird_xp[i], 4)}'
 
 
 def bird_slots():
