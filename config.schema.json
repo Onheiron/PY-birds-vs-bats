@@ -1138,26 +1138,6 @@
         "level_hp_multiplier": {
           "type": "number"
         },
-        "max_bats_by_level": {
-          "properties": {
-            "level_10_12": {
-              "type": "number"
-            },
-            "level_13_15": {
-              "type": "number"
-            },
-            "level_16_18": {
-              "type": "number"
-            },
-            "level_4_6": {
-              "type": "number"
-            },
-            "level_7_9": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        },
         "mini_bat": {
           "properties": {
             "anim_frames_per_step": {
@@ -1171,61 +1151,6 @@
             },
             "min_y_fraction": {
               "type": "number"
-            }
-          },
-          "type": "object"
-        },
-        "spawn_rate_by_level": {
-          "properties": {
-            "level_10_12": {
-              "type": "number"
-            },
-            "level_13_15": {
-              "type": "number"
-            },
-            "level_16_18": {
-              "type": "number"
-            },
-            "level_4_6": {
-              "type": "number"
-            },
-            "level_7_9": {
-              "type": "number"
-            }
-          },
-          "type": "object"
-        },
-        "tier_weights_by_level": {
-          "properties": {
-            "level_10_12": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "level_13_15": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "level_16_18": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "level_4_6": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "level_7_9": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
             }
           },
           "type": "object"

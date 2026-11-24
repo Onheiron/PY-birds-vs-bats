@@ -130,3 +130,29 @@ def test_stat_sheets_tool_prints_every_bird_and_enemy():
     out = subprocess.run([sys.executable, 'tools/stat_sheets.py'], capture_output=True, text=True, check=True).stdout
     for name in ('Yellow', 'Dinosaur', 'Rock', 'Armored T4', 'Spellcaster T2', 'Barrier T4'):
         assert f'| {name} |' in out
+
+
+def test_difficulties_change_the_bats_of_every_world():
+    from src.core import constants
+    from src.engine import enemy_stats
+
+    def bats(difficulty):
+        constants.configure(difficulty)
+        return [enemy_stats.world_table(w)['max_bats'] for w in range(1, 7)]
+
+    try:
+        normal, easy, hell = bats(1), bats(0), bats(3)
+        assert all(e <= n for e, n in zip(easy, normal)) and sum(easy) < sum(normal)
+        assert all(h >= n for h, n in zip(hell, normal)) and sum(hell) > sum(normal)
+    finally:
+        constants.configure(1)
+
+
+def test_config_files_only_use_known_bat_settings():
+    import yaml
+
+    stale = ('spawn_rate_by_level', 'max_bats_by_level', 'tier_weights_by_level', 'spawn_probability_by_level')
+    for name in ('config.yml', 'config_easy.yml', 'config_hard.yml', 'config_hell.yml', 'hardmode.yml', 'config.sample.yml'):
+        text = (ROOT / name).read_text()
+        yaml.safe_load(text)
+        assert not any(key in text for key in stale), name

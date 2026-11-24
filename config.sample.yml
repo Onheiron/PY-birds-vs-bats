@@ -22,14 +22,14 @@ background:
   enabled: true                   # Scrolling scenery behind the game area
   parallax: false                 # Second, faster scenery layer
 
-bat_enemy:
-  # Bats alive at the same time, by level range (no bats in levels 1-3)
-  max_bats_by_level:
-    level_4_6: 1
-    level_7_9: 2
-    level_10_12: 3
-    level_13_15: 4
-    level_16_18: 5
+enemy_stats:
+  bats:
+    # Every number of every bat kind is a stat, and can change world by world
+    # (see enemy_stats in config.yml). Divers dive more often from world 4 on:
+    worlds:
+      4: {kinds: {diver: {ability_chance: 0.1}}}
+    # How many bats, how often, which tiers and kinds: bat_enemy.worlds in
+    # config.yml (a list: copy it whole to change it)
 
 speed:
   mph_per_level: 40               # Miles per hour gained with each gear

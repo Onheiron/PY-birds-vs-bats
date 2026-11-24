@@ -16,18 +16,20 @@ bat_enemy:
     2: 240      # ADVENTURE: 480
     3: 480      # ADVENTURE: 960
     4: 960      # ADVENTURE: 1920
-  spawn_rate_by_level:
-    level_4_6: 300    # ADVENTURE: 200
-    level_7_9: 220    # ADVENTURE: 150
-    level_10_12: 160  # ADVENTURE: 100
-    level_13_15: 120  # ADVENTURE: 70
-    level_16_18: 90   # ADVENTURE: 50
-  max_bats_by_level:
-    level_4_6: 1
-    level_7_9: 1      # ADVENTURE: 2
-    level_10_12: 2    # ADVENTURE: 3
-    level_13_15: 3    # ADVENTURE: 4
-    level_16_18: 4    # ADVENTURE: 5
+  # Bats per world (PEACEFUL: about half of ADVENTURE, slower, lower tiers); a list replaces the whole of config.yml's, see
+  # bat_enemy.worlds there for what each field means
+  worlds:
+    - {max_bats: 0, spawn_interval: 0, tiers: [0, 0, 0, 0], kinds: {}, height: [3, 8], dive_height: [0.05, 0.20], mini_bat: 0.05}
+    - {max_bats: 1, spawn_interval: 180, tiers: [85, 15, 0, 0], kinds: {diver: 0.04},
+       height: [3, 8], dive_height: [0.08, 0.25], mini_bat: 0.1}
+    - {max_bats: 2, spawn_interval: 150, tiers: [65, 30, 5, 0], kinds: {armored: 0.04, diver: 0.05, spellcaster: 0.03, healer: 0.03},
+       height: [5, 12], dive_height: [0.1, 0.3], mini_bat: 0.15}
+    - {max_bats: 2, spawn_interval: 135, tiers: [50, 35, 13, 2], kinds: {armored: 0.05, diver: 0.06, spellcaster: 0.04, healer: 0.03, bomber: 0.04, plague: 0.03},
+       height: [8, 16], dive_height: [0.12, 0.35], mini_bat: 0.2}
+    - {max_bats: 3, spawn_interval: 110, tiers: [35, 40, 20, 5], kinds: {armored: 0.07, diver: 0.06, spellcaster: 0.05, healer: 0.04, bomber: 0.05, plague: 0.04, necromancer: 0.02},
+       height: [10, 20], dive_height: [0.15, 0.4], mini_bat: 0.25}
+    - {max_bats: 3, spawn_interval: 90, tiers: [20, 40, 30, 10], kinds: {armored: 0.1, diver: 0.07, spellcaster: 0.06, healer: 0.04, bomber: 0.05, plague: 0.05, necromancer: 0.04},
+       height: [12, 23], dive_height: [0.18, 0.45], mini_bat: 0.3}
 
 obstacle:
   # Lower HP - obstacles break faster

@@ -16,25 +16,20 @@ bat_enemy:
     2: 1200     # ADVENTURE: 480
     3: 2400     # ADVENTURE: 960
     4: 4800     # ADVENTURE: 1920
-  spawn_rate_by_level:
-    level_4_6: 80     # ADVENTURE: 200
-    level_7_9: 60     # ADVENTURE: 150
-    level_10_12: 45   # ADVENTURE: 100
-    level_13_15: 30   # ADVENTURE: 70
-    level_16_18: 20   # ADVENTURE: 50
-  max_bats_by_level:
-    level_4_6: 3      # ADVENTURE: 1
-    level_7_9: 5      # ADVENTURE: 2
-    level_10_12: 7    # ADVENTURE: 3
-    level_13_15: 9    # ADVENTURE: 4
-    level_16_18: 10   # ADVENTURE: 5
-  # Higher tier bats appear earlier
-  tier_weights_by_level:
-    level_4_6: [40, 40, 15, 5]     # ADVENTURE: [70, 25, 5, 0]
-    level_7_9: [25, 40, 25, 10]    # ADVENTURE: [50, 35, 12, 3]
-    level_10_12: [15, 30, 35, 20]  # ADVENTURE: [30, 40, 22, 8]
-    level_13_15: [5, 20, 45, 30]   # ADVENTURE: [15, 35, 35, 15]
-    level_16_18: [0, 10, 40, 50]   # ADVENTURE: [5, 25, 45, 25]
+  # Bats per world (LEGENDARY: about twice ADVENTURE, faster, higher tiers); a list replaces the whole of config.yml's, see
+  # bat_enemy.worlds there for what each field means
+  worlds:
+    - {max_bats: 0, spawn_interval: 0, tiers: [0, 0, 0, 0], kinds: {}, height: [3, 8], dive_height: [0.05, 0.20], mini_bat: 0.2}
+    - {max_bats: 5, spawn_interval: 60, tiers: [40, 40, 15, 5], kinds: {armored: 0.05, diver: 0.15},
+       height: [3, 8], dive_height: [0.08, 0.25], mini_bat: 0.3}
+    - {max_bats: 7, spawn_interval: 50, tiers: [25, 40, 25, 10], kinds: {armored: 0.12, diver: 0.15, spellcaster: 0.1, healer: 0.08},
+       height: [5, 12], dive_height: [0.1, 0.3], mini_bat: 0.4}
+    - {max_bats: 8, spawn_interval: 45, tiers: [15, 30, 35, 20], kinds: {armored: 0.15, diver: 0.15, spellcaster: 0.12, healer: 0.08, bomber: 0.12, plague: 0.1},
+       height: [8, 16], dive_height: [0.12, 0.35], mini_bat: 0.5}
+    - {max_bats: 9, spawn_interval: 35, tiers: [5, 20, 45, 30], kinds: {armored: 0.18, diver: 0.15, spellcaster: 0.12, healer: 0.1, bomber: 0.12, plague: 0.1, necromancer: 0.08},
+       height: [10, 20], dive_height: [0.15, 0.4], mini_bat: 0.6}
+    - {max_bats: 10, spawn_interval: 25, tiers: [0, 10, 40, 50], kinds: {armored: 0.2, diver: 0.15, spellcaster: 0.12, healer: 0.1, bomber: 0.12, plague: 0.12, necromancer: 0.1},
+       height: [12, 23], dive_height: [0.18, 0.45], mini_bat: 0.7}
 
 obstacle:
   # Massive HP - obstacles are walls
