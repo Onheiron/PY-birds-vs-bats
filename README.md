@@ -109,8 +109,9 @@ Distance does not advance while a boss is alive.
   once all of them are dead. A wave bat that reaches a side flies out and
   comes back in from the top with the HP it has left. Mini bats and
   jumpscares still come out of the obstacles at random.
-- **Flock bonus:** the score is ×2 with all nine birds alive (FULL HOUSE),
-  ×1 with seven or eight, ×0.5 with fewer; the start line shows it.
+- **Flock bonus:** the score is ×2 with all nine birds alive (full house),
+  ×1 with seven or eight, ×0.5 with fewer; the start line shows it by its
+  colour: light green, white, light red.
 - Bats come in tiers with special kinds: armored, divers, spellcasters.
   From the second biome some are **elites** (gold, marked ♦): tougher, with
   one or two affixes (Swift, Regenerating, Terrifying...) and better drops.

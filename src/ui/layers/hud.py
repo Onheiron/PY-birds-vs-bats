@@ -138,7 +138,7 @@ def draw_starting_line(fb):
         base_color = RED
     else:
         base_char = '-'
-        base_color = ''
+        base_color = _flock_bonus_color()
 
     # Render base line first
     for i in range(constants.layout.width):
@@ -176,17 +176,15 @@ def draw_starting_line(fb):
                     if x % 2 == 0:  # Same alternating pattern as global tailwind
                         fb.put(GAME_X_OFFSET + x, starting_line_y + HEADER_HEIGHT, '^', BLUE)
 
-    _draw_flock_bonus(fb, starting_line_y + HEADER_HEIGHT)
+
+# Start line colour by flock bonus: light green ×2 (full house), white ×1, light red ×0.5
+FLOCK_BONUS_COLORS = {'up': '\033[38;5;120m', 'even': '\033[38;5;255m', 'down': '\033[38;5;210m'}
 
 
-def _draw_flock_bonus(fb, row):
-    """The flock bonus, in the middle of the start line: ' FULL HOUSE x2 '."""
-    mult, label = flock_bonus()
-    text = f' {label} x{mult:g} '
-    color = GREEN if mult > 1 else (RED if mult < 1 else '')
-    start = max(0, (constants.layout.width - len(text)) // 2)
-    for k, ch in enumerate(text):
-        fb.put(GAME_X_OFFSET + start + k, row, ch, color)
+def _flock_bonus_color():
+    """The start line shows the flock bonus by its colour (wind effects draw over it)."""
+    mult = flock_bonus()[0]
+    return FLOCK_BONUS_COLORS['up' if mult > 1 else 'down' if mult < 1 else 'even']
 
 
 def draw_center_of_mass(fb):
