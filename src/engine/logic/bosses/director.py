@@ -188,10 +188,21 @@ def check_bird_boss_collision():
             afflictions.try_afflict(i, boss, is_boss=True)
 
         if bird_color == ORANGE:
-            boss['hp'] -= 32 * hp_scale()  # Orange does a fixed 32 (×hp_scale) to bosses
-        else:
-            boss['hp'] -= damage
-            award_damage_xp(i, damage, 'contact', 'boss')
+            # The Phoenix crashes into the boss: a share of its max HP, then it is an egg again
+            share = float(getattr(constants.orange, 'boss_crash_pct', 0.10))
+            top = boss.get('max_hp', boss['hp'])
+            boss['hp'] -= max(32 * hp_scale(), int(top * share))
+            from src.engine.logic.collisions import phoenix_to_egg
+
+            phoenix_to_egg(i)
+            if boss['hp'] <= 0:
+                boss['state'] = 'dying'
+                play_sfx('boss_death')
+            else:
+                play_sfx('hit')
+            break
+        boss['hp'] -= damage
+        award_damage_xp(i, damage, 'contact', 'boss')
 
         # Boss scream if hit causes scare
         scare_bird_ticks(i, int(1.0 / constants.timing.base_sleep))

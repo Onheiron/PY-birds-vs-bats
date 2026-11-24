@@ -4638,6 +4638,9 @@
     },
     "orange": {
       "properties": {
+        "boss_crash_pct": {
+          "type": "number"
+        },
         "recover_chance": {
           "type": "number"
         }

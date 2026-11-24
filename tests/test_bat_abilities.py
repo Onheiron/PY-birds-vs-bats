@@ -221,3 +221,19 @@ def test_a_jumpscare_shows_its_face_for_half_a_game_second_whatever_the_gear():
         assert bat['scary_face_done']
         assert bat['scary_face_until'] - clock.now() == 0.5
         assert bat['visible_until'] > clock.now()
+
+
+def test_the_phoenix_crashes_into_a_boss_and_is_an_egg_again():
+    from src.engine.logic.bosses import director
+    from src.entities.sprites import ORANGE
+
+    with Simulation(seed=1, key_rate=0):
+        birds = game_state.birds
+        boss = {'hp': 10000, 'max_hp': 10000, 'x_pos': 0, 'y_pos': 0, 'width': 200, 'height': 30, 'state': 'active'}
+        game_state.enemies.boss = boss
+        for i in range(len(birds.colors)):
+            birds.lost[i] = i != 0
+        birds.colors[0], birds.vy[0], birds.y[0], birds.random_lanes[0] = ORANGE, -1, 2, 0
+        director.check_bird_boss_collision()
+        assert boss['hp'] == 9000
+        assert birds.y[0] == 999 and any(loot['type'] == 'orange_egg' for loot in game_state.items.loot_items)

@@ -26,6 +26,26 @@ from src.entities.sprites import (
 from src.services.sound import play_sfx
 
 
+def phoenix_to_egg(i):
+    """The Phoenix turns into a dormant egg in its lane (and drops its orange egg)."""
+    lane = state.birds.random_lanes[i]
+    state.birds.y[i] = 999  # Out of play
+    set_ball_vy(i, 0)
+    reset_bird_power(i)
+    state.birds.speeds[i] = 0
+    # Spawn orange egg loot (both native and transformed Orange birds)
+    drop_loot(
+        {
+            'x_pos': constants.layout.lane_positions[lane],
+            'y_pos': constants.layout.starting_line,
+            'type': 'orange_egg',
+            'rarity': 'epic',
+            'spawn_ts': clock.now(),
+        },
+        'orange',
+    )
+
+
 def check_bird_ceiling_bounce():
     """Check if birds hit ceiling and bounce them."""
     for i in range(constants.layout.num_balls):
@@ -34,22 +54,7 @@ def check_bird_ceiling_bounce():
         if state.birds.y[i] <= 1:
             # ORANGE special: goes to dormant state
             if state.birds.colors[i] == ORANGE:
-                lane = state.birds.random_lanes[i]
-                state.birds.y[i] = 999  # Out of play
-                set_ball_vy(i, 0)
-                reset_bird_power(i)
-                state.birds.speeds[i] = 0
-                # Spawn orange egg loot (both native and transformed Orange birds)
-                drop_loot(
-                    {
-                        'x_pos': constants.layout.lane_positions[lane],
-                        'y_pos': constants.layout.starting_line,
-                        'type': 'orange_egg',
-                        'rarity': 'epic',
-                        'spawn_ts': clock.now(),
-                    },
-                    'orange',
-                )
+                phoenix_to_egg(i)
                 continue
 
             # RAINBOW special: warp to floor instead of bounce

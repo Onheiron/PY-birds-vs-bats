@@ -528,6 +528,7 @@ synergies:
 
 orange:
   recover_chance: 0.1
+  boss_crash_pct: 0.10        # a Phoenix crashing into a boss takes this share of its max HP (at least 320), then is an egg again
 
 # New birds
 rainbow:
