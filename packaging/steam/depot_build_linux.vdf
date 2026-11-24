@@ -1,0 +1,11 @@
+"DepotBuild"
+{
+	"DepotID" "0000001"          // your Linux depot ID
+	"ContentRoot" "../../dist/BVB/"
+	"FileMapping"
+	{
+		"LocalPath" "*"
+		"DepotPath" "."
+		"Recursive" "1"
+	}
+}

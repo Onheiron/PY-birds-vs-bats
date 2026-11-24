@@ -17,6 +17,8 @@ _SYNC_BEGIN = "\033[?2026h"
 _SYNC_END = "\033[?2026l"
 
 _saved_termios = None
+# Window mode (src/ui/window.py): None, or {'fullscreen': bool} once asked for
+_window_mode = None
 _sync_output = os.environ.get('BVB_SYNC_OUTPUT', '1') != '0'
 
 
@@ -35,9 +37,21 @@ def _enable_windows_ansi():
         pass
 
 
+def use_window(fullscreen=False):
+    """Play in a window of its own (a terminal emulator) instead of this terminal."""
+    global _window_mode
+    _window_mode = {'fullscreen': fullscreen}
+
+
 def setup():
     """Prepare the terminal for the game: raw input, hidden cursor, clean screen."""
     global _saved_termios
+
+    if _window_mode is not None:
+        from src.ui import window
+
+        window.open_window(fullscreen=_window_mode['fullscreen'])
+        return
 
     # Sprites use box-drawing and block characters: make sure they can be encoded
     with contextlib.suppress(AttributeError, ValueError):
@@ -58,6 +72,12 @@ def cleanup():
     """Restore the terminal to the state it was in before setup()."""
     global _saved_termios
 
+    from src.ui import window
+
+    if window.active():
+        window.close_window()
+        return
+
     if _saved_termios is not None:
         try:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, _saved_termios)
@@ -76,6 +96,11 @@ def cleanup():
 def write_frame(output):
     """Send one frame of differential output to the terminal."""
     if not output:
+        return
+    from src.ui import window
+
+    if window.active():
+        window.get().write(output)
         return
     stream = sys.stdout
     if _sync_output:

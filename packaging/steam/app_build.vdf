@@ -1,0 +1,12 @@
+"AppBuild"
+{
+	"AppID" "0000000"            // your Steam app ID
+	"Desc" "BVB Linux build"
+	"BuildOutput" "../../dist/steam-output/"
+	"ContentRoot" "../../dist/BVB/"
+	"SetLive" ""                 // e.g. "beta" to publish to a branch right away
+	"Depots"
+	{
+		"0000001" "depot_build_linux.vdf"   // your Linux depot ID
+	}
+}

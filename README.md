@@ -237,6 +237,21 @@ packaging/              PyInstaller spec
   what the test harness (`tests/harness.py`) relies on: it runs the real loop
   with a virtual clock and a tiny terminal emulator instead of a screen.
 
+### Window mode and Steam
+
+```bash
+python3 game.py --window
+```
+
+```bash
+python3 game.py --fullscreen
+```
+
+The game in a window of its own (needs `pip install pygame-ce`): keyboard and
+gamepad (A bounces, B swaps, Start pauses...). This is the Steam build: see
+`docs/steam.md` for the controller layout, the Linux depot built in the Steam
+Linux Runtime and how to upload it.
+
 ### Watching the bot
 
 ```bash

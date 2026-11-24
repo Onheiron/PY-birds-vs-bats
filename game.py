@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """BVB - Bird vs Bat. Entry point."""
 
+import os
 import sys
 
 USAGE = """\
-usage: game.py [--config FILE] [--theme FILE] [--bot PROFILE ...] [--version] [--help]
+usage: game.py [--window] [--fullscreen] [--config FILE] [--theme FILE] [--bot PROFILE ...]
+               [--version] [--help]
+
+  --window        play in a window of its own instead of this terminal
+                  (keyboard and gamepad; F11 toggles full screen)
+  --fullscreen    the window full screen (implies --window)
 
   --config FILE   YAML configuration merged over the defaults in config.yml
                   (try hardmode.yml, or start from config.sample.yml)
@@ -18,9 +24,28 @@ Controls: arrows move and bounce, SPACE swaps, P pauses, Q quits.
 """
 
 
+def _window_options():
+    """Take --window / --fullscreen out of the arguments; True/False/None for full screen."""
+    args = sys.argv[1:]
+    fullscreen = '--fullscreen' in args
+    window = fullscreen or '--window' in args or os.environ.get('BVB_WINDOW') == '1'
+    sys.argv[1:] = [a for a in args if a not in ('--window', '--fullscreen')]
+    if not window:
+        return None
+    # The window draws 24-bit colour: let the game use it
+    os.environ['COLORTERM'] = 'truecolor'
+    return fullscreen
+
+
 def main():
     """Set the terminal up, then run games until the player quits."""
     from src import __version__
+
+    fullscreen = _window_options()
+    if fullscreen is not None:
+        from src.ui import terminal as terminal_module
+
+        terminal_module.use_window(fullscreen)
 
     if '--version' in sys.argv[1:]:
         print(f'BVB {__version__}')

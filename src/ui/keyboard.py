@@ -88,5 +88,9 @@ _read_pending = _read_pending_windows if os.name == 'nt' else _read_pending_unix
 
 def read_keys(text=False):
     """Return the keys pressed since the last call (possibly empty)."""
+    from src.ui import window
+
+    if window.active():
+        return window.get().read_keys(text)
     buffer = _read_pending()
     return parse_keys(buffer, text) if buffer else []
