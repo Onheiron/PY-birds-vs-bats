@@ -4,7 +4,7 @@ import random
 import time as time
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, enemy_stats
+from src.engine import clock, enemy_stats
 from src.engine.logic import afflictions, bat_abilities
 from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
@@ -24,7 +24,12 @@ def _move_horizontally(bat):
     next_x = bat['x_pos'] + bat['direction'] * step
     if _check_bat_can_move(bat, next_x):
         bat['x_pos'] = next_x
-        if bat['x_pos'] <= 0:
+        at_side = bat['x_pos'] <= 0 or bat['x_pos'] >= constants.layout.width - enemy_stats.bat_width(bat)
+        if at_side and bat.get('wave') is not None:
+            from src.engine.logic import waves
+
+            waves.reenter(bat)  # out from the side, back in from the top
+        elif bat['x_pos'] <= 0:
             bat['x_pos'] = 0
             bat['direction'] = 1
         elif bat['x_pos'] >= constants.layout.width - 8:
@@ -295,24 +300,4 @@ def _check_bat_can_move(bat, next_x):
 
         if not (next_right < other_left or next_left > other_right):
             return False
-
-    # Check collision with birds
-    for i in range(constants.layout.num_balls):
-        if state.birds.lost[i]:
-            continue
-
-        bird_y = state.birds.y[i]
-
-        # Bat horizontal range
-        bat_left = next_x
-        bat_right = next_x + 8
-
-        # Lane range
-        lane_left, lane_right = bird_kinds.hit_span(i)
-
-        horizontal_overlap = not (bat_right < lane_left or bat_left > lane_right)
-
-        if horizontal_overlap and abs(bird_y - bat['y_pos']) < 8:
-            return False
-
-    return True
+    return True  # birds do not stop bats: they fly across the lanes

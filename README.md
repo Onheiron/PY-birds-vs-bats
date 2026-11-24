@@ -103,7 +103,15 @@ Distance does not advance while a boss is alive.
 
 - **Obstacles** scroll down in four tiers; tier 3+ obstacles can hide mini bats
   and jumpscare bats, swamp obstacles grow flowers, cave portals teleport birds.
-- **Bats** come in tiers with special kinds: armored, divers, spellcasters.
+- **Bats** come in **waves** from the second biome: a card in the right panel
+  counts down to the next wave and says how many bats it has and their tier;
+  then they come in from the top a few at a time, and the next wave starts
+  once all of them are dead. A wave bat that reaches a side flies out and
+  comes back in from the top with the HP it has left. Mini bats and
+  jumpscares still come out of the obstacles at random.
+- **Flock bonus:** the score is ×2 with all nine birds alive (FULL HOUSE),
+  ×1 with seven or eight, ×0.5 with fewer; the start line shows it.
+- Bats come in tiers with special kinds: armored, divers, spellcasters.
   From the second biome some are **elites** (gold, marked ♦): tougher, with
   one or two affixes (Swift, Regenerating, Terrifying...) and better drops.
   Enemy stats and affixes are listed in `docs/stats.md`.
@@ -258,7 +266,10 @@ python3 tools/replay.py --bot expert --bot average
 The report shows keys per second (moves and UP apart), the time between a
 move and the next UP, how far birds had fallen when bounced, swaps, powers
 and how birds were lost. Games continued with CONTINUE are recorded too: the
-recording keeps the loaded game and its replay starts from there.
+recording keeps the loaded game and its replay starts from there. A
+recording also keeps the git commit of the code it was played with: a replay
+matches only with that same code, and `replay.py` says which commit to check
+out when it differs.
 
 ### Balance simulator
 

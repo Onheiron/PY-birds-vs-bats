@@ -140,24 +140,16 @@ def spawn_obstacle():
 
 
 def spawn_bat():
-    """Maybe spawn a bat, as the current world says (bat_enemy.worlds)."""
-    state.enemies.bat_spawn_timer -= 1
-    if state.enemies.bat_spawn_timer > 0:
-        return
-    world = enemy_stats.world_table()
-    interval = int(world.get('spawn_interval', 0) or 0)
-    max_bats = int(world.get('max_bats', 0) or 0)
-    if interval <= 0 or max_bats <= 0:
-        state.enemies.bat_spawn_timer = 60  # no bats in this world: look again later
-        return
-    state.enemies.bat_spawn_timer = interval
-    if len(state.enemies.bats) >= max_bats:
-        state.enemies.bat_spawn_timer = interval // 2
-        return
+    """Bats come in waves (logic/waves.py); this makes the bats a wave sends."""
+    from src.engine.logic import waves
 
-    level = state.game.level
-    tier = enemy_stats.roll_tier(world)
-    hp = _bat_hp(tier, level)
+    waves.update()
+
+
+def new_bat(tier, world=None):
+    """A new bat of ``tier`` for the current world (bat_enemy.worlds), coming in from the top."""
+    world = world if world is not None else enemy_stats.world_table()
+    hp = _bat_hp(tier, state.game.level)
     x_pos = random.randint(0, constants.layout.width - 8)
     low, high = list(world.get('height') or [3, 8])
     target_y = random.randint(int(low), max(int(low), min(int(high), constants.layout.starting_line - 3)))
@@ -167,10 +159,13 @@ def spawn_bat():
         low_f, high_f = list(world.get('dive_height') or [0.1, 0.3])
         screen = constants.layout.starting_line
         target_y = random.randint(max(1, int(screen * low_f)), max(2, int(screen * high_f)))
-    start_y = -(3 if kind == 'spellcaster' else 2) + 1  # spellcasters are 3 lines tall, others 2
     elite, affixes = enemy_stats.roll_elite(kind)
-    bat = enemy_stats.make_bat(tier, kind, x_pos, start_y, target_y, hp, affixes, elite=elite)
-    state.enemies.spawn_queue.append({'type': 'bat', 'data': bat})
+    return enemy_stats.make_bat(tier, kind, x_pos, entry_row(kind), target_y, hp, affixes, elite=elite)
+
+
+def entry_row(kind):
+    """Row a bat comes in at: just above the top edge (spellcasters are 3 lines tall, others 2)."""
+    return -(3 if kind == 'spellcaster' else 2) + 1
 
 
 def _bat_hp(tier, level):
@@ -218,9 +213,9 @@ def despawn_old_entities():
     """Remove entities that have been around too long."""
     now = clock.now()
 
-    # Bats fly away after their linger stat (armored bats stay longer)
+    # Bats fly away after their linger stat (armored bats stay longer); wave bats stay to the end
     for bat in state.enemies.bats[:]:
-        if now - bat.get('spawn_ts', now) > enemy_stats.get(bat, 'linger'):
+        if bat.get('wave') is None and now - bat.get('spawn_ts', now) > enemy_stats.get(bat, 'linger'):
             state.enemies.bats.remove(bat)
 
     # Loot despawn after configured time

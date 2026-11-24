@@ -1155,6 +1155,35 @@
           },
           "type": "object"
         },
+        "waves": {
+          "properties": {
+            "first_pause": {
+              "type": "number"
+            },
+            "min_size": {
+              "type": "number"
+            },
+            "pause": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "size_by_world": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "size_cut_per_tier": {
+              "type": "number"
+            },
+            "size_per_level": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
         "worlds": {
           "items": {
             "type": "object"

@@ -2,7 +2,7 @@
 
 from src.core import constants
 from src.engine import clock, enemy_stats, stats
-from src.engine.logic.spawning import process_spawn_queue, spawn_bat
+from src.engine.logic.spawning import new_bat, spawn_bat
 from tests.harness import FRAME_DT, Simulation
 
 
@@ -73,11 +73,7 @@ def test_elites_spawn_by_biome_chance(monkeypatch):
         state = sim.state
         state.game.level, state.game.level_group = 16, 6
         monkeypatch.setattr(constants.elites, 'chance_by_biome', [1, 1, 1, 1, 1, 1])
-        state.enemies.bats.clear()
-        state.enemies.bat_spawn_timer = 0
-        spawn_bat()
-        process_spawn_queue()
-        bat = state.enemies.bats[-1]
+        bat = new_bat(enemy_stats.roll_tier(enemy_stats.world_table()))
         assert bat['elite']
         # Plain elites get 2 random affixes in world 6; special kinds get their elite behaviour instead
         assert len(bat['affixes']) == (0 if bat.get('kind') else 2)

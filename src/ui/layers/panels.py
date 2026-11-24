@@ -522,6 +522,11 @@ def draw_notifications(fb):
 
     state.ui.notifications[:] = active_notifications
 
+    from src.engine.logic import waves
+
+    wave_card = waves.card()
+    if wave_card:
+        active_notifications = [wave_card] + active_notifications  # the wave card stays on top
     if not active_notifications:
         return
 

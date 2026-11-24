@@ -143,6 +143,15 @@ bat_enemy:
        kinds: {armored: 0.20, diver: 0.14, spellcaster: 0.12, healer: 0.08, bomber: 0.10, plague: 0.10,
                necromancer: 0.08},
        height: [12, 23], dive_height: [0.18, 0.45], mini_bat: 0.60}
+  # Bat waves (logic/waves.py): a countdown card, then the wave's bats come in from the top,
+  # at most max_bats at once (one every spawn_interval ticks); the next wave after a pause
+  waves:
+    first_pause: 5               # seconds before the first wave of a world
+    pause: [6, 10]               # seconds between a cleared wave and the next
+    size_by_world: [0, 6, 8, 10, 12, 14]   # bats in a wave of tier 1...
+    size_per_level: 1            # ...+ this for each level of the world after the first...
+    size_cut_per_tier: 1         # ...- this for each tier above 1
+    min_size: 3
   # Lowest tier of each kind
   kind_min_tier: {armored: 2, diver: 1, spellcaster: 2, healer: 2, bomber: 2, plague: 2, necromancer: 3}
   # Armor of armored bats, by tier

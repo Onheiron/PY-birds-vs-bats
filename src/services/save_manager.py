@@ -506,6 +506,8 @@ def _enemies_to_dict(enemies):
         'obstacle_spawn_timer': enemies.obstacle_spawn_timer,
         'bats': list(enemies.bats),
         'bat_spawn_timer': enemies.bat_spawn_timer,
+        'bat_wave': enemies.bat_wave,
+        'wave_count': enemies.wave_count,
         'spawn_queue': list(enemies.spawn_queue),
         'right_panel_barriers': list(enemies.right_panel_barriers),
         'right_panel_barrier_timer': enemies.right_panel_barrier_timer,
@@ -641,6 +643,8 @@ def _restore_enemies(enemies, data, keep_ages=False):
     enemies.obstacle_spawn_timer = data.get('obstacle_spawn_timer', 0)
     enemies.bats = data.get('bats', [])
     enemies.bat_spawn_timer = data.get('bat_spawn_timer', 0)
+    enemies.bat_wave = data.get('bat_wave')
+    enemies.wave_count = data.get('wave_count', 0)
     enemies.spawn_queue = data.get('spawn_queue', [])
     enemies.right_panel_barriers = data.get('right_panel_barriers', [])
     enemies.right_panel_barrier_timer = data.get('right_panel_barrier_timer', 0)
