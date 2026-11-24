@@ -104,19 +104,37 @@ def apply_powerup(loot_type):
 
 
 def hatch_bird(bird_type, loot=None):
-    """Hatch a bird of ``bird_type`` into the first free slot (a bird card)."""
+    """Hatch a bird of ``bird_type`` into the free slot closest to the flock (a bird card)."""
     _spawn_bird_from_egg(f'{bird_type.lower()}_egg', loot)
 
 
+def _hatch_slots():
+    """Free bird slots, the one whose lane is closest to the flock first (never off on its own)."""
+    birds = state.birds
+    n = constants.layout.num_balls
+    alive = [birds.random_lanes[i] for i in range(n) if not birds.lost[i]]
+    free = [i for i in range(n) if birds.lost[i]]
+    if not alive:
+        return free
+    centre = sum(alive) / len(alive)
+    taken = set(alive)
+
+    def key(i):
+        lane = birds.random_lanes[i]
+        return (lane in taken, min(abs(lane - a) for a in alive), abs(lane - centre))
+
+    return sorted(free, key=key)
+
+
 def _spawn_bird_from_egg(egg_type, loot=None):
-    """Hatch an egg (the collected ``loot``) into the first free bird slot."""
+    """Hatch an egg (the collected ``loot``) into the free bird slot closest to the flock."""
     bird_type = get_bird_type_from_egg(egg_type)
     if bird_type is None:
         return
     bird_color = get_color_for_bird_type(bird_type)
     bird_speed = get_default_speed(bird_type)
 
-    for idx in range(constants.layout.num_balls):
+    for idx in _hatch_slots():
         if state.birds.lost[idx]:
             state.birds.lost[idx] = False
             stats.clear_bird(idx)

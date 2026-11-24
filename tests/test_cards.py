@@ -306,3 +306,17 @@ def test_power_duration_lengthens_timed_cards_and_power_ups():
         cards.apply_card(frenzy)
         mod = [m for m in sim.state.stats.modifiers if m['source'] == 'card:frenzy'][0]
         assert abs((mod['until'] - clock.now()) - 20 * 1.5) < 1e-6
+
+
+def test_a_hatched_bird_takes_the_free_lane_closest_to_the_flock():
+    from src.core import state as game_state
+    from src.engine.logic import loot
+
+    with Simulation(seed=1, key_rate=0):
+        birds = game_state.birds
+        for i in range(len(birds.colors)):
+            birds.random_lanes[i] = i
+            birds.lost[i] = not 3 <= i <= 5  # the flock in lanes 3-5
+        loot.hatch_bird('RED')
+        assert not birds.lost[2] or not birds.lost[6]  # right next to the flock
+        assert birds.lost[0] and birds.lost[8]

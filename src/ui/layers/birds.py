@@ -1,6 +1,7 @@
 """Birds and their status indicators."""
 
 import math
+import random
 
 from src.core import constants, state
 from src.engine import clock
@@ -18,6 +19,7 @@ from src.entities.sprites import (
     DINOSAUR_DOWN_2,
     DINOSAUR_UP_1,
     DINOSAUR_UP_2,
+    GLITCH,
     GREEN,
     PATCHWORK,
     PURPLE,
@@ -31,6 +33,45 @@ from src.entities.sprites import (
 )
 from src.ui.colors import apply_bold, get_render_color
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
+
+# Rainbow: colour changes per second (the whole bird at once)
+RAINBOW_STEPS_PER_SECOND = 6
+
+# Glitch: what a corrupted frame may show
+GLITCH_SPRITES = (BIRD_UP_1, BIRD_UP_2, BIRD_DOWN_1, BIRD_DOWN_2)
+GLITCH_GLYPHS = '#%&?!▓░▒¿§'
+GLITCH_COLORS = ('\033[1;38;5;46m', '\033[1;38;5;51m', '\033[1;38;5;201m', '\033[1;38;5;226m', '\033[1;38;5;255m')
+
+
+def _glitch(i, sprite, x_pos):
+    """A glitched look for Glitch bird ``i`` this instant: (sprite, x, {(line, col): colour}).
+
+    Changes a few times a second; about one moment in four it shows clean. Uses
+    its own random generator: drawing never touches the game's random numbers.
+    """
+    rng = random.Random(i * 7919 + int(clock.now() * 8))
+    roll = rng.random()
+    if roll < 0.25:
+        return sprite, x_pos, {}
+    if roll < 0.50:
+        # One wing open, the other closed: columns from different frames
+        width = len(sprite[0])
+        sprite = [''.join(rng.choice(GLITCH_SPRITES)[line][col] for col in range(width)) for line in range(2)]
+    elif roll < 0.70:
+        # Upside down: the frame of the other direction, lines swapped
+        flipped = rng.choice(GLITCH_SPRITES)
+        sprite = [flipped[1], flipped[0]]
+    else:
+        sprite = list(rng.choice(GLITCH_SPRITES))
+    if rng.random() < 0.35:
+        x_pos += rng.choice((-1, 1))  # jumps a column
+    colours = {}
+    for _ in range(rng.randint(0, 2)):
+        line, col = rng.randrange(len(sprite)), rng.randrange(len(sprite[0]))
+        sprite[line] = sprite[line][:col] + rng.choice(GLITCH_GLYPHS) + sprite[line][col + 1 :]
+        colours[(line, col)] = rng.choice(GLITCH_COLORS)
+    return sprite, x_pos, colours
+
 
 # Intangible Stealth: white, greys down to black, a moment unseen (None), and back
 STEALTH_FADE = (
@@ -217,6 +258,12 @@ def draw_birds(fb):
         # Apply bold modifier for foreground game elements
         bird_color = apply_bold(bird_color)
 
+        # Glitch: a corrupted sprite most of the time (mixed wings, flipped, shifted, garbled)
+        is_glitch = state.birds.colors[i] == GLITCH and not is_frozen and not flash
+        glitch_colors = None
+        if is_glitch:
+            sprite, x_pos, glitch_colors = _glitch(i, sprite, x_pos)
+
         # Patchwork uses multicolor rendering (fixed colors by position)
         is_patchwork = state.birds.colors[i] == PATCHWORK and not is_frozen and not flash
         # Fixed color pattern: left=YELLOW, center=RED, right=BLUE
@@ -253,7 +300,9 @@ def draw_birds(fb):
                 x_off = len(line) // 2
                 for ci, char in enumerate(line):
                     if char != ' ':
-                        if is_patchwork:
+                        if glitch_colors is not None:
+                            char_color = glitch_colors.get((line_idx, ci), bird_color)
+                        elif is_patchwork:
                             # Color based on horizontal position only (stable across frames)
                             char_color = apply_bold(patchwork_colors[ci % 3])
                         elif is_clockwork and char in ("'", "."):
@@ -268,9 +317,9 @@ def draw_birds(fb):
                                 # Full: green blinking
                                 char_color = apply_bold(GREEN if clockwork_blink else CLOCKWORK)
                         elif is_rainbow:
-                            # Fast animated rainbow colors cycling + fade based on charge
-                            color_idx = (state.game.frame_count // 2 + ci * 2 + line_idx) % len(rainbow_colors)
-                            base_color = rainbow_colors[color_idx]
+                            # The whole bird changes colour over time (fading with its charge)
+                            color_idx = (int(clock.now() * RAINBOW_STEPS_PER_SECOND) + i) % len(rainbow_colors)
+                            base_color = apply_bold(rainbow_colors[color_idx])
                             # Apply brightness fade based on charge
                             if rainbow_brightness < 0.3:
                                 char_color = '\033[38;5;240m'  # Dark gray - dying
