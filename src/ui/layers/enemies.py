@@ -468,5 +468,7 @@ def draw_projectiles(fb):
                 carried = state.birds.colors[j] if 0 <= j < len(state.birds.colors) else None
                 if carried in SHOT_COLORS:
                     proj_color = get_dynamic_color(SHOT_COLORS[carried])
+                    if symbol == '⋅':
+                        symbol = '•'  # a coloured shot is a round dot, never a tick
                     break
             fb.put(GAME_X_OFFSET + proj['x_pos'], y_pos + HEADER_HEIGHT, symbol, proj_color)
