@@ -106,8 +106,11 @@ Distance does not advance while a boss is alive.
 - **Bats** come in **waves** from the second biome: a card in the right panel
   counts down to the next wave and says how many bats it has and their tier;
   then they come in from the top a few at a time, and the next wave starts
-  once all of them are dead. A wave bat that reaches a side flies out and
-  comes back in from the top with the HP it has left. Mini bats and
+  once all of them are dead. Each bat comes in above a spot it chose (by
+  its kind: the strongest bird, birds with powers, full or empty lanes...),
+  goes down to a row that depends on its tier, holds, moves a few lanes,
+  and after a few spots flies out from the top, coming back a moment later
+  with the HP it has left. Mini bats and
   jumpscares still come out of the obstacles at random.
 - **Flock bonus:** the score is ×2 with all nine birds alive (full house),
   ×1 with seven or eight, ×0.5 with fewer; the start line shows it by its

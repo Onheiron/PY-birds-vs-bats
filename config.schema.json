@@ -1157,6 +1157,93 @@
         },
         "waves": {
           "properties": {
+            "behaviour": {
+              "properties": {
+                "cast_hold_max": {
+                  "type": "number"
+                },
+                "cruise_by_tier": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "number"
+                    },
+                    "type": "array"
+                  },
+                  "type": "object"
+                },
+                "elite_pace": {
+                  "type": "number"
+                },
+                "hold": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "kinds": {
+                  "properties": {
+                    "armored": {
+                      "properties": {
+                        "hold": {
+                          "items": {
+                            "type": "number"
+                          },
+                          "type": "array"
+                        },
+                        "stops": {
+                          "items": {
+                            "type": "number"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "healer": {
+                      "properties": {
+                        "cruise_shift": {
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "necromancer": {
+                      "properties": {
+                        "cruise_shift": {
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "spellcaster": {
+                      "properties": {
+                        "casts": {
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                },
+                "move_lanes": {
+                  "type": "number"
+                },
+                "out": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "stops": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            },
             "first_pause": {
               "type": "number"
             },

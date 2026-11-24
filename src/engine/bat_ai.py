@@ -5,7 +5,7 @@ import time as time
 
 from src.core import constants, state
 from src.engine import clock, enemy_stats
-from src.engine.logic import afflictions, bat_abilities
+from src.engine.logic import afflictions, bat_abilities, bat_behaviour
 from src.entities.sprites import DINOSAUR, ORANGE, PURPLE
 
 
@@ -23,14 +23,8 @@ def _move_horizontally(bat):
     step = max(1, int(enemy_stats.get(bat, 'move_step')))
     next_x = bat['x_pos'] + bat['direction'] * step
     if _check_bat_can_move(bat, next_x):
-        bat.pop('blocked_since', None)
         bat['x_pos'] = next_x
-        at_side = bat['x_pos'] <= 0 or bat['x_pos'] >= constants.layout.width - enemy_stats.bat_width(bat)
-        if at_side and bat.get('wave') is not None:
-            from src.engine.logic import waves
-
-            waves.reenter(bat)  # out from the side, back in from the top
-        elif bat['x_pos'] <= 0:
+        if bat['x_pos'] <= 0:
             bat['x_pos'] = 0
             bat['direction'] = 1
         elif bat['x_pos'] >= constants.layout.width - 8:
@@ -38,29 +32,6 @@ def _move_horizontally(bat):
             bat['direction'] = -1
     else:
         bat['direction'] *= -1
-        _note_blocked(bat)
-
-
-def _note_blocked(bat):
-    """A wave bat that cannot move sideways for too long flies out from the top (and comes back)."""
-    if bat.get('wave') is None:
-        return
-    now = clock.now()
-    since = bat.setdefault('blocked_since', now)
-    if now - since >= float(getattr(getattr(constants.bat_enemy, 'waves', None), 'stuck_time', 1.5)):
-        bat.pop('blocked_since', None)
-        bat['leaving'] = True
-
-
-def _fly_out_top(bat):
-    """Leaving: straight up out of the screen, then back in from the top (same HP)."""
-    if state.game.frame_count % 2 == 0:
-        bat['y_pos'] -= 1
-    from src.engine.logic import waves
-    from src.engine.logic.spawning import entry_row
-
-    if bat['y_pos'] < entry_row(bat.get('kind')):
-        waves.reenter(bat)
 
 
 def update_bat_positions():
@@ -71,11 +42,14 @@ def update_bat_positions():
         if slow < 1 and state.game.frame_count % max(1, round(1 / slow)) != 0:
             continue
 
-        if bat.get('leaving'):
-            _fly_out_top(bat)
-            continue
         kinds = enemy_stats.bat_kinds(bat)
-        _move_horizontally(bat)
+        if bat.get('wave') is not None:
+            # Wave bats follow their plan (logic/bat_behaviour.py)
+            bat_behaviour.update(bat)
+            if bat_behaviour.busy(bat):
+                continue
+        else:
+            _move_horizontally(bat)
         if 'diver' in kinds:
             _update_diver_bat(bat)
             continue  # divers handle their own height
@@ -152,6 +126,7 @@ def _update_spellcaster_bat(bat):
     if bat.get('spell_state', 'idle') == 'casting':
         if now >= bat.get('casting_end_time', 0):
             _apply_spell_effect(bat)
+            bat['casts_done'] = bat.get('casts_done', 0) + 1
             bat['spell_state'] = 'idle'
             bat['spell_cooldown'] = now + enemy_stats.get(bat, 'ability_interval')
         return
@@ -168,7 +143,9 @@ def _update_spellcaster_bat(bat):
             bat['current_spells'] = random.sample(known, 2)
             bat['casting_end_time'] = now + 2 * enemy_stats.get(bat, 'cast_time')
         else:
-            bat['current_spells'] = [random.choice(known)]
+            # The spell it picked its spot for (wave bats), else any it knows
+            planned = bat.pop('next_spell', None)
+            bat['current_spells'] = [planned if planned in known else random.choice(known)]
             bat['casting_end_time'] = now + enemy_stats.get(bat, 'cast_time')
         bat['current_spell'] = bat['current_spells'][0]
 

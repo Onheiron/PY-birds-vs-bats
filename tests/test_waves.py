@@ -1,7 +1,7 @@
 """Bat waves: a countdown, then the wave's bats a few at a time, until all are dead."""
 
 from src.engine import bat_ai, clock, enemy_stats
-from src.engine.logic import waves
+from src.engine.logic import bat_behaviour, waves
 from src.engine.logic.spawning import process_spawn_queue, spawn_bat
 from tests.harness import Simulation
 
@@ -50,21 +50,6 @@ def test_a_wave_never_has_more_than_max_bats_at_once_and_ends_when_all_are_dead(
         assert state.enemies.bat_wave['starts_at'] > clock.now()
 
 
-def test_a_wave_bat_at_a_side_comes_back_from_the_top_with_its_hp():
-    with Simulation(seed=2, key_rate=0) as sim:
-        state = sim.state
-        start_wave(sim)
-        tick(state, 200)
-        bat = waves.wave_bats()[0]
-        bat['hp'], bat['y_pos'], bat['x_pos'], bat['direction'] = 7, 10, 1, -1
-        for _ in range(12):
-            state.game.frame_count += 1
-            bat_ai._move_horizontally(bat)
-            if bat['y_pos'] < 0:
-                break
-        assert bat['y_pos'] < 0 and bat['hp'] == 7 and bat in state.enemies.bats
-
-
 def test_no_waves_in_the_first_world():
     with Simulation(seed=2, key_rate=0) as sim:
         sim.state.game.level_group = 1
@@ -72,29 +57,80 @@ def test_no_waves_in_the_first_world():
         assert sim.state.enemies.bat_wave is None and waves.card() is None
 
 
-def test_a_stuck_wave_bat_flies_out_the_top_and_comes_back():
-    with Simulation(seed=2, key_rate=0) as sim:
+def run_plan(state, bat, seconds, step=1 / 30):
+    """Run a wave bat's plan (and its descent) for ``seconds`` of game time."""
+    phases = []
+    for _ in range(int(seconds / step)):
+        clock.resume_at(clock.now() + step)
+        state.game.frame_count += 1
+        bat_behaviour.update(bat)
+        if not bat_behaviour.busy(bat) and bat['y_pos'] < bat['target_y']:
+            bat['y_pos'] += 1
+        if not phases or phases[-1] != bat['plan']['phase']:
+            phases.append(bat['plan']['phase'])
+    return phases
+
+
+def plain_bat(sim, tier=2):
+    state = sim.state
+    wave = start_wave(sim)
+    wave['tier'] = tier
+    tick(state, 200)
+    bat = waves.wave_bats()[0]
+    for other in waves.wave_bats()[1:]:
+        state.enemies.bats.remove(other)
+    bat['kind'] = None
+    return bat
+
+
+def test_a_wave_bat_holds_spots_then_flies_out_and_comes_back_with_its_hp():
+    with Simulation(seed=4, key_rate=0) as sim:
         state = sim.state
-        start_wave(sim)
-        tick(state, 200)
-        bat = waves.wave_bats()[0]
-        bat['hp'], bat['y_pos'], bat['x_pos'] = 7, 10, 20
-        bat['blocked_since'] = clock.now() - 2  # boxed in for two seconds
+        bat = plain_bat(sim)
+        bat['hp'] = 7
+        phases = run_plan(state, bat, 40)
+        assert {'enter', 'hold', 'move', 'leave', 'out'} <= set(phases)
+        assert phases.index('hold') < phases.index('leave') < phases.index('out')
+        assert phases.count('enter') >= 2  # came back in
+        assert bat['hp'] == 7 and bat in state.enemies.bats
+
+
+def test_higher_tiers_cruise_lower():
+    with Simulation(seed=4, key_rate=0) as sim:
+        bat = plain_bat(sim, tier=1)
+        rows1 = [bat_behaviour._cruise_row(bat) for _ in range(50)]
+        bat['tier'] = 4
+        rows4 = [bat_behaviour._cruise_row(bat) for _ in range(50)]
+        assert max(rows1) < min(rows4)
+
+
+def test_a_boxed_in_wave_bat_leaves_from_the_top():
+    with Simulation(seed=4, key_rate=0) as sim:
+        state = sim.state
+        bat = plain_bat(sim)
+        bat['plan'] = {'phase': 'move', 'target_x': (bat['x_pos'] + 10) % 30, 'stops': 3, 'until': 0}
         real = bat_ai._check_bat_can_move
         bat_ai._check_bat_can_move = lambda b, x: False
         try:
-            for _ in range(3):
-                state.game.frame_count += 1
-                bat_ai._move_horizontally(bat)
+            phases = run_plan(state, bat, 3)
         finally:
             bat_ai._check_bat_can_move = real
-        assert bat['leaving']
-        for _ in range(100):
-            state.game.frame_count += 1
-            bat_ai._fly_out_top(bat)
-            if not bat.get('leaving'):
-                break
-        assert not bat.get('leaving') and bat['y_pos'] < 0 and bat['hp'] == 7 and bat in state.enemies.bats
+        assert 'leave' in phases
+
+
+def test_the_spellcaster_picks_its_spot_by_its_spell():
+    from src.entities.sprites import GOLD, RED
+
+    with Simulation(seed=4, key_rate=0) as sim:
+        birds = sim.state.birds
+        for i in range(len(birds.colors)):
+            birds.lost[i] = i >= 2
+        birds.colors[0], birds.random_lanes[0] = RED, 1  # has a power: worth silencing
+        birds.colors[1], birds.random_lanes[1] = GOLD, 7  # no power
+        bat = {'kind': 'spellcaster', 'known_spells': ['silence'], 'tier': 3, 'x_pos': 0, 'y_pos': 5}
+        weights = bat_behaviour.lane_weights(bat)
+        assert bat['next_spell'] == 'silence'
+        assert weights.get(1, 0) > 0 and 7 not in weights
 
 
 def test_overlapping_bats_can_move_apart():
