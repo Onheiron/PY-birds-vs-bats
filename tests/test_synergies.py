@@ -128,3 +128,15 @@ def test_other_birds_powers_leave_the_gold_alone():
         powers._power_yellow(1, 1)
         assert birds.vy[0] == 1 and birds.vy[2] == 1  # not bounced
         assert 0 not in game_state.special.speed_boosts and 2 not in game_state.special.speed_boosts
+
+
+def test_the_flock_bonus_follows_the_living_birds():
+    from src.engine.progression import flock_bonus
+
+    with Simulation(seed=1, key_rate=0):
+        line_up(*[RED] * 9)
+        assert flock_bonus() == (2.0, 'FULL HOUSE')
+        line_up(*[RED] * 7)
+        assert flock_bonus()[0] == 1.0
+        line_up(*[RED] * 6)
+        assert flock_bonus()[0] == 0.5

@@ -577,6 +577,12 @@ speed:
 # Score calculation settings
 score:
   score_breakeven_height: 0.33    # Height fraction where score multiplier = 1.0 (0.0 = bottom, 1.0 = top)
+  # Flock bonus: the score is multiplied by how many of your birds are alive (zombies not counted).
+  # Each entry: at least ``birds`` alive -> ``mult``; the first that applies wins. Shown on the start line.
+  flock_bonus:
+    - {birds: 9, mult: 2.0, label: FULL HOUSE}
+    - {birds: 7, mult: 1.0, label: FLOCK}
+    - {birds: 0, mult: 0.5, label: FLOCK}
 
 # Level milestones (18 levels in 6 groups of 3)
 # Distances: 3, 7, 12, 18, 25, 33, 42, 52, 63, 75, 88, 102, 117, 133, 150, 168, 187, 207

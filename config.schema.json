@@ -5381,6 +5381,23 @@
     },
     "score": {
       "properties": {
+        "flock_bonus": {
+          "items": {
+            "properties": {
+              "birds": {
+                "type": "number"
+              },
+              "label": {
+                "type": "string"
+              },
+              "mult": {
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
         "score_breakeven_height": {
           "type": "number"
         }

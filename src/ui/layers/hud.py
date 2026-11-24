@@ -4,7 +4,7 @@ from src.core import constants, state
 from src.engine import stats
 from src.engine.birds import get_affected_lanes
 from src.engine.grades import compute_grade_from_xp, grade_progress
-from src.engine.progression import compute_prestige
+from src.engine.progression import compute_prestige, flock_bonus
 from src.entities.sprites import BLUE, DARK_GRAY, GREEN, RED, YELLOW, get_biome_name
 from src.ui.colors import (
     HEADER_ACCENT,
@@ -175,6 +175,18 @@ def draw_starting_line(fb):
                 for x in range(lane_start, lane_end):
                     if x % 2 == 0:  # Same alternating pattern as global tailwind
                         fb.put(GAME_X_OFFSET + x, starting_line_y + HEADER_HEIGHT, '^', BLUE)
+
+    _draw_flock_bonus(fb, starting_line_y + HEADER_HEIGHT)
+
+
+def _draw_flock_bonus(fb, row):
+    """The flock bonus, in the middle of the start line: ' FULL HOUSE x2 '."""
+    mult, label = flock_bonus()
+    text = f' {label} x{mult:g} '
+    color = GREEN if mult > 1 else (RED if mult < 1 else '')
+    start = max(0, (constants.layout.width - len(text)) // 2)
+    for k, ch in enumerate(text):
+        fb.put(GAME_X_OFFSET + start + k, row, ch, color)
 
 
 def draw_center_of_mass(fb):

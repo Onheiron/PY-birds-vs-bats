@@ -185,6 +185,24 @@ def compute_prestige():
     return float(total)
 
 
+def flock_alive():
+    """Your living birds (a zombie is not yours any more)."""
+    from src.entities.sprites import ZOMBIE
+
+    birds = state.birds
+    return sum(1 for i in range(len(birds.colors)) if not birds.lost[i] and birds.colors[i] != ZOMBIE)
+
+
+def flock_bonus():
+    """(multiplier, label) of the flock bonus: more living birds, more score (score.flock_bonus)."""
+    alive = flock_alive()
+    for entry in getattr(constants.score, 'flock_bonus', None) or []:
+        entry = entry if isinstance(entry, dict) else vars(entry)
+        if alive >= int(entry.get('birds', 0)):
+            return float(entry.get('mult', 1.0)), str(entry.get('label', 'FLOCK'))
+    return 1.0, 'FLOCK'
+
+
 def add_score(amount, by_bird=None):
     """Add score (always increases). Used for leaderboard/achievements.
 
@@ -192,7 +210,7 @@ def add_score(amount, by_bird=None):
     """
     amt = float(amount)
     prestige = compute_prestige()
-    score_amount = amt * prestige
+    score_amount = amt * prestige * flock_bonus()[0]
 
     state.game.score += score_amount * 0.2
 
