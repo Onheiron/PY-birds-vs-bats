@@ -114,3 +114,8 @@ def test_a_continued_game_is_recorded_and_replays_exactly():
         time.time = real_time
     runner.replay(recording)
     assert (state.game.level, int(state.game.score), state.game.miles, state.game.lives) == result
+
+
+def test_a_recording_keeps_the_code_commit():
+    data, _ = record_bot_game(frames=60)
+    assert data['commit'] is None or len(data['commit'].rstrip('+')) == 40

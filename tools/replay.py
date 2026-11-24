@@ -158,6 +158,14 @@ def main():
 
     data = recorder.load(path)
     print(f'{path.name}: seed {data["seed"]}, recorded {data.get("date", "?")}, version {data.get("version", "?")}')
+    commit = data.get('commit')
+    current = recorder.code_commit()
+    if commit and current and commit.rstrip('+') != current.rstrip('+'):
+        print(
+            f'Recorded with commit {commit}, this code is {current}: to replay it exactly, git checkout {commit.rstrip("+")}'
+        )
+    elif commit and commit.endswith('+'):
+        print(f'Recorded with local changes on top of commit {commit.rstrip("+")}: the replay may differ.')
 
     observer = Observer()
     observer.install()

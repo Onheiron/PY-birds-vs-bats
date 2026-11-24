@@ -2,7 +2,8 @@
 
 A recording holds what the game needs to run again in the same way: the seed,
 the difficulty, the configuration, the settings, the meta-progression profile,
-the time of every frame and the keys pressed in it.
+the time of every frame and the keys pressed in it, and the git commit of the
+code (``commit``): a replay matches only with that same code.
 
 The play loop shows the game one time per frame: while a frame is processed,
 ``time.time()`` returns the time the frame started (``FrameTime``), so the
@@ -74,6 +75,7 @@ class Recorder:
         self.header = {
             'format': FORMAT,
             'version': _version(),
+            'commit': code_commit(),
             'date': datetime.datetime.now().isoformat(timespec='seconds'),
             'seed': state.game_seed,
             'difficulty': state.settings.difficulty,
@@ -130,6 +132,31 @@ def load(path):
     if data.get('format') != FORMAT:
         raise ValueError(f'{path}: unknown recording format {data.get("format")}')
     return data
+
+
+def code_commit():
+    """The git commit of the code being played ('+' when it has local changes), None outside git.
+
+    A replay needs the very same code: tools/replay.py shows it to check out.
+    """
+    import subprocess
+
+    root = Path(__file__).resolve().parents[2]
+    try:
+        commit = subprocess.run(
+            ['git', 'rev-parse', 'HEAD'], cwd=root, capture_output=True, text=True, timeout=2, check=True
+        ).stdout.strip()
+        dirty = subprocess.run(
+            ['git', 'status', '--porcelain', '--untracked-files=no'],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return commit + ('+' if dirty else '') if commit else None
 
 
 def _version():
