@@ -1381,6 +1381,9 @@
                 },
                 "speed": {
                   "type": "number"
+                },
+                "speed_damage": {
+                  "type": "number"
                 }
               },
               "type": "object"
@@ -1438,6 +1441,9 @@
                   "type": "number"
                 },
                 "speed": {
+                  "type": "number"
+                },
+                "speed_damage": {
                   "type": "number"
                 },
                 "weight": {
@@ -1796,6 +1802,9 @@
                 "speed": {
                   "type": "number"
                 },
+                "speed_damage": {
+                  "type": "number"
+                },
                 "vs_elites": {
                   "type": "number"
                 },
@@ -1828,6 +1837,9 @@
                 "speed": {
                   "type": "number"
                 },
+                "speed_damage": {
+                  "type": "number"
+                },
                 "weight": {
                   "type": "number"
                 }
@@ -1855,6 +1867,9 @@
                   "type": "number"
                 },
                 "speed": {
+                  "type": "number"
+                },
+                "speed_damage": {
                   "type": "number"
                 },
                 "vs_elites": {
@@ -2532,6 +2547,14 @@
                 },
                 "effects": {
                   "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
                     "type": "object"
                   },
                   "type": "array"
@@ -6096,6 +6119,14 @@
                 },
                 "effects": {
                   "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
                     "type": "object"
                   },
                   "type": "array"

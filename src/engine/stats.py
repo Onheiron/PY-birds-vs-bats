@@ -50,7 +50,7 @@ BIRD_STATS = {
     # Attack
     'damage_bonus': StatDef(0, 0, 999, 'flat damage added to the base damage'),
     'damage_mult': StatDef(1.0, 0, 100, 'multiplier on all damage dealt'),
-    'speed_damage': StatDef(1.0, 0, 5, 'how strongly current speed multiplies damage (1 = damage × speed)'),
+    'speed_damage': StatDef(1.0, 1, 5, 'how strongly current speed multiplies damage (1 = damage × speed, never less)'),
     'vs_bats': StatDef(0, -1, 10, 'extra damage against bats (0.5 = +50%)'),
     'vs_obstacles': StatDef(0, -1, 10, 'extra damage against obstacles'),
     'vs_elites': StatDef(0, -1, 10, 'extra damage against elites and bosses'),

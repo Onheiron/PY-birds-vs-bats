@@ -94,7 +94,10 @@ def calculate_bird_damage(bird_idx, target='bat'):
     effective_dmg = max(0, effective_dmg)
     effective_spd = max(1, effective_spd)
 
-    speed_factor = 1 + stats.bird(bird_idx, 'speed_damage') * (effective_spd - 1)
+    speed_damage = stats.bird(bird_idx, 'speed_damage')
+    if bird_color == GLITCH:
+        speed_damage = random.uniform(1.0, 2.0)  # unpredictable: from 1 to 2 on every hit
+    speed_factor = 1 + speed_damage * (effective_spd - 1)
     raw = (gear_bonus + effective_dmg) * speed_factor
     raw *= stats.bird(bird_idx, 'damage_mult') * (1 + stats.bird(bird_idx, VS_STAT.get(target, 'vs_bats')))
     crit = stats.bird(bird_idx, 'crit_chance')

@@ -58,7 +58,7 @@ XP from damage and score from kills divide by it, so they did not change.
 |---|:-:|:-:|---|
 | `damage_bonus` | 0 | 0 … 999 | flat damage added to the base damage |
 | `damage_mult` | 1 | 0 … 100 | multiplier on all damage dealt |
-| `speed_damage` | 1 | 0 … 5 | how strongly current speed multiplies damage (1 = damage × speed) |
+| `speed_damage` | 1 | 1 … 5 | how strongly current speed (with its boosts) multiplies damage (1 = damage × speed, never less); Blue 2, Stealth 1.6, Clockwork and Twister 1.5, Berserk 1.3, White 1.2, Glitch random 1–2 on every hit |
 | `vs_bats` | 0 | -1 … 10 | extra damage against bats (0.5 = +50%) |
 | `vs_obstacles` | 0 | -1 … 10 | extra damage against obstacles |
 | `vs_elites` | 0 | -1 … 10 | extra damage against elites and bosses |
@@ -241,7 +241,7 @@ Generated with `python3 tools/stat_sheets.py`.
 | Clockwork | 20 | 0 | 0 | 0 | 1 | 1.3 | 1 | 5 | 2 |
 | White | 40 | 0 | 0 | 0 | 1 | 1.2 | 1 | 5 | 2 |
 | Orange | 50 | 0 | 0 | 0 | 1 | 1 | 1 | 5 | 2 |
-| Gold | 58 | 0 | 0 | 0 | 1 | 0.7 | 1 | 5 | 2 |
+| Gold | 58 | 0 | 3 | 0 | 1 | 0.7 | 1 | 5 | 2 |
 | Cookie | 29 | 0 | 0 | 0 | 1 | 1 | 1 | 5 | 2 |
 | Stealth | 31 | 0 | 0 | 0 | 1 | 0.9 | 1 | 5 | 2 |
 | Dinosaur | 38 | 0 | 6 | 0 | 1 | 2.5 | 15 | 9 | 3 |
@@ -263,19 +263,19 @@ Generated with `python3 tools/stat_sheets.py`.
 | Blue | 10 | 0 | 1 | 2 | +10% | 0 | 0 | 0 | 5% | 2 | 0% | 0 | 1 |
 | Patchwork | 10 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0% | 2 | 0% | 0 | 1 |
 | Purple | 10 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 5% | 2 | 0% | 0 | 1 |
-| Clockwork | 11 | 0 | 1 | 1 | 0 | 0 | 0 | 3 | 0% | 2 | 0% | 0 | 0.7 |
-| White | 20 | 0 | 1 | 1 | 0 | 0 | +20% | 0 | 0% | 2 | 0% | 0 | 1 |
+| Clockwork | 11 | 0 | 1 | 1.5 | 0 | 0 | 0 | 3 | 0% | 2 | 0% | 0 | 0.7 |
+| White | 20 | 0 | 1 | 1.2 | 0 | 0 | +20% | 0 | 0% | 2 | 0% | 0 | 1 |
 | Orange | 999 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0% | 2 | 0% | 0 | 0 |
 | Gold | 2 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0% | 2 | 0% | 0 | 1 |
 | Cookie | 9 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0% | 2 | 0% | 0 | 1 |
-| Stealth | 75 | 0 | 1 | 1 | 0 | 0 | +30% | 5 | 20% | 2.5 | 0% | 0 | 1 |
+| Stealth | 75 | 0 | 1 | 1.6 | 0 | 0 | +30% | 5 | 20% | 2.5 | 0% | 0 | 1 |
 | Dinosaur | 50 | 0 | 1 | 1 | 0 | +40% | 0 | 0 | 0% | 2 | 0% | 1 | 0.5 |
 | Glitch | 10 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 10% | 3 | 0% | 0 | 1 |
 | Rainbow | 30 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0% | 2 | 0% | 0 | 1 |
-| Twister | 45 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0% | 2 | 0% | 1 | 1 |
+| Twister | 45 | 0 | 1 | 1.5 | 0 | 0 | 0 | 0 | 0% | 2 | 0% | 1 | 1 |
 | Frosty | 28 | 0 | 1 | 1 | 0 | 0 | +10% | 0 | 0% | 2 | 30% | 0 | 0.8 |
 | Poison | 27 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 5% | 2 | 30% | 0 | 1 |
-| Berserk | 40 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 15% | 2 | 30% | 0 | 1.3 |
+| Berserk | 40 | 0 | 1 | 1.3 | 0 | 0 | 0 | 0 | 15% | 2 | 30% | 0 | 1.3 |
 | Rock | 31 | 0 | 1 | 1 | 0 | 0 | 0 | 4 | 0% | 2 | 0% | 1 | 0.6 |
 | Zombie | 1 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0% | 2 | 0% | 0 | 1 |
 
@@ -382,5 +382,5 @@ Generated with `python3 tools/stat_sheets.py`.
 | Rock T2 | 80 (+10%/level) | 3 | 0 | 3 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
 | Cloud T3 | 160 (+10%/level) | 0 | 0 | 5 | 0 | 1.2 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
 | Barrier T4 | 320 (+10%/level) | 2 | 0 | 0 | 8 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 5 | 1 | 1 | 0 |
-| Stalactite (T1 base) | 50 (+10%/level) | 0 | 0 | -3 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 2 | 1 | 1 | 0 |
+| Stalactite (T1 base) | 50 (+10%/level) | 0 | 0 | -3 | 0 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 0 | 3 | 1 | 1 | 0 |
 | Peak (T4 base) | 640 (+10%/level) | 2 | 0 | 0 | 23 | 1 | 0 | 1 | 0 | 1 | 5 | 1 | 60 | 1 | 2 | 5 | 1 | 1 | 0 |
