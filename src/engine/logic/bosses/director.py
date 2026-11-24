@@ -178,6 +178,10 @@ def check_bird_boss_collision():
         # Apply armor reduction (lowered by freezing, bleeding and armor pierce)
         armor_reduction = getattr(boss_cfg, 'armor_reduction', 1)
         if armor_reduction > 0:
+            # Bosses of later worlds are better armored (combat.boss_armor_per_world)
+            per_world = float(getattr(constants.combat, 'boss_armor_per_world', 0))
+            armor_reduction += per_world * (max(1, state.game.level_group) - 1)
+        if armor_reduction > 0:
             armor_reduction = max(0, armor_reduction - afflictions.armor_cut(boss) - stats.bird(i, 'armor_pierce'))
         if bird_color != ORANGE:
             damage = max(1, damage - armor_reduction)

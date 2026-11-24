@@ -3312,6 +3312,9 @@
         "boss_affliction_factor": {
           "type": "number"
         },
+        "boss_armor_per_world": {
+          "type": "number"
+        },
         "boss_hp_mult": {
           "type": "number"
         },
@@ -4069,22 +4072,6 @@
             },
             "worlds": {
               "additionalProperties": {
-                "properties": {
-                  "tiers": {
-                    "additionalProperties": {
-                      "properties": {
-                        "defense": {
-                          "type": "number"
-                        },
-                        "hp_mult": {
-                          "type": "number"
-                        }
-                      },
-                      "type": "object"
-                    },
-                    "type": "object"
-                  }
-                },
                 "type": "object"
               },
               "type": "object"

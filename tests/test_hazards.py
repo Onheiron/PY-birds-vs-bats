@@ -93,7 +93,7 @@ def test_rocks_are_harder_in_the_cave():
     with Simulation(seed=3, key_rate=0) as sim:
         in_world(sim, 5)
         rock = enemy_stats.equip_obstacle({'tier': 2, 'hp': 80})
-        assert rock['hp'] == 120 and enemy_stats.get(rock, 'defense') == 6
+        assert rock['hp'] == 120 and enemy_stats.get(rock, 'defense') == 3 + 3 + 4  # tier, cave rocks, world 5
 
 
 def test_fog_only_in_the_mountains():
