@@ -98,6 +98,14 @@ class Skill:
     sweep: bool = False
     # Keys of a combo played without looking (the SPACE, arrows, SPACE of a swap): frames apart
     combo_interval: int = 4
+    # UP presses per second the free UP hand adds out of habit, whatever is under the
+    # cursor (they fire the power of a rising bird, or do nothing). Players do this a lot
+    idle_up_rate: float = 0.0
+    # Learned choices ('learned' card or pact policy, see tools/fit_bot.py): how much
+    # the player likes each card / pact (id -> weight; 'refuse' for refusing a pact),
+    # and how much a rarer card weighs on top of that
+    card_prefs: tuple = ()
+    rarity_pull: float = 0.5
 
 
 PROFILES = {
@@ -138,6 +146,45 @@ PROFILES = {
         memory=0.5,
     ),
 }
+
+
+# The 'me' profile shipped with the game (fitted from the author's games), used
+# until tools/fit_bot.py writes yours to ~/.bvb/bot_profile.json
+SHIPPED_PLAYER_PROFILE = 'player_profile.json'
+
+
+def load_player_profile(path=None):
+    """The 'me' profile: yours (tools/fit_bot.py), else the shipped one; None if neither reads."""
+    import json
+    from pathlib import Path
+
+    paths = (
+        [Path(path)]
+        if path
+        else [Path.home() / '.bvb' / 'bot_profile.json', Path(__file__).with_name(SHIPPED_PLAYER_PROFILE)]
+    )
+    fields = None
+    for candidate in paths:
+        try:
+            fields = json.loads(candidate.read_text())['skill']
+            break
+        except (OSError, ValueError, KeyError):
+            continue
+    if fields is None:
+        return None
+    known = Skill.__dataclass_fields__
+    fields = {k: v for k, v in fields.items() if k in known}
+    if 'card_prefs' in fields:
+        fields['card_prefs'] = tuple((k, float(v)) for k, v in dict(fields['card_prefs']).items())
+    for key in ('favorites',):
+        if key in fields:
+            fields[key] = tuple(fields[key])
+    return Skill(**fields)
+
+
+_me = load_player_profile()
+if _me is not None:
+    PROFILES['me'] = _me  # plays like you (tools/fit_bot.py)
 
 
 def profile(name, **changes):
@@ -546,6 +593,8 @@ class Bot:
         """Index of the option the bot wants in a choice on screen."""
         options = offer['cards']
         policy = self.skill.pact_policy if offer['kind'] == 'pact' else self.skill.card_policy
+        if policy == 'learned':
+            return self._learned_choice(options)
         if policy == 'random':
             return self.rng.randrange(len(options))
         if policy == 'adaptive':
@@ -565,6 +614,21 @@ class Bot:
             if card['kind'] == 'bird' and not strategy.wants_bird(card['bird'], self.skill):
                 return 0
             return (rank[card['rarity']] + 1) * value.get(card['kind'], 1)
+
+        return max(range(len(options)), key=worth)
+
+    def _learned_choice(self, options):
+        """The option the player would take: their liking for it, a little more for rarer ones."""
+        prefs = dict(self.skill.card_prefs)
+        default = sum(prefs.values()) / len(prefs) if prefs else 0.5
+        rank = {'common': 0, 'uncommon': 1, 'rare': 2, 'epic': 3, 'legendary': 4, 'mythical': 5}
+
+        def worth(i):
+            card = options[i]
+            liking = prefs.get(card.get('id'), default)
+            if card.get('kind') == 'bird' and not strategy.wants_bird(card['bird'], self.skill):
+                liking = 0
+            return liking * (1 + self.skill.rarity_pull * rank.get(card.get('rarity'), 0)) * self.rng.uniform(0.8, 1.2)
 
         return max(range(len(options)), key=worth)
 
@@ -776,6 +840,17 @@ class Bot:
             keys.append(up)
             self.up_cooldown = self.skill.key_interval
             self.counts['sweep bounces'] += 1
+        elif (
+            two_hands
+            and self.up_cooldown == 0
+            and self.plan is None
+            and self.skill.idle_up_rate > 0
+            and self.rng.random() < self.skill.idle_up_rate / 60
+            and not self._harmful_press()
+        ):
+            keys.append(up)  # out of habit
+            self.up_cooldown = self.skill.key_interval
+            self.counts['habit UPs'] += 1
         if self.cooldown == 0 or (two_hands and self.up_cooldown == 0):
             plan = self.plan
             key = self.decide()

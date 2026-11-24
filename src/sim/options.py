@@ -42,7 +42,8 @@ def add_game_options(parser, bot_default='expert'):
         '--bot',
         default=bot_default,
         metavar='PROFILE',
-        help=f'bot skill: perfect, expert, average, novice (default {bot_default})',
+        help=f'bot skill: perfect, expert, average, novice, me (plays like you: tools/fit_bot.py) '
+        f'(default {bot_default})',
     )
     parser.add_argument(
         '--bot-set',

@@ -132,3 +132,17 @@ def test_the_bot_lets_raised_zombies_fall():
         bot = Bot(PROFILES['expert'])
         bot._update_abandon()
         assert 3 in bot.abandon
+
+
+def test_the_learned_choice_follows_the_players_liking(tmp_path):
+    import json
+
+    from src.sim.bot import Bot, load_player_profile
+
+    path = tmp_path / 'profile.json'
+    path.write_text(json.dumps({'skill': {'card_policy': 'learned', 'card_prefs': {'a': 0.9, 'b': 0.1}}}))
+    skill = load_player_profile(path)
+    assert skill.card_policy == 'learned' and dict(skill.card_prefs) == {'a': 0.9, 'b': 0.1}
+    bot = Bot(skill, seed=1)
+    options = [{'id': 'b', 'kind': 'stat', 'rarity': 'rare'}, {'id': 'a', 'kind': 'stat', 'rarity': 'common'}]
+    assert bot._learned_choice(options) == 1  # liked far more, though less rare

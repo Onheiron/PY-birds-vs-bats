@@ -247,13 +247,43 @@ python3 game.py --bot expert
 python3 game.py --bot perfect --speed 4 --start-level 10 --difficulty legendary
 ```
 
-Options: `--bot` (`perfect`, `expert`, `average`, `novice`), `--bot-set
+Options: `--bot` (`perfect`, `expert`, `average`, `novice`, `me`), `--bot-set
 key_interval=3` to tweak it, `--seed`, `--difficulty`, `--start-level`,
 `--formation RED,RED,...`, `--set section.key=value`, `--speed`, `--games N`
 (back to back, one seed after the other), `--sound`. While it plays: `+`/`-`
 change speed (x0.25 to x16), `B` takes over the controls and gives them back,
 `P` opens the pause menu, `Q` quits. A watched game is the same game the
 simulator plays for that seed and those options.
+
+### A bot that plays like you
+
+The `me` bot plays like the person whose games it was fitted from: same key
+rate, same habits (how high birds are bounced, UPs pressed out of habit,
+swaps to brake, the gear kept), same liking for cards and pacts. It comes
+fitted from the author's games; fit it to yours from your recordings:
+
+```bash
+python3 tools/fit_bot.py
+```
+
+```bash
+python3 tools/fit_bot.py --calibrate
+```
+
+The first measures every recording in `~/.bvb/recordings/` (replayed with the
+code it was played with, from its commit) and writes `~/.bvb/bot_profile.json`;
+`--calibrate` also plays the bot on your seeds and tunes it until its games
+look like yours (a few minutes). Then test a change without playing:
+
+```bash
+python3 tools/simulate.py --bot me --runs 20
+```
+
+```bash
+python3 game.py --bot me
+```
+
+More recordings make a better fit: run it again after a few games.
 
 ### Recording and replaying your games
 
