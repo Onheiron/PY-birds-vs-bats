@@ -182,7 +182,7 @@ def enemy_sheets():
                     row.append(str(bat['max_hp']) if name == 'hp' else fmt(name, enemy_stats.get(bat, name)))
                 rows.append(row)
                 if kind and tier == tiers[-1]:
-                    used = [n for n in ABILITY_STATS.get(kind, ())]
+                    used = list(ABILITY_STATS.get(kind, ()))
                     ability_rows.append([label] + ['; '.join(f'{n} {fmt(n, enemy_stats.get(bat, n))}' for n in used)])
         obs_rows = []
         names = {1: 'Tree', 2: 'Rock', 3: 'Cloud', 4: 'Barrier'}

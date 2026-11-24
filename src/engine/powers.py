@@ -17,11 +17,15 @@ from src.engine.progression import hp_scale
 from src.entities.bird_types import BirdType, get_bird_type_by_color
 from src.entities.sprites import (
     GLITCH,
+    GOLD,
     PATCHWORK,
     PURPLE,
     RED,
     YELLOW,
 )
+
+# Birds other birds' powers leave alone (no bounce, slow, relay or wind)
+UNTOUCHED_BY_POWERS = (GOLD,)
 
 
 def activate_bird_power(bird_idx):
@@ -67,6 +71,8 @@ def _power_yellow(bird_idx, bird_lane):
         adj_bird = find_bird_in_lane(adj_lane)
         if adj_bird < 0 or state.birds.lost[adj_bird]:
             continue
+        if state.birds.colors[adj_bird] in UNTOUCHED_BY_POWERS:
+            continue  # the Gold keeps to itself: other birds' powers do not reach it
         if state.birds.vy[adj_bird] != 1:  # Must be falling
             continue
 
@@ -208,6 +214,8 @@ def _power_white(bird_idx, bird_lane):
         adj_bird = find_bird_in_lane(adj_lane)
         if adj_bird < 0 or state.birds.lost[adj_bird]:
             continue
+        if state.birds.colors[adj_bird] in UNTOUCHED_BY_POWERS:
+            continue  # the Gold keeps to itself: other birds' powers do not reach it
 
         adj_color = state.birds.colors[adj_bird]
 

@@ -9,6 +9,7 @@ from src.entities.sprites import (
     CLOCKWORK,
     COOKIE,
     FROSTY,
+    GOLD,
     ORANGE,
     PATCHWORK,
     RED,
@@ -116,3 +117,14 @@ def test_a_frosty_next_to_a_red_freezes_what_its_shots_hit():
         game_state.special.red_projectiles[:] = [shot]
         collisions.check_projectile_collision()
         assert id(target) in game_state.special.frozen_enemies
+
+
+def test_other_birds_powers_leave_the_gold_alone():
+    with Simulation(seed=1, key_rate=0):
+        line_up(GOLD, YELLOW, GOLD)
+        birds = game_state.birds
+        for i in (0, 2):
+            birds.vy[i], birds.y[i] = 1, 10
+        powers._power_yellow(1, 1)
+        assert birds.vy[0] == 1 and birds.vy[2] == 1  # not bounced
+        assert 0 not in game_state.special.speed_boosts and 2 not in game_state.special.speed_boosts

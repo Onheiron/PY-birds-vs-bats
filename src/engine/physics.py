@@ -6,7 +6,7 @@ import random
 from src.core import constants, state
 from src.engine import clock, enemy_stats, hazards, stats, synergies
 from src.engine.birds import reset_bird_power, set_ball_vy
-from src.entities.sprites import CLOCKWORK, GLITCH
+from src.entities.sprites import CLOCKWORK, GLITCH, GOLD
 
 
 def move_interval(speed):
@@ -124,8 +124,8 @@ def update_bird_positions():
                 # Expired, clean up
                 del state.special.twister_tailwind[twister_idx]
                 continue
-            # Check if this bird is in one of the affected lanes
-            if bird_lane in tw_info['lanes']:
+            # Check if this bird is in one of the affected lanes (a Twister's wind skips the Gold)
+            if bird_lane in tw_info['lanes'] and state.birds.colors[i] != GOLD:
                 tw_up_bonus = getattr(constants.twister, 'tailwind_up_bonus', 2)
                 tw_down_pen = getattr(constants.twister, 'tailwind_down_penalty', 1)
                 if state.birds.vy[i] == -1 and tw_up_bonus > 0:

@@ -32,6 +32,14 @@ from src.entities.sprites import (
 from src.ui.colors import apply_bold, get_render_color
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
+# Intangible Stealth: white, greys down to black, a moment unseen (None), and back
+STEALTH_FADE = (
+    ['\033[38;5;255m', '\033[38;5;252m', '\033[38;5;249m', '\033[38;5;246m', '\033[38;5;243m']
+    + ['\033[38;5;240m', '\033[38;5;237m', '\033[38;5;235m', None, None, None, None]
+    + ['\033[38;5;235m', '\033[38;5;237m', '\033[38;5;240m', '\033[38;5;243m']
+    + ['\033[38;5;246m', '\033[38;5;249m', '\033[38;5;252m']
+)
+
 # Flash colours of afflicted birds (the indicator above them uses the same)
 POISONED_COLOR = '\033[38;5;46m'
 BLEEDING_COLOR = '\033[38;5;196m'
@@ -193,17 +201,10 @@ def draw_birds(fb):
             if tangible:
                 bird_color = get_render_color(WHITE)
             else:
-                # Smooth flicker: 6-step gradient from bright to dim and back
-                stealth_phase = (state.game.frame_count // 3) % 6
-                stealth_colors = [
-                    '\033[38;5;255m',  # Bright white
-                    '\033[38;5;250m',  # Light gray
-                    '\033[38;5;245m',  # Medium gray
-                    '\033[38;5;240m',  # Dark gray
-                    '\033[38;5;245m',  # Medium gray (going back up)
-                    '\033[38;5;250m',  # Light gray (going back up)
-                ]
-                bird_color = stealth_colors[stealth_phase]
+                # Intangible: a smooth fade out to nothing and back in
+                bird_color = STEALTH_FADE[(state.game.frame_count // 2) % len(STEALTH_FADE)]
+                if bird_color is None:
+                    continue  # fully faded: not drawn
         elif state.birds.colors[i] == BLUE and state.birds.power_used[i]:
             bird_color = get_render_color(CYAN)
 
