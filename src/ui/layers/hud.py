@@ -57,21 +57,18 @@ def draw_header(fb):
     if _header_cache.restore(fb, cache_key, 0, 0):
         return
 
-    # Calculate box positions - 4 boxes evenly spaced
-    box_width = 18
-    total_boxes_width = box_width * 4 + 6  # 4 boxes + spacing
+    # Box positions: the score box is wider, so big numbers keep off its right border
+    widths = [18, 18, 21, 18]
+    total_boxes_width = sum(widths) + 6  # 4 boxes + spacing
     start_x = (TOTAL_WIDTH - total_boxes_width) // 2
-
-    box1_x = start_x
-    box2_x = start_x + box_width + 2
-    box3_x = start_x + (box_width + 2) * 2
-    box4_x = start_x + (box_width + 2) * 3
+    xs = [start_x + sum(widths[:k]) + 2 * k for k in range(4)]
+    box1_x, box2_x, box3_x, box4_x = xs
+    box_width = widths[0]
+    score_width = widths[2]
 
     # Row 0: Top borders
-    fb.put_string(box1_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
-    fb.put_string(box2_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
-    fb.put_string(box3_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
-    fb.put_string(box4_x, 0, "╔" + "═" * (box_width - 2) + "╗", HEADER_BORDER)
+    for x, w in zip(xs, widths, strict=True):
+        fb.put_string(x, 0, "╔" + "═" * (w - 2) + "╗", HEADER_BORDER)
 
     # Row 1: Labels with values
     # Box 1: LIVES (hearts centered)
@@ -98,9 +95,9 @@ def draw_header(fb):
     # Box 3: SCORE
     fb.put(box3_x, 1, '║', HEADER_BORDER)
     fb.put_string(box3_x + 1, 1, " SCORE ", HEADER_LABEL)
-    score_val = f"{score_display:>9}"
+    score_val = f"{score_display:>{score_width - 10}} "  # a space before the border
     fb.put_string(box3_x + 8, 1, score_val, HEADER_ACCENT)
-    fb.put(box3_x + box_width - 1, 1, '║', HEADER_BORDER)
+    fb.put(box3_x + score_width - 1, 1, '║', HEADER_BORDER)
 
     # Box 4: BIOME
     fb.put(box4_x, 1, '║', HEADER_BORDER)
@@ -110,10 +107,8 @@ def draw_header(fb):
     fb.put(box4_x + box_width - 1, 1, '║', HEADER_BORDER)
 
     # Row 2: Bottom borders
-    fb.put_string(box1_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
-    fb.put_string(box2_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
-    fb.put_string(box3_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
-    fb.put_string(box4_x, 2, "╚" + "═" * (box_width - 2) + "╝", HEADER_BORDER)
+    for x, w in zip(xs, widths, strict=True):
+        fb.put_string(x, 2, "╚" + "═" * (w - 2) + "╝", HEADER_BORDER)
 
     # Row 3: Separator line (this is where game area starts at row 4)
     fb.put_string(0, 3, "═" * TOTAL_WIDTH, HEADER_BORDER)

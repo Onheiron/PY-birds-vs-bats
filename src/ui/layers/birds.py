@@ -37,40 +37,32 @@ from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 # Rainbow: colour changes per second (the whole bird at once)
 RAINBOW_STEPS_PER_SECOND = 6
 
-# Glitch: what a corrupted frame may show
-GLITCH_SPRITES = (BIRD_UP_1, BIRD_UP_2, BIRD_DOWN_1, BIRD_DOWN_2)
-GLITCH_GLYPHS = '#%&?!▓░▒¿§'
-GLITCH_COLORS = ('\033[1;38;5;46m', '\033[1;38;5;51m', '\033[1;38;5;201m', '\033[1;38;5;226m', '\033[1;38;5;255m')
+# Glitch: frames it borrows halves from (wings open / closed, up / down)
+GLITCH_UP = (BIRD_UP_1, BIRD_UP_2)
+GLITCH_DOWN = (BIRD_DOWN_1, BIRD_DOWN_2)
 
 
-def _glitch(i, sprite, x_pos):
-    """A glitched look for Glitch bird ``i`` this instant: (sprite, x, {(line, col): colour}).
+def _glitch(i, sprite, rising):
+    """A glitched sprite for Glitch bird ``i`` this instant.
 
-    Changes a few times a second; about one moment in four it shows clean. Uses
-    its own random generator: drawing never touches the game's random numbers.
+    Only pieces of its real frames: the left wing from one frame and the right
+    wing from another (one open, one closed), now and then the frames of the
+    other direction (it looks upside down). Changes a few times a second;
+    about one moment in four it shows clean. Uses its own random generator:
+    drawing never touches the game's random numbers.
     """
     rng = random.Random(i * 7919 + int(clock.now() * 8))
-    roll = rng.random()
-    if roll < 0.25:
-        return sprite, x_pos, {}
-    if roll < 0.50:
-        # One wing open, the other closed: columns from different frames
-        width = len(sprite[0])
-        sprite = [''.join(rng.choice(GLITCH_SPRITES)[line][col] for col in range(width)) for line in range(2)]
-    elif roll < 0.70:
-        # Upside down: the frame of the other direction, lines swapped
-        flipped = rng.choice(GLITCH_SPRITES)
-        sprite = [flipped[1], flipped[0]]
-    else:
-        sprite = list(rng.choice(GLITCH_SPRITES))
-    if rng.random() < 0.35:
-        x_pos += rng.choice((-1, 1))  # jumps a column
-    colours = {}
-    for _ in range(rng.randint(0, 2)):
-        line, col = rng.randrange(len(sprite)), rng.randrange(len(sprite[0]))
-        sprite[line] = sprite[line][:col] + rng.choice(GLITCH_GLYPHS) + sprite[line][col + 1 :]
-        colours[(line, col)] = rng.choice(GLITCH_COLORS)
-    return sprite, x_pos, colours
+    if rng.random() < 0.25:
+        return sprite
+    frames = GLITCH_UP if rising else GLITCH_DOWN
+    if rng.random() < 0.25:
+        frames = GLITCH_DOWN if rising else GLITCH_UP  # flipped
+    left, right = rng.choice(frames), rng.choice(frames)
+    if left is right:
+        right = frames[1] if left is frames[0] else frames[0]
+    if rng.random() < 0.5:
+        left, right = right, left
+    return [left[line][0] + left[line][1] + right[line][2] for line in range(2)]
 
 
 # Intangible Stealth: white, greys down to black, a moment unseen (None), and back
@@ -258,11 +250,9 @@ def draw_birds(fb):
         # Apply bold modifier for foreground game elements
         bird_color = apply_bold(bird_color)
 
-        # Glitch: a corrupted sprite most of the time (mixed wings, flipped, shifted, garbled)
-        is_glitch = state.birds.colors[i] == GLITCH and not is_frozen and not flash
-        glitch_colors = None
-        if is_glitch:
-            sprite, x_pos, glitch_colors = _glitch(i, sprite, x_pos)
+        # Glitch: most of the time its wings come from different frames
+        if state.birds.colors[i] == GLITCH and not is_frozen and not flash:
+            sprite = _glitch(i, sprite, state.birds.vy[i] == -1)
 
         # Patchwork uses multicolor rendering (fixed colors by position)
         is_patchwork = state.birds.colors[i] == PATCHWORK and not is_frozen and not flash
@@ -300,9 +290,7 @@ def draw_birds(fb):
                 x_off = len(line) // 2
                 for ci, char in enumerate(line):
                     if char != ' ':
-                        if glitch_colors is not None:
-                            char_color = glitch_colors.get((line_idx, ci), bird_color)
-                        elif is_patchwork:
+                        if is_patchwork:
                             # Color based on horizontal position only (stable across frames)
                             char_color = apply_bold(patchwork_colors[ci % 3])
                         elif is_clockwork and char in ("'", "."):
