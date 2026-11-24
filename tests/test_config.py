@@ -152,7 +152,14 @@ def test_config_files_only_use_known_bat_settings():
     import yaml
 
     stale = ('spawn_rate_by_level', 'max_bats_by_level', 'tier_weights_by_level', 'spawn_probability_by_level')
-    for name in ('config.yml', 'config_easy.yml', 'config_hard.yml', 'config_hell.yml', 'hardmode.yml', 'config.sample.yml'):
+    for name in (
+        'config.yml',
+        'config_easy.yml',
+        'config_hard.yml',
+        'config_hell.yml',
+        'hardmode.yml',
+        'config.sample.yml',
+    ):
         text = (ROOT / name).read_text()
         yaml.safe_load(text)
         assert not any(key in text for key in stale), name

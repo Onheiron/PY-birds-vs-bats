@@ -96,3 +96,39 @@ def test_cli_end_to_end(tmp_path, capsys):
     text = capsys.readouterr().out
     assert 'level reached, median' in text and 'Birds lost per game' in text
     assert out.exists()
+
+
+def test_the_bot_lets_a_falling_bird_reach_the_loot_below_it():
+    from src.sim.bot import Bot
+    from tests.harness import Simulation
+
+    with Simulation(seed=1, key_rate=0) as sim:
+        birds = sim.state.birds
+        for i in range(len(birds.colors)):
+            birds.random_lanes[i] = i
+            birds.lost[i] = i != 4
+            birds.vy[i] = -1
+        birds.y[4], birds.vy[4] = 14, 1
+        x = sim.constants.layout.lane_positions[4]
+        sim.state.items.loot_items[:] = [{'type': 'egg', 'x_pos': x, 'y_pos': 22, 'rarity': 'common'}]
+        bot = Bot(PROFILES['expert'])
+        bot.frame = 100
+        bot.fall_seen[4] = 0
+        bot._perceive()
+        target = [t for t in bot._urgent_targets() if t[2] == 4][0]
+        assert target[3] is False and 4 in bot.waiting_for_loot  # waits for the egg
+        sim.state.items.loot_items[:] = []
+        bot._perceive()
+        target = [t for t in bot._urgent_targets() if t[2] == 4][0]
+        assert target[3] is True
+
+
+def test_the_bot_lets_raised_zombies_fall():
+    from src.sim.bot import Bot
+    from tests.harness import Simulation
+
+    with Simulation(seed=1, key_rate=0) as sim:
+        sim.state.special.zombies[3] = {'raised': True}
+        bot = Bot(PROFILES['expert'])
+        bot._update_abandon()
+        assert 3 in bot.abandon

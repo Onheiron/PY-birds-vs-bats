@@ -33,7 +33,7 @@ from collections import Counter
 from dataclasses import dataclass, replace
 
 from src.core import constants, state
-from src.engine import bird_kinds, clock, hazards, stats
+from src.engine import bird_kinds, clock, enemy_stats, hazards, stats
 from src.engine.birds import get_affected_lanes
 from src.engine.logic.helpers import get_obstacle_lanes
 from src.engine.timing import frames_per_update
@@ -88,6 +88,7 @@ class Skill:
     purple_charge: float = 2.0  # seconds a Purple charges before release (0 = fire at once)
     red_battery: bool = True  # hold a Red shot until its shooter neighbours rise, unless the enemy is close
     power_travel: bool = True  # move the cursor just to fire a power (False: only powers under the cursor)
+    collect_loot: bool = True  # let a falling bird pass through loot in its lane before bouncing it
     # Seconds it keeps track of a bird it cannot see any more (dark, fog), guessing
     # where it is from where it last saw it going; then it forgets it until it sees it again
     memory: float = 2.0
@@ -171,6 +172,7 @@ class Bot:
         self.up_cooldown = 0  # the UP hand, when playing with two hands
         self.chasing = None  # the bird the cursor is running for
         self.view = {}  # bird -> (y, vy) it sees or remembers this frame
+        self.waiting_for_loot = set()  # falling birds it lets fall through loot first
         self.memory = {}  # bird -> where it last saw it
         self.lit = None  # darkness this frame: (lane, row) -> level (None: no darkness)
         self.fall_seen = {}  # bird -> frame it was first seen falling
@@ -303,6 +305,12 @@ class Bot:
             # Worth bouncing early once it has fallen far enough or is about to pass an
             # enemy; not while an enemy above would stop it, unless time runs out
             ready = not falling or poisoned or self._y(i) >= self._bounce_line() or below is not None
+            # Loot further down its lane: let it fall through the loot first, while there is time
+            if falling and ready and self._loot_below(i) and deadline - needed > self.skill.safety_frames * 3:
+                ready = False
+                self.waiting_for_loot.add(i)
+            else:
+                self.waiting_for_loot.discard(i)
             if ready and above:
                 ready = deadline - needed < self.skill.dodge_margin
             targets.append((deadline - needed, lane, i, ready))
@@ -384,6 +392,8 @@ class Bot:
                 continue
             if self._power_useful(i, enemy_lanes):
                 cost = self._travel_frames(lane)
+                if lane in self._priority_lanes():
+                    cost -= 60  # a healer or a necromancer above: shoot it first
                 if best is None or cost < best[0]:
                     best = (cost, lane)
         return best[1] if best else None
@@ -478,6 +488,19 @@ class Bot:
                 lanes_by_bird[i] = (lane,)
         return lanes_by_bird
 
+    def _priority_lanes(self):
+        """Lanes under a healer or a necromancer it can see (they make the other bats worse)."""
+        positions = constants.layout.lane_positions
+        lanes = set()
+        for bat in state.enemies.bats:
+            if bat.get('kind') not in ('healer', 'necromancer'):
+                continue
+            for lane, x in enumerate(positions):
+                under = bat['x_pos'] - 1 <= x <= bat['x_pos'] + enemy_stats.bat_width(bat) + 1
+                if under and self._sees(lane, bat['y_pos']):
+                    lanes.add(lane)
+        return lanes
+
     def _falling_neighbour(self, lane, reach):
         for i, bird_lane in enumerate(state.birds.random_lanes):
             if state.birds.lost[i] or bird_lane == lane or abs(bird_lane - lane) > reach:
@@ -558,6 +581,8 @@ class Bot:
     def _update_abandon(self):
         before = self.abandon
         self.abandon = strategy.abandoned(self.skill)
+        # Zombies a necromancer raised cost no life when they fall, and they bite: let them go
+        self.abandon |= {i for i, z in state.special.zombies.items() if z.get('raised')}
         self.counts['birds let go'] += len(self.abandon - before)
 
     def _plan_swap(self, slack):
@@ -717,7 +742,21 @@ class Bot:
         if self.plan is not None or self._harmful_press():
             return False
         cursor_lanes = set(get_affected_lanes())
-        return any(t[1] in cursor_lanes for t in self._urgent_targets())
+        return any(t[1] in cursor_lanes and t[2] not in self.waiting_for_loot for t in self._urgent_targets())
+
+    def _loot_below(self, i):
+        """Is there loot (an egg, a firefly...) below falling bird ``i`` in its lane, that it would collect?"""
+        if not self.skill.collect_loot:
+            return False
+        x = constants.layout.lane_positions[state.birds.random_lanes[i]]
+        y = self._y(i)
+        reach = stats.bird(i, 'pickup_radius')
+        for loot in state.items.loot_items:
+            if loot['type'] == 'orange_egg':
+                continue
+            if abs(loot['x_pos'] - x) <= reach and y + 2 < loot['y_pos'] < constants.layout.height - 2:
+                return True
+        return False
 
     def press(self):
         """Keys pressed this frame, respecting the key rate of each hand.
