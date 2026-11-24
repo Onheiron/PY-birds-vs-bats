@@ -839,12 +839,12 @@ cards:
   # then prestige (× prestige_scale) pushes towards rarer eggs as set by the
   # difficulty (difficulty.<mode>.rarity_factor / tier_scaling / base_rarity_boost).
   # Expected in a normal run (~40 eggs): ~1–2 epic, a legendary every 2–3 runs,
-  # a mythical about once in 15 runs.
+  # a mythical about once in 1000 runs (luck never turns an egg mythical).
   rarity_weights:
     #          common uncommon rare epic legendary mythical
     mini_bat: [72,    21,      6,   1,   0,        0]
-    bat:      [64,    24,      8.5, 3,   0.4,      0.04]
-    boss:     [10,    40,      35,  12,  2.5,      0.3]
+    bat:      [64,    24,      8.5, 3,   0.4,      0.0008]
+    boss:     [10,    40,      35,  12,  2.5,      0.008]
   tier_shift: 0.05
   prestige_scale: 0.03
   other_slots:

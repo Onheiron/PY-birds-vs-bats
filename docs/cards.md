@@ -18,11 +18,13 @@ Each bat tier above 1 shifts these a little towards rarer eggs
 (`tier_shift`), and so does prestige (`prestige_scale`, through the
 difficulty's prestige rules). Elites drop one rarity higher; the flock's
 `egg_luck` (from cards and pacts, at most 25%) upgrades drops; a bird's
-`luck` upgrades an egg it collects.
+`luck` upgrades an egg it collects. None of these upgrades goes past
+legendary: a mythical egg only drops as such, from its tiny weight (bats
+0.0008, bosses 0.008), about once in 1000 runs.
 
-Measured over 60 simulated runs (expert bot, ~50 eggs per run): 47% common,
-29% uncommon, 15% rare, 6.6% epic, 2% legendary, 0.5% mythical; a legendary
-egg in one run out of three, a mythical one in one run out of fourteen.
+Measured over 60 simulated runs before that change (expert bot, ~50 eggs per
+run): 47% common, 29% uncommon, 15% rare, 6.6% epic, 2% legendary; a legendary
+egg in one run out of three.
 
 Picking an egg up **stops the game** and offers cards, listed top to bottom:
 as many as the flock stat `choices` (3 to start, up to 6). **↑ / ↓** select,

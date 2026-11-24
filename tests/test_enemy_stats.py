@@ -52,6 +52,8 @@ def test_elites_get_affixes_hp_and_rewards():
         assert enemy_stats.affix_names(b['affixes']) == 'Warded Hulking'
         assert enemy_stats.upgrade_rarity('rare', enemy_stats.get(b, 'loot_rarity_bonus')) == 'epic'
         assert enemy_stats.upgrade_rarity('mythical', 3) == 'mythical'
+        assert enemy_stats.upgrade_rarity('legendary', 1) == 'legendary'  # luck never makes a mythical
+        assert enemy_stats.upgrade_rarity('epic', 3) == 'legendary'
 
 
 def test_regeneration_heals_over_game_time():

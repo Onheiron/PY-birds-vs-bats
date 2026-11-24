@@ -360,8 +360,15 @@ def equip_obstacle(obstacle):
 
 
 def upgrade_rarity(rarity, steps):
-    """``rarity`` moved up by ``steps`` (capped at mythical)."""
+    """``rarity`` moved up by ``steps`` (luck, elites), at most to legendary.
+
+    Mythical is never reached this way: a mythical egg only comes from its own
+    tiny drop weight (cards.rarity_weights).
+    """
     steps = int(steps)
     if steps <= 0 or rarity not in RARITIES:
         return rarity
-    return RARITIES[min(len(RARITIES) - 1, RARITIES.index(rarity) + steps)]
+    top = RARITIES.index('legendary')
+    if RARITIES.index(rarity) >= top:
+        return rarity
+    return RARITIES[min(top, RARITIES.index(rarity) + steps)]
