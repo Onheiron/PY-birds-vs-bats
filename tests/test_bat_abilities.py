@@ -204,3 +204,20 @@ def test_an_elite_plague_bleeds_first_then_poisons():
         update_special_bird_states()
         assert 4 not in game_state.special.bleeding_birds
         assert game_state.special.poisoned_birds[4]['cure_attempts_needed'] == 3
+
+
+def test_a_jumpscare_shows_its_face_for_half_a_game_second_whatever_the_gear():
+    from src.core import state as game_state
+    from src.engine import clock
+    from src.engine.logic import mini_bats
+
+    with Simulation(seed=1, key_rate=0):
+        obstacle = {'id': 999, 'lane': 4, 'y_pos': 10, 'tier': 3, 'hp': 100, 'sprite': ['###'], 'sprite_width': 3}
+        game_state.enemies.obstacles.append(obstacle)
+        mini_bats.spawn_jumpscare_bat_from_obstacle(obstacle)
+        bat = game_state.enemies.mini_bats[-1]
+        for _ in range(20):
+            mini_bats.update_mini_bats()  # many ticks, no game time passing
+        assert bat['scary_face_done']
+        assert bat['scary_face_until'] - clock.now() == 0.5
+        assert bat['visible_until'] > clock.now()

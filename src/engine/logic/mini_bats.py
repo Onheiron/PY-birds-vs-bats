@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import bird_kinds, enemy_stats
+from src.engine import bird_kinds, clock, enemy_stats
 from src.engine.birds import scare_bird, set_ball_vy, stun_bird
 from src.engine.logic.damage import calculate_bird_damage, handle_mini_bat_death
 from src.engine.progression import award_damage_xp
@@ -91,8 +91,7 @@ def spawn_jumpscare_bat_from_obstacle(obstacle):
         'visited_obstacles': {obs_id} if obs_id is not None else set(),
         'is_jumpscare': True,
         'scary_face_done': False,
-        'visible_timer': 0,
-        'visible_duration_frames': int(visible_duration / constants.timing.base_sleep),
+        'visible_seconds': visible_duration,  # out for this long after its scream (game seconds)
     }
 
     # Add to mini_bats list (reuses existing system)
@@ -125,7 +124,8 @@ def activate_jumpscare_scary_face(jumpscare_bat):
 
     # Set scary face timer on bat
     scary_face_duration = getattr(jumpscare_cfg, 'scary_face_duration', 0.5) if jumpscare_cfg else 0.5
-    jumpscare_bat['scary_face_timer'] = int(scary_face_duration / constants.timing.base_sleep)
+    # In game seconds: a count of ticks would last less the higher the gear
+    jumpscare_bat['scary_face_until'] = clock.now() + scary_face_duration
 
 
 def try_spawn_mini_bat_on_hit(obstacle):
@@ -243,7 +243,7 @@ def update_mini_bats():
                     if mb.get('is_jumpscare') and not mb.get('scary_face_done'):
                         activate_jumpscare_scary_face(mb)
                         mb['scary_face_done'] = True
-                        mb['visible_timer'] = 0
+                        mb['visible_until'] = clock.now() + mb.get('visible_seconds', 3.0)
 
         elif mb['state'] == 'hiding':
             # Hide animation: sprite → O → * → • → · → disappear
@@ -277,16 +277,10 @@ def update_mini_bats():
             source_id = mb.get('source_obstacle_id')
             visited = mb.get('visited_obstacles', set())
 
-            # Jumpscare bat: decrement scary face timer
-            if mb.get('scary_face_timer', 0) > 0:
-                mb['scary_face_timer'] -= 1
-
-            # Jumpscare bat: track visible time and hide after duration
+            # Jumpscare bat: out for visible_seconds after its scream, then hides again
             if mb.get('is_jumpscare') and mb.get('scary_face_done'):
-                mb['visible_timer'] = mb.get('visible_timer', 0) + 1
-
                 # Random chance to do another scary face while active
-                if mb.get('scary_face_timer', 0) <= 0:
+                if clock.now() >= mb.get('scary_face_until', 0):
                     jumpscare_cfg = getattr(constants.bat_enemy, 'jumpscare_bat', None)
                     random_scream_chance = (
                         getattr(jumpscare_cfg, 'random_scream_chance', 0.01) if jumpscare_cfg else 0.01
@@ -294,7 +288,7 @@ def update_mini_bats():
                     if random.random() < random_scream_chance:
                         activate_jumpscare_scary_face(mb)
 
-                if mb['visible_timer'] >= mb.get('visible_duration_frames', 100):
+                if clock.now() >= mb.get('visible_until', clock.now() + 3.0):
                     # Time to hide in another tier 3+ obstacle
                     available_obstacles = [obs for obs in tier3_obstacles if obs.get('id') not in visited]
                     if available_obstacles:

@@ -345,7 +345,7 @@ def draw_mini_bats(fb):
             y_pos = mb['y_pos']
 
             # Jumpscare bat with scary face active
-            if is_jumpscare and mb.get('scary_face_timer', 0) > 0:
+            if is_jumpscare and clock.now() < mb.get('scary_face_until', 0):
                 # Render scary face sprite (3 lines tall)
                 for line_offset, line in enumerate(JUMPSCARE_BAT_SCARY_FACE):
                     render_y = y_pos - 1 + line_offset
