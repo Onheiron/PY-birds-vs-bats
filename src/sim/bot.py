@@ -106,6 +106,8 @@ class Skill:
     # and how much a rarer card weighs on top of that
     card_prefs: tuple = ()
     rarity_pull: float = 0.5
+    # 'learned' formation: (kind, lanes from the middle lane the player keeps it at)
+    lane_prefs: tuple = ()
 
 
 PROFILES = {
@@ -174,8 +176,9 @@ def load_player_profile(path=None):
         return None
     known = Skill.__dataclass_fields__
     fields = {k: v for k, v in fields.items() if k in known}
-    if 'card_prefs' in fields:
-        fields['card_prefs'] = tuple((k, float(v)) for k, v in dict(fields['card_prefs']).items())
+    for key in ('card_prefs', 'lane_prefs'):
+        if key in fields:
+            fields[key] = tuple((k, float(v)) for k, v in dict(fields[key]).items())
     for key in ('favorites',):
         if key in fields:
             fields[key] = tuple(fields[key])
@@ -655,13 +658,13 @@ class Bot:
             return
         falling = sum(1 for i in strategy.alive() if state.birds.vy[i] == 1)
         if strategy.wants_brake(self.skill, falling):
-            pair = strategy.brake_swap(state.player.lane)
+            pair = strategy.brake_swap(state.player.lane, self.skill.formation, dict(self.skill.lane_prefs))
             if pair:
                 self.plan = (*pair, 'brakes')
                 return
         if self.skill.formation != 'none' and self.frame - self.last_formation >= self.skill.formation_every:
             self.last_formation = self.frame
-            pair = strategy.best_formation_swap(self.skill.formation)
+            pair = strategy.best_formation_swap(self.skill.formation, dict(self.skill.lane_prefs))
             if pair:
                 self.plan = (*pair, 'formation swaps')
 

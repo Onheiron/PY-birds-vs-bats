@@ -191,6 +191,19 @@ def preferences(measures):
     return {cid: round((taken[cid] + 1) / (offered[cid] + 2), 3) for cid in offered}
 
 
+def lane_prefs(measures):
+    """How far from the middle lane the player keeps each kind of bird (mean, in lanes)."""
+    distances = {}
+    for m in measures:
+        for sample in m.get('layouts', []):
+            lanes = sample[1:]
+            middle = (len(lanes) - 1) / 2
+            for lane, k in enumerate(lanes):
+                if k is not None:
+                    distances.setdefault(k, []).append(abs(lane - middle))
+    return {k: round(statistics.mean(v), 2) for k, v in distances.items() if len(v) >= 10}
+
+
 def fit(measures):
     """Skill fields from the measures."""
     weights = [m['minutes'] for m in measures]
@@ -205,7 +218,9 @@ def fit(measures):
         'memory': 2.0,
         'bounce_from': round(min(0.8, max(0.05, player['bounce height'])), 2),
         'max_gear': int(player['gear (mode)']),
-        'formation': 'none',
+        'formation': 'learned' if lane_prefs(measures) else 'none',
+        'lane_prefs': lane_prefs(measures),
+        'formation_every': 60,
         'idle_up_rate': round(player['idle UP/s'], 2),
         'card_policy': 'learned',
         'pact_policy': 'learned',
@@ -227,6 +242,7 @@ def _play_bot(args):
 
     fields = dict(fields)
     fields['card_prefs'] = tuple(fields['card_prefs'].items())
+    fields['lane_prefs'] = tuple(fields.get('lane_prefs', {}).items())
     config = runner.RunConfig(
         seed=seed,
         difficulty=difficulty,
@@ -344,11 +360,13 @@ def main():
     print()
     print(table(player, bot))
     print()
-    shown = {k: v for k, v in fields.items() if k != 'card_prefs'}
+    shown = {k: v for k, v in fields.items() if k not in ('card_prefs', 'lane_prefs')}
     print('Skill:', ', '.join(f'{k}={v}' for k, v in shown.items()))
     liked = sorted(fields['card_prefs'].items(), key=lambda kv: -kv[1])
     print('Cards you like most:', ', '.join(f'{k} {v:.2f}' for k, v in liked[:6]))
     print('...and least:', ', '.join(f'{k} {v:.2f}' for k, v in liked[-6:]))
+    order = sorted(fields.get('lane_prefs', {}).items(), key=lambda kv: kv[1])
+    print('Formation (lanes from the middle):', ', '.join(f'{k} {v:.1f}' for k, v in order))
     print(f'\nSaved {out}: play it with  python3 tools/simulate.py --bot me')
 
 

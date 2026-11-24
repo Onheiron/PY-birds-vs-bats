@@ -115,9 +115,16 @@ def _lane_kinds():
     return out
 
 
-def formation_score(lanes, formation):
-    """How well an arrangement (lane -> bird type) suits ``formation``."""
+def formation_score(lanes, formation, prefs=None):
+    """How well an arrangement (lane -> bird type) suits ``formation``.
+
+    'learned': each kind as far from the middle lane as the player keeps it
+    (``prefs``: kind -> lanes from the middle, see tools/fit_bot.py).
+    """
     n = constants.layout.num_lanes
+    if formation == 'learned':
+        target = learned_layout(lanes, prefs)
+        return sum(1.0 for lane, k in lanes.items() if k is not None and target.get(lane) == k)
     score = 0.0
     for lane in range(n):
         here = lanes.get(lane)
@@ -143,13 +150,27 @@ def formation_score(lanes, formation):
     return score
 
 
-def best_formation_swap(formation):
+def learned_layout(lanes, prefs):
+    """The player's formation for these birds: the middle lanes to the kinds they keep in
+    the middle (``prefs``: kind -> lanes from the middle), the edges to the others."""
+    n = constants.layout.num_lanes
+    middle = (n - 1) / 2
+    prefs = prefs or {}
+    default = sum(prefs.values()) / len(prefs) if prefs else middle / 2
+    kinds = sorted((k for k in lanes.values() if k is not None), key=lambda k: (prefs.get(k, default), k))
+    # Lanes from the middle out, alternating sides (left first)
+    order = sorted(range(n), key=lambda lane: (abs(lane - middle), lane))
+    free = [lane for lane in order if lane in lanes]
+    return dict(zip(free, kinds, strict=False))
+
+
+def best_formation_swap(formation, prefs=None):
     """(lane_a, lane_b) of the single swap that improves the formation most, or None."""
     n = constants.layout.num_lanes
     # Every lane, even one whose slot moved away through a portal
     known = _lane_kinds()
     lanes = {lane: known.get(lane) for lane in range(n)}
-    current = formation_score(lanes, formation)
+    current = formation_score(lanes, formation, prefs)
     best, best_gain = None, 0.0
     for a in range(n):
         for b in range(a + 1, n):
@@ -157,21 +178,36 @@ def best_formation_swap(formation):
                 continue
             trial = dict(lanes)
             trial[a], trial[b] = trial[b], trial[a]
-            gain = formation_score(trial, formation) - current
+            gain = formation_score(trial, formation, prefs) - current
             if gain > best_gain + 1e-9:
                 best, best_gain = (a, b), gain
     return best
 
 
-def brake_swap(cursor):
+def brake_swap(cursor, formation='none', prefs=None):
     """Two lanes to swap just to shed momentum: rising birds near the cursor first.
 
     A swap sends both birds back to the starting line, rising; birds that are
-    already rising lose least by it.
+    already rising lose least by it. With a formation it never spoils it: two
+    birds of the same kind, or a swap that puts it right (the last swaps of a
+    braking spree restore the formation).
     """
     living = [i for i in alive() if state.birds.y[i] < constants.layout.height]
     if len(living) < 2:
         return None
+    if formation != 'none':
+        fixing = best_formation_swap(formation, prefs)
+        if fixing:
+            return fixing
+        same = [
+            (abs(state.birds.home_lanes[a] - cursor) + abs(state.birds.home_lanes[b] - cursor), a, b)
+            for a in living
+            for b in living
+            if a < b and kind(a) == kind(b)
+        ]
+        if same:
+            _d, a, b = min(same)
+            return state.birds.home_lanes[a], state.birds.home_lanes[b]
     rising = sorted(
         (i for i in living if state.birds.vy[i] == -1), key=lambda i: abs(state.birds.home_lanes[i] - cursor)
     )

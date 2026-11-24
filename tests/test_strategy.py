@@ -56,3 +56,25 @@ def test_a_braking_bot_swaps_and_slows_down():
 def test_strategies_are_valid_skill_changes():
     for changes in strategy.STRATEGIES.values():
         Bot(profile('expert', **changes))
+
+
+def test_the_learned_formation_puts_kinds_where_the_player_keeps_them():
+    from src.sim import strategy
+    from tests.harness import Simulation
+
+    prefs = {'RED': 1.2, 'BLUE': 1.6, 'YELLOW': 3.0}
+    with Simulation(seed=1, key_rate=0):
+        lanes = dict(enumerate(['RED', 'YELLOW', 'BLUE', 'YELLOW', 'RED', 'YELLOW', 'BLUE', 'RED', 'YELLOW']))
+        target = strategy.learned_layout(lanes, prefs)
+        assert [target[lane] for lane in range(9)] == [
+            'YELLOW',
+            'YELLOW',
+            'BLUE',
+            'RED',
+            'RED',
+            'RED',
+            'BLUE',
+            'YELLOW',
+            'YELLOW',
+        ]
+        assert strategy.formation_score(target, 'learned', prefs) == 9

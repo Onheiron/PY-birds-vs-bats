@@ -73,6 +73,7 @@ def measure(data, play=None):
         'offers': [],
         'deaths': [],
         'levels': [],
+        'layouts': [],  # every 2 s: the kind of bird in each lane (None: empty)
     }
     clock = {'start': None, 'last': None}
     fall_start = {}  # bird -> game second its fall began
@@ -171,6 +172,13 @@ def measure(data, play=None):
                 fall_start[i] = t
             elif vy != 1 and before[i] == 1 and i in fall_start:
                 out['falls'].append([round(t - fall_start.pop(i), 3), 'bounced'])
+        if (
+            not state.game.paused
+            and state.choice.active is None
+            and (not out['layouts'] or t - out['layouts'][-1][0] >= 2.0)
+        ):
+            lanes = len(constants.layout.lane_positions)
+            out['layouts'].append([round(t, 1)] + [lane_kind(lane) for lane in range(lanes)])
         if not out['levels'] or out['levels'][-1][1] != state.game.level:
             out['levels'].append([round(t, 1), state.game.level])
         return result

@@ -9,7 +9,7 @@
     "memory": 2.0,
     "bounce_from": 0.23,
     "max_gear": 4,
-    "formation": "none",
+    "formation": "learned",
     "idle_up_rate": 0.52,
     "card_policy": "learned",
     "pact_policy": "learned",
@@ -74,7 +74,27 @@
       "giant_slayer": 0.667,
       "lumberjack": 0.333
     },
-    "rarity_pull": 0.3
+    "rarity_pull": 0.3,
+    "lane_prefs": {
+      "YELLOW": 2.95,
+      "RED": 1.24,
+      "BLUE": 1.63,
+      "PATCHWORK": 1.46,
+      "WHITE": 1.83,
+      "CLOCKWORK": 3.43,
+      "POISON": 2.53,
+      "ORANGE": 1.25,
+      "STEALTH": 2.74,
+      "GOLD": 1.28,
+      "COOKIE": 3.8,
+      "ROCK": 2.28,
+      "PURPLE": 2.66,
+      "BERSERK": 2.49,
+      "FROSTY": 3.54,
+      "RAINBOW": 4.0,
+      "TWISTER": 2.37
+    },
+    "formation_every": 60
   },
   "fitted_from": [
     "481f04dd-20261124-173339-seed224926571-L11.json.gz",
