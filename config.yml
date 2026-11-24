@@ -46,7 +46,8 @@ combat:
   boss_hp_mult: 1.0
   # ...and grows by this share per world after the first (1.0: ×6 in the last world)
   boss_hp_per_world: 1.0
-  # Boss armor (its armor_reduction) grows by this much per world after the first
+  # Boss armor (its armor_reduction) grows by this much per world after the first.
+  # Armor, defense and armor pierce against bats and bosses are base points: × hp_scale
   boss_armor_per_world: 4
   # Afflictions (freeze, poison, bleed) land this much less often on bosses
   boss_affliction_factor: 0.33
@@ -250,7 +251,7 @@ jelly_boss:
   level: 9                            # Which level this boss appears (3-3 = level 9)
   spawn_miles_before_transition: 1    # Spawn 1 mile before level end (like wind boss)
   hp: 4000                             # Higher HP
-  armor_reduction: -10                 # Less armor (takes more damage)
+  armor_reduction: -2                  # Less armor (takes more damage; × hp_scale)
   # Position - settles at 1/4 from top
   target_y_fraction: 0.25             # Fraction of screen height from top
   # Animation timing (10 frames, 1 fps = 10 seconds per cycle)
@@ -822,11 +823,11 @@ elites:
   affix_count_by_biome: [1, 1, 1, 2, 2, 2]
   stats: {hp_mult: 2.0, xp_mult: 2.0, score_mult: 2.0, loot_rarity_bonus: 1}
   affixes:
-    ironclad:     {name: Ironclad,     stats: {armor: 20}}
+    ironclad:     {name: Ironclad,     stats: {armor: 4}}            # base points (× hp_scale)
     regenerating: {name: Regenerating, stats: {regen: 20}}
     terrifying:   {name: Terrifying,   stats: {fear_strength: 1.5, fear_radius: 1}}
     swift:        {name: Swift,        stats: {speed: 1.5}}
-    warded:       {name: Warded,       stats: {projectile_defense: 30}}
+    warded:       {name: Warded,       stats: {projectile_defense: 5}}   # base points (× hp_scale)
     hulking:      {name: Hulking,      stats: {hp_mult: 1.5, damage_taken: 0.8}}
     bountiful:    {name: Bountiful,    stats: {xp_mult: 1.5, loot_rarity_bonus: 1}}
 
@@ -889,14 +890,14 @@ cards:
     hollow_bones:    {name: Hollow Bones, desc: "Birds climb faster (and faster birds hit harder).", kind: stat,
                       effects: [{stat: rise_speed_bonus, add: 3}]}
     feather_brake:   {name: Feather Brake, desc: "Birds fall more slowly: more time to bounce them.",   kind: stat, effects: [{stat: fall_speed_bonus, add: -4}]}
-    keen_eyes:       {name: Keen Eyes, desc: "More critical hits.",       kind: stat, effects: [{stat: crit_chance, add: 0.03}]}
+    keen_eyes:       {name: Keen Eyes, desc: "More critical hits.",       kind: stat, effects: [{stat: crit_chance, add: 0.02}]}
     heavy_blows:     {name: Heavy Blows, desc: "Critical hits hurt more.",     kind: stat, effects: [{stat: crit_damage, add: 0.15}]}
     brave_hearts:    {name: Brave Hearts, desc: "Scared birds fall less fast.",    kind: stat, effects: [{stat: fear_resist, add: 0.1}]}
     steady_nerves:   {name: Steady Nerves, desc: "Scares wear off sooner.",   kind: stat, effects: [{stat: fear_duration_mult, pct: -10}]}
     piercing_talons: {name: Piercing Talons, desc: "Ignore part of the armor of bats and barriers.", kind: stat, effects: [{stat: armor_pierce, add: 3}]}
-    bat_hunter:      {name: Bat Hunter, desc: "More damage against bats.",      kind: stat, effects: [{stat: vs_bats, add: 0.06}]}
+    bat_hunter:      {name: Bat Hunter, desc: "More damage against bats.",      kind: stat, effects: [{stat: vs_bats, add: 0.04}]}
     lumberjack:      {name: Lumberjack, desc: "More damage against obstacles.",      kind: stat, effects: [{stat: vs_obstacles, add: 0.08}]}
-    giant_slayer:    {name: Giant Slayer, desc: "More damage against elites and bosses.",    kind: stat, effects: [{stat: vs_elites, add: 0.08}], min_rarity: uncommon}
+    giant_slayer:    {name: Giant Slayer, desc: "More damage against elites and bosses.",    kind: stat, effects: [{stat: vs_elites, add: 0.06}], min_rarity: uncommon}
     wide_wings:      {name: Wide Wings, desc: "Birds collect eggs from farther away.",      kind: stat, effects: [{stat: pickup_radius, add: 0.5}]}
     lucky_feather:   {name: Lucky Feather, desc: "An egg a bird collects may turn one rarity rarer.",   kind: stat, effects: [{stat: luck, add: 0.02}]}
     quick_study:     {name: Quick Study, desc: "Birds earn more XP from hits and kills.",     kind: stat, effects: [{stat: xp_gain, pct: 6}]}

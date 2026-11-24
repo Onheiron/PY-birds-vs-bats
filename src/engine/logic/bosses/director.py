@@ -184,7 +184,8 @@ def check_bird_boss_collision():
         if armor_reduction > 0:
             armor_reduction = max(0, armor_reduction - afflictions.armor_cut(boss) - stats.bird(i, 'armor_pierce'))
         if bird_color != ORANGE:
-            damage = max(1, damage - armor_reduction)
+            # Armor in base points, like the bird's damage stat: × hp_scale
+            damage = max(1, damage - armor_reduction * hp_scale())
             afflictions.try_afflict(i, boss, is_boss=True)
 
         if bird_color == ORANGE:

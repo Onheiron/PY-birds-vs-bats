@@ -69,14 +69,14 @@ Card effects are written for a common card and multiplied by
 | **Sharp Beaks** | Flock bonus | Permanent | common – mythical | Every bird hits harder. | +6% damage | +42% damage |
 | **Hollow Bones** | Flock bonus | Permanent | common – mythical | Birds climb faster. | +1.5 rising speed | +10.5 rising speed |
 | **Feather Brake** | Flock bonus | Permanent | common – mythical | Birds fall more slowly: more time to bounce them. | −1.5 falling speed | −10.5 falling speed |
-| **Keen Eyes** | Flock bonus | Permanent | common – mythical | More critical hits. | +3% crit chance | +21% crit chance |
+| **Keen Eyes** | Flock bonus | Permanent | common – mythical | More critical hits. | +2% crit chance | +14% crit chance |
 | **Heavy Blows** | Flock bonus | Permanent | common – mythical | Critical hits hurt more. | +0.15 crit damage | +1.05 crit damage |
 | **Brave Hearts** | Flock bonus | Permanent | common – mythical | Scared birds fall less fast. | +6% fear resistance | +42% fear resistance |
 | **Steady Nerves** | Flock bonus | Permanent | common – mythical | Scares wear off sooner. | −6% fear duration | −42% fear duration |
 | **Piercing Talons** | Flock bonus | Permanent | common – mythical | Ignore part of the armor of bats and barriers. | +2 armor pierce | +14 armor pierce |
-| **Bat Hunter** | Flock bonus | Permanent | common – mythical | More damage against bats. | +6% damage vs bats | +42% damage vs bats |
+| **Bat Hunter** | Flock bonus | Permanent | common – mythical | More damage against bats. | +4% damage vs bats | +28% damage vs bats |
 | **Lumberjack** | Flock bonus | Permanent | common – mythical | More damage against obstacles. | +8% damage vs obstacles | +56% damage vs obstacles |
-| **Giant Slayer** | Flock bonus | Permanent | uncommon – mythical | More damage against elites and bosses. | +12.8% damage vs elites | +56% damage vs elites |
+| **Giant Slayer** | Flock bonus | Permanent | uncommon – mythical | More damage against elites and bosses. | +9.6% damage vs elites | +42% damage vs elites |
 | **Wide Wings** | Flock bonus | Permanent | common – mythical | Birds collect eggs from farther away. | +0.5 pickup radius | +3.5 pickup radius |
 | **Lucky Feather** | Flock bonus | Permanent | common – mythical | An egg a bird collects may turn one rarity rarer. | +2% lucky finds (a collected egg turns rarer) | +14% lucky finds (a collected egg turns rarer) |
 | **Quick Study** | Flock bonus | Permanent | common – mythical | Birds earn more XP from hits and kills. | +6% XP | +42% XP |

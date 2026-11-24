@@ -55,7 +55,7 @@ BIRD_STATS = {
     'vs_obstacles': StatDef(0, -1, 10, 'extra damage against obstacles'),
     'vs_elites': StatDef(0, -1, 10, 'extra damage against elites and bosses'),
     'armor_pierce': StatDef(0, 0, 99, 'armor points ignored'),
-    'crit_chance': StatDef(0, 0, 1, 'chance of a critical hit'),
+    'crit_chance': StatDef(0, 0, 0.5, 'chance of a critical hit (at most 50%)'),
     'crit_damage': StatDef(2.0, 1, 20, 'damage multiplier of a critical hit'),
     'affliction_chance': StatDef(0, 0, 1, "chance to apply the bird's affliction (freeze, poison, bleed) on hit"),
     'knockback': StatDef(0, 0, 10, 'rows a hit pushes a bat back up'),

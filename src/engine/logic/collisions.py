@@ -180,7 +180,7 @@ def check_bird_obstacle_collision():
             if bird_color == ORANGE:
                 obs['hp'] = 0
             else:
-                obs['hp'] -= enemy_stats.mitigate(obs, damage, 'contact', bird=i)
+                obs['hp'] -= enemy_stats.mitigate(obs, damage, 'contact', bird=i, scaled=False)
                 award_damage_xp(i, damage)
                 # Also damage flower if present
                 if flower and flower.get('active') and flower.get('hp', 0) > 0:
@@ -422,7 +422,7 @@ def check_projectile_collision():
             if proj['y_pos'] < obs['y_pos'] - 1 or proj['y_pos'] > obs['y_pos'] + sprite_height:
                 continue
 
-            damage = enemy_stats.mitigate(obs, proj.get('damage', 1), 'projectile')
+            damage = enemy_stats.mitigate(obs, proj.get('damage', 1), 'projectile', scaled=False)
             obs['hp'] -= damage
 
             owner = proj.get('owner')

@@ -166,20 +166,26 @@ def get(enemy, name):
     return ENEMY_STATS[name][0]
 
 
-def mitigate(enemy, damage, hit='contact', bird=None, armor_cut=0):
+def mitigate(enemy, damage, hit='contact', bird=None, armor_cut=0, scaled=True):
     """Damage left after the enemy's defences (never below 1).
 
     ``hit`` is 'contact' or 'projectile'; armor only stops contact hits and is
     lowered by ``armor_cut`` (debuffs) and the hitting bird's armor pierce.
+    Against bats (``scaled``) defense, armor, armor cuts and pierce are in base
+    points, like a bird's damage stat: they count × combat.hp_scale, the scale
+    of damage and HP. Obstacles keep them as they are (``scaled=False``).
     """
-    reduction = get(enemy, 'defense') + get(enemy, f'{hit}_defense')
+    from src.engine.progression import hp_scale
+
+    scale = hp_scale() if scaled else 1
+    reduction = (get(enemy, 'defense') + get(enemy, f'{hit}_defense')) * scale
     if hit == 'contact':
         armor = get(enemy, 'armor') - armor_cut
         if bird is not None:
             from src.engine import stats
 
             armor -= stats.bird(bird, 'armor_pierce')
-        reduction += max(0, armor)
+        reduction += max(0, armor) * scale
     taken = get(enemy, 'damage_taken')
     if taken != 1:
         damage = round(damage * taken)

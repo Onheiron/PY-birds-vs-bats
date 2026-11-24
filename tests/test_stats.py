@@ -72,7 +72,7 @@ def test_stats_are_clamped():
     with Simulation(seed=1, key_rate=0) as sim:
         setup_bird(sim, RED)
         stats.add_modifier(0, 'crit_chance', add=5)
-        assert stats.bird(0, 'crit_chance') == 1
+        assert stats.bird(0, 'crit_chance') == 0.5  # at most 50%
 
 
 def test_damage_follows_attack_stats():
@@ -85,8 +85,9 @@ def test_damage_follows_attack_stats():
         stats.add_modifier(0, 'damage_mult', mul=3.0)
         # Damage is rounded once at the end, so allow the rounding of the unscaled value
         assert abs(calculate_bird_damage(0) - plain * 3) <= 1.5
+        # Bonuses add up: damage_mult 3 + vs_obstacles 1 = ×4 against obstacles
         stats.add_modifier(0, 'vs_obstacles', add=1.0)
-        assert abs(calculate_bird_damage(0, 'obstacle') - 2 * calculate_bird_damage(0, 'bat')) <= 1
+        assert abs(calculate_bird_damage(0, 'obstacle') - 4 / 3 * calculate_bird_damage(0, 'bat')) <= 1.5
 
 
 def test_fear_stats():

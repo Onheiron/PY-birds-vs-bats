@@ -16,7 +16,7 @@ def test_tier_stats():
         assert b['stats'] == {}
         assert enemy_stats.mitigate(b, 70, 'contact') == 70
         b = enemy_stats.equip_bat(bat(tier=2))
-        assert enemy_stats.mitigate(b, 70, 'contact') == 69  # defense 1
+        assert enemy_stats.mitigate(b, 70, 'contact') == 60  # defense 1 (× hp_scale 10)
 
 
 def test_armored_bats_have_armor_and_move_slower():
@@ -26,11 +26,11 @@ def test_armored_bats_have_armor_and_move_slower():
         assert enemy_stats.get(b, 'speed') == 0.6 * 0.9
         assert enemy_stats.get(b, 'descent_interval') == 6
         assert b['max_hp'] == int(20 * 1.3)
-        # 50 − defense 4 − armor 20
-        assert enemy_stats.mitigate(b, 50, 'contact') == 26
-        assert enemy_stats.mitigate(b, 50, 'contact', armor_cut=20) == 46
+        # 500 − (defense 4 + armor 20) × hp_scale 10
+        assert enemy_stats.mitigate(b, 500, 'contact') == 260
+        assert enemy_stats.mitigate(b, 500, 'contact', armor_cut=20) == 460
         # Armor does not stop projectiles, and armored bats are weak to them
-        assert enemy_stats.mitigate(b, 50, 'projectile') == 51
+        assert enemy_stats.mitigate(b, 500, 'projectile') == 510
 
 
 def test_armor_pierce_and_minimum_damage():
@@ -38,7 +38,7 @@ def test_armor_pierce_and_minimum_damage():
         b = enemy_stats.equip_bat(bat(tier=4, armored=True))
         pierce = stats.bird(0, 'armor_pierce')
         stats.add_modifier(0, 'armor_pierce', add=5)
-        assert enemy_stats.mitigate(b, 50, 'contact', bird=0) == 26 + pierce + 5
+        assert enemy_stats.mitigate(b, 500, 'contact', bird=0) == 260 + (pierce + 5) * 10
         assert enemy_stats.mitigate(b, 1, 'contact') == 1
 
 
@@ -48,7 +48,7 @@ def test_elites_get_affixes_hp_and_rewards():
         assert b['elite'] and b['affixes'] == ['warded', 'hulking']
         assert b['max_hp'] == int(20 * 2.0 * 1.5)
         assert enemy_stats.get(b, 'xp_mult') == 2.0
-        assert enemy_stats.mitigate(b, 100, 'projectile') == 50  # 100 × 0.8 − 30
+        assert enemy_stats.mitigate(b, 100, 'projectile') == 30  # 100 × 0.8 − 5 × hp_scale 10
         assert enemy_stats.affix_names(b['affixes']) == 'Warded Hulking'
         assert enemy_stats.upgrade_rarity('rare', enemy_stats.get(b, 'loot_rarity_bonus')) == 'epic'
         assert enemy_stats.upgrade_rarity('mythical', 3) == 'mythical'

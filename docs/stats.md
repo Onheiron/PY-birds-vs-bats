@@ -29,8 +29,10 @@ value = (default + kind value + grade growth + flat modifiers)
 **Scale.** Speeds are ×10 of the movement code's points: a bird with speed
 `S` moves one cell every `max(1, 6 − S/10)` ticks (speed 20 → every 4 ticks,
 50+ → every tick), so a bird at 21 is a little faster than one at 20. Damage,
-enemy HP, armor and defences are on a ×10 scale too (`combat.hp_scale: 10`):
-XP from damage and score from kills divide by it, so they did not change.
+enemy HP are on a ×10 scale too (`combat.hp_scale: 10`): XP from damage and
+score from kills divide by it, so they did not change. Armor, defences, armor
+cuts and armor pierce of bats and bosses are written in base points (like a
+bird's damage stat) and count × hp_scale; those of obstacles count as written.
 
 ### Base
 
@@ -106,7 +108,8 @@ XP from damage and score from kills divide by it, so they did not change.
 ### Formulas that use them
 
 - **Damage:** `round(((gear − 3) + damage + boosts + damage_bonus) × (1 + speed_damage × (speed/10 − 1))
-  × damage_mult × (1 + vs_<target>) × crit)`, at least 1. The target is a bat,
+  × (damage_mult + vs_<target>) × crit)`, at least 1: the damage bonuses add up.
+  Crit chance is at most 50%. The target is a bat,
   an obstacle or an elite (bosses). Armor is reduced by `armor_pierce` first.
 - **Fear:** a scare lasts `seconds × fear_duration_mult − fear_duration_cut`
   (at least 1 s when a cut applies); `fear_immunity` is the chance to ignore it;
@@ -198,8 +201,9 @@ from the world hazards (`hazards` section, `src/engine/hazards.py`) and from bom
 | `score_mult` | 1 | × | multiplier on kill score |
 | `loot_rarity_bonus` | 0 | + | rarity steps added to its drop |
 
-**Damage taken:** `max(1, round(damage × damage_taken) − defense − <contact|projectile>_defense
-− max(0, armor − debuffs − armor_pierce))`; armor only counts against contact hits.
+**Damage taken:** `max(1, round(damage × damage_taken) − (defense + <contact|projectile>_defense
++ max(0, armor − debuffs − armor_pierce)) × hp_scale)`; armor only counts against contact hits
+(obstacles: the same without × hp_scale).
 
 ### Elite bats
 
@@ -215,11 +219,11 @@ A spawning bat becomes an elite with chance `elites.chance_by_biome[biome − 1]
 
 | Affix | Effect |
 |---|---|
-| Ironclad | +20 armor |
+| Ironclad | +4 armor (−40 damage from contact hits) |
 | Regenerating | heals 20 HP per second |
 | Terrifying | scares 1.5× longer, and the lanes next to the hit bird too |
 | Swift | moves 1.5× faster |
-| Warded | −30 damage from projectiles |
+| Warded | +5 projectile defense (−50 damage) |
 | Hulking | ×1.5 HP, takes 20% less damage |
 | Bountiful | ×1.5 XP, drop one more rarity higher |
 

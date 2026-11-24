@@ -31,7 +31,7 @@ def calculate_bird_damage(bird_idx, target='bat'):
     """Calculate damage a bird deals to a ``target`` ('bat', 'obstacle' or 'elite'):
 
     TOT = round((GR_BONUS + DMG + BOOST + damage_bonus) × SPEED_FACTOR
-                × damage_mult × (1 + vs_<target>) × crit)
+                × (damage_mult + vs_<target>) × crit)
     SPEED_FACTOR = 1 + speed_damage × (SPD − 1)   (speed_damage 1 → × SPD)
 
     Where:
@@ -99,7 +99,8 @@ def calculate_bird_damage(bird_idx, target='bat'):
         speed_damage = random.uniform(1.0, 2.0)  # unpredictable: from 1 to 2 on every hit
     speed_factor = 1 + speed_damage * (effective_spd - 1)
     raw = (gear_bonus + effective_dmg) * speed_factor
-    raw *= stats.bird(bird_idx, 'damage_mult') * (1 + stats.bird(bird_idx, VS_STAT.get(target, 'vs_bats')))
+    # Damage bonuses add up (damage_mult 1.8 and vs_bats +0.75 make ×2.55, not ×3.15)
+    raw *= stats.bird(bird_idx, 'damage_mult') + stats.bird(bird_idx, VS_STAT.get(target, 'vs_bats'))
     crit = stats.bird(bird_idx, 'crit_chance')
     if crit > 0 and random.random() < crit:
         raw *= stats.bird(bird_idx, 'crit_damage')
