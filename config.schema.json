@@ -1180,6 +1180,9 @@
             },
             "size_per_level": {
               "type": "number"
+            },
+            "stuck_time": {
+              "type": "number"
             }
           },
           "type": "object"

@@ -6,7 +6,8 @@ their tier. Then the bats come in from the top a few at a time: never more
 than the world's ``max_bats`` at once, a new one every ``spawn_interval``
 ticks while there is room, until the whole wave has come. A wave bat that
 reaches a side of the screen flies out and comes back in from the top, with
-the HP it has left; wave bats do not fly away (linger). The wave is over when
+the HP it has left; one that cannot move sideways for ``stuck_time`` seconds
+flies out from the top and comes back too; wave bats do not fly away (linger). The wave is over when
 all its bats are dead; after a pause the next one starts.
 
 Mini bats and jumpscares are not part of waves: they still come out of the
@@ -89,6 +90,7 @@ def update():
     state.enemies.bat_spawn_timer = max(1, int(world.get('spawn_interval', 60) or 60))
     bat = new_bat(wave['tier'], world)
     bat['wave'] = wave['number']
+    bat['x_pos'] = free_column(bat)  # never on top of another bat
     wave['spawned'] += 1
     state.enemies.spawn_queue.append({'type': 'bat', 'data': bat})
 
@@ -97,12 +99,23 @@ def reenter(bat):
     """A wave bat at a side of the screen flies out and comes back in from the top (same HP)."""
     from src.engine.logic.spawning import entry_row
 
-    bat['x_pos'] = random.randint(0, constants.layout.width - enemy_stats.bat_width(bat))
+    bat['x_pos'] = free_column(bat)
     bat['y_pos'] = entry_row(bat.get('kind'))
+    bat.pop('leaving', None)
+    bat.pop('blocked_since', None)
     bat['direction'] = random.choice([-1, 1])
     if bat.get('diver_state'):
         bat['diver_state'] = 'flying'
         bat['dive_start_y'] = None
+
+
+def free_column(bat):
+    """A random column where the bat overlaps no other bat (any column if there is none)."""
+    width = enemy_stats.bat_width(bat)
+    last = constants.layout.width - width
+    others = [(b['x_pos'], b['x_pos'] + enemy_stats.bat_width(b)) for b in state.enemies.bats if b is not bat]
+    free = [x for x in range(last + 1) if all(x + width < left or x > right for left, right in others)]
+    return random.choice(free) if free else random.randint(0, last)
 
 
 def card():

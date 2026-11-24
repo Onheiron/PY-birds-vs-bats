@@ -70,3 +70,39 @@ def test_no_waves_in_the_first_world():
         sim.state.game.level_group = 1
         tick(sim.state, 500)
         assert sim.state.enemies.bat_wave is None and waves.card() is None
+
+
+def test_a_stuck_wave_bat_flies_out_the_top_and_comes_back():
+    with Simulation(seed=2, key_rate=0) as sim:
+        state = sim.state
+        start_wave(sim)
+        tick(state, 200)
+        bat = waves.wave_bats()[0]
+        bat['hp'], bat['y_pos'], bat['x_pos'] = 7, 10, 20
+        bat['blocked_since'] = clock.now() - 2  # boxed in for two seconds
+        real = bat_ai._check_bat_can_move
+        bat_ai._check_bat_can_move = lambda b, x: False
+        try:
+            for _ in range(3):
+                state.game.frame_count += 1
+                bat_ai._move_horizontally(bat)
+        finally:
+            bat_ai._check_bat_can_move = real
+        assert bat['leaving']
+        for _ in range(100):
+            state.game.frame_count += 1
+            bat_ai._fly_out_top(bat)
+            if not bat.get('leaving'):
+                break
+        assert not bat.get('leaving') and bat['y_pos'] < 0 and bat['hp'] == 7 and bat in state.enemies.bats
+
+
+def test_overlapping_bats_can_move_apart():
+    with Simulation(seed=2, key_rate=0) as sim:
+        state = sim.state
+        start_wave(sim)
+        tick(state, 200)
+        a, b = waves.wave_bats()[:2]
+        a['x_pos'], b['x_pos'] = 20, 23
+        assert bat_ai._check_bat_can_move(a, 19)  # away from b
+        assert not bat_ai._check_bat_can_move(a, 21)  # into b

@@ -23,6 +23,7 @@ def _move_horizontally(bat):
     step = max(1, int(enemy_stats.get(bat, 'move_step')))
     next_x = bat['x_pos'] + bat['direction'] * step
     if _check_bat_can_move(bat, next_x):
+        bat.pop('blocked_since', None)
         bat['x_pos'] = next_x
         at_side = bat['x_pos'] <= 0 or bat['x_pos'] >= constants.layout.width - enemy_stats.bat_width(bat)
         if at_side and bat.get('wave') is not None:
@@ -37,6 +38,29 @@ def _move_horizontally(bat):
             bat['direction'] = -1
     else:
         bat['direction'] *= -1
+        _note_blocked(bat)
+
+
+def _note_blocked(bat):
+    """A wave bat that cannot move sideways for too long flies out from the top (and comes back)."""
+    if bat.get('wave') is None:
+        return
+    now = clock.now()
+    since = bat.setdefault('blocked_since', now)
+    if now - since >= float(getattr(getattr(constants.bat_enemy, 'waves', None), 'stuck_time', 1.5)):
+        bat.pop('blocked_since', None)
+        bat['leaving'] = True
+
+
+def _fly_out_top(bat):
+    """Leaving: straight up out of the screen, then back in from the top (same HP)."""
+    if state.game.frame_count % 2 == 0:
+        bat['y_pos'] -= 1
+    from src.engine.logic import waves
+    from src.engine.logic.spawning import entry_row
+
+    if bat['y_pos'] < entry_row(bat.get('kind')):
+        waves.reenter(bat)
 
 
 def update_bat_positions():
@@ -47,6 +71,9 @@ def update_bat_positions():
         if slow < 1 and state.game.frame_count % max(1, round(1 / slow)) != 0:
             continue
 
+        if bat.get('leaving'):
+            _fly_out_top(bat)
+            continue
         kinds = enemy_stats.bat_kinds(bat)
         _move_horizontally(bat)
         if 'diver' in kinds:
@@ -299,5 +326,10 @@ def _check_bat_can_move(bat, next_x):
         next_right = next_x + 8
 
         if not (next_right < other_left or next_left > other_right):
+            here_left, here_right = bat['x_pos'], bat['x_pos'] + 8
+            if not (here_right < other_left or here_left > other_right):
+                # Already overlapping: it may still move away (else both are stuck for good)
+                if abs(next_x - other_left) > abs(bat['x_pos'] - other_left):
+                    continue
             return False
     return True  # birds do not stop bats: they fly across the lanes

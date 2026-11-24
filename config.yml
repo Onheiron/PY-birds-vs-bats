@@ -152,6 +152,7 @@ bat_enemy:
     size_per_level: 1            # ...+ this for each level of the world after the first...
     size_cut_per_tier: 1         # ...- this for each tier above 1
     min_size: 3
+    stuck_time: 1.5              # a wave bat that cannot move sideways this long flies out the top and comes back
   # Lowest tier of each kind
   kind_min_tier: {armored: 2, diver: 1, spellcaster: 2, healer: 2, bomber: 2, plague: 2, necromancer: 3}
   # Armor of armored bats, by tier
