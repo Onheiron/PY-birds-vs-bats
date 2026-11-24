@@ -43,13 +43,10 @@ def update_bat_positions():
             continue
 
         kinds = enemy_stats.bat_kinds(bat)
-        if bat.get('wave') is not None:
-            # Wave bats follow their plan (logic/bat_behaviour.py)
-            bat_behaviour.update(bat)
-            if bat_behaviour.busy(bat):
-                continue
-        else:
-            _move_horizontally(bat)
+        # Every bat follows a plan (logic/bat_behaviour.py): spots, holds, out from the top
+        bat_behaviour.update(bat)
+        if bat_behaviour.busy(bat):
+            continue
         if 'diver' in kinds:
             _update_diver_bat(bat)
             continue  # divers handle their own height

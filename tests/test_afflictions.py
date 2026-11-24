@@ -21,14 +21,18 @@ def afflict(bird, color, target, is_boss=False):
 
 def test_frozen_bats_move_slower_and_lose_armor():
     with Simulation(seed=1, key_rate=0) as sim:
-        # Above the screen, where no bird reaches them
-        frozen, free = bat(y_pos=-40, target_y=-40), bat(y_pos=-40, target_y=-40, x_pos=20)
+        # On their way to a far spot, no bird around
+        for i in range(len(sim.state.birds.colors)):
+            sim.state.birds.lost[i] = True
+        frozen, free = bat(y_pos=5, target_y=5, x_pos=0), bat(y_pos=5, target_y=5, x_pos=22)
+        frozen['plan'] = {'phase': 'move', 'target_x': 13, 'stops': 3, 'until': 0}
+        free['plan'] = {'phase': 'move', 'target_x': 37, 'stops': 3, 'until': 0}
         sim.state.enemies.bats[:] = [frozen, free]
         assert afflict(0, FROSTY, frozen) == 'frozen'
         assert afflictions.armor_cut(frozen) == 20
         moved = {id(frozen): 0, id(free): 0}
         last = {id(frozen): frozen['x_pos'], id(free): free['x_pos']}
-        for _ in range(int(1.5 / FRAME_DT)):
+        for _ in range(int(2 / FRAME_DT)):
             sim.step(key=None, render=False)
             for b in (frozen, free):
                 moved[id(b)] += abs(b['x_pos'] - last[id(b)])

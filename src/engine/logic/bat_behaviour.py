@@ -1,6 +1,7 @@
-"""How wave bats move: come in, settle, pick a spot, hold it, move on, fly out, come back.
+"""How bats move: come in, settle, pick a spot, hold it, move on, fly out, come back.
 
-A wave bat (logic/waves.py) follows a plan (``bat['plan']``):
+Every bat (wave bats, logic/waves.py, and those a boss summons, which start
+from where they appear) follows a plan (``bat['plan']``):
 
 1. **enter**: it comes in from the top straight above the spot it picked and
    goes down to its cruising row: deeper the higher its tier
@@ -245,10 +246,19 @@ def busy(bat):
 
 
 def update(bat):
-    """One tick of a wave bat's plan (its sideways moves and its comings and goings)."""
+    """One tick of a bat's plan (its sideways moves and its comings and goings)."""
     plan = bat.get('plan')
     if plan is None:
-        start(bat)
+        if bat['y_pos'] >= 0:
+            # Already on screen (summoned by a boss): it starts from where it is
+            bat['plan'] = {
+                'phase': 'move',
+                'target_x': pick_spot(bat, near=bat['x_pos']),
+                'stops': random.randint(*[int(v) for v in _kind_cfg(bat, 'stops', [3, 5])]),
+                'until': 0,
+            }
+        else:
+            start(bat)
         plan = bat['plan']
     now = clock.now()
     phase = plan['phase']
