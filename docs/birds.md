@@ -24,6 +24,10 @@ What every bird does, read from the code (not from the descriptions in
   + a bonus for its grade (C1 +0.03 … A2 +1, S +5). It multiplies the score
   and pushes loot towards rarer drops.
 - **Unique birds:** at most one White, one Orange and one Gold at a time.
+- **Damage and speed:** contact damage grows with the bird's speed, boosts
+  included (rise bonus, sprint, Blue power, tailwind), never with the gear.
+  `speed_damage` says how strongly: 1 for most birds; Blue 2, Stealth 1.6,
+  Clockwork and Twister 1.5, Berserk 1.3, White 1.2, Glitch 1–2 at random.
 
 ## The birds
 
@@ -31,13 +35,13 @@ What every bird does, read from the code (not from the descriptions in
 |---|:-:|:-:|---|---|:-:|:-:|
 | **Yellow** | 21 | 9 | Neighbours (±1 lane) that are falling: Yellow and Patchwork are bounced, any other bird is slowed for 3 s | — | 0 | common |
 | **Red** | 30 | 11 | Fires a projectile up its lane: damage 10, +10 for every neighbour that is a rising Red, Purple or Patchwork | — | 0 | common |
-| **Blue** | 42 | 10 | Sprint for 3 s: +10 speed while rising and +10 speed in its damage | — | 0 | common |
+| **Blue** | 42 | 10 | Sprint for 3 s: +10 speed while rising (and so more damage) | Speed damage ×2: its speed boosts count double in its damage | 0 | common |
 | **Patchwork** | 30 | 10 | none of its own | Counts as Yellow for the Yellow chain and as Red for the Red bonus; drawn in random colours | 0 | common |
 | **Purple** | 28 | 10 | Charged shot: the bird stops and charges while UP keeps being pressed, then fires on release; 10 / 40 / 160 / 640 damage after 0 / 1 / 2 / 3 s (fires by itself at 3 s) | Can be bounced while scared | +1 | uncommon |
 | **Clockwork** | 20 | 11 | +1 charge (max 3); its speed equals its charge | Bounces by itself at the starting line while charged; starts with 2, loses 1 every 30 s; at 0 it drops at top speed (a bounce gives 1 back) | +2 | rare |
 | **White** ("Templar") | 40 | 20 | Within ±2 lanes: bounces falling birds (not scared or stunned ones) and fires the powers of rising Yellow, Red and Blue birds | ×1.5 score; unique | +3 | epic |
 | **Orange** ("Phoenix") | 50 | 999 | none | Kills any enemy in one hit; at the ceiling it turns into a dormant egg in its lane (and drops an orange egg); UP on its lane has a 10% chance to wake it; an obstacle crushes the dormant egg (bird lost); never dies at the floor; ×0.5 score; unique | +3 | epic |
-| **Gold** | 58 | 2 | none | Scores a flat 100 per move instead of the usual formula; damage 2, so it barely hurts enemies; unique | +3 | epic |
+| **Gold** | 58 | 2 | none | Scores a flat 40 per move instead of the usual formula; damage 2, so it barely hurts enemies; falls a bit faster (+3); cards and pacts do not change it (upgrades do); unique | +3 | epic |
 | **Cookie** | 29 | 9 | Drops a crumb worth 75% of its XP for another bird to pick up; dies after its 5th crumb | Earns 1.5× XP; cannot pick crumbs up itself | +2 | rare |
 | **Stealth** | 31 | 75 | Turns solid for 3 s: speed 60, +40 damage, bats cannot scare it | Otherwise passes through enemies, obstacles and loot (and cannot collect loot); ×1.2 score | +2 | rare |
 | **Dinosaur** | 38 | 50 | none | Needs 15 presses to bounce (every 3rd press slows its fall); 3 rows tall, so a bigger target; ×2 score | +4 | legendary |
@@ -48,6 +52,7 @@ What every bird does, read from the code (not from the descriptions in
 | **Poison** | 31 | 27 | For 2 s its poison chance becomes 60% | Hitting a bat or a boss: 30% chance (a third on bosses) to poison it, 20 HP/s for 5 s | +1 | uncommon |
 | **Berserk** | 32 | 40 | For 2 s its bleed chance becomes 60% | Hitting a bat or a boss: 30% chance (a third on bosses) to make it bleed, 10 HP/s for 10 s and 10 less armor | +1 | uncommon |
 | **Rock** | 19 | 31 | For 3 s: pushes 2 rows and speed 30 | Hitting a bat pushes it up 1 row | +1 | uncommon |
+| **Zombie** | 20 | 1 | none | Not hatched: a necromancer raises it in an empty lane, or its zombies bite one of your birds (2%). Bounces by itself while a necromancer lives; scares falling neighbours and may bite them; no score, prestige or XP; collects nothing. One a necromancer raised costs no life when lost | 0 | – |
 
 "Card rarity": new birds hatch from bird cards, offered by eggs of that
 rarity while a lane is free (see `docs/cards.md`).
@@ -80,7 +85,7 @@ Values are in `config.yml` `synergies` (code: `src/engine/synergies.py`).
   climb.
 - **Yellow next to Blue:** a scared Blue falling past a rising Yellow (at most
   1 row apart) is no longer scared, so it can be bounced again.
-- **Red next to Phoenix:** each Red adds +5% to the chance that UP wakes the
+- **Red next to Phoenix:** each Red adds +3% to the chance that UP wakes the
   dormant Phoenix egg (base 10%).
 - **Yellow next to Clockwork:** the Yellow power slows the falling Clockwork
   like any other bird and adds 1 to its charge (never above the maximum).

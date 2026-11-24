@@ -20,8 +20,10 @@ Examples:
   # Everything as JSON for your own analysis
   python3 tools/simulate.py --runs 100 --json results.json
 
-Bot profiles: perfect (60 keys/s, no delay), expert (15 keys/s, 150 ms),
-average (10 keys/s, 250 ms), novice (6 keys/s, 400 ms, no powers).
+Bot profiles (keys per second per hand; moves with one hand, UP with the other):
+perfect (60, no delay), expert (7.5, 200 ms reactions, auto formation, brakes
+above gear 7, sweeps), average (5, 300 ms, same strategy), novice (3, 450 ms,
+no powers). In the dark and under fog the bot sees only what a player sees.
 Values given with --set / --variant are YAML, so lists and numbers work.
 """
 

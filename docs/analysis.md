@@ -1,5 +1,13 @@
 # Analysing what matters
 
+> **Out of date.** These numbers were measured before the November 2026
+> changes: bot at human key rates with two hands and sweeps, per-world bat
+> tables and new bats (healer, bomber, plague, necromancer), world hazards,
+> elite behaviours, card levels (6 per type, 4 types a run), the Gold and fear
+> caps, the tougher first boss. The tools still work; rerun them
+> (`tools/analyze.py`, `tools/campaign.py`) before trusting any figure below.
+> What each world adds now: `docs/worlds.md`.
+
 `tools/analyze.py` plays many games with the bot and measures **how much each
 factor and each choice changes the outcome**, instead of trying fixed
 strategies one by one.

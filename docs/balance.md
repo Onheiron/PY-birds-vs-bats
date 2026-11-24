@@ -1,5 +1,13 @@
 # Balance: what the analysis found, and what was changed
 
+> **Out of date.** These numbers were measured before the November 2026
+> changes: bot at human key rates with two hands and sweeps, per-world bat
+> tables and new bats (healer, bomber, plague, necromancer), world hazards,
+> elite behaviours, card levels (6 per type, 4 types a run), the Gold and fear
+> caps, the tougher first boss. The tools still work; rerun them
+> (`tools/analyze.py`, `tools/campaign.py`) before trusting any figure below.
+> What each world adds now: `docs/worlds.md`.
+
 Everything here comes from simulated games: `tools/simulate.py`,
 `tools/analyze.py` (`factors`, `decisions`, `levels`, `powers`, `cards`) and
 `tools/campaign.py`. The bot profiles stand for players: **expert** ~15
