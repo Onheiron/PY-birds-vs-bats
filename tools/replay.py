@@ -161,9 +161,8 @@ def main():
     commit = data.get('commit')
     current = recorder.code_commit()
     if commit and current and commit.rstrip('+') != current.rstrip('+'):
-        print(
-            f'Recorded with commit {commit}, this code is {current}: to replay it exactly, git checkout {commit.rstrip("+")}'
-        )
+        print(f'Recorded with commit {commit}, this code is {current}.')
+        print(f'To replay it exactly: git checkout {commit.rstrip("+")}')
     elif commit and commit.endswith('+'):
         print(f'Recorded with local changes on top of commit {commit.rstrip("+")}: the replay may differ.')
 
