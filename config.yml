@@ -861,7 +861,7 @@ cards:
     lucky_feather:   {name: Lucky Feather, desc: "An egg a bird collects may turn one rarity rarer.",   kind: stat, effects: [{stat: luck, add: 0.02}]}
     quick_study:     {name: Quick Study, desc: "Birds earn more XP from hits and kills.",     kind: stat, effects: [{stat: xp_gain, pct: 6}]}
     show_off:        {name: Show-off, desc: "More points.",        kind: stat, effects: [{stat: score_mult, pct: 5}]}
-    lasting_powers:  {name: Lasting Powers, desc: "Powers last longer.",  kind: stat, effects: [{stat: power_duration, pct: 8}]}
+    lasting_powers:  {name: Lasting Powers, desc: "Powers, timed cards and power-ups last longer.",  kind: stat, effects: [{stat: power_duration, pct: 8}]}
     potent_powers:   {name: Potent Powers, desc: "Powers hit harder.",   kind: stat, effects: [{stat: power_potency, pct: 8}]}
     safety_net:      {name: Safety Net, desc: "A bird reaching the floor may bounce back instead.",      kind: stat, effects: [{stat: floor_save, add: 0.02}], min_rarity: rare}
     second_wind:     {name: Second Wind, desc: "Every bird can fire its power once more per ascent.",     kind: stat, effects: [{stat: power_uses, add: 1, scale: false}],

@@ -4,7 +4,7 @@ import random
 from collections import Counter
 
 from src.core import constants
-from src.engine import cards, choices, enemy_stats, stats
+from src.engine import cards, choices, clock, enemy_stats, stats
 from src.engine.enemy_stats import RARITIES
 from tests.harness import Simulation
 
@@ -291,3 +291,18 @@ def test_a_queued_egg_draws_its_cards_after_the_choice_before_it():
         second = sim.state.choice.active
         assert second is not None and second is not first
         assert not any(c['kind'] == 'bird' for c in second['cards'])  # no slot left for a bird
+
+
+def test_power_duration_lengthens_timed_cards_and_power_ups():
+    from src.engine.logic import loot
+
+    with Simulation(seed=1, key_rate=0) as sim:
+        frenzy = cards._make_card('frenzy', cards._catalog()['frenzy'], 'common')
+        tail = loot.powerup_details('tailwind')['seconds']
+        base = cards.card_info(frenzy)['duration']
+        stats.add_modifier('flock', 'power_duration', mul=1.5, source='card:lasting_powers')
+        assert cards.card_info(frenzy)['duration'] != base  # the shown seconds follow
+        assert loot.powerup_details('tailwind')['seconds'] == tail * 1.5
+        cards.apply_card(frenzy)
+        mod = [m for m in sim.state.stats.modifiers if m['source'] == 'card:frenzy'][0]
+        assert abs((mod['until'] - clock.now()) - 20 * 1.5) < 1e-6

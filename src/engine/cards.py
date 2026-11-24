@@ -149,9 +149,10 @@ def apply_effect(effect, source=''):
     """Apply one effect to the flock (or to the enemies, for an ``enemy`` effect)."""
     if 'stat' in effect:
         mul = 1 + effect['pct'] / 100 if 'pct' in effect else 1.0
-        stats.add_modifier(
-            'flock', effect['stat'], add=effect.get('add', 0.0), mul=mul, seconds=effect.get('seconds'), source=source
-        )
+        seconds = effect.get('seconds')
+        if seconds:
+            seconds *= stats.duration_mult()  # power duration lengthens timed cards too
+        stats.add_modifier('flock', effect['stat'], add=effect.get('add', 0.0), mul=mul, seconds=seconds, source=source)
     if 'enemy' in effect:
         state.stats.enemy_layers.append(_enemy_layer(effect['enemy']))
     if 'xp' in effect:
@@ -210,7 +211,7 @@ def describe_effect(effect):
     good = (value >= 0) != (stat in _LOWER_IS_BETTER)
     text = f'{sign}{_number(abs(value))}{unit} {label}'
     if effect.get('seconds'):
-        text += f" for {_number(effect['seconds'])} s"
+        text += f" for {_number(effect['seconds'] * stats.duration_mult())} s"
     return text, good
 
 
@@ -294,7 +295,7 @@ BIRD_BLURBS = {
 def _seconds_of(card):
     for effect in card['effects']:
         if effect.get('seconds'):
-            return effect['seconds']
+            return effect['seconds'] * stats.duration_mult()
         if 'powerup' in effect:
             from src.engine.logic.loot import powerup_details
 

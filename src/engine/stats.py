@@ -226,6 +226,22 @@ def flock(name):
     return max(definition.minimum, min(definition.maximum, (definition.default + add) * mul))
 
 
+def flock_bird_stat(name):
+    """A bird stat as the cards, pacts and upgrades set it for the whole flock (no bird type, no grade)."""
+    definition = BIRD_STATS[name]
+    add, mul = 0.0, 1.0
+    for mod in state.stats.modifiers:
+        if mod['stat'] == name and mod['target'] == 'flock':
+            add += mod.get('add', 0)
+            mul *= mod.get('mul', 1)
+    return max(definition.minimum, min(definition.maximum, (definition.default + add) * mul))
+
+
+def duration_mult():
+    """How much longer timed cards and power-ups last: the flock's power_duration (Lasting Powers...)."""
+    return flock_bird_stat('power_duration') / BIRD_STATS['power_duration'].default
+
+
 def type_value(bird_type, name):
     """Value of stat ``name`` for a kind of bird at grade D, before modifiers."""
     value = _defaults().get(name, BIRD_STATS[name].default)
