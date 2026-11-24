@@ -275,3 +275,19 @@ def test_no_eggs_when_nothing_is_left_to_offer():
 
 def _kind(entry):
     return (entry if isinstance(entry, dict) else vars(entry)).get('kind', 'stat')
+
+
+def test_a_queued_egg_draws_its_cards_after_the_choice_before_it():
+    with Simulation(seed=1, key_rate=0) as sim:
+        sim.state.birds.lost[0] = True  # one free slot
+        choices.offer_egg('common')
+        choices.offer_egg('common')
+        first = sim.state.choice.active
+        bird = next((n for n, c in enumerate(first['cards']) if c['kind'] == 'bird'), None)
+        if bird is None:
+            first['cards'][0] = cards._roll_bird('common', set(), random.Random(3))
+            bird = 0
+        choices.pick(bird)  # the slot is taken now
+        second = sim.state.choice.active
+        assert second is not None and second is not first
+        assert not any(c['kind'] == 'bird' for c in second['cards'])  # no slot left for a bird

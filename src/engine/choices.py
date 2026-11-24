@@ -24,13 +24,28 @@ def active():
 
 
 def _open(offer):
-    if not offer['cards']:
-        return
-    if state.choice.active is None:
-        state.choice.active = offer
-        events.emit('choice_offered', offer=offer)
-    else:
+    """Show ``offer`` now, or queue it behind the one on screen.
+
+    An egg's cards are drawn when it is shown (``cards`` None until then), so a
+    queued egg reflects what the choices before it changed (a bird hatched, a
+    card type maxed...).
+    """
+    if state.choice.active is not None:
         state.choice.queue.append(offer)
+        return
+    if offer['kind'] == 'egg' and offer.get('cards') is None:
+        offer['cards'] = cards.roll_offer(offer['rarity'], random)
+    if not offer['cards']:
+        _next()
+        return
+    state.choice.active = offer
+    events.emit('choice_offered', offer=offer)
+
+
+def _next():
+    """Show the next queued offer, if any."""
+    if state.choice.active is None and state.choice.queue:
+        _open(state.choice.queue.pop(0))
 
 
 def offer_egg(rarity, rng=random):
@@ -40,7 +55,8 @@ def offer_egg(rarity, rng=random):
             'kind': 'egg',
             'title': f'{rarity.upper()} EGG',
             'rarity': rarity,
-            'cards': cards.roll_offer(rarity, rng),
+            # Drawn now if shown now; a queued egg draws its cards when its turn comes
+            'cards': cards.roll_offer(rarity, rng) if state.choice.active is None else None,
             'index': 0,
             'refusable': False,
         }
@@ -104,8 +120,7 @@ def skip():
     state.choice.skips -= 1
     state.choice.active = None
     events.emit('choice_made', offer=offer, card=dict(REFUSE, id='skip', name='Skip'))
-    if state.choice.queue:
-        _open(state.choice.queue.pop(0))
+    _next()
     return True
 
 
@@ -141,8 +156,7 @@ def pick(index=None):
         from src.services import save_manager
 
         save_manager.checkpoint()  # a boss beaten and its pact settled
-    if state.choice.queue:
-        _open(state.choice.queue.pop(0))
+    _next()
     return card
 
 
