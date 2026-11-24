@@ -271,6 +271,13 @@ def update(bat):
         return
     settled = bat['y_pos'] >= bat['target_y'] or 'diver' in enemy_stats.bat_kinds(bat)
     if phase in ('enter', 'move'):
+        if not settled:
+            from src.engine.bat_ai import can_descend
+
+            if not can_descend(bat):
+                _blocked(bat)  # a bird below would end up above it: out from the top if it lasts
+            else:
+                bat.pop('blocked_since', None)
         if settled:
             plan['phase'] = 'hold'
             plan['until'] = now + _between(_kind_cfg(bat, 'hold', [1.0, 2.0]), (1, 2)) * _pace(bat)
@@ -314,6 +321,11 @@ def _fly_to(bat, target_x):
         bat['x_pos'] = next_x
         bat.pop('blocked_since', None)
         return
+    _blocked(bat)
+
+
+def _blocked(bat):
+    """It cannot go on (other bats, or a bird it must not pass under): it leaves if this lasts."""
     since = bat.setdefault('blocked_since', clock.now())
     if clock.now() - since >= float(getattr(getattr(constants.bat_enemy, 'waves', None), 'stuck_time', 1.5)):
         bat.pop('blocked_since', None)

@@ -62,7 +62,7 @@ def update_bat_positions():
 
         # Vertical descent to its height
         vert_interval = max(1, int(enemy_stats.get(bat, 'descent_interval')))
-        if state.game.frame_count % vert_interval == 0 and bat['y_pos'] < bat['target_y']:
+        if state.game.frame_count % vert_interval == 0 and bat['y_pos'] < bat['target_y'] and can_descend(bat):
             bat['y_pos'] += 1
 
 
@@ -75,7 +75,7 @@ def _update_diver_bat(bat):
     diver_state = bat.get('diver_state', 'flying')
     if diver_state == 'flying':
         if state.game.frame_count % max(1, int(enemy_stats.get(bat, 'descent_interval'))) == 0:
-            if bat['y_pos'] < bat['target_y']:
+            if bat['y_pos'] < bat['target_y'] and can_descend(bat):
                 bat['y_pos'] += 1
         ready = clock.now() >= bat.get('ability_ready', 0)
         if (
@@ -88,7 +88,10 @@ def _update_diver_bat(bat):
 
     elif diver_state == 'diving':
         if state.game.frame_count % max(1, int(enemy_stats.get(bat, 'dive_interval'))) == 0:
-            bat['y_pos'] += 1
+            if can_descend(bat):
+                bat['y_pos'] += 1
+            else:
+                bat['diver_state'] = 'returning'  # a bird above: the dive stops there
         # Elite divers bring a headwind with them
         wind = enemy_stats.get(bat, 'dive_wind')
         if wind:
@@ -309,4 +312,36 @@ def _check_bat_can_move(bat, next_x):
                 if abs(next_x - other_left) > abs(bat['x_pos'] - other_left):
                     continue
             return False
-    return True  # birds do not stop bats: they fly across the lanes
+    # Never under a bird: a bat does not fly sideways into lanes where a bird is above it
+    # (wave bats boxed in like this fly out from the top instead)
+    return not bird_above(bat, next_x, bat['y_pos'] + bat_height(bat) - 1)
+
+
+def bat_height(bat):
+    """Rows a bat takes (spellcasters 3, the others 2)."""
+    return 3 if 'spellcaster' in enemy_stats.bat_kinds(bat) else 2
+
+
+def bird_above(bat, x, bottom):
+    """Is a living bird, in the columns of the bat at ``x``, at or above row ``bottom``?
+
+    A bat must never end up below a bird: it does not move sideways, nor down,
+    where that would happen.
+    """
+    from src.engine import bird_kinds
+
+    right = x + enemy_stats.bat_width(bat) - 1
+    for i in range(len(state.birds.colors)):
+        if state.birds.lost[i] or state.birds.y[i] >= constants.layout.height:
+            continue
+        left_i, right_i = bird_kinds.hit_span(i)
+        if right < left_i or x > right_i:
+            continue
+        if state.birds.y[i] <= bottom:
+            return True
+    return False
+
+
+def can_descend(bat):
+    """May the bat go down a row? Not if a bird in its columns would then be above it."""
+    return not bird_above(bat, bat['x_pos'], bat['y_pos'] + bat_height(bat))

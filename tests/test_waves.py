@@ -142,3 +142,25 @@ def test_overlapping_bats_can_move_apart():
         a['x_pos'], b['x_pos'] = 20, 23
         assert bat_ai._check_bat_can_move(a, 19)  # away from b
         assert not bat_ai._check_bat_can_move(a, 21)  # into b
+
+
+def test_a_bat_never_moves_under_a_bird():
+    with Simulation(seed=4, key_rate=0) as sim:
+        state = sim.state
+        bat = plain_bat(sim)
+        birds = state.birds
+        for i in range(len(birds.colors)):
+            birds.lost[i] = i != 0
+        from src.core import constants
+
+        x = constants.layout.lane_positions[4]
+        birds.random_lanes[0], birds.y[0] = 4, 6  # a bird high up in lane 4
+        bat['y_pos'] = 10
+        bat['x_pos'] = x + 6  # just right of lane 4
+        assert not bat_ai._check_bat_can_move(bat, x - 3)  # sideways into lane 4: under the bird
+        bat['x_pos'], bat['y_pos'] = x - 4, 2  # above the bird, in its lane
+        assert not bat_ai.can_descend(bat) or bat['y_pos'] + 2 < 6
+        bat['y_pos'] = 4  # its bottom row is 5: one more row and the bird would be level with it
+        assert not bat_ai.can_descend(bat)
+        birds.y[0] = 20  # the bird is far below: free to come down and across
+        assert bat_ai.can_descend(bat)
