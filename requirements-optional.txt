@@ -1,7 +1,3 @@
 # Optional features: the game runs without them.
-# Sound effects and dynamic music (numpy synthesizes, pygame-ce plays through SDL audio)
-numpy>=1.24
-# Playing in a window of its own (game.py --window; the Steam build)
-pygame-ce>=2.5
 # Online leaderboard and telemetry (also needs a Firebase service account)
 firebase-admin>=6.0

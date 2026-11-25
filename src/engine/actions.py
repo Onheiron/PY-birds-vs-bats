@@ -316,7 +316,9 @@ def handle_audio_toggle():
     """Toggle audio on/off (mute/unmute)."""
     audio = get_audio()
     if audio is None:
-        notify('Audio not available')
+        from src.services.sound import unavailable_reason
+
+        notify(f'No audio: {unavailable_reason()}')
         return
 
     # Toggle audio state

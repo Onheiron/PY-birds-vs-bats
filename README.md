@@ -26,13 +26,17 @@ python3 game.py
 Standalone binaries for Linux, macOS and Windows are attached to each
 [release](https://github.com/Onheiron/PY-birds-vs-bats/releases): unpack and run `BVB`.
 
+`requirements.txt` includes `numpy` and `pygame-ce`: sound effects and the
+music, played with real instrument samples and following the flock and the
+gear (`docs/music.md`; SDL audio: macOS, Linux, Windows), and the window
+mode. Without them the game runs silent and says why.
+
 Optional extras (the game runs fine without them):
 
 ```bash
 pip install -r requirements-optional.txt
 ```
 
-- `numpy` + `pygame-ce`: sound effects and the music, played with real instrument samples and following the flock and the gear (`docs/music.md`; SDL audio: macOS, Linux, Windows), and the window mode
 - `firebase-admin` + a service account file: online leaderboard (not active yet:
   the client is never connected, see `docs/unused-mechanics.md`)
 
@@ -247,7 +251,7 @@ python3 game.py --window
 python3 game.py --fullscreen
 ```
 
-The game in a window of its own (needs `pip install pygame-ce`): keyboard and
+The game in a window of its own: keyboard and
 gamepad (A bounces, B swaps, Start pauses...). This is the Steam build: see
 `docs/steam.md` for the controller layout, the Linux depot built in the Steam
 Linux Runtime and how to upload it.

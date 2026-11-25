@@ -27,8 +27,10 @@ try:
     from src.services import synth
 
     _IMPORTED = True
-except ImportError:
+    _missing = None
+except ImportError as error:
     _IMPORTED = False
+    _missing = getattr(error, 'name', None) or str(error)
 
 SFX_COOLDOWN = 0.05  # seconds between two plays of the same effect
 SFX_CHANNELS = 6  # effects heard at once
@@ -37,6 +39,7 @@ SFX_VOLUME = 1.0
 CROSSFADE_MS = 600
 
 _ready = None  # None: not tried yet; True / False once the mixer was opened (or failed)
+_why = None  # why there is no audio (shown to the player)
 _enabled = True
 _lock = threading.Lock()
 _sfx_sounds = {}
@@ -58,8 +61,11 @@ def _open():
     global _ready
     if _ready is not None:
         return _ready
+    global _why
     _ready = False
     if not _IMPORTED:
+        package = 'pygame-ce' if _missing == 'pygame' else _missing
+        _why = f'{package} missing: pip install -r requirements.txt'
         return False
     try:
         pygame.mixer.pre_init(synth.SAMPLE_RATE, -16, 2, 512)
@@ -67,9 +73,15 @@ def _open():
         pygame.mixer.set_num_channels(2 + SFX_CHANNELS)
         pygame.mixer.set_reserved(2)  # channels 0 and 1: the music
         _ready = True
-    except Exception:
+    except Exception as error:
+        _why = f'no audio device ({error})'
         _ready = False
     return _ready
+
+
+def unavailable_reason():
+    """Why there is no audio, or None."""
+    return None if _open() else _why
 
 
 def _sound(wave):

@@ -1,20 +1,24 @@
 """Sound facade: every call is a safe no-op when the audio backend is missing.
 
-The real backend (src.services.audio) needs numpy and pygame-ce (SDL audio),
-which are optional. Game code talks to this module only, so it never has to check
-whether audio is available.
+The real backend (src.services.audio) needs numpy and pygame-ce (SDL audio,
+in requirements.txt). Game code talks to this module only, so it never has to
+check whether audio is available; ``unavailable_reason()`` says why it is not.
 """
 
 from src.core import constants, state
 from src.entities.bird_types import get_bird_type_by_color
 
+_why = None
 try:
     from src.services import audio as _backend
 
     if not _backend.is_audio_available():
+        _why = _backend.unavailable_reason()
         _backend = None
-except (ImportError, OSError):
+except (ImportError, OSError) as error:
+    _why = str(error)
     _backend = None
+_told = False
 
 _last_bird_sync_frame = 0
 _last_bird_set = None
@@ -23,6 +27,21 @@ _last_bird_set = None
 def get_audio():
     """Return the audio backend module, or None when audio is unavailable."""
     return _backend
+
+
+def unavailable_reason():
+    """Why there is no audio (None if there is)."""
+    return None if _backend is not None else (_why or 'unknown reason')
+
+
+def _tell_once():
+    """No audio: say why once, on the first game of the session."""
+    global _told
+    if _backend is None and not _told:
+        _told = True
+        from src.engine.notifications import notify
+
+        notify(f'No audio: {unavailable_reason()}', duration_frames=200)
 
 
 def play_sfx(name):
@@ -44,6 +63,7 @@ def apply_music_setting():
 def start_session_music():
     """Restart the music for a new session, in sync with biome, gear and flock."""
     if _backend is None:
+        _tell_once()
         return
     _backend.stop_music()
     if state.settings.music_enabled:

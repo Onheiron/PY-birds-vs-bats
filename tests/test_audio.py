@@ -25,3 +25,12 @@ def test_every_sound_effect_is_made_and_plays(engine):
         assert wave is not None and len(wave) > 0 and abs(wave).max() <= 1.0
         engine.play_sfx(name)
     assert synth.sfx_wave('no such sound') is None
+
+
+def test_without_pygame_the_game_says_what_to_install(monkeypatch):
+    monkeypatch.setattr(audio, '_ready', None)
+    monkeypatch.setattr(audio, '_IMPORTED', False)
+    monkeypatch.setattr(audio, '_missing', 'pygame')
+    assert not audio.is_audio_available()
+    assert audio.unavailable_reason() == 'pygame-ce missing: pip install -r requirements.txt'
+    monkeypatch.setattr(audio, '_ready', None)
