@@ -4449,6 +4449,113 @@
       },
       "type": "object"
     },
+    "merchant": {
+      "properties": {
+        "extra": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "stock": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "wares": {
+          "properties": {
+            "common_egg": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "egg": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "epic_egg": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "egg": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "feather": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                },
+                "rerolls": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "mend": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "lives": {
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "rare_egg": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "egg": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "notifications": {
       "properties": {
         "duration_seconds": {
@@ -5761,6 +5868,43 @@
       },
       "type": "object"
     },
+    "unlocks": {
+      "properties": {
+        "LEGENDARY": {
+          "properties": {
+            "all": {
+              "properties": {
+                "won_survival": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "desc": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "SURVIVAL": {
+          "properties": {
+            "all": {
+              "properties": {
+                "adventure_world4": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "desc": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "upgrades": {
       "properties": {
         "tree": {
@@ -5964,6 +6108,37 @@
               },
               "type": "object"
             },
+            "formation": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "formation": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
             "giant_slayer": {
               "properties": {
                 "branch": {
@@ -6033,6 +6208,45 @@
                 },
                 "name": {
                   "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "haggling": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "merchant_discount": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "requires": {
+                  "properties": {
+                    "merchant_stock": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
                 }
               },
               "type": "object"
@@ -6193,6 +6407,68 @@
                     }
                   },
                   "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "merchant_stock": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "merchant_stock": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "opening_card": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "opening_eggs": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
                 }
               },
               "type": "object"
@@ -6499,6 +6775,589 @@
                       },
                       "stat": {
                         "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "training": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "requires": {
+                  "properties": {
+                    "formation": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_berserk": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_blue": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_clockwork": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_cookie": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_dinosaur": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_frosty": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_glitch": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_patchwork": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_poison": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_purple": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_rainbow": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_red": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_rock": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_stealth": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_twister": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "veteran_yellow": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "bird": {
+                        "type": "string"
+                      },
+                      "start_grade": {
+                        "type": "number"
                       }
                     },
                     "type": "object"

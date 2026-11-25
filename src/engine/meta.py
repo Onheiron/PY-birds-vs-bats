@@ -56,6 +56,8 @@ RUN_COUNTERS = (
     'clean_worlds',
     'swapless_worlds',
     'clean_bosses',
+    'adventure_world4',  # reached the fourth world on ADVENTURE (unlocks SURVIVAL)
+    'spent',  # gold spent at the merchant: it comes off the run's reward
 )
 # Lifetime counters that keep the best run instead of adding up
 BEST_COUNTERS = ('level', 'score', 'max_gear')
@@ -147,9 +149,77 @@ def run_reward_parts():
 
 
 def run_gold():
-    """Gold this run pays when it ends (its reward × difficulty × Gold Digger)."""
+    """Gold this run pays when it ends (its reward × difficulty × Gold Digger, less what the
+    merchant was paid)."""
     base, difficulty, digger = run_reward_parts()
-    return int(round(base * difficulty * digger))
+    return max(0, int(round(base * difficulty * digger)) - (state.meta.run or {}).get('spent', 0))
+
+
+def difficulty_factor():
+    """The difficulty's factor of the run reward (merchant prices follow it)."""
+    return run_reward_parts()[1]
+
+
+def spend(amount):
+    """Pay ``amount`` of the run's gold (the merchant); False if the run has not earned it."""
+    run = state.meta.run
+    if run is None or amount > run_gold():
+        return False
+    run['spent'] = run.get('spent', 0) + amount
+    return True
+
+
+# ---------------------------------------------------------------------- difficulties
+
+
+def unlocks():
+    return _as_dict(_cfg('unlocks'))
+
+
+def difficulty_unlocked(name):
+    """Is the difficulty ``name`` open? (those not in ``unlocks`` always are)"""
+    entry = unlocks().get(name)
+    if entry is None or state.meta.profile is None:
+        return True
+    life = dict(profile().get('lifetime', {}))
+    return _met(entry, life)
+
+
+def unlock_goal(name):
+    entry = unlocks().get(name)
+    return _as_dict(entry).get('desc', '') if entry is not None else ''
+
+
+# ---------------------------------------------------------------------- formation
+
+
+FORMATION_EXCLUDED = ('WHITE', 'GOLD', 'ORANGE', 'ZOMBIE')  # evolved or undead: never in a formation
+
+
+def formation_unlocked():
+    return state.meta.profile is not None and upgrade_value('formation') > 0
+
+
+def formation_choices():
+    """Bird types a formation may hold: the ones discovered (Yellow, Red and Blue always)."""
+    from src.entities.bird_types import BirdType
+
+    names = [n for n in dir(BirdType) if n.isupper() and n not in FORMATION_EXCLUDED]
+    known = set(state.discovery.birds) | {BirdType.YELLOW, BirdType.RED, BirdType.BLUE}
+    order = ['YELLOW', 'RED', 'BLUE', 'PURPLE']
+    names.sort(key=lambda n: (order.index(n) if n in order else len(order), n))
+    return [getattr(BirdType, n) for n in names if getattr(BirdType, n) in known]
+
+
+def formation():
+    """The starting flock chosen (profile['formation']), or None to use the default one."""
+    if not formation_unlocked():
+        return None
+    chosen = profile().get('formation')
+    allowed = set(formation_choices())
+    if not chosen or any(bird not in allowed for bird in chosen):
+        return None
+    return list(chosen)
 
 
 def _count(name, amount=1):
@@ -237,6 +307,8 @@ def _check_global(run=None):
 
 def _on_level_up(level):
     _set_best('level', level)
+    if state.settings.difficulty == 1 and state.game.level_group >= 4:
+        _set_best('adventure_world4', 1)
 
 
 def _on_score(score):
@@ -393,13 +465,33 @@ def buy(upgrade_id, save=True):
     return True
 
 
+# Effects of the meta progression that add up level by level (stats scale through cards.scale_effect)
+LEVELLED = (
+    'lives',
+    'gold_pct',
+    'rerolls',
+    'skips',
+    'start_grade',
+    'merchant_stock',
+    'merchant_discount',
+    'opening_eggs',
+)
+
+
 def upgrade_effects(upgrade_id, level=None):
     """The effects of an upgrade at ``level`` (default: the level owned)."""
     entry = _as_dict(upgrades()[upgrade_id])
     level = level_of(upgrade_id) if level is None else level
     if level <= 0:
         return []
-    return [cards.scale_effect(e, level) for e in entry.get('effects', [])]
+    out = []
+    for effect in entry.get('effects', []):
+        effect = cards.scale_effect(effect, level)
+        for key in LEVELLED:
+            if key in effect:
+                effect[key] = effect[key] * level
+        out.append(effect)
+    return out
 
 
 def upgrade_value(key):
@@ -413,12 +505,37 @@ def upgrade_value(key):
 
 def apply_upgrades():
     """Apply every upgrade owned to the run that starts."""
+    grades = {}  # bird type (None: every bird) -> grades more at the start
+    opening = 0
     for upgrade_id in upgrades():
         for effect in upgrade_effects(upgrade_id):
             if 'lives' in effect:
                 state.game.lives += int(effect['lives'])
             if any(k in effect for k in ('stat', 'rerolls', 'skips')):
                 cards.apply_effect(effect, source=f'upgrade:{upgrade_id}')
+            if 'start_grade' in effect:
+                grades[effect.get('bird')] = grades.get(effect.get('bird'), 0) + int(effect['start_grade'])
+            opening += int(effect.get('opening_eggs', 0))
+    _start_grades(grades)
+    if opening:
+        from src.engine import choices
+
+        for _ in range(opening):
+            choices.offer_egg('common')
+
+
+def _start_grades(grades):
+    """Birds start that many grades up (Training for all, a Veteran upgrade for its type)."""
+    if not grades:
+        return
+    from src.engine import grades as grade_table
+    from src.entities.bird_types import get_bird_type_by_color
+
+    steps = grade_table.grade_steps()
+    for i, color in enumerate(state.birds.colors):
+        n = grades.get(None, 0) + grades.get(get_bird_type_by_color(color), 0)
+        if n > 0:
+            state.birds.per_bird_xp[i] = max(state.birds.per_bird_xp[i], steps[min(n, len(steps) - 1)])
 
 
 def describe_upgrade(upgrade_id, level=None):
@@ -430,6 +547,17 @@ def describe_upgrade(upgrade_id, level=None):
             parts.append(f"+{int(effect['lives'])} starting lives")
         elif 'gold_pct' in effect:
             parts.append(f"+{effect['gold_pct']:g}% gold")
+        elif 'start_grade' in effect:
+            who = str(effect['bird']).title() + ' birds' if effect.get('bird') else 'every bird'
+            parts.append(f"{who} start {int(effect['start_grade'])} grade{'s' if effect['start_grade'] > 1 else ''} up")
+        elif 'formation' in effect:
+            parts.append('choose the starting flock (NEW GAME > FORMATION)')
+        elif 'opening_eggs' in effect:
+            parts.append(f"{int(effect['opening_eggs'])} common egg at the start")
+        elif 'merchant_stock' in effect:
+            parts.append(f"+{int(effect['merchant_stock'])} merchant ware")
+        elif 'merchant_discount' in effect:
+            parts.append(f"-{effect['merchant_discount']:g}% merchant prices")
         else:
             parts.append(cards.describe_effect(effect)[0])
     return ', '.join(parts)

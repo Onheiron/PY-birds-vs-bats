@@ -129,7 +129,10 @@ def _cycle_difficulty(delta=1):
 
 
 def _difficulty_name():
-    return DIFFICULTY_NAMES[state.settings.difficulty]
+    from src.engine import meta
+
+    name = DIFFICULTY_NAMES[state.settings.difficulty]
+    return name if meta.difficulty_unlocked(name) else f'{name} (locked)'
 
 
 def _start_game(difficulty):
@@ -152,7 +155,13 @@ def _continue():
 
 
 def _new_game():
+    from src.engine import meta
+
     selected = state.settings.difficulty
+    name = DIFFICULTY_NAMES[selected]
+    if not meta.difficulty_unlocked(name):
+        notify(meta.unlock_goal(name), title=f'{name} is locked:')
+        return
     constants.reload_for_difficulty(selected)
     _start_game(selected)
 
@@ -256,12 +265,63 @@ def _update_items():
     return [Item(name, 'option' if value else 'plain', (lambda v=value: v) if value else None, on_enter=updater.choose)]
 
 
+def _formation_item():
+    from src.engine import meta
+
+    return [Item('FORMATION', opens='formation')] if meta.formation_unlocked() else []
+
+
+def _formation_list():
+    """The flock the player has chosen, or the default one."""
+    from src.engine import meta
+
+    chosen = meta.formation()
+    if chosen:
+        return chosen
+    birds = list(constants.birds.default_formation[: constants.layout.num_balls])
+    return birds + [birds[0]] * (constants.layout.num_balls - len(birds))
+
+
+def _set_formation_bird(slot, delta):
+    from src.engine import meta
+
+    birds = _formation_list()
+    options = meta.formation_choices()
+    current = options.index(birds[slot]) if birds[slot] in options else 0
+    birds[slot] = options[(current + delta) % len(options)]
+    meta.profile()['formation'] = birds
+    save_manager.save_profile(meta.profile())
+
+
+def _reset_formation():
+    from src.engine import meta
+
+    meta.profile().pop('formation', None)
+    save_manager.save_profile(meta.profile())
+
+
+def _formation_items():
+    birds = _formation_list()
+    items = [
+        Item(
+            f'BIRD {slot + 1}',
+            'option',
+            (lambda b=bird: str(b).title()),
+            on_change=(lambda delta, s=slot: _set_formation_bird(s, delta)),
+            on_enter=(lambda s=slot: _set_formation_bird(s, 1)),
+        )
+        for slot, bird in enumerate(birds)
+    ]
+    return [*items, Item('DEFAULT FLOCK', on_enter=_reset_formation), _back_item()]
+
+
 def _title_items():
     return [
         *_update_items(),
         Item('CONTINUE', on_enter=_continue),
         Item('NEW GAME', value=_difficulty_name, on_enter=_new_game, on_change=_change_new_game_difficulty),
         Item('LOAD', opens='load'),
+        *_formation_item(),
         Item('UPGRADES', value=_gold_text, opens='upgrades'),
         Item('ACHIEVEMENTS', opens='achievements'),
         Item('BIRDPEDIA', opens='birdpedia'),
@@ -554,6 +614,7 @@ SCREENS = {
         _page('batpedia_list', 'bats'),
         _page('biomes_list', 'biomes'),
         Screen('upgrades', 'UPGRADES', _upgrades_items, hint='select'),
+        Screen('formation', 'FORMATION', _formation_items),
         Screen('achievements', 'ACHIEVEMENTS', _achievements_items, hint='select'),
     )
 }

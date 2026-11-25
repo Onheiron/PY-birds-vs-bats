@@ -306,6 +306,18 @@ def _seconds_of(card):
 def card_info(card):
     """Everything a card shows: {'name', 'rarity', 'kind', 'duration', 'text', 'lines'}."""
     kind = card['kind']
+    if kind == 'ware':  # the merchant's (src/engine/merchant.py)
+        from src.engine import meta
+
+        affordable = card['price'] <= meta.run_gold()
+        return {
+            'name': card['name'],
+            'rarity': card['rarity'],
+            'kind': 'Merchant',
+            'duration': '',
+            'text': card.get('desc', ''),
+            'lines': [(f"Price {card['price']} gold (you have {meta.run_gold()})", affordable)],
+        }
     seconds = _seconds_of(card)
     if kind == 'bird':
         duration = 'Hatches now'

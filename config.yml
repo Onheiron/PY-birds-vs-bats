@@ -1003,6 +1003,25 @@ run_reward:
   bats_per_gold: 25
   difficulty: [0.5, 1.0, 1.5, 2.0]
 
+# The merchant comes between worlds (after the boss's pact, not after the last world): its
+# wares are paid with the run's gold, which then comes off the run's reward. Prices are
+# multiplied by the difficulty's run_reward factor (the gold earned is, too) and lowered by
+# Haggling. ``stock``: the wares shown, then one more of ``extra`` per Merchant Stock level.
+merchant:
+  wares:
+    common_egg: {name: Common Egg,    desc: "Open a common egg now.",        price: 4,  egg: common}
+    rare_egg:   {name: Rare Egg,      desc: "Open a rare egg now.",          price: 8,  egg: rare}
+    mend:       {name: Mend,          desc: "Get one life back.",            price: 5,  lives: 1}
+    epic_egg:   {name: Epic Egg,      desc: "Open an epic egg now.",         price: 14, egg: epic}
+    feather:    {name: Lucky Feather, desc: "One more egg reroll this run.", price: 3,  rerolls: 1}
+  stock: [common_egg, rare_egg, mend]
+  extra: [epic_egg, feather]
+
+# Difficulties that must be earned (goals over every run played, as achievements)
+unlocks:
+  SURVIVAL:  {desc: "Reach the fourth world on ADVENTURE", all: {adventure_world4: 1}}
+  LEGENDARY: {desc: "Win on SURVIVAL", all: {won_survival: 1}}
+
 # Achievements pay their gold once, the first time.
 # all: {counter: minimum}, most: {counter: maximum}; in_a_run: the goal must be
 # met within one run (otherwise over every run played: counts add up, level,
@@ -1104,12 +1123,54 @@ upgrades:
     lucky_eggs:    {name: Lucky Eggs,    branch: Fortune, desc: Enemies drop rarer eggs,
                     costs: [30, 50, 80], requires: {gold_digger: 1}, effects: [{stat: egg_luck, add: 0.02}]}
     rerolls:       {name: Rerolls,       branch: Fortune, desc: One more egg reroll per run,
-                    costs: [25, 45, 70], requires: {gold_digger: 2}, effects: [{rerolls: 1}]}
+                    costs: [25, 45, 70, 100, 140], requires: {gold_digger: 2}, effects: [{rerolls: 1}]}
     skips:         {name: Skips,         branch: Fortune, desc: One more egg skip per run,
-                    costs: [30, 55], requires: {rerolls: 1}, effects: [{skips: 1}]}
+                    costs: [30, 55, 80, 110, 150], requires: {rerolls: 1}, effects: [{skips: 1}]}
+    merchant_stock: {name: Merchant Stock, branch: Fortune, desc: The merchant brings one more ware,
+                    costs: [50, 90], effects: [{merchant_stock: 1}]}
+    haggling:      {name: Haggling,      branch: Fortune, desc: The merchant's prices fall,
+                    costs: [60, 100], requires: {merchant_stock: 1}, effects: [{merchant_discount: 20}]}
+    formation:     {name: Formation,     branch: Flock,   desc: Choose your nine starting birds,
+                    costs: [60], effects: [{formation: 1}]}
+    opening_card:  {name: Opening Card,  branch: Flock,   desc: Open a common egg as every run starts,
+                    costs: [40], effects: [{opening_eggs: 1}]}
+    training:      {name: Training,      branch: Flock,   desc: Every bird starts one grade higher,
+                    costs: [80, 150], requires: {formation: 1}, effects: [{start_grade: 1}]}
     mastery:       {name: Mastery,       branch: Nest,    desc: Take each card type one more time,
                     costs: [60, 110, 180, 280], requires: {extra_life: 1}, effects: [{stat: card_max_level, add: 1}]}
     breadth:       {name: Breadth,       branch: Nest,    desc: Follow one more card type per run,
                     costs: [90, 160, 260], requires: {mastery: 1}, effects: [{stat: card_types, add: 1}]}
     renown:        {name: Renown,        branch: Fortune, desc: Start with more prestige,
                     costs: [35, 55, 85, 130], requires: {lucky_eggs: 1}, effects: [{stat: prestige_bonus, add: 0.5}]}
+    veteran_yellow:    {name: Yellow Veteran, branch: Veterans, desc: Yellow birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: YELLOW}]}
+    veteran_red:       {name: Red Veteran, branch: Veterans, desc: Red birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: RED}]}
+    veteran_blue:      {name: Blue Veteran, branch: Veterans, desc: Blue birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: BLUE}]}
+    veteran_purple:    {name: Purple Veteran, branch: Veterans, desc: Purple birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: PURPLE}]}
+    veteran_patchwork: {name: Patchwork Veteran, branch: Veterans, desc: Patchwork birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: PATCHWORK}]}
+    veteran_cookie:    {name: Cookie Veteran, branch: Veterans, desc: Cookie birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: COOKIE}]}
+    veteran_clockwork: {name: Clockwork Veteran, branch: Veterans, desc: Clockwork birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: CLOCKWORK}]}
+    veteran_stealth:   {name: Stealth Veteran, branch: Veterans, desc: Stealth birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: STEALTH}]}
+    veteran_dinosaur:  {name: Dinosaur Veteran, branch: Veterans, desc: Dinosaur birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: DINOSAUR}]}
+    veteran_glitch:    {name: Glitch Veteran, branch: Veterans, desc: Glitch birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: GLITCH}]}
+    veteran_twister:   {name: Twister Veteran, branch: Veterans, desc: Twister birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: TWISTER}]}
+    veteran_frosty:    {name: Frosty Veteran, branch: Veterans, desc: Frosty birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: FROSTY}]}
+    veteran_poison:    {name: Poison Veteran, branch: Veterans, desc: Poison birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: POISON}]}
+    veteran_berserk:   {name: Berserk Veteran, branch: Veterans, desc: Berserk birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: BERSERK}]}
+    veteran_rock:      {name: Rock Veteran, branch: Veterans, desc: Rock birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: ROCK}]}
+    veteran_rainbow:   {name: Rainbow Veteran, branch: Veterans, desc: Rainbow birds start one grade higher,
+                    costs: [30], effects: [{start_grade: 1, bird: RAINBOW}]}

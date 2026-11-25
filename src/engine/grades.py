@@ -44,3 +44,11 @@ def compute_grade_from_xp(xp):
             return (label, _GRADE_COLORS.get(label[0], DARK_GRAY))
 
     return ('C1', ORANGE)
+
+
+def grade_steps():
+    """XP at which each grade starts, lowest first: [0, C1, C2, ..., S] (the start grades of the
+    meta progression index it)."""
+    base = float(constants.progression.xp_base)
+    factor = float(constants.progression.grade_exp_factor)
+    return [0] + [threshold for _label, threshold in reversed(_grade_thresholds(base, factor))]

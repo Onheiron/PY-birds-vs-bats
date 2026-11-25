@@ -50,6 +50,11 @@ def test_tree_is_consistent():
 
 
 def test_every_submenu_is_reachable_from_a_root():
+    from src.core import state as game_state
+    from src.engine import meta
+
+    game_state.meta.profile = meta.new_profile()
+    game_state.meta.profile['upgrades'] = {'formation': 1}  # FORMATION shows once it is bought
     reachable = set()
     todo = [menus.TITLE, menus.PAUSE]
     while todo:
@@ -58,6 +63,7 @@ def test_every_submenu_is_reachable_from_a_root():
             continue
         reachable.add(screen_id)
         todo.extend(item.opens for item in menus.SCREENS[screen_id].items() if item.opens)
+    game_state.meta.profile = None
     assert reachable == set(menus.SCREENS)
 
 

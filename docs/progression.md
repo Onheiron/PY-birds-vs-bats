@@ -143,6 +143,42 @@ what it had).
 
 Maxing the whole tree costs 3515 gold.
 
+## Fixed unlocks
+
+Besides the stat upgrades, the tree has upgrades that change how a run starts
+and goes (`upgrades.tree` in config.yml):
+
+- **Formation** (Flock, 60 gold): choose the nine starting birds among the
+  ones discovered (TITLE > FORMATION; evolved birds and zombies never). The
+  choice is kept in the profile.
+- **Opening Card** (Flock, 40): every run starts with a free common egg.
+- **Training** (Flock, 80 and 150): every bird starts one grade higher per
+  level. **Veterans** (one per bird type, 30 each): birds of that type start
+  one grade higher (on top of Training).
+- **Merchant Stock** (Fortune, 50 and 90) and **Haggling** (60 and 100): see
+  the merchant below.
+- **Rerolls** and **Skips** go up to 5 levels.
+
+Every level of an upgrade adds its effect again (Extra Life 3 is +3 lives,
+Gold Digger 5 is +50% gold).
+
+### The merchant
+
+Between worlds, after the boss's pact (not after the last world), the
+merchant offers wares paid with the run's gold, which then comes off the
+gold the run pays at its end (`merchant` in config.yml): a common egg (4), a
+rare egg (8), a life (5); with Merchant Stock an epic egg (14) and a lucky
+feather (one more reroll, 3). Prices follow the difficulty like the reward
+does (x0.5 on PEACEFUL ... x2 on LEGENDARY), less 20% per Haggling level.
+One ware per visit, or leave.
+
+### Difficulties to earn
+
+PEACEFUL and ADVENTURE are always open; SURVIVAL opens once the fourth world
+is reached on ADVENTURE, LEGENDARY once a run is won on SURVIVAL (`unlocks`
+in config.yml). A locked one shows "(locked)" at NEW GAME and says what it
+needs.
+
 ## Tuning it
 
 `tools/campaign.py` plays **campaigns**: a player's runs one after the

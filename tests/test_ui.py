@@ -68,6 +68,10 @@ def test_new_game_from_title_applies_selected_difficulty(sim):
     menus.open_title()
     sim.press('DOWN', title=True)  # CONTINUE -> NEW GAME
     state.settings.difficulty = 1
+    from src.engine import meta
+
+    state.meta.profile = meta.new_profile()
+    state.meta.profile['lifetime'] = {'adventure_world4': 1}  # SURVIVAL is unlocked
     try:
         sim.press('RIGHT', title=True)  # NORMAL -> HARD
         assert state.settings.difficulty == 2
@@ -154,3 +158,19 @@ def test_write_frame_wraps_output_in_a_synchronized_update(monkeypatch):
     monkeypatch.setattr(terminal, '_sync_output', False)
     terminal.write_frame('Y')
     assert stream.getvalue() == 'Y'
+
+
+def test_a_locked_difficulty_cannot_be_started(sim):
+    from src.engine import meta
+
+    state = sim.state
+    state.meta.profile = meta.new_profile()
+    state.ui.show_title = True
+    menus.open_title()
+    sim.press('DOWN', title=True)  # NEW GAME
+    state.settings.difficulty = 2  # SURVIVAL, not earned yet
+    try:
+        sim.press('ENTER', title=True)
+        assert state.ui.show_title is True  # still at the title
+    finally:
+        state.settings.difficulty = 1

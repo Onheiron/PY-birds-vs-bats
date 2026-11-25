@@ -146,6 +146,8 @@ def draw_choice_overlay(fb):
     template = (
         '{navigate} choose  {take} take  {reroll} reroll  {skip} skip'
         if offer['kind'] == 'egg'
+        else '{navigate} choose  {take} buy'
+        if offer['kind'] == 'merchant'
         else '{navigate} choose  {take} confirm'
     )
     hint = controls.hint(template)

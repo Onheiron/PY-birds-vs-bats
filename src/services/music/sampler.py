@@ -7,7 +7,7 @@ that run past the end of the loop wrap round to its start, so the loop has no
 seam. The parts are then panned, summed, given a room (a short reverb, also
 wrapped round) and a gentle limiter.
 
-Needs numpy, and pygame's mixer to decode the Ogg samples.
+Needs numpy, and pygame's mixer to decode the Opus samples.
 """
 
 import json
@@ -42,12 +42,16 @@ def bank():
             for name, notes in index.items():
                 samples = []
                 for midi_note, filename in notes.items():
-                    sound = pygame.mixer.Sound(str(BANK_DIR / filename))
+                    try:
+                        sound = pygame.mixer.Sound(str(BANK_DIR / filename))
+                    except pygame.error:
+                        continue  # a sample this pygame cannot decode: the nearest other one plays
                     data = pygame.sndarray.array(sound).astype(np.float32) / 32768.0
                     if data.ndim > 1:
                         data = data.mean(axis=1)
                     samples.append((int(midi_note), data))
-                loaded[name] = sorted(samples, key=lambda item: item[0])
+                if samples:
+                    loaded[name] = sorted(samples, key=lambda item: item[0])
             _bank = loaded
         return _bank
 

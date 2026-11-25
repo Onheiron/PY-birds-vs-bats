@@ -6,7 +6,7 @@ listed top to bottom: UP / DOWN select, ENTER takes. An egg can also be
 rerolled (R) or skipped (S) a few times per run (cards.rerolls / cards.skips). A pact offer also
 has a last option to refuse.
 
-An offer is a dict: {'kind': 'egg' | 'pact', 'title', 'rarity', 'cards': [...],
+An offer is a dict: {'kind': 'egg' | 'pact' | 'merchant', 'title', 'rarity', 'cards': [...],
 'index', 'refusable'}. Offers arriving while another one is on screen wait
 in ``state.choice.queue``.
 """
@@ -21,6 +21,11 @@ REFUSE = {'id': 'refuse', 'name': 'Refuse', 'kind': 'refuse', 'rarity': 'common'
 
 def active():
     return state.choice.active
+
+
+def open_offer(offer):
+    """Show any offer (the merchant's), or queue it."""
+    _open(offer)
 
 
 def _open(offer):
@@ -136,6 +141,15 @@ def pick(index=None):
     if offer is None:
         return None
     card = offer['cards'][offer['index'] if index is None else index]
+    if offer['kind'] == 'merchant' and card['kind'] == 'ware':
+        from src.engine import merchant
+
+        if not merchant.buy(card):
+            return None  # not enough gold: the merchant waits
+        state.choice.active = None
+        events.emit('choice_made', offer=offer, card=card)
+        _next()
+        return card
     state.choice.active = None
     if card['kind'] != 'refuse':
         state.choice.taken.append(

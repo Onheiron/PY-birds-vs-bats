@@ -48,6 +48,9 @@ def mixer():
     pygame.mixer.pre_init(22050, -16, 2, 512)
     pygame.mixer.init()
     yield pygame
+    from src.services import audio
+
+    audio.cleanup()  # also when a test failed: the next tests must not find a closed mixer marked ready
     pygame.mixer.quit()
 
 

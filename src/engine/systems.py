@@ -115,6 +115,9 @@ class _BossWatch:
             self.boss_type = None
             # Every biome boss offers a pact (see src/engine/cards.py); save once it is settled
             choices.offer_pact(state.game.level_group)
+            from src.engine import merchant
+
+            merchant.visit(state.game.level_group)  # after the pact (it waits in the queue)
             if state.choice.active is None:
                 save_manager.checkpoint()
         self.defeated = defeated

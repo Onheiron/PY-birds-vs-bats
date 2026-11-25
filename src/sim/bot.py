@@ -595,6 +595,8 @@ class Bot:
     def _choose(self, offer):
         """Index of the option the bot wants in a choice on screen."""
         options = offer['cards']
+        if offer['kind'] == 'merchant':
+            return self._merchant_choice(options)
         policy = self.skill.pact_policy if offer['kind'] == 'pact' else self.skill.card_policy
         if policy == 'learned':
             return self._learned_choice(options)
@@ -619,6 +621,21 @@ class Bot:
             return (rank[card['rarity']] + 1) * value.get(card['kind'], 1)
 
         return max(range(len(options)), key=worth)
+
+    def _merchant_choice(self, options):
+        """A life when few are left, else the rarest egg the run can pay for, else leave."""
+        from src.engine import meta
+
+        gold = meta.run_gold()
+        rank = {'common': 0, 'uncommon': 1, 'rare': 2, 'epic': 3, 'legendary': 4, 'mythical': 5}
+        affordable = [i for i, c in enumerate(options) if c['kind'] == 'ware' and c['price'] <= gold]
+        lives = [i for i in affordable if options[i].get('lives')]
+        if lives and state.game.lives <= 2:
+            return lives[0]
+        eggs = [i for i in affordable if options[i].get('egg')]
+        if eggs:
+            return max(eggs, key=lambda i: rank.get(options[i]['rarity'], 0))
+        return len(options) - 1  # leave
 
     def _learned_choice(self, options):
         """The option the player would take: their liking for it, a little more for rarer ones."""

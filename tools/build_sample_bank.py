@@ -7,10 +7,11 @@ The music is played by the game itself (src/services/music/): it writes the
 notes of every part and plays them with these samples, pitched to each note.
 The samples are recorded once, here, from a General MIDI SoundFont with
 FluidSynth: a few notes per instrument (one every half octave), mono,
-22050 Hz, Ogg Vorbis. The default SoundFont is FluidR3_GM (MIT licence: the
+Opus (pygame-ce decodes Opus on Linux, macOS and Windows; its Windows build
+has no Ogg Vorbis). The default SoundFont is FluidR3_GM (MIT licence: the
 samples may ship with the game), e.g. ``apt install fluidsynth fluid-soundfont-gm``.
 
-Writes media/music/bank/<instrument>_<note>.ogg and media/music/bank/bank.json.
+Writes media/music/bank/<instrument>_<note>.opus and media/music/bank/bank.json.
 """
 
 import argparse
@@ -50,7 +51,7 @@ def _midi_file(path, program, note, seconds, drum=False):
 def record(sf2, name, spec, note, work):
     midi_path = work / f'{name}_{note}.mid'
     wav_path = work / f'{name}_{note}.wav'
-    out = BANK / f'{name}_{note}.ogg'
+    out = BANK / f'{name}_{note}.opus'
     _midi_file(midi_path, spec.get('program', 0), note, spec['hold'], drum=spec.get('drum', False))
     subprocess.run(
         [
@@ -73,7 +74,7 @@ def record(sf2, name, spec, note, work):
         check=True,
         capture_output=True,
     )
-    # Mono, the silence at the end cut, Ogg Vorbis
+    # Mono, the silence at the end cut, Opus (48 kHz inside; the mixer resamples)
     subprocess.run(
         [
             'ffmpeg',
@@ -85,17 +86,20 @@ def record(sf2, name, spec, note, work):
             '-ac',
             '1',
             '-ar',
-            str(SAMPLE_RATE),
+            '48000',
             '-af',
             'areverse,silenceremove=start_periods=1:start_threshold=-60dB,areverse',
             '-c:a',
-            'libvorbis',
-            '-q:a',
-            '3',
+            'libopus',
+            '-b:a',
+            '64k',
             str(out),
         ],
         check=True,
     )
+    if out.stat().st_size < 400:  # silence (the note is out of the instrument's range): no sample
+        out.unlink()
+        return None
     return out.name
 
 
@@ -114,10 +118,10 @@ def main():
             raise SystemExit(f'Unknown instruments: {", ".join(sorted(unknown))}')
         index = json.loads(index_path.read_text()) if index_path.exists() else {}
         for name in args.only:
-            for old in BANK.glob(f'{name}_*.ogg'):
+            for old in BANK.glob(f'{name}_*.*'):
                 old.unlink()
     else:
-        for old in BANK.glob('*.ogg'):
+        for old in [*BANK.glob('*.ogg'), *BANK.glob('*.opus')]:
             old.unlink()
         index = {}
     with tempfile.TemporaryDirectory() as tmp:
@@ -128,10 +132,11 @@ def main():
             notes = (
                 spec['notes'] if 'notes' in spec else list(range(spec['low'], spec['high'] + 1, spec.get('step', 6)))
             )
-            index[name] = {str(n): record(args.soundfont, name, spec, n, work) for n in notes}
+            recorded = {str(n): record(args.soundfont, name, spec, n, work) for n in notes}
+            index[name] = {n: f for n, f in recorded.items() if f}
             print(f'{name}: {len(notes)} samples')
     index_path.write_text(json.dumps(index, indent=1, sort_keys=True))
-    size = sum(f.stat().st_size for f in BANK.glob('*.ogg'))
+    size = sum(f.stat().st_size for f in BANK.glob('*.opus'))
     print(f'{sum(len(v) for v in index.values())} samples, {size / 1e6:.1f} MB in {BANK}')
 
 

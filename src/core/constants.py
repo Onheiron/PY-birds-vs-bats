@@ -22,6 +22,8 @@ SECTIONS = (
     'power_damage',
     'achievements',
     'run_reward',
+    'merchant',
+    'unlocks',
     'upgrades',
     'cards',
     'pacts',

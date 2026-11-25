@@ -422,6 +422,13 @@ def init(seed=None):
     layout = constants.layout
     num_birds = layout.num_balls
     formation = list(constants.birds.default_formation[:num_birds])
+    # The flock the player chose (meta progression: the Formation upgrade)
+    if meta.profile is not None and meta.profile.get('upgrades', {}).get('formation'):
+        chosen = meta.profile.get('formation')
+        if chosen and len(chosen) == num_birds:
+            from src.engine import meta as meta_progression
+
+            formation = meta_progression.formation() or formation
     # Pad with YELLOW if the formation is shorter than the number of birds
     formation += [BirdType.YELLOW] * (num_birds - len(formation))
 
