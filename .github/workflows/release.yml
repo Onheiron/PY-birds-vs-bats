@@ -4,6 +4,12 @@ name: Release
 # GitHub release with standalone binaries for Linux, macOS and Windows and the
 # Steam Linux build. Or run it by hand with "publish": it tags the commit
 # v<__version__> and publishes the release itself.
+#
+# Published with it (see docs/publishing.md):
+# - PyPI (pip install birds-vs-bats), by trusted publishing: no token, the
+#   project on pypi.org trusts this workflow (environment "pypi");
+# - itch.io, with butler, when the repository has the variable ITCH_GAME
+#   ("user/game") and the secret BUTLER_API_KEY.
 on:
   push:
     tags: ["v*"]
@@ -111,9 +117,31 @@ jobs:
           path: dist/BVB-*-steam-linux.tar.gz
           if-no-files-found: error
 
+  pip:
+    name: Build the pip package
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+      - name: Install it and smoke test the bvb command
+        run: |
+          python -m venv /tmp/bvb
+          /tmp/bvb/bin/pip install dist/*.whl
+          python tools/smoke_test_binary.py /tmp/bvb/bin/bvb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BVB-pip
+          path: dist/*
+          if-no-files-found: error
+
   publish:
     name: Publish GitHub release
-    needs: [verify, build, steam-linux]
+    needs: [verify, build, steam-linux, pip]
     if: startsWith(github.ref, 'refs/tags/') || inputs.publish
     runs-on: ubuntu-latest
     permissions:
@@ -134,3 +162,47 @@ jobs:
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: artifacts/*
+
+  pypi:
+    name: Publish to PyPI
+    needs: [verify, publish]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: BVB-pip
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  itch:
+    name: Publish to itch.io
+    needs: [verify, publish]
+    if: vars.ITCH_GAME != ''
+    runs-on: ubuntu-latest
+    env:
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+      VERSION: ${{ needs.verify.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Get butler
+        run: |
+          curl -sSfL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler && chmod +x butler/butler
+      - name: Unpack one folder per channel
+        run: |
+          mkdir -p itch/linux itch/mac itch/windows
+          tar -xzf artifacts/BVB-$VERSION-steam-linux.tar.gz -C itch/linux --strip-components=1
+          tar -xzf artifacts/BVB-$VERSION-macos-arm64.tar.gz -C itch/mac --strip-components=1
+          unzip -q artifacts/BVB-$VERSION-windows-x86_64.zip -d itch/windows-tmp
+          mv itch/windows-tmp/*/* itch/windows/
+      - name: Push
+        run: |
+          for channel in linux mac windows; do
+            butler/butler push "itch/$channel" "${{ vars.ITCH_GAME }}:$channel" --userversion "$VERSION"
+          done

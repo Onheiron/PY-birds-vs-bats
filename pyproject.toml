@@ -1,4 +1,68 @@
-# Tooling configuration. Dependencies live in requirements*.txt.
+# Packaging (pip install birds-vs-bats) and tooling. The runtime dependencies are also in
+# requirements.txt, for running from the sources.
+
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "birds-vs-bats"
+dynamic = ["version"]
+description = "BVB - Bird vs Bat: an arcade roguelike in the terminal (or in a window), with a music that follows your flock"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+    "jsonschema>=4.0",
+    "numpy>=1.24",
+    "pygame-ce>=2.5",
+]
+keywords = ["game", "terminal", "roguelike", "arcade", "ascii"]
+classifiers = [
+    "Environment :: Console",
+    "Topic :: Games/Entertainment :: Arcade",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://github.com/Onheiron/PY-birds-vs-bats"
+
+[project.scripts]
+bvb = "birds_vs_bats.__main__:main"
+birds-vs-bats = "birds_vs_bats.__main__:main"
+
+[tool.hatch.version]
+path = "src/__init__.py"
+
+# The wheel holds one package, birds_vs_bats: the launcher, and the game laid out as in the repository
+[tool.hatch.build]
+exclude = ["**/__pycache__", "**/*.pyc"]
+
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+
+[tool.hatch.build.targets.wheel.force-include]
+"packaging/pip/birds_vs_bats/__init__.py" = "birds_vs_bats/__init__.py"
+"packaging/pip/birds_vs_bats/__main__.py" = "birds_vs_bats/__main__.py"
+"game.py" = "birds_vs_bats/game.py"
+"src" = "birds_vs_bats/src"
+"media/music" = "birds_vs_bats/media/music"
+"media/fonts" = "birds_vs_bats/media/fonts"
+"config.yml" = "birds_vs_bats/config.yml"
+"config_easy.yml" = "birds_vs_bats/config_easy.yml"
+"config_hard.yml" = "birds_vs_bats/config_hard.yml"
+"config_hell.yml" = "birds_vs_bats/config_hell.yml"
+"hardmode.yml" = "birds_vs_bats/hardmode.yml"
+"config.sample.yml" = "birds_vs_bats/config.sample.yml"
+"config.schema.json" = "birds_vs_bats/config.schema.json"
+"theme.yml" = "birds_vs_bats/theme.yml"
+"theme_accessible.yml" = "birds_vs_bats/theme_accessible.yml"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src", "/game.py", "/media/music", "/media/fonts", "/packaging/pip", "/README.md",
+    "/config*.yml", "/config.schema.json", "/hardmode.yml", "/theme*.yml", "/requirements*.txt",
+]
 
 [tool.ruff]
 line-length = 120

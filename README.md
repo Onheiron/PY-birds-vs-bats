@@ -14,6 +14,24 @@ bosses. Pure Python, runs in any modern terminal.
 
 Requires Python 3.10 or newer and a terminal of at least 115 × 38 characters
 (the playfield is laid out for a wide screen; shrink the font if it does not fit).
+Free to play, from the terminal:
+
+```bash
+pip install birds-vs-bats
+```
+
+```bash
+bvb
+```
+
+`bvb --window` plays it in a window of its own (keyboard and gamepad);
+`pip install -U birds-vs-bats` updates it.
+
+Standalone builds for Linux (and the Steam Deck), macOS and Windows are on
+[itch.io](https://itch.io) (the itch app keeps them up to date) and attached to each
+[release](https://github.com/Onheiron/PY-birds-vs-bats/releases): unpack and run `BVB`.
+
+From the sources:
 
 ```bash
 pip install -r requirements.txt
@@ -22,9 +40,6 @@ pip install -r requirements.txt
 ```bash
 python3 game.py
 ```
-
-Standalone binaries for Linux, macOS and Windows are attached to each
-[release](https://github.com/Onheiron/PY-birds-vs-bats/releases): unpack and run `BVB`.
 
 `requirements.txt` includes `numpy` and `pygame-ce`: sound effects and the
 music, played with real instrument samples and following the flock and the
