@@ -75,6 +75,12 @@ def start_session_music():
         _backend.start_music()
 
 
+def follow_pause(paused):
+    """The music holds while the game is paused (run every frame: it acts on changes only)."""
+    if _backend is not None:
+        _backend.pause_music(paused)
+
+
 def stop_music():
     """Stop the music (the mixer keeps running for sound effects)."""
     if _backend is not None:

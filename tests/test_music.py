@@ -82,3 +82,21 @@ def test_the_game_music_follows_the_flock(mixer):
         time.sleep(0.05)
     assert audio._music['playing_now'][3] == 3  # speed step 3
     audio.cleanup()
+
+
+def test_the_music_holds_while_the_game_is_paused(mixer):
+    from src.services import audio
+
+    audio._ready = None
+    assert audio.is_audio_available()
+    audio.update_active_birds({'YELLOW': 1})
+    audio.start_music()
+    deadline = time.time() + 20
+    while audio._music['playing_now'] is None and time.time() < deadline:
+        time.sleep(0.05)
+    channel = mixer.mixer.Channel(audio._music['channel'])
+    audio.pause_music(True)
+    assert audio._music['paused']
+    audio.pause_music(False)
+    assert not audio._music['paused'] and channel.get_busy()
+    audio.cleanup()

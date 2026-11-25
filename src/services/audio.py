@@ -51,6 +51,7 @@ _music = {
     'bats': 0,
     'gear': 1,
     'playing_now': None,  # what the loop on the channel plays (see _signature)
+    'paused': False,  # the game is paused: the music holds where it is
     'channel': 0,  # which of the two music channels plays now
     'version': 0,  # bumped by every change: an older background render is dropped
 }
@@ -155,12 +156,14 @@ def _render_and_play(version, fade=True):
         _music['channel'] = 1 - _music['channel']
         new = pygame.mixer.Channel(_music['channel'])
         sound.set_volume(MUSIC_VOLUME)
-        if fade and old.get_busy():
+        if fade and old.get_busy() and not _music['paused']:
             old.fadeout(CROSSFADE_MS)
             new.play(sound, loops=-1, fade_ms=CROSSFADE_MS)
         else:
             old.stop()
             new.play(sound, loops=-1)
+        if _music['paused']:
+            new.pause()  # ready for when the game resumes
 
 
 def _changed():
@@ -196,6 +199,22 @@ def stop_music():
     if _ready:
         for index in (0, 1):
             pygame.mixer.Channel(index).fadeout(300)
+
+
+def pause_music(paused):
+    """Hold the music while the game is paused, and go on from there when it resumes."""
+    with _lock:
+        if _music['paused'] == paused:
+            return
+        _music['paused'] = paused
+        if not _ready:
+            return
+        for index in (0, 1):
+            channel = pygame.mixer.Channel(index)
+            if paused:
+                channel.pause()
+            else:
+                channel.unpause()
 
 
 def update_music_for_biome(biome):

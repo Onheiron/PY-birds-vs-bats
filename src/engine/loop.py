@@ -34,6 +34,7 @@ class Session:
         """Advance one render frame: miles always, physics/logic every N frames."""
         game = state.game
         now = time.time()
+        sound.follow_pause(game.paused)  # the music holds while paused
 
         if game.paused or state.choice.active is not None:
             # Neither miles nor game time advance while paused or choosing a card
