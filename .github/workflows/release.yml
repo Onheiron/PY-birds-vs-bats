@@ -65,7 +65,7 @@ jobs:
           - os: macos-latest
             name: macos-arm64
             smoke: dist/BVB.app/Contents/MacOS/BVB
-          - os: macos-13  # Intel Macs
+          - os: macos-15-intel  # Intel Macs
             name: macos-x86_64
             smoke: dist/BVB.app/Contents/MacOS/BVB
           - os: windows-latest
