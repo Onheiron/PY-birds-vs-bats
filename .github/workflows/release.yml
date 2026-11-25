@@ -6,8 +6,9 @@ name: Release
 # v<__version__> and publishes the release itself.
 #
 # Published with it (see docs/publishing.md):
-# - PyPI (pip install birds-vs-bats), by trusted publishing: no token, the
-#   project on pypi.org trusts this workflow (environment "pypi");
+# - PyPI (pip install birds-vs-bats), by trusted publishing (the project on
+#   pypi.org trusts this workflow, environment "pypi") or with the secret
+#   PYPI_API_TOKEN;
 # - itch.io, with butler, when the repository has the variable ITCH_GAME
 #   ("user/game") and the secret BUTLER_API_KEY.
 on:
@@ -175,7 +176,11 @@ jobs:
         with:
           name: BVB-pip
           path: dist
+      # Trusted publishing; or, if the repository has the secret PYPI_API_TOKEN, that token
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true  # a version already on PyPI (uploaded by hand) is not an error
 
   itch:
     name: Publish to itch.io

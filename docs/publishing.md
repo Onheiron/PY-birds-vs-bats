@@ -24,7 +24,9 @@ The project `birds-vs-bats` on pypi.org must trust this workflow:
    `pypi` (no secret needed; you may require your approval before it runs).
 
 No token is stored anywhere: PyPI checks that the upload comes from that
-workflow.
+workflow. Instead, a PyPI API token scoped to the project can be saved as the
+repository secret `PYPI_API_TOKEN` (Settings → Secrets and variables →
+Actions); the release uses it when it is there.
 
 The pip package (`pyproject.toml`) installs one package, `birds_vs_bats`:
 a launcher (`packaging/pip/birds_vs_bats/`) and the game laid out as in the
