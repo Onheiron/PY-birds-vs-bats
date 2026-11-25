@@ -15,7 +15,7 @@ usage: game.py [--window] [--fullscreen] [--config FILE] [--theme FILE] [--bot P
   --config FILE   YAML configuration merged over the defaults in config.yml
                   (try hardmode.yml, or start from config.sample.yml)
   --theme FILE    colour theme (default: theme.yml)
-  --bot PROFILE   watch the bot play (perfect, expert, average, novice, me);
+  --bot PROFILE   watch the bot play (perfect, expert, average, novice, me, top);
                   see game.py --bot expert --help for its options
   --version       print the version and exit
   --help          show this message and exit

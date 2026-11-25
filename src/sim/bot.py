@@ -31,6 +31,7 @@ game's seeded randomness.
 import random
 from collections import Counter
 from dataclasses import dataclass, replace
+from pathlib import Path
 
 from src.core import constants, state
 from src.engine import bird_kinds, clock, enemy_stats, hazards, stats
@@ -188,6 +189,11 @@ def load_player_profile(path=None):
 _me = load_player_profile()
 if _me is not None:
     PROFILES['me'] = _me  # plays like you (tools/fit_bot.py)
+
+# 'top': plays like the best of the online leaderboards (tools/fit_community.py, every week)
+_top = load_player_profile(Path(__file__).with_name('top_profile.json'))
+if _top is not None:
+    PROFILES['top'] = _top
 
 
 def profile(name, **changes):

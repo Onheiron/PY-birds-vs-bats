@@ -1,0 +1,33 @@
+name: Community bot
+
+# Every week: fit the 'top' bot from the best verified games of the online
+# leaderboards (tools/fit_community.py) and commit src/sim/top_profile.json.
+on:
+  schedule:
+    - cron: "41 4 * * 1"  # Mondays
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # the tags: each game is measured with its version's code
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Fit the top bot
+        run: SDL_AUDIODRIVER=dummy python tools/fit_community.py
+      - name: Commit it
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/sim/top_profile.json
+          git diff --cached --quiet && exit 0
+          git commit -m "The top bot, fitted from this week's best verified games"
+          git push

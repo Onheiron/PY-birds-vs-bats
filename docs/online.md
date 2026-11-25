@@ -30,9 +30,32 @@ secret `FIREBASE_SERVICE_ACCOUNT`, never in the game).
 SETTINGS > ONLINE turns it off: nothing is sent or read. Bot games, the
 simulator and the tests never go online (`BVB_OFFLINE`).
 
+## The verified games, and the 'top' bot
+
+Every verified game is kept: the verifier uploads its recording to the
+GitHub pre-release `recordings-YYYY-Www` of its week (public, never the
+"latest" release the updater looks at), named
+`<difficulty>-<score>-<id>.json.gz`. A recording holds the seed, the version,
+the settings, the upgrades and every key with its time: no personal data
+besides the name typed at game over.
+
+Every Monday `.github/workflows/community-bot.yml` runs
+`tools/fit_community.py`: it downloads the best 12 ADVENTURE games of the last
+4 weeks, measures them with the code of their version (`tools/fit_bot.py`) and
+commits `src/sim/top_profile.json`. The bot profile **top** plays like them:
+
+```bash
+python3 game.py --bot top
+```
+
+```bash
+python3 tools/simulate.py --bot top
+```
+
 ## Maintenance
 
-Actions → Online → Run workflow:
+Actions → Online → Run workflow (Actions → Community bot → Run workflow fits
+the top bot now):
 
 - `verify`: verify now (it also runs every 15 minutes);
 - `rules`: deploy `firestore.rules`;

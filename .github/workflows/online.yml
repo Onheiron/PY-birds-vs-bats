@@ -16,7 +16,7 @@ on:
         default: verify
 
 permissions:
-  contents: read
+  contents: write  # the verified games are archived as release assets (recordings-YYYY-Www)
 
 concurrency:
   group: online
@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      GH_TOKEN: ${{ github.token }}
       ACTION: ${{ inputs.action || 'verify' }}
     steps:
       - uses: actions/checkout@v5

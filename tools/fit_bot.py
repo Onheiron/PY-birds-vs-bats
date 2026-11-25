@@ -84,6 +84,8 @@ def measure_file(path, commit=None, refresh=False):
     with gzip.open(path, 'rt', encoding='utf-8') as f:
         header = json.load(f)
     commit = (commit or header.get('commit') or '').rstrip('+') or None
+    if commit is None and header.get('version'):
+        commit = f"v{header['version']}"  # a downloaded build (no git): the tag of its version
     cache = BVB / 'measurements' / f'{Path(path).name}.{commit or "current"}.json'
     if cache.exists() and not refresh:
         return json.loads(cache.read_text())

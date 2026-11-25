@@ -8,6 +8,11 @@ Needs firebase-admin and the service account of the Firebase project in the
 environment variable FIREBASE_SERVICE_ACCOUNT (its JSON): the GitHub secret.
 It never runs in the game.
 
+Every verified recording is also archived as an asset of the GitHub pre-release
+``recordings-YYYY-Www`` (its week), named <difficulty>-<score>-<id>.json.gz:
+tools/fit_community.py fits the 'top' bot from the best of them. Needs GH_TOKEN
+with contents: write (the workflow's).
+
 A submission (src/services/online.py) is a recording of a whole game. It is
 replayed with the code of the version it was played with (the git tag
 v<version>, checked out in a worktree): only when the replay ends with the
@@ -126,8 +131,39 @@ def add_to_board(db, board, entry):
     ref.set({'entries': ranked, 'updated': datetime.datetime.now(datetime.timezone.utc)})
 
 
+def archive(files):
+    """Upload verified recordings to their week's pre-release (made when missing)."""
+    if not files or not os.environ.get('GH_TOKEN'):
+        return
+    by_week = {}
+    for path, week in files:
+        by_week.setdefault(week, []).append(str(path))
+    for week, paths in by_week.items():
+        tag = f'recordings-{week}'
+        if subprocess.run(['gh', 'release', 'view', tag], capture_output=True, check=False).returncode != 0:
+            subprocess.run(
+                [
+                    'gh',
+                    'release',
+                    'create',
+                    tag,
+                    '--prerelease',
+                    '--title',
+                    f'Verified games {week}',
+                    '--notes',
+                    'Verified games of the online leaderboards (tools/verify_runs.py).',
+                ],
+                check=True,
+            )
+        subprocess.run(['gh', 'release', 'upload', tag, *paths, '--clobber'], check=True)
+        print(f'archived {len(paths)} game(s) in {tag}')
+
+
 def verify(db):
     from google.cloud.firestore_v1.base_query import FieldFilter
+
+    keep = Path(tempfile.mkdtemp(prefix='bvb-verified-'))
+    to_archive = []
 
     pending = list(db.collection('submissions').where(filter=FieldFilter('status', '==', 'pending')).stream())
     print(f'{len(pending)} submission(s) to verify')
@@ -158,9 +194,15 @@ def verify(db):
             for board in boards_of(snap.create_time, doc['difficulty']):
                 add_to_board(db, board, entry)
             snap.reference.update({'status': 'verified'})
+            when = snap.create_time.astimezone(datetime.timezone.utc)
+            year, week, _day = when.isocalendar()
+            name = f"{DIFFICULTIES[int(doc['difficulty'])]}-{int(doc['score']):09d}-{snap.id}.json.gz"
+            (keep / name).write_bytes(raw)
+            to_archive.append((keep / name, f'{year}-W{week:02d}'))
             print(f'{snap.id}: verified, {entry["score"]} at level {entry["level"]}')
         for p in parts:
             p.reference.delete()
+    archive(to_archive)
 
 
 def wipe(db):
