@@ -186,6 +186,9 @@ def _owl_boss_cast_spell(boss):
     spell_index = boss.get('spell_index', 0)
     spells = OWL_BOSS_SPELLS
     spell_name = spells[spell_index % len(spells)]
+    from src.services.sound import play_sfx
+
+    play_sfx('meteor' if spell_name == 'meteor_shower' else 'owl_spell')
 
     owl_boss_cfg = getattr(constants, 'owl_boss', None)
     spells_cfg = getattr(owl_boss_cfg, 'spells', None) if owl_boss_cfg else None

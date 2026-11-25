@@ -104,6 +104,84 @@ def boss_death():
     ]
 
 
+# --------------------------------------------------------------------------- the bosses' own
+
+
+def tree_arrive():
+    """Old wood creaking: two cellos bending down, a deep timpani."""
+    return [
+        (sampler.glide('cello', N('D3'), N('A2'), 0.9, 1.6, 115), 1.0, -0.2),
+        (sampler.glide('cello', N('Eb3'), N('Bb2'), 0.9, 1.6, 105, delay=0.15), 0.8, 0.2),
+        (_notes('timpani', [(0.5, 1, [N('C2')], 120)], 1.6), 0.9, 0),
+    ]
+
+
+def wind_arrive():
+    """A gust rising: a piccolo and strings sweeping up, the choir swelling."""
+    return [
+        (sampler.glide('piccolo', N('C5'), N('C7'), 0.8, 1.4, 95), 0.7, 0.3),
+        (sampler.glide('strings', N('C4'), N('C6'), 0.9, 1.4, 100), 0.8, -0.3),
+        (_notes('choir', [(0.4, 0.9, [N('C4'), N('Eb4'), N('G4')], 90)], 1.4), 0.6, 0),
+    ]
+
+
+def jelly_arrive():
+    """A big low "blorp": a synth bass bending down, a wobbling vibraphone cluster."""
+    return [
+        (sampler.glide('synth_bass', N('G2'), N('C2'), 0.4, 1.2, 120), 1.0, 0),
+        (_notes('vibraphone', [(0.25, 0.6, [N('C4'), N('Db4'), N('E4')], 85)], 1.2), 0.6, 0.2),
+    ]
+
+
+def owl_arrive():
+    """The owl's call: "hoo... hoo-hoo" on the ocarina, a low choir under it."""
+    call = [(0, 0.45, [N('E5')], 95), (0.65, 0.2, [N('C5')], 90), (0.9, 0.45, [N('C5')], 95)]
+    return [
+        (_notes('ocarina', call, 1.8), 0.9, 0),
+        (_notes('choir', [(0, 1.5, [N('C3'), N('G3')], 75)], 1.8), 0.5, 0),
+    ]
+
+
+def branch_break():
+    """A branch snaps: a dry tom and a timpani, a cello cracking down."""
+    return [
+        (_notes('drums', [(0, 0.1, [45], 110), (0.05, 0.1, [45], 95)], 0.8), 0.9, 0),
+        (_notes('timpani', [(0.05, 0.4, [N('F2')], 110)], 0.8), 0.8, 0),
+        (sampler.glide('cello', N('A3'), N('D3'), 0.25, 0.8, 100), 0.6, 0.2),
+    ]
+
+
+def flower_bloom():
+    """A flower opens: three music box notes up (small: they bloom often)."""
+    return [(_notes('music_box', _run('music_box', ['C6', 'E6', 'A6'], 0, 0.06, 0.2, 70), 0.5), 0.6, 0)]
+
+
+def wind_gust():
+    """The wind turns: a pan flute sliding up and away."""
+    return [(sampler.glide('pan_flute', N('A4'), N('E6'), 0.35, 0.6, 80), 0.5, 0)]
+
+
+def jelly_spawn():
+    """The jelly spits a bat: a short squish up."""
+    return [(sampler.glide('synth_bass', N('C2'), N('G2'), 0.15, 0.4, 110), 0.9, 0)]
+
+
+def owl_spell():
+    """A spell: a diminished chord on the celesta and the choir."""
+    return [
+        (_notes('celesta', _run('celesta', ['B5', 'D6', 'F6', 'Ab6'], 0, 0.05, 0.5, 85), 1.2), 0.8, 0.2),
+        (_notes('choir', [(0.1, 0.9, [N('B3'), N('D4'), N('F4')], 85)], 1.2), 0.6, 0),
+    ]
+
+
+def meteor():
+    """Meteors fall: tremolo strings diving, a timpani impact."""
+    return [
+        (sampler.glide('tremolo', N('G4'), N('C3'), 0.5, 1.0, 110), 0.8, 0),
+        (_notes('timpani', [(0.5, 0.4, [N('C2')], 120)], 1.0), 0.9, 0),
+    ]
+
+
 def swap():
     """A pan flute swooping up and back."""
     return [
@@ -143,6 +221,16 @@ EFFECTS = {
     'bat_death': bat_death,
     'boss_scream': boss_scream,
     'boss_death': boss_death,
+    'tree_arrive': tree_arrive,
+    'wind_arrive': wind_arrive,
+    'jelly_arrive': jelly_arrive,
+    'owl_arrive': owl_arrive,
+    'branch_break': branch_break,
+    'flower_bloom': flower_bloom,
+    'wind_gust': wind_gust,
+    'jelly_spawn': jelly_spawn,
+    'owl_spell': owl_spell,
+    'meteor': meteor,
     'swap': swap,
     'card_take': card_take,
     'menu_move': menu_move,
@@ -152,7 +240,14 @@ EFFECTS = {
 QUIET = {'menu_move', 'menu_select', 'menu_back'}  # little room: they are dry and close
 # Effects that play very often: cut to this many seconds, dry and softer (seconds, gain),
 # so they never cover the music
-FREQUENT = {'hit': (0.12, 0.5), 'destroy': (0.3, 0.6), 'bat_death': (0.18, 1.6)}
+FREQUENT = {
+    'hit': (0.12, 0.5),
+    'destroy': (0.3, 0.6),
+    'bat_death': (0.18, 1.6),
+    'flower_bloom': (0.4, 0.6),
+    'wind_gust': (0.5, 1.5),
+    'jelly_spawn': (0.3, 0.8),
+}
 FADE = 0.04  # seconds of fade at the cut
 
 _made = {}

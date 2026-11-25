@@ -218,6 +218,8 @@ def update_tree_boss():
             if flower['frame'] < FLOWER_MATURE_FRAME and now >= flower.get('grow_timer', 0):
                 flower['frame'] += 1
                 flower['grow_timer'] = now + grow_interval
+                if flower['frame'] == FLOWER_MATURE_FRAME:
+                    play_sfx('flower_bloom')
 
                 # If flower just matured (frame 5), apply its effect
                 if flower['frame'] == FLOWER_MATURE_FRAME:
@@ -278,6 +280,7 @@ def _handle_tree_branch_hit(branch, bird_idx):
         if branch['hp'] <= 0:
             branch['destroyed'] = True
             add_score(100)  # Score for destroying branch
+            play_sfx('branch_break')
 
     # Apply effects on hit
 
@@ -387,6 +390,7 @@ def _tree_boss_defeated(boss):
         # Mark boss as scrolling down (defeated but still visible)
         boss['state'] = 'scrolling_down'
         state.enemies.boss_defeated = True
+        play_sfx('boss_death')  # every branch is down
         return
 
     # Already scrolling down - continue scrolling

@@ -145,6 +145,9 @@ def _update_jelly_bat_spawn_anim(boss):
 
 def _spawn_bat_from_jelly_boss(boss, anim):
     """Spawn a bat from the jelly boss animation: tier and kind as the world's bats (bat_enemy.worlds)."""
+    from src.services.sound import play_sfx
+
+    play_sfx('jelly_spawn')
     world = enemy_stats.world_table()
     tier = enemy_stats.roll_tier(world)
     table = constants.bat_enemy.hp_by_tier

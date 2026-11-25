@@ -175,6 +175,20 @@ def _sound_for(event):
     return lambda **_fields: play_sfx(name)
 
 
+# The sound of each boss's arrival (the Bat King screams)
+BOSS_ARRIVALS = {
+    'normal': 'boss_scream',
+    'tree': 'tree_arrive',
+    'wind': 'wind_arrive',
+    'jelly': 'jelly_arrive',
+    'owl': 'owl_arrive',
+}
+
+
+def _on_boss_spawned(boss_type='normal', **_fields):
+    play_sfx(BOSS_ARRIVALS.get(boss_type, 'boss_scream'))
+
+
 def _on_loot_collected(loot, bird):
     play_sfx('egg' if '_egg' in loot['type'] else 'powerup')
 
@@ -202,3 +216,4 @@ def subscribe():
         events.on(event, _sound_for(event))
     events.on('loot_collected', _on_loot_collected)
     events.on('choice_made', _on_choice_made)
+    events.on('boss_spawned', _on_boss_spawned)

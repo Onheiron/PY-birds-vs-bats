@@ -67,10 +67,12 @@ def update_wind_boss():
             # Determine wind phase based on animation frame
             # Frame 0 = max_up → headwind starts (obnoxious wind)
             # Frame 5 = max_down → tailwind starts
-            if boss['anim_frame'] >= 5:
-                boss['wind_phase'] = 'tailwind'
-            else:
-                boss['wind_phase'] = 'headwind'
+            phase = 'tailwind' if boss['anim_frame'] >= 5 else 'headwind'
+            if phase != boss.get('wind_phase'):
+                from src.services.sound import play_sfx
+
+                play_sfx('wind_gust')  # the wind turns
+            boss['wind_phase'] = phase
 
         # Apply wind effects to all birds
         _apply_wind_boss_effect(boss)

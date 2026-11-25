@@ -7,7 +7,7 @@ a pushed tag `v<version>`) builds the game and publishes it:
 |---|---|---|
 | GitHub release | binaries for Linux, macOS, Windows, the Steam Linux build, the pip package | always |
 | PyPI | `pip install birds-vs-bats`, the `bvb` command | trusted publishing (no token) |
-| itch.io | channels `linux` (also the Steam Deck), `mac`, `windows` | butler, with an API key |
+| itch.io | channels `linux` (also the Steam Deck), `mac` (Apple Silicon), `mac-intel`, `windows` | butler, with an API key |
 
 Before a release, raise `__version__` in `src/__init__.py`: PyPI and itch.io
 refuse a version they already have.

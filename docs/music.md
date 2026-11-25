@@ -112,7 +112,17 @@ in the background when the audio opens:
 | level_up | a new level | trumpet arpeggio, brass chord, crash |
 | bird_lost | a bird is lost | clarinet falling a minor third |
 | bat_death | a bat is killed | a tiny chiptune squeak (0.18 s) |
-| boss_scream | a boss screams | tremolo strings and choir sliding down, taiko |
+| boss_scream | the Bat King arrives, or screams | tremolo strings and choir sliding down, taiko |
+| tree_arrive | the Old Tree arrives | two cellos creaking down, timpani |
+| wind_arrive | the Gale arrives | piccolo and strings sweeping up, choir swell |
+| jelly_arrive | the Jelly arrives | a low synth bass "blorp", vibraphone cluster |
+| owl_arrive | the Night Owl arrives | "hoo... hoo-hoo" on the ocarina, low choir |
+| branch_break | a branch of the Tree breaks | dry toms, timpani, a cello cracking down |
+| flower_bloom | a flower of the Tree opens | three music box notes up (0.4 s) |
+| wind_gust | the Gale's wind turns | a pan flute sliding up (0.5 s) |
+| jelly_spawn | the Jelly spits a bat | a short synth bass squish (0.3 s) |
+| owl_spell | the Owl casts a spell | diminished celesta run, choir |
+| meteor | the Owl's meteor shower | tremolo strings diving, timpani impact |
 | boss_death | a boss is defeated | timpani roll, big major chord, harp run |
 | game_over | the game is over | the sad trombone |
 | swap | two birds swap | pan flute swoop |
@@ -120,7 +130,7 @@ in the background when the audio opens:
 | menu_move / menu_select / menu_back | menus and choices | music box tick, celesta up / down |
 
 The bounce has none on purpose: it would play all the time. The effects that
-play very often (hit, destroy, bat killed) are short, dry and soft, so they
+play very often (hit, destroy, bat killed, flower, gust, jelly spit) are short, dry and soft, so they
 never cover the music. Without the
 sample bank the effects fall back to the synthesized ones (`synth.py`).
 

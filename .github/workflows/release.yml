@@ -65,6 +65,9 @@ jobs:
           - os: macos-latest
             name: macos-arm64
             smoke: dist/BVB.app/Contents/MacOS/BVB
+          - os: macos-13  # Intel Macs
+            name: macos-x86_64
+            smoke: dist/BVB.app/Contents/MacOS/BVB
           - os: windows-latest
             name: windows-x86_64
             smoke: dist/BVB/BVB.exe
@@ -206,13 +209,14 @@ jobs:
           unzip -q butler.zip -d butler && chmod +x butler/butler
       - name: Unpack one folder per channel
         run: |
-          mkdir -p itch/linux itch/mac itch/windows
+          mkdir -p itch/linux itch/mac itch/mac-intel itch/windows
           tar -xzf artifacts/BVB-$VERSION-steam-linux.tar.gz -C itch/linux --strip-components=1
           tar -xzf artifacts/BVB-$VERSION-macos-arm64.tar.gz -C itch/mac --strip-components=1
+          tar -xzf artifacts/BVB-$VERSION-macos-x86_64.tar.gz -C itch/mac-intel --strip-components=1
           unzip -q artifacts/BVB-$VERSION-windows-x86_64.zip -d itch/windows-tmp
           mv itch/windows-tmp/*/* itch/windows/
       - name: Push
         run: |
-          for channel in linux mac windows; do
+          for channel in linux mac mac-intel windows; do
             butler/butler push "itch/$channel" "${{ vars.ITCH_GAME }}:$channel" --userversion "$VERSION"
           done

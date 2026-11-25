@@ -38,7 +38,12 @@ FONTS = ['DejaVuSansMono.ttf', 'DejaVuSansMono-Bold.ttf', 'LICENSE-DejaVu.txt']
 
 # The kind of build, read by the in-game updater (src/services/updater.py) to pick its download
 
-KIND = {'darwin': 'macos-arm64', 'win32': 'windows-x86_64'}.get(sys.platform, 'linux-x86_64')
+import platform  # noqa: E402
+
+KIND = {
+    'darwin': 'macos-arm64' if platform.machine() == 'arm64' else 'macos-x86_64',
+    'win32': 'windows-x86_64',
+}.get(sys.platform, 'linux-x86_64')
 BUILD_FILE = os.path.join(workpath, 'BUILD')
 os.makedirs(workpath, exist_ok=True)
 with open(BUILD_FILE, 'w', encoding='utf-8') as f:
