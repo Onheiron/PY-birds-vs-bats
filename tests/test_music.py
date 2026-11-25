@@ -130,3 +130,24 @@ def test_title_game_and_game_over_music_take_turns(mixer, monkeypatch):
     audio.play_sfx('swap')
     audio.play_sfx('card_take')
     audio.cleanup()
+
+
+def test_leaving_a_paused_game_for_the_title_brings_the_title_music(mixer):
+    from src.services import audio
+
+    audio._ready = None
+    assert audio.is_audio_available()
+    audio.update_active_birds({'YELLOW': 1})
+    audio.start_music()
+    audio.pause_music(True)  # paused in the game...
+    audio.stop_music()  # ...then back to the title (the session ends)
+    assert not audio._music['paused']
+    audio.play_screen('title')
+    deadline = time.time() + 20
+    while not any(mixer.mixer.Channel(i).get_busy() for i in (0, 1)) and time.time() < deadline:
+        time.sleep(0.05)
+    assert not audio._music['paused']
+    assert mixer.mixer.Channel(audio._music['channel']).get_busy()
+    audio.pause_music(True)  # a pause outside the game holds nothing
+    assert not audio._music['paused']
+    audio.cleanup()

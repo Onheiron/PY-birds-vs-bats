@@ -241,7 +241,7 @@ def play_screen(name):
         _music['screen'] = name
         _music['playing'] = False  # the game's music gives way
         _music['playing_now'] = None
-        _music['paused'] = False
+        _release_pause()  # left the game while paused: the screen's music must be heard
         _music['version'] += 1
         version = _music['version']
     threading.Thread(target=_screen_music, args=(name, version), daemon=True).start()
@@ -285,15 +285,26 @@ def stop_music():
         _music['playing_now'] = None
         _music['screen'] = None
         _music['version'] += 1
+        _release_pause()
     if _ready:
         for index in (0, 1):
             pygame.mixer.Channel(index).fadeout(300)
 
 
+def _release_pause():
+    """The music channels are no longer held by a pause (lock held). A paused channel would keep
+    the next music silent, and the game no longer says when it resumes once it is left."""
+    if _music['paused'] and _ready:
+        for index in (0, 1):
+            pygame.mixer.Channel(index).unpause()
+    _music['paused'] = False
+
+
 def pause_music(paused):
-    """Hold the music while the game is paused, and go on from there when it resumes."""
+    """Hold the music while the game is paused, and go on from there when it resumes.
+    Only the game's music: a screen's music (title, game over) is never held."""
     with _lock:
-        if _music['paused'] == paused:
+        if _music['paused'] == paused or (paused and _music['screen'] is not None):
             return
         _music['paused'] = paused
         if not _ready:
