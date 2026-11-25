@@ -73,9 +73,6 @@ def test_bird_cards_need_a_free_lane_and_respect_unique_birds(monkeypatch):
         sim.state.birds.lost[0] = True
         birds = [c['bird'] for o in offers('epic', 200) for c in o if c['kind'] == 'bird']
         assert birds and set(birds) <= {
-            'WHITE',
-            'ORANGE',
-            'GOLD',
             'CLOCKWORK',
             'COOKIE',
             'STEALTH',
@@ -88,11 +85,14 @@ def test_bird_cards_need_a_free_lane_and_respect_unique_birds(monkeypatch):
             'DINOSAUR',
             'GLITCH',
         }
-        from src.entities.sprites import WHITE
 
-        sim.state.birds.colors[1] = WHITE
-        birds = [c['bird'] for o in offers('epic', 200) for c in o if c['kind'] == 'bird']
-        assert 'WHITE' not in birds
+
+def test_evolved_birds_never_hatch_from_an_egg():
+    with Simulation(seed=1, key_rate=0) as sim:
+        sim.state.birds.lost[0] = True
+        for rarity in ('common', 'uncommon', 'rare', 'epic', 'legendary', 'mythical'):
+            birds = {c['bird'] for o in offers(rarity, 100) for c in o if c['kind'] == 'bird'}
+            assert not birds & {'WHITE', 'ORANGE', 'GOLD'}, rarity
 
 
 def test_picking_up_an_egg_stops_the_game_until_a_card_is_taken():

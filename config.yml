@@ -97,10 +97,9 @@ eggs:
       cookie_egg: 30
       stealth_egg: 20
       twister_egg: 20
-    epic:
-      white_egg: 34
-      orange_egg: 33
-      gold_egg: 33
+    # White, Orange (Phoenix) and Gold never hatch from an egg: they are earned by
+    # evolution (Blue, Red, Yellow at grade S). Epic eggs offer no bird.
+    epic: {}
     legendary:
       dinosaur_egg: 50
       glitch_egg: 50

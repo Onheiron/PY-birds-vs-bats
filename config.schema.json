@@ -3553,15 +3553,6 @@
                 },
                 "glitch_egg": {
                   "type": "number"
-                },
-                "gold_egg": {
-                  "type": "number"
-                },
-                "orange_egg": {
-                  "type": "number"
-                },
-                "white_egg": {
-                  "type": "number"
                 }
               },
               "type": "object"
