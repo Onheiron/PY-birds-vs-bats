@@ -75,13 +75,13 @@ in the background when the audio opens:
 
 | Effect | When | Sound |
 |---|---|---|
-| hit | a bird hits an enemy or an obstacle | low tom, short low pizzicato |
-| destroy | an obstacle or an enemy is destroyed | timpani, crash, harp run down |
+| hit | a bird hits an enemy or an obstacle | a short dry low tom (0.12 s) |
+| destroy | an obstacle or an enemy is destroyed | one damped timpani stroke (0.3 s) |
 | powerup | a power-up is picked up | harp glissando up, celesta |
 | egg | an egg is picked up | celesta chime, glockenspiel |
 | level_up | a new level | trumpet arpeggio, brass chord, crash |
 | bird_lost | a bird is lost | clarinet falling a minor third |
-| bat_death | a bat is killed | chiptune squeak sliding down |
+| bat_death | a bat is killed | a tiny chiptune squeak (0.18 s) |
 | boss_scream | a boss screams | tremolo strings and choir sliding down, taiko |
 | boss_death | a boss is defeated | timpani roll, big major chord, harp run |
 | game_over | the game is over | the sad trombone |
@@ -89,7 +89,9 @@ in the background when the audio opens:
 | card_take | a card or a pact is taken | harp arpeggio, celesta |
 | menu_move / menu_select / menu_back | menus and choices | music box tick, celesta up / down |
 
-The bounce has none on purpose: it would play all the time. Without the
+The bounce has none on purpose: it would play all the time. The effects that
+play very often (hit, destroy, bat killed) are short, dry and soft, so they
+never cover the music. Without the
 sample bank the effects fall back to the synthesized ones (`synth.py`).
 
 ## Changing it

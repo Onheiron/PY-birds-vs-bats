@@ -4,6 +4,8 @@ Each effect is a few notes; ``render(name)`` makes it once (stereo float32)
 and keeps it. The bounce has none: it would play all the time.
 """
 
+import numpy as np
+
 from src.services.music import sampler
 from src.services.music.score import note as N  # noqa: N812
 
@@ -20,21 +22,13 @@ def _run(instrument, names, start, step, length, velocity):
 
 
 def hit():
-    """A muted thud: a low tom and a short low pizzicato."""
-    return [
-        (_notes('drums', [(0, 0.2, [45], 110)], 0.5), 1.0, 0),
-        (_notes('pizzicato', [(0, 0.1, [N('E3')], 100)], 0.5), 0.7, 0),
-    ]
+    """A short dry "tok" (a low tom): it plays all the time, so it stays small."""
+    return [(_notes('drums', [(0, 0.1, [45], 90)], 0.3), 1.0, 0)]
 
 
 def destroy():
-    """Timpani, a short crash, a harp run down."""
-    harp = _run('harp', ['G6', 'E6', 'C6', 'G5', 'E5'], 0.05, 0.04, 0.3, 80)
-    return [
-        (_notes('timpani', [(0, 0.5, [N('G2')], 120)], 1.2), 1.0, 0),
-        (_notes('drums', [(0, 0.5, [49], 90)], 1.2), 0.5, 0),
-        (_notes('harp', harp, 1.2), 0.7, 0.3),
-    ]
+    """One damped timpani stroke: short, it plays often."""
+    return [(_notes('timpani', [(0, 0.2, [N('G2')], 105)], 0.5), 1.0, 0)]
 
 
 def powerup():
@@ -83,11 +77,8 @@ def bird_lost():
 
 
 def bat_death():
-    """A little chiptune squeak sliding down, and a pizzicato pop."""
-    return [
-        (sampler.glide('square', N('C6'), N('C5'), 0.22, 0.6, 100), 0.9, 0),
-        (_notes('pizzicato', [(0, 0.1, [N('G5')], 90)], 0.6), 0.6, 0),
-    ]
+    """A tiny chiptune squeak sliding down: short, it plays often."""
+    return [(sampler.glide('square', N('C6'), N('G5'), 0.15, 0.2, 95), 0.9, 0)]
 
 
 def boss_scream():
@@ -159,6 +150,10 @@ EFFECTS = {
     'menu_back': menu_back,
 }
 QUIET = {'menu_move', 'menu_select', 'menu_back'}  # little room: they are dry and close
+# Effects that play very often: cut to this many seconds, dry and softer (seconds, gain),
+# so they never cover the music
+FREQUENT = {'hit': (0.12, 0.5), 'destroy': (0.3, 0.6), 'bat_death': (0.18, 1.6)}
+FADE = 0.04  # seconds of fade at the cut
 
 _made = {}
 
@@ -168,5 +163,12 @@ def render(name):
     if name not in EFFECTS:
         return None
     if name not in _made:
-        _made[name] = sampler.one_shot(EFFECTS[name](), wet=0.06 if name in QUIET else 0.12)
+        if name in FREQUENT:
+            seconds, gain = FREQUENT[name]
+            audio = sampler.one_shot(EFFECTS[name](), wet=0.0, tail=0.0)[: int(seconds * sampler.SAMPLE_RATE)]
+            fade = min(len(audio), int(FADE * sampler.SAMPLE_RATE))
+            audio[len(audio) - fade :] *= np.linspace(1, 0, fade, dtype=np.float32)[:, None]
+            _made[name] = audio * gain
+        else:
+            _made[name] = sampler.one_shot(EFFECTS[name](), wet=0.06 if name in QUIET else 0.12)
     return _made[name]
