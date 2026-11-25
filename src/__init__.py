@@ -1,3 +1,3 @@
 """BVB - Bird vs Bat: a terminal arcade roguelike."""
 
-__version__ = "2.3.1"
+__version__ = "2.4.0"

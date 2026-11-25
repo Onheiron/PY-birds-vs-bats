@@ -210,8 +210,8 @@ def _render_and_play(version, fade=True):
         else:
             _music['loop_start'] = time.monotonic()
         _music['loop_len'] = len(wave) / synth.SAMPLE_RATE
-        _music['playing_now'] = signature
         _swap_in(_sound(wave), loops=-1, fade=fade)
+        _music['playing_now'] = signature  # once it plays (readers may not hold the lock)
 
 
 def _from_where_it_was(wave):

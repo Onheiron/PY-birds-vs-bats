@@ -132,7 +132,7 @@ def _difficulty_name():
     from src.engine import meta
 
     name = DIFFICULTY_NAMES[state.settings.difficulty]
-    return name if meta.difficulty_unlocked(name) else f'{name} (locked)'
+    return name if meta.difficulty_unlocked(name) else f'{name} ✗'
 
 
 def _start_game(difficulty):
@@ -265,54 +265,92 @@ def _update_items():
     return [Item(name, 'option' if value else 'plain', (lambda v=value: v) if value else None, on_enter=updater.choose)]
 
 
-def _formation_item():
-    from src.engine import meta
-
-    return [Item('FORMATION', opens='formation')] if meta.formation_unlocked() else []
+_picked_lane = {'lane': None}  # FORMATION: the lane picked up, waiting for a second ENTER to swap
 
 
 def _formation_list():
-    """The flock the player has chosen, or the default one."""
+    """The bird of each lane: the player's, or the default flock in its usual order."""
     from src.engine import meta
 
-    chosen = meta.formation()
-    if chosen:
-        return chosen
-    birds = list(constants.birds.default_formation[: constants.layout.num_balls])
-    return birds + [birds[0]] * (constants.layout.num_balls - len(birds))
+    return meta.formation() or meta.default_flock()
 
 
-def _set_formation_bird(slot, delta):
+def _save_formation(birds):
     from src.engine import meta
 
-    birds = _formation_list()
-    options = meta.formation_choices()
-    current = options.index(birds[slot]) if birds[slot] in options else 0
-    birds[slot] = options[(current + delta) % len(options)]
-    meta.profile()['formation'] = birds
+    meta.profile()['formation'] = list(birds)
     save_manager.save_profile(meta.profile())
 
 
-def _reset_formation():
+def _lane_enter(lane):
+    """ENTER on a lane: pick it up, or swap it with the lane picked up before."""
+    picked = _picked_lane['lane']
+    if picked is None:
+        _picked_lane['lane'] = lane
+        return
+    _picked_lane['lane'] = None
+    if picked != lane:
+        birds = _formation_list()
+        birds[picked], birds[lane] = birds[lane], birds[picked]
+        _save_formation(birds)
+
+
+def _lane_change(lane, delta):
+    """LEFT / RIGHT on a lane: another bird there (only with the Formation upgrade)."""
     from src.engine import meta
 
+    if not meta.formation_unlocked():
+        notify('Choose which birds with the FORMATION upgrade', title='Formation')
+        return
+    birds = _formation_list()
+    options = meta.formation_choices()
+    current = options.index(birds[lane]) if birds[lane] in options else 0
+    birds[lane] = options[(current + delta) % len(options)]
+    _save_formation(birds)
+
+
+def _random_lanes():
+    from src.engine import meta
+
+    _picked_lane['lane'] = None
     meta.profile().pop('formation', None)
     save_manager.save_profile(meta.profile())
 
 
+def _lane_value(lane, bird):
+    from src.engine import meta
+
+    mark = '◆ ' if _picked_lane['lane'] == lane else ''
+    return f"{mark}{str(bird).title()}{' ↔' if meta.formation_unlocked() else ''}"
+
+
 def _formation_items():
+    from src.engine import meta
+
     birds = _formation_list()
     items = [
         Item(
-            f'BIRD {slot + 1}',
+            f'LANE {lane + 1}',
             'option',
-            (lambda b=bird: str(b).title()),
-            on_change=(lambda delta, s=slot: _set_formation_bird(s, delta)),
-            on_enter=(lambda s=slot: _set_formation_bird(s, 1)),
+            (lambda n=lane, b=bird: _lane_value(n, b)),
+            on_enter=(lambda n=lane: _lane_enter(n)),
+            on_change=(lambda delta, n=lane: _lane_change(n, delta)),
         )
-        for slot, bird in enumerate(birds)
+        for lane, bird in enumerate(birds)
     ]
-    return [*items, Item('DEFAULT FLOCK', on_enter=_reset_formation), _back_item()]
+    status = 'OFF' if meta.formation() else 'ON'
+    return [*items, Item('RANDOM LANES', 'option', lambda: status, on_enter=_random_lanes), _back_item()]
+
+
+def _flock_meta_items():
+    """TITLE > FLOCK: the starting flock, the upgrades, the feathers, the birds."""
+    return [
+        Item('FORMATION', opens='formation'),
+        Item('UPGRADES', value=_gold_text, opens='upgrades'),
+        Item('FEATHERS', opens='page_feathers'),
+        Item('BIRDS', opens='page_flock_birds'),
+        _back_item(),
+    ]
 
 
 def _leaderboard_items():
@@ -331,8 +369,7 @@ def _title_items():
         Item('CONTINUE', on_enter=_continue),
         Item('NEW GAME', value=_difficulty_name, on_enter=_new_game, on_change=_change_new_game_difficulty),
         Item('LOAD', opens='load'),
-        *_formation_item(),
-        Item('UPGRADES', value=_gold_text, opens='upgrades'),
+        Item('FLOCK', value=_gold_text, opens='flock_meta'),
         Item('ACHIEVEMENTS', opens='achievements'),
         Item('LEADERBOARDS', opens='leaderboards'),
         Item('BIRDPEDIA', opens='birdpedia'),
@@ -477,7 +514,7 @@ def _profile():
 
 def _gold_text():
     meta = _profile()
-    return f"{meta.profile().get('gold', 0)} gold"
+    return f"{meta.profile().get('gold', 0)} ❖"
 
 
 def _branches():
@@ -507,7 +544,7 @@ def _upgrade_value(uid):
         return f'{level}/{top}  MAX'
     if meta.missing_requirements(uid):
         return f'{level}/{top}  ✗'
-    return f'{level}/{top}  {meta.cost(uid)}g'
+    return f'{level}/{top}  {meta.cost(uid)}❖'
 
 
 def _buy(uid):
@@ -525,7 +562,7 @@ def _buy(uid):
         elif meta.cost(uid) is None:
             notify(f'{name} is at its maximum', title='Upgrade')
         else:
-            notify(f'{name} costs {meta.cost(uid)} gold', title='Not enough gold')
+            notify(f'{name} costs {meta.cost(uid)} feathers ❖', title='Not enough feathers')
 
     return buy
 
@@ -544,7 +581,7 @@ def upgrade_hint(screen_id, cursor):
     if uid is None:
         from src.ui import controls
 
-        return controls.hint(f"Gold: {meta.profile().get('gold', 0)}   {{select}} Buy  {{back}} Back")
+        return controls.hint(f"Feathers: {meta.profile().get('gold', 0)} ❖   {{select}} Buy  {{back}} Back")
     entry = meta.upgrades()[uid]
     desc = (entry if isinstance(entry, dict) else vars(entry)).get('desc', '')
     missing = meta.missing_requirements(uid)
@@ -626,7 +663,10 @@ SCREENS = {
         _page('batpedia_list', 'bats'),
         _page('biomes_list', 'biomes'),
         Screen('upgrades', 'UPGRADES', _upgrades_items, hint='select'),
-        Screen('formation', 'FORMATION', _formation_items),
+        Screen('formation', 'FORMATION', _formation_items, hint='formation'),
+        Screen('flock_meta', 'FLOCK', _flock_meta_items, hint='select'),
+        _page('page_feathers', 'feathers'),
+        _page('page_flock_birds', 'flock_birds'),
         Screen('leaderboards', 'LEADERBOARDS', _leaderboard_items, hint='select'),
         *[_page(f'leaderboard_{period}', f'board_{period}') for period in ('week', 'month', 'all')],
         Screen('achievements', 'ACHIEVEMENTS', _achievements_items, hint='select'),

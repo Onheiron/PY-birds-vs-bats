@@ -58,11 +58,12 @@ bypass-selection = true
 "config.schema.json" = "birds_vs_bats/config.schema.json"
 "theme.yml" = "birds_vs_bats/theme.yml"
 "theme_accessible.yml" = "birds_vs_bats/theme_accessible.yml"
+"CHANGELOG.md" = "birds_vs_bats/CHANGELOG.md"
 
 [tool.hatch.build.targets.sdist]
 include = [
     "/src", "/game.py", "/media/music", "/media/fonts", "/media/icons/bvb_256.png", "/packaging/pip", "/README.md",
-    "/config*.yml", "/config.schema.json", "/hardmode.yml", "/theme*.yml", "/requirements*.txt",
+    "/config*.yml", "/config.schema.json", "/CHANGELOG.md", "/hardmode.yml", "/theme*.yml", "/requirements*.txt",
 ]
 
 [tool.ruff]

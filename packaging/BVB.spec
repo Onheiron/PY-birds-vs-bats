@@ -33,6 +33,7 @@ DATA_FILES = [
     'config.schema.json',
     'theme.yml',
     'theme_accessible.yml',
+    'CHANGELOG.md',
 ]
 FONTS = ['DejaVuSansMono.ttf', 'DejaVuSansMono-Bold.ttf', 'LICENSE-DejaVu.txt']
 

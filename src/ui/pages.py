@@ -176,6 +176,10 @@ def page(content_type):
 
     if content_type.startswith('achievements_'):
         return achievement_page(content_type)
+    if content_type == 'feathers':
+        return feathers_page()
+    if content_type == 'flock_birds':
+        return flock_birds_page()
     if content_type.startswith('board_'):
         return leaderboard_page(content_type.split('_', 1)[1])
     if content_type.startswith('flock_'):
@@ -231,7 +235,7 @@ def achievement_page(content_type):
     lines = ['Paid once, the first time.', '']
     for aid, entry in page:
         mark = '✓' if aid in done else ' '
-        gold = f"{entry.get('gold', 0)}g"
+        gold = f"{entry.get('gold', 0)}❖"
         lines.append(f"{mark}{gold:>5} {entry.get('desc', aid)}"[:36])
     pages = (len(entries) + ACHIEVEMENTS_PER_PAGE - 1) // ACHIEVEMENTS_PER_PAGE
     more = f' {int(number) + 1}/{pages}' if pages > 1 else ''
@@ -260,3 +264,44 @@ def leaderboard_page(period):
             name = str(entry.get('name', '?'))[:13]
             lines.append(f"{mark}{rank:>2} {name:<14}{int(entry.get('score', 0)):>10,} {entry.get('level', '')}")
     return {'title': title, 'lines': lines}
+
+
+def feathers_page():
+    """TITLE > FLOCK > FEATHERS: what there is to spend, what the last run paid and why."""
+    from src.engine import meta
+
+    prof = state.meta.profile or meta.new_profile()
+    cfg = meta._as_dict(meta._cfg('run_reward'))
+    lines = [f"{prof.get('gold', 0)} ❖ to spend", f"{prof.get('gold_earned', 0)} ❖ earned in all", '']
+    last = prof.get('last_run')
+    if last:
+        lines += [
+            f"LAST RUN              +{last['reward']} ❖",
+            f"  level {last['level']} × {cfg.get('per_level', 1)}",
+            f"  {last['bosses']} boss{'es' if last['bosses'] != 1 else ''} × {cfg.get('per_boss', 4)}",
+            f"  {last['bats']} bats ÷ {cfg.get('bats_per_gold', 25)}",
+            f"  difficulty ×{last['difficulty']:g}  digger ×{last['digger']:g}",
+        ]
+        if last.get('spent'):
+            lines.append(f"  merchant −{last['spent']}")
+    else:
+        lines.append('No run finished yet.')
+    total = sum(meta._as_dict(e).get('gold', 0) for e in meta.global_achievements().values())
+    done = set(prof.get('achievements', []))
+    got = sum(meta._as_dict(e).get('gold', 0) for aid, e in meta.global_achievements().items() if aid in done)
+    lines += ['', f'Achievements: {got} of {total} ❖']
+    return {'title': 'FEATHERS ❖', 'lines': lines}
+
+
+def flock_birds_page():
+    """TITLE > FLOCK > BIRDS: the bird types discovered."""
+    from src.entities.bird_types import BirdType
+
+    names = sorted(n for n in dir(BirdType) if n.isupper())
+    known = set(state.discovery.birds)
+    found = [n for n in names if getattr(BirdType, n) in known]
+    lines = [f'{len(found)}/{len(names)} discovered', '']
+    for i in range(0, len(names), 3):
+        row = names[i : i + 3]
+        lines.append('  '.join(f"{(n.title() if n in found else '???'):<10}" for n in row).rstrip())
+    return {'title': 'BIRDS', 'lines': lines}

@@ -100,3 +100,22 @@ def test_survival_and_legendary_must_be_earned():
         assert meta.difficulty_unlocked('SURVIVAL') and not meta.difficulty_unlocked('LEGENDARY')
         meta.profile()['lifetime']['won_survival'] = 1
         assert meta.difficulty_unlocked('LEGENDARY')
+
+
+def test_anyone_sets_the_lanes_of_the_default_birds():
+    from src.engine import menus
+
+    with Simulation(seed=1, key_rate=0):
+        new_run()
+        default = meta.default_flock()
+        menus._lane_enter(0)
+        menus._lane_enter(8)  # swap lanes 1 and 9
+        lanes = meta.formation()
+        assert lanes[0] == default[8] and lanes[8] == default[0]
+        state.init(seed=3)
+        assert state.birds.random_lanes == list(range(9))  # bird i in lane i: no shuffle
+        assert [get_bird_type_by_color(c) for c in state.birds.colors] == lanes
+        menus._lane_change(0, 1)  # another bird: needs the Formation upgrade
+        assert meta.formation() == lanes
+        menus._random_lanes()
+        assert meta.formation() is None

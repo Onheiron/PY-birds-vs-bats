@@ -5,7 +5,9 @@ What carries over from one run to the next (`src/engine/meta.py`): a
 **upgrades** bought, the **global achievements** unlocked and lifetime
 counters.
 
-## Gold and achievements
+## Feathers and achievements
+
+Feathers ❖ (the profile's `gold`) are what upgrades are bought with.
 
 Gold comes from two places (`run_reward` and `achievements` in `config.yml`):
 
@@ -148,9 +150,12 @@ Maxing the whole tree costs 3515 gold.
 Besides the stat upgrades, the tree has upgrades that change how a run starts
 and goes (`upgrades.tree` in config.yml):
 
-- **Formation** (Flock, 60 gold): choose the nine starting birds among the
-  ones discovered (TITLE > FORMATION; evolved birds and zombies never). The
-  choice is kept in the profile.
+- **Lanes** (no upgrade needed): TITLE > FLOCK > FORMATION sets the lane of
+  every starting bird (ENTER picks a lane up, ENTER on another swaps them);
+  RANDOM LANES puts them back in random lanes, as when nothing is set.
+- **Formation** (Flock, 60 feathers): choose the nine starting birds too
+  (LEFT / RIGHT on a lane), among the ones discovered (evolved birds and
+  zombies never). The lanes are kept in the profile.
 - **Opening Card** (Flock, 40): every run starts with a free common egg.
 - **Training** (Flock, 80 and 150): every bird starts one grade higher per
   level. **Veterans** (one per bird type, 30 each): birds of that type start

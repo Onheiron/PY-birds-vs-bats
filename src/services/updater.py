@@ -120,8 +120,16 @@ def _check():
     name = asset_name(version, build())
     if name not in assets or 'SHA256SUMS.txt' not in assets:
         return
+    from src.ui import news
+
     with _lock:
         status.update(version=version, state='available', progress=0.0, error=None)
+        status['notes'] = (
+            news.sections(release.get('body') or '').get(version)
+            or [line.strip()[2:] for line in (release.get('body') or '').splitlines() if line.strip().startswith('- ')][
+                :6
+            ]
+        )
         status['_urls'] = (assets[name], assets['SHA256SUMS.txt'], name)
 
 

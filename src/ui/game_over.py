@@ -60,8 +60,8 @@ def _gold_line():
     )
     count = len(state.meta.run_achievements)
     if not count:
-        return f"Gold Earned:    {reward}"
-    return f"Gold Earned:    {reward} + {extra} ({count} achievement{'s' if count > 1 else ''})"
+        return f"Feathers:       {reward} ❖"
+    return f"Feathers:       {reward} + {extra} ❖ ({count} achievement{'s' if count > 1 else ''})"
 
 
 # The on-screen keyboard of the name entry: picked with the arrows (a gamepad's D-pad or stick)
@@ -134,7 +134,7 @@ def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_len
         _gold_line(),
     )
     for i, line in enumerate(stats):
-        centered(center_y - 2 + i, line, YELLOW if line.startswith('Gold') else '')
+        centered(center_y - 2 + i, line, YELLOW if line.startswith('Feathers') else '')
 
     if phase == "name":
         name_y = center_y + 4

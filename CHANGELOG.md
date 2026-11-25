@@ -1,0 +1,35 @@
+# Changelog
+
+Every release adds a section headed by its version: the game shows the one it
+runs (and the one an update brings) on the title screen, and the release on
+GitHub uses it as its notes. Keep each line short: they are read in a small box.
+
+## 2.4.0
+
+- A new home: news, the leaderboard and your flock at a glance
+- FLOCK: set the lane of every starting bird (no upgrade needed)
+- Gold is now feathers ❖
+- Nothing overflows the menus any more
+
+## 2.3.1
+
+- The version and its update under the logo
+
+## 2.3.0
+
+- Online leaderboards, every game verified by replay
+- The merchant brings a brood of birds on ADVENTURE
+- The gear climbs from 5 in world 2, no more jump
+- A held bounce no longer repeats
+
+## 2.2.4
+
+- Sound effects for every boss
+- An app for Intel Macs too
+
+## 2.2.3
+
+- On-screen keyboard for your name at game over
+- Cards and pacts are taken with X on a gamepad
+- Fixed unlocks: formation, opening card, the merchant
+- The game updates itself from the title menu

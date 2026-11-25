@@ -23,6 +23,7 @@ HINTS = {
     'rebinding': "Press new key...  ESC Cancel",
     'root': "{navigate} Navigate  {select} Select",
     'page': "{scroll} Scroll  {select} or {back} Back",
+    'formation': "{navigate} Lane  {select} Pick / swap  {change} Bird  {back} Back",
 }
 
 

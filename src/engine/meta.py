@@ -125,6 +125,16 @@ def end_run(save=True):
     prof['runs'] = prof.get('runs', 0) + 1
     _check_global(run=dict(meta.run))
     gold = meta.run_gold = run_gold()
+    base, factor, digger = run_reward_parts()
+    prof['last_run'] = {  # what the run paid and why (TITLE > FLOCK > FEATHERS)
+        'level': meta.run.get('level', 0),
+        'bosses': meta.run.get('bosses', 0),
+        'bats': meta.run.get('bats', 0),
+        'difficulty': factor,
+        'digger': round(digger, 2),
+        'spent': meta.run.get('spent', 0),
+        'reward': gold,
+    }
     prof['gold'] = prof.get('gold', 0) + gold
     prof['gold_earned'] = prof.get('gold_earned', 0) + gold
     if save:
@@ -211,15 +221,23 @@ def formation_choices():
     return [getattr(BirdType, n) for n in names if getattr(BirdType, n) in known]
 
 
+def default_flock():
+    """The birds every run starts with (birds.default_formation), one per lane."""
+    birds = list(constants.birds.default_formation[: constants.layout.num_balls])
+    return birds + ['YELLOW'] * (constants.layout.num_balls - len(birds))
+
+
 def formation():
-    """The starting flock chosen (profile['formation']), or None to use the default one."""
-    if not formation_unlocked():
+    """The bird of each lane the player set (profile['formation'], lane by lane), or None: the
+    default flock in random lanes. Anyone may place the default birds; the Formation upgrade
+    lets them choose which birds too, among the ones discovered."""
+    chosen = profile().get('formation') if state.meta.profile is not None else None
+    if not chosen or len(chosen) != constants.layout.num_balls:
         return None
-    chosen = profile().get('formation')
-    allowed = set(formation_choices())
-    if not chosen or any(bird not in allowed for bird in chosen):
-        return None
-    return list(chosen)
+    if formation_unlocked():
+        allowed = set(formation_choices())
+        return list(chosen) if all(bird in allowed for bird in chosen) else None
+    return list(chosen) if sorted(chosen) == sorted(default_flock()) else None
 
 
 def _count(name, amount=1):
@@ -298,7 +316,7 @@ def _check_global(run=None):
         gold = entry.get('gold', 0)
         prof['gold'] = prof.get('gold', 0) + gold
         prof['gold_earned'] = prof.get('gold_earned', 0) + gold
-        notify(f"{entry.get('name', aid)}  +{gold} gold", title='Global achievement!')
+        notify(f"{entry.get('name', aid)}  +{gold} ❖", title='Achievement!')
         events.emit('achievement', id=aid, kind='global', gold=gold)
 
 

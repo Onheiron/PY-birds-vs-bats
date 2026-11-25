@@ -93,7 +93,7 @@ def visit(world):
 def buy(ware):
     """Pay for ``ware`` and get it; False (and the merchant stays) when the run cannot pay."""
     if not meta.spend(ware['price']):
-        notify(f"Not enough gold: {ware['price']} (you have {meta.run_gold()})", title='Merchant')
+        notify(f"Not enough feathers: {ware['price']} ❖ (you have {meta.run_gold()})", title='Merchant')
         return False
     from src.engine import cards, choices
 
@@ -104,5 +104,5 @@ def buy(ware):
             cards.apply_effect({allowance: ware[allowance]}, source='merchant')
     if ware.get('egg'):
         choices.offer_egg(ware['egg'], birds_only=bool(ware.get('birds_only')))
-    notify(f"{ware['name']}  -{ware['price']} gold", title='Merchant')
+    notify(f"{ware['name']}  -{ware['price']} ❖", title='Merchant')
     return True

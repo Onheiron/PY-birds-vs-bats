@@ -76,6 +76,7 @@ def start_game(config, now):
         overrides = constants_merge(overrides, {'birds': {'default_formation': list(config.formation)}})
     constants.configure(config.difficulty, base=config.base_config, overrides=overrides)
 
+    state.meta.profile = copy.deepcopy(config.profile) if config.profile else meta.new_profile()  # lanes
     state.init(config.seed)
     state.settings.difficulty = config.difficulty
     # Settings outlive a game: start every simulated game with the cursor assists off
@@ -172,6 +173,7 @@ def replay(data):
             virtual.now = data['start_time']
             save_manager.apply_save_data(copy.deepcopy(data['save']))
         else:
+            state.meta.profile = copy.deepcopy(data['profile'])  # before init: the lanes come from it
             state.init(data['seed'])
         for key, value in data['settings'].items():
             setattr(state.settings, key, copy.deepcopy(value))

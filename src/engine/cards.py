@@ -316,7 +316,7 @@ def card_info(card):
             'kind': 'Merchant',
             'duration': '',
             'text': card.get('desc', ''),
-            'lines': [(f"Price {card['price']} gold (you have {meta.run_gold()})", affordable)],
+            'lines': [(f"Price {card['price']} ❖ (this run has {meta.run_gold()})", affordable)],
         }
     seconds = _seconds_of(card)
     if kind == 'bird':

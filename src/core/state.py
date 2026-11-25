@@ -423,22 +423,23 @@ def init(seed=None):
     layout = constants.layout
     num_birds = layout.num_balls
     formation = list(constants.birds.default_formation[:num_birds])
-    # The flock the player chose (meta progression: the Formation upgrade)
-    if meta.profile is not None and meta.profile.get('upgrades', {}).get('formation'):
-        chosen = meta.profile.get('formation')
-        if chosen and len(chosen) == num_birds:
-            from src.engine import meta as meta_progression
-
-            formation = meta_progression.formation() or formation
     # Pad with YELLOW if the formation is shorter than the number of birds
     formation += [BirdType.YELLOW] * (num_birds - len(formation))
+    # The lanes the player set (FLOCK > FORMATION): which bird starts in which lane
+    lanes = None
+    if meta.profile is not None and meta.profile.get('formation'):
+        from src.engine import meta as meta_progression
+
+        lanes = meta_progression.formation()
+    if lanes:
+        formation = lanes
 
     birds.colors = [get_color_for_bird_type(bird_type) for bird_type in formation]
     birds.speeds = [get_default_speed(bird_type) for bird_type in formation]
 
     # Randomize which bird goes to which lane
     birds.random_lanes = list(range(layout.num_lanes))
-    if constants.birds.randomize_lanes:
+    if constants.birds.randomize_lanes and not lanes:  # set lanes: bird i in lane i
         random.shuffle(birds.random_lanes)
     # Home lanes start same as random_lanes (where bird would go following portals down)
     birds.home_lanes = birds.random_lanes.copy()
