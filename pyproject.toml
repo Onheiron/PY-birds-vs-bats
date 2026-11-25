@@ -109,4 +109,4 @@ addopts = "-q"
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["src/services/audio.py", "src/services/synth.py", "src/services/music_engine.py", "src/services/firebase_client.py"]
+omit = ["src/services/audio.py", "src/services/synth.py", "src/services/music_engine.py", "src/services/online.py"]

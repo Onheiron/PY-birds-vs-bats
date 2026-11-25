@@ -62,7 +62,7 @@ def main():
     # Imported here: loading the game reads the configuration, which may stop
     # with a message for the user, and must not happen for --help or --version.
     from src.engine import loop
-    from src.services import optional, save_manager, sound
+    from src.services import save_manager, sound
     from src.ui import terminal
     from src.ui.framebuffer import reset_framebuffer
 
@@ -76,7 +76,6 @@ def main():
             reset_framebuffer()
     finally:
         sound.cleanup()
-        optional.close_firebase()
         terminal.cleanup()
     from src.core import state
 

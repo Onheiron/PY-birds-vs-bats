@@ -1,3 +1,0 @@
-# Optional features: the game runs without them.
-# Online leaderboard and telemetry (also needs a Firebase service account)
-firebase-admin>=6.0

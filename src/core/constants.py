@@ -24,6 +24,7 @@ SECTIONS = (
     'run_reward',
     'merchant',
     'unlocks',
+    'online',
     'upgrades',
     'cards',
     'pacts',

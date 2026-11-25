@@ -54,7 +54,7 @@ a = Analysis(
         'game',
         'src.engine.loop',
         'src.services.audio',
-        'src.services.firebase_client',
+        'src.services.online',
         'src.services.updater',
         'src.ui.window',
         'pygame._sdl2.controller',

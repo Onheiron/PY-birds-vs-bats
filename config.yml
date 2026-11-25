@@ -1017,6 +1017,16 @@ merchant:
   stock: [common_egg, rare_egg, mend]
   extra: [epic_egg, feather]
 
+# Online leaderboards (src/services/online.py): an anonymous Firebase account, finished
+# games sent for verification (tools/verify_runs.py replays them), leaderboards to read.
+# The web API key is public by design: the Firestore rules (firestore.rules) allow
+# players only to add their own games and name.
+online:
+  enabled: true
+  firebase:
+    api_key: AIzaSyAmAn2UPtoFXJMniP9d68juw-OC4KmGHmE
+    project_id: birds-vs-bats
+
 # Difficulties that must be earned (goals over every run played, as achievements)
 unlocks:
   SURVIVAL:  {desc: "Reach the fourth world on ADVENTURE", all: {adventure_world4: 1}}

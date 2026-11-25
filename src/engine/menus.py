@@ -315,6 +315,16 @@ def _formation_items():
     return [*items, Item('DEFAULT FLOCK', on_enter=_reset_formation), _back_item()]
 
 
+def _leaderboard_items():
+    from src.services import online
+
+    return [
+        *[Item(online.PERIOD_NAMES[p], opens=f'leaderboard_{p}') for p in online.PERIODS],
+        Item('DIFFICULTY', 'option', _difficulty_name, on_change=_change_new_game_difficulty),
+        _back_item(),
+    ]
+
+
 def _title_items():
     return [
         *_update_items(),
@@ -324,6 +334,7 @@ def _title_items():
         *_formation_item(),
         Item('UPGRADES', value=_gold_text, opens='upgrades'),
         Item('ACHIEVEMENTS', opens='achievements'),
+        Item('LEADERBOARDS', opens='leaderboards'),
         Item('BIRDPEDIA', opens='birdpedia'),
         Item('SETTINGS', opens='settings'),
         Item('QUIT', on_enter=_quit),
@@ -349,6 +360,7 @@ def _settings_items():
         Item('GRAPHICS', opens='graphics'),
         Item('CONTROLS', opens='controls'),
         Item('DIFFICULTY', 'option', _difficulty_name, on_enter=_cycle_difficulty, on_change=_cycle_difficulty),
+        _option('ONLINE', 'online_enabled'),
         _back_item(),
     ]
 
@@ -615,6 +627,8 @@ SCREENS = {
         _page('biomes_list', 'biomes'),
         Screen('upgrades', 'UPGRADES', _upgrades_items, hint='select'),
         Screen('formation', 'FORMATION', _formation_items),
+        Screen('leaderboards', 'LEADERBOARDS', _leaderboard_items, hint='select'),
+        *[_page(f'leaderboard_{period}', f'board_{period}') for period in ('week', 'month', 'all')],
         Screen('achievements', 'ACHIEVEMENTS', _achievements_items, hint='select'),
     )
 }

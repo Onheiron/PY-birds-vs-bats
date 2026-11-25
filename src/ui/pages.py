@@ -176,6 +176,8 @@ def page(content_type):
 
     if content_type.startswith('achievements_'):
         return achievement_page(content_type)
+    if content_type.startswith('board_'):
+        return leaderboard_page(content_type.split('_', 1)[1])
     if content_type.startswith('flock_'):
         from src.ui import flock_pages
 
@@ -234,3 +236,27 @@ def achievement_page(content_type):
     pages = (len(entries) + ACHIEVEMENTS_PER_PAGE - 1) // ACHIEVEMENTS_PER_PAGE
     more = f' {int(number) + 1}/{pages}' if pages > 1 else ''
     return {'title': f'{name.upper()}{more}', 'lines': lines}
+
+
+def leaderboard_page(period):
+    """An online leaderboard of the difficulty chosen at NEW GAME (src/services/online.py)."""
+    from src.engine.menus import DIFFICULTY_NAMES
+    from src.services import online
+
+    difficulty = DIFFICULTY_NAMES[state.settings.difficulty]
+    title = f'{online.PERIOD_NAMES[period]} · {difficulty}'
+    entries = online.board(period)
+    if entries == 'offline':
+        lines = ['Offline: the leaderboards could not', 'be read.', '', 'SETTINGS > ONLINE turns them on.']
+    elif entries is None:
+        lines = ['Loading...']
+    elif not entries:
+        lines = ['Nobody yet: be the first!', '', 'Finished games appear here once', 'verified (a few minutes).']
+    else:
+        mine = (online.account() or {}).get('uid')
+        lines = [f"{'#':>3} {'NAME':<14}{'SCORE':>10} LV"]
+        for rank, entry in enumerate(entries[:15], 1):
+            mark = '>' if entry.get('uid') == mine else ' '
+            name = str(entry.get('name', '?'))[:13]
+            lines.append(f"{mark}{rank:>2} {name:<14}{int(entry.get('score', 0)):>10,} {entry.get('level', '')}")
+    return {'title': title, 'lines': lines}

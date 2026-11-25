@@ -145,7 +145,7 @@ def test_title_settings_are_saved_as_defaults_but_pause_settings_are_not(sim):
     press_all(sim, ['ESC', 'ESC', 'ESC'])
 
     open_title(sim)
-    press_all(sim, ['DOWN'] * 6 + ['ENTER', 'ENTER', 'RIGHT'], title=True)  # SETTINGS > SOUND > toggle SFX
+    press_all(sim, ['DOWN'] * 7 + ['ENTER', 'ENTER', 'RIGHT'], title=True)  # SETTINGS > SOUND > toggle SFX
     assert state.settings.sfx_enabled is True
     assert defaults_file()['sfx_enabled'] is True
     press_all(sim, ['LEFT'], title=True)

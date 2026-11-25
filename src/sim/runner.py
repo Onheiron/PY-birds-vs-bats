@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 
 from src.core import constants, state
 from src.engine import clock, input_handler, loop, meta, progression
-from src.services import optional, sound
+from src.services import online, sound
 from src.sim.bot import PROFILES, Bot, Skill
 from src.sim.stats import RunStats
 
@@ -51,7 +51,7 @@ class _VirtualTime:
 def _quiet_services():
     """No sound, no telemetry during simulations."""
     sound._backend = None
-    optional.firebase_client = None
+    online.disabled = True  # bot games are never sent
     from src.services import save_manager
 
     save_manager.checkpoints_enabled = False

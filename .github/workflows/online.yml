@@ -1,0 +1,51 @@
+name: Online
+
+# The leaderboards' backend (src/services/online.py). Every 15 minutes: replay the games
+# players sent and put the true ones on the leaderboards (tools/verify_runs.py). By hand:
+# verify now, deploy the Firestore rules (firestore.rules), or wipe the database.
+# Needs the secret FIREBASE_SERVICE_ACCOUNT (the service account's JSON).
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "verify, rules or wipe (wipe deletes every document)"
+        type: choice
+        options: [verify, rules, wipe]
+        default: verify
+
+permissions:
+  contents: read
+
+concurrency:
+  group: online
+  cancel-in-progress: false
+
+jobs:
+  online:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      ACTION: ${{ inputs.action || 'verify' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # the tags: every game is replayed with its version's code
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -r requirements.txt firebase-admin
+      - name: Verify the games sent
+        if: env.ACTION == 'verify'
+        run: SDL_AUDIODRIVER=dummy python tools/verify_runs.py verify
+      - name: Wipe the database
+        if: env.ACTION == 'wipe'
+        run: python tools/verify_runs.py wipe --yes
+      - name: Deploy the Firestore rules
+        if: env.ACTION == 'rules'
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@13 deploy --only firestore:rules --project birds-vs-bats --non-interactive

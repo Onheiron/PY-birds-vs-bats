@@ -50,14 +50,8 @@ music, played with real instrument samples and following the flock and the
 gear (`docs/music.md`; SDL audio: macOS, Linux, Windows), and the window
 mode. Without them the game runs silent and says why.
 
-Optional extras (the game runs fine without them):
-
-```bash
-pip install -r requirements-optional.txt
-```
-
-- `firebase-admin` + a service account file: online leaderboard (not active yet:
-  the client is never connected, see `docs/unused-mechanics.md`)
+Online leaderboards need nothing more: finished games are sent (anonymously) and
+verified by replaying them; see `docs/online.md`. SETTINGS > ONLINE turns it off.
 
 ### Command line
 

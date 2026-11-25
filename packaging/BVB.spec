@@ -63,7 +63,7 @@ a = Analysis(
         'game',
         'src.engine.loop',
         'src.services.audio',
-        'src.services.firebase_client',
+        'src.services.online',
         'src.services.updater',
         'src.services.music.arrangement',
         'src.services.music.boss',

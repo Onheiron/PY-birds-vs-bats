@@ -20,7 +20,7 @@ import time
 from src.core import state
 from src.engine import input_handler
 from src.engine.timing import FrameClock
-from src.services import optional, sound
+from src.services import online, sound
 from src.sim.options import DIFFICULTIES, add_game_options, formation_from, overrides_from, skill_from
 from src.sim.runner import FRAME_DT, RunConfig, end_reason, start_game
 from src.ui import framebuffer, keyboard, render, terminal
@@ -167,7 +167,7 @@ def main(argv):
     args = build_parser().parse_args(argv)
     if not args.sound:
         sound._backend = None
-    optional.firebase_client = None  # never send scores from bot games
+    online.disabled = True  # never send bot games
 
     results = []
     real_time = time.time

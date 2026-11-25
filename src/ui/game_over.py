@@ -2,12 +2,10 @@
 
 import time
 
-from src import __version__
 from src.core import constants, state
 from src.engine.timing import FrameClock
 from src.entities.sprites import RED
 from src.services.background import background_call
-from src.services.optional import firebase_client
 from src.ui import controls, terminal
 from src.ui.framebuffer import get_framebuffer
 from src.ui.keyboard import read_keys
@@ -233,34 +231,12 @@ def _ask_retry(fb, clock, elapsed_str, player_name):
 
 
 def _submit_stats(player_name, elapsed, elapsed_str, avg_ppm):
-    """Send the final score and a game_over event to Firebase (best effort)."""
-    if not firebase_client:
-        return
-    try:
-        if player_name.strip():
-            background_call(
-                firebase_client.send_score,
-                player_name.strip(),
-                int(state.game.score),
-                elapsed,
-                elapsed_str,
-                __version__,
-                avg_ppm,
-            )
-        background_call(
-            firebase_client.log_event,
-            'game_over',
-            {
-                'score': int(state.game.score),
-                'level': state.game.level,
-                'time_played_seconds': elapsed,
-                'time_played': elapsed_str,
-                'version': __version__,
-                'avg_ppm': avg_ppm,
-            },
-        )
-    except Exception:
-        pass
+    """Send the game for verification and the online leaderboards (in the background)."""
+    from src.services import online
+
+    recording = getattr(state.ui, 'last_recording', None)
+    if recording and online.enabled():
+        background_call(online.send_game, recording, player_name)
 
 
 def show():

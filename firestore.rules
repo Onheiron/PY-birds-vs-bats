@@ -1,0 +1,40 @@
+rules_version = '2';
+// BVB online (src/services/online.py, tools/verify_runs.py). Players are anonymous Firebase
+// users: they may only add their own games for verification and set their own name. The
+// leaderboards are written by the verifier (service account, rules do not apply to it) and
+// read by everyone. Deployed by .github/workflows/online.yml (action: rules).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /boards/{board} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /players/{uid} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 20;
+    }
+    match /parts/{part} {
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && part.matches(request.auth.uid + '-.*')
+        && request.resource.data.keys().hasOnly(['uid', 'submission', 'n', 'data'])
+        && request.resource.data.data is bytes
+        && request.resource.data.data.size() <= 800000;
+    }
+    match /submissions/{sid} {
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && sid.matches(request.auth.uid + '-.*')
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly(
+             ['uid', 'name', 'version', 'difficulty', 'score', 'level', 'parts', 'status'])
+        && request.resource.data.parts is int && request.resource.data.parts <= 20;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 _home = tempfile.mkdtemp(prefix='bvb-test-home-')
 os.environ['HOME'] = _home
 os.environ['USERPROFILE'] = _home
+os.environ['BVB_OFFLINE'] = '1'  # never reach the online leaderboards
 os.environ.pop('COLORTERM', None)
 os.environ.pop('BVB_THEME_PATH', None)
 

@@ -299,6 +299,7 @@ def _new_settings():
     return SimpleNamespace(
         # Sound settings
         sfx_enabled=True,
+        online_enabled=True,  # send finished games to the online leaderboards
         music_enabled=True,
         # Graphics settings
         background_enabled=True,

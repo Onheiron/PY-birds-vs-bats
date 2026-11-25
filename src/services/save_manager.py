@@ -180,6 +180,7 @@ def save_default_settings():
     settings_data = {
         'version': SAVE_VERSION,
         'sfx_enabled': state.settings.sfx_enabled,
+        'online_enabled': state.settings.online_enabled,
         'music_enabled': state.settings.music_enabled,
         'background_enabled': state.settings.background_enabled,
         'parallax_enabled': state.settings.parallax_enabled,
@@ -214,6 +215,8 @@ def load_default_settings():
         # Apply settings
         if 'sfx_enabled' in data:
             state.settings.sfx_enabled = data['sfx_enabled']
+        if 'online_enabled' in data:
+            state.settings.online_enabled = data['online_enabled']
         # The music always starts on: it is turned off for the session in SETTINGS > SOUND
         state.settings.music_enabled = True
         if 'background_enabled' in data:

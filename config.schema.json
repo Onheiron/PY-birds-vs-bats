@@ -4645,6 +4645,25 @@
       },
       "type": "object"
     },
+    "online": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "firebase": {
+          "properties": {
+            "api_key": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "orange": {
       "properties": {
         "boss_crash_pct": {
