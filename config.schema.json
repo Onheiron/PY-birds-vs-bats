@@ -3548,10 +3548,16 @@
             },
             "epic": {
               "properties": {
+                "clockwork_egg": {
+                  "type": "number"
+                },
                 "dinosaur_egg": {
                   "type": "number"
                 },
                 "glitch_egg": {
+                  "type": "number"
+                },
+                "stealth_egg": {
                   "type": "number"
                 }
               },
@@ -3578,9 +3584,6 @@
             },
             "rare": {
               "properties": {
-                "clockwork_egg": {
-                  "type": "number"
-                },
                 "cookie_egg": {
                   "type": "number"
                 },
@@ -3588,9 +3591,6 @@
                   "type": "number"
                 },
                 "orange_egg": {
-                  "type": "number"
-                },
-                "stealth_egg": {
                   "type": "number"
                 },
                 "twister_egg": {
