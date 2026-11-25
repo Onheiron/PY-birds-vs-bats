@@ -15,14 +15,21 @@ from src.ui import pages
 from src.ui.colors import MENU_ARROW_COLOR, MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT, SIDE_PANEL_WIDTH, TOTAL_HEIGHT, TOTAL_WIDTH
 
+# Templates: {action} becomes its label in the active control profile (src/ui/controls.py)
 HINTS = {
-    'change': "↑↓ Navigate  ←→ Change  ⏎ Select",
-    'select': "↑↓ Navigate  ⏎ Select  ESC Back",
-    'controls': "↑↓ Navigate  ⏎ Rebind  ESC Back",
+    'change': "{navigate} Navigate  {change} Change  {select} Select",
+    'select': "{navigate} Navigate  {select} Select  {back} Back",
+    'controls': "{navigate} Navigate  {rebind} Rebind  {back} Back",
     'rebinding': "Press new key...  ESC Cancel",
-    'root': "↑↓ Navigate  ⏎ Select",
-    'page': "↑↓ Scroll  ⏎ or ESC Back",
+    'root': "{navigate} Navigate  {select} Select",
+    'page': "{scroll} Scroll  {select} or {back} Back",
 }
+
+
+def hint_text(name):
+    from src.ui import controls
+
+    return controls.hint(HINTS[name])
 
 
 @dataclass(frozen=True)
@@ -81,8 +88,8 @@ def item_text(item, style):
 
 def screen_hint(screen):
     if screen.hint == 'controls' and state.ui.rebinding_control is not None:
-        return HINTS['rebinding']
-    return HINTS[screen.hint]
+        return hint_text('rebinding')
+    return hint_text(screen.hint)
 
 
 def _put_hint(fb, style, y, hint):
@@ -124,7 +131,10 @@ def draw_box(fb, style, title, lines, selected, hint):
 def draw_page(fb, style, content):
     """A text page (guide, Bird-Dex...), drawn wider than the menu it opens from."""
     page = pages.page(content)
-    lines = page['lines']
+    from src.ui import controls
+
+    # Pages name controls as {action}: the labels of the active profile
+    lines = [controls.hint(line) if '{' in line else line for line in page['lines']]
 
     in_panel = style.x >= GAME_X_OFFSET + constants.layout.width  # the pause menu, in the right panel
     width = style.width if in_panel else min(40, style.width + 10)
@@ -176,7 +186,7 @@ def draw_page(fb, style, content):
     fb.put(x + width - 1, y, '║', MENU_BORDER_COLOR)
     y += 1
     fb.put_string(x, y, "╚" + "═" * inner + "╝", MENU_BORDER_COLOR)
-    fb.put_string(x, y + 1, HINTS['page'][:width], MENU_BORDER_COLOR)
+    fb.put_string(x, y + 1, hint_text('page')[:width], MENU_BORDER_COLOR)
 
 
 def draw_screen(fb, style, screen, selected):
@@ -206,12 +216,12 @@ def draw_pause_overlay(fb):
     style = pause_style()
     if menus.root() != menus.PAUSE:
         # Paused before the menu opened: show its first page
-        draw_box(fb, style, 'PAUSED', [item.name for item in menus.SCREENS[menus.PAUSE].items()], 0, HINTS['root'])
+        draw_box(fb, style, 'PAUSED', [item.name for item in menus.SCREENS[menus.PAUSE].items()], 0, hint_text('root'))
         return
 
     screen = menus.current_screen()
     if menus.depth() == 1:
         lines = [item.name for item in screen.items()]
-        draw_box(fb, style, screen.title, lines, menus.cursor(), HINTS['root'])
+        draw_box(fb, style, screen.title, lines, menus.cursor(), hint_text('root'))
     else:
         draw_screen(fb, style, screen, menus.cursor())

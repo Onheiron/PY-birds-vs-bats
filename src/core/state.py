@@ -308,6 +308,9 @@ def _new_settings():
         # birds (bounce_on_enter) or acts as UP on it, bounce or power (trigger_on_enter)
         bounce_on_enter=False,
         trigger_on_enter=False,
+        # Labels of the controls in the hints: auto (the device used last), keyboard,
+        # xbox, playstation, steamdeck (src/ui/controls.py)
+        controls_profile='auto',
         # Difficulty: 0=EASY, 1=NORMAL, 2=HARD, 3=HELL
         difficulty=1,
         # Key bindings (can be remapped)

@@ -17,6 +17,7 @@ the cards do not all fit, the others are shown as one line each.
 from src.core import constants, state
 from src.engine import cards, choices
 from src.entities.sprites import GREEN, RED, YELLOW
+from src.ui import controls
 from src.ui.colors import MENU_BORDER_COLOR, MENU_NORMAL_COLOR, apply_bold
 from src.ui.layout import GAME_X_OFFSET, HEADER_HEIGHT
 
@@ -142,5 +143,10 @@ def draw_choice_overlay(fb):
         fb.put(x + width - 1, row_y, '║', MENU_BORDER_COLOR)
         row_y += 1
     fb.put_string(x, row_y, '╚' + '═' * (width - 2) + '╝', MENU_BORDER_COLOR)
-    hint = '↑/↓ choose  ENTER take  R reroll  S skip' if offer['kind'] == 'egg' else '↑/↓ choose  ENTER confirm'
+    template = (
+        '{navigate} choose  {select} take  {reroll} reroll  {skip} skip'
+        if offer['kind'] == 'egg'
+        else '{navigate} choose  {select} confirm'
+    )
+    hint = controls.hint(template)
     fb.put_string(x + max(0, (width - len(hint)) // 2), row_y + 1, hint, MENU_BORDER_COLOR)

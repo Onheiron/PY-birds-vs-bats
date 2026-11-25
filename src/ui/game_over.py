@@ -8,7 +8,7 @@ from src.engine.timing import FrameClock
 from src.entities.sprites import RED
 from src.services.background import background_call
 from src.services.optional import firebase_client
-from src.ui import terminal
+from src.ui import controls, terminal
 from src.ui.framebuffer import get_framebuffer
 from src.ui.keyboard import read_keys
 from src.ui.layout import GAME_X_OFFSET, SIDE_PANEL_WIDTH, TOTAL_WIDTH
@@ -111,8 +111,8 @@ def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_len
         centered(name_y, "Enter name for leaderboard:", YELLOW)
         padding = " " * (name_max_length - len(player_name))
         centered(name_y + 1, f"[ {player_name}_{padding} ]", GREEN)
-        centered(name_y + 3, "(ENTER to confirm, ESC to skip)")
-        footer = "Type your name | ENTER confirm | ESC skip"
+        centered(name_y + 3, controls.hint("({confirm} to confirm, ESC to skip)"))
+        footer = controls.hint("Type your name | {confirm} confirm | {delete} delete | ESC skip")
     else:
         menu_y = center_y + 4
         if selected == 0:
@@ -121,7 +121,7 @@ def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_len
         else:
             centered(menu_y, "    RETRY")
             centered(menu_y + 1, "> [  EXIT ] <", GREEN)
-        footer = "UP/DOWN select | SPACE confirm"
+        footer = controls.hint("{navigate} select | {select} confirm")
 
     # Floor separator and footer
     floor_y = height + 2

@@ -217,6 +217,7 @@ class Window:
         self.controllers = {}
         self._scan_controllers()
         self.held = {}  # direction -> (next repeat time)
+        self.last_device = 'keyboard'  # the control profile of the device used last (src/ui/controls.py)
         self.stick = {'x': 0, 'y': 0}
         self.trigger_down = False
         pygame.key.set_repeat(int(REPEAT_DELAY * 1000), int(REPEAT_EVERY * 1000))
@@ -354,6 +355,16 @@ class Window:
             return {self.A: 'ENTER', self.B: 'ESC', self.X: 'r', self.Y: 's'}.get(button)
         return {self.A: 'UP', self.B: 'SPACE', self.X: 'm', self.Y: 'x'}.get(button)
 
+    def _pad_profile(self, instance_id):
+        """Control profile of a gamepad, from its name: playstation, steamdeck or xbox."""
+        pad = self.controllers.get(instance_id)
+        name = (getattr(pad, 'name', '') or '').lower()
+        if any(word in name for word in ('playstation', 'dualshock', 'dualsense', 'ps3', 'ps4', 'ps5', 'sony')):
+            return 'playstation'
+        if 'steam deck' in name or 'steamdeck' in name:
+            return 'steamdeck'
+        return 'xbox'
+
     def _press_direction(self, key, keys):
         keys.append(key)
         self.held[key] = time.monotonic() + REPEAT_DELAY
@@ -369,7 +380,9 @@ class Window:
             elif event.type in (pg.VIDEORESIZE, pg.WINDOWSIZECHANGED) and not self.fullscreen:
                 self.surface = pg.display.get_surface()
                 self._layout()
-            elif event.type == pg.KEYDOWN:
+            elif event.type in (pg.KEYDOWN, pg.TEXTINPUT):
+                self.last_device = 'keyboard'
+            if event.type == pg.KEYDOWN:
                 if event.key == pg.K_F11 or (event.key == pg.K_RETURN and event.mod & pg.KMOD_ALT):
                     self.toggle_fullscreen()
                     continue
@@ -400,6 +413,7 @@ class Window:
             elif event.type == pg.CONTROLLERDEVICEREMOVED:
                 self.controllers.pop(event.instance_id, None)
             elif event.type == pg.CONTROLLERBUTTONDOWN:
+                self.last_device = self._pad_profile(event.instance_id)
                 key = self._button_key(event.button)
                 if key in ('LEFT', 'RIGHT', 'UP', 'DOWN'):
                     self._press_direction(key, keys)

@@ -308,6 +308,19 @@ def _graphics_items():
     ]
 
 
+def _controls_profile_name():
+    from src.ui import controls
+
+    return controls.profile_name()
+
+
+def _cycle_controls(delta=1):
+    from src.ui import controls
+
+    controls.cycle_profile(delta)
+    _settings_changed()
+
+
 def _controls_items():
     items = [
         Item(name, 'binding', (lambda control=control: binding_display(control)), rebind=control)
@@ -316,6 +329,7 @@ def _controls_items():
     assists = [
         _option('BOUNCE ON ENTER', 'bounce_on_enter'),
         _option('TRIGGER ON ENTER', 'trigger_on_enter'),
+        Item('BUTTON LABELS', 'option', _controls_profile_name, on_enter=_cycle_controls, on_change=_cycle_controls),
     ]
     return items + assists + [_back_item()]
 
@@ -443,7 +457,9 @@ def upgrade_hint(screen_id, cursor):
     SCREENS[screen_id].items()  # fills _UPGRADE_OF for this screen
     uid = _UPGRADE_OF.get((screen_id, cursor))
     if uid is None:
-        return f"Gold: {meta.profile().get('gold', 0)}   ⏎ Buy  ESC Back"
+        from src.ui import controls
+
+        return controls.hint(f"Gold: {meta.profile().get('gold', 0)}   {{select}} Buy  {{back}} Back")
     entry = meta.upgrades()[uid]
     desc = (entry if isinstance(entry, dict) else vars(entry)).get('desc', '')
     missing = meta.missing_requirements(uid)

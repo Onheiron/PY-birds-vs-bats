@@ -25,6 +25,12 @@ with `pip install pygame-ce`.
 
 Typing a name at game over: A confirms, B deletes. Held directions repeat.
 
+The hints on screen name the controls of the device used last
+(`src/ui/controls.py`): keys on the keyboard, [A] [B] [X] [Y] and LB/RB on an
+Xbox pad, L1/R1 on the Steam Deck, ✕ ○ □ △ and L1/R1 on a PlayStation pad.
+SETTINGS > CONTROLS > BUTTON LABELS fixes one (AUTO, KEYBOARD, XBOX,
+PLAYSTATION, STEAM DECK); the COMMANDS page of the guide lists them too.
+
 The thumbs split like on a keyboard: the left one moves (D-pad, or LB/RB
 without leaving the face buttons), the right one bounces (A) and swaps (B).
 

@@ -186,6 +186,7 @@ def save_default_settings():
         'accessibility_enabled': state.settings.accessibility_enabled,
         'bounce_on_enter': state.settings.bounce_on_enter,
         'trigger_on_enter': state.settings.trigger_on_enter,
+        'controls_profile': state.settings.controls_profile,
         'difficulty': state.settings.difficulty,
         'key_bindings': state.settings.key_bindings,
     }
@@ -226,6 +227,8 @@ def load_default_settings():
                 setattr(state.settings, assist, bool(data[assist]))
         if 'difficulty' in data:
             state.settings.difficulty = data['difficulty']
+        if data.get('controls_profile') in ('auto', 'keyboard', 'xbox', 'playstation', 'steamdeck'):
+            state.settings.controls_profile = data['controls_profile']
         if 'key_bindings' in data:
             state.settings.key_bindings = data['key_bindings']
 

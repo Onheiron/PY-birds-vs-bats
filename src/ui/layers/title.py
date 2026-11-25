@@ -3,10 +3,10 @@
 from src.core import state
 from src.engine import menus
 from src.entities.sprites import YELLOW
-from src.ui import terminal
+from src.ui import controls, terminal
 from src.ui.colors import MENU_BORDER_COLOR, MENU_NORMAL_COLOR, MENU_SELECTED_COLOR
 from src.ui.framebuffer import get_framebuffer
-from src.ui.layers.menus import HINTS, draw_screen, title_style
+from src.ui.layers.menus import draw_screen, hint_text, title_style
 from src.ui.layout import TOTAL_WIDTH
 
 # ASCII art logo for title screen
@@ -64,7 +64,7 @@ def _draw_main_menu(fb, menu_y, selected):
 
     # LEFT/RIGHT only does something on entries with a value (NEW GAME)
     if items[selected].on_change:
-        hint = "↑↓ Navigate  ←→ Difficulty  ⏎ Start"
+        hint = controls.hint("{navigate} Navigate  {change} Difficulty  {select} Start")
     else:
-        hint = HINTS['root']
+        hint = hint_text('root')
     fb.put_string((TOTAL_WIDTH - len(hint)) // 2, menu_y + 2, hint, MENU_BORDER_COLOR)
