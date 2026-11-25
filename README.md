@@ -32,7 +32,8 @@ Desktop builds for macOS (an app), Windows and Linux (and the Steam Deck) are on
 [release](https://github.com/Onheiron/PY-birds-vs-bats/releases): unpack and open
 `BVB` (`BVB.app` on macOS). They play in a window of their own (F11: full screen);
 `BVB --terminal` plays in the terminal instead. On macOS the app is not signed by
-Apple: the first time, right-click it and choose Open.
+Apple: the first time, right-click it and choose Open. They update themselves: when
+a new version is out the title menu shows UPDATE (src/services/updater.py).
 
 From the sources:
 

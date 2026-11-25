@@ -60,3 +60,14 @@ app installs them and updates them by itself; on the Steam Deck, add the
 installed `BVB` to Steam as a non-Steam game once.
 
 Without `ITCH_GAME` the itch.io step is skipped.
+
+## Updates of the downloaded builds
+
+The desktop builds and the Steam Linux build update themselves
+(`src/services/updater.py`): at the title they ask GitHub for the latest
+release; when it is newer, UPDATE in the title menu downloads the build of the
+same kind (the `BUILD` file the specs write into the bundle), checks it against
+the release's `SHA256SUMS.txt`, swaps it in and RESTART starts it. So the asset
+names of the release (`BVB-<version>-<kind>.tar.gz` / `.zip`) must not change.
+It is off from the sources and pip, when Steam installed the game, and with
+`BVB_NO_UPDATE` set.

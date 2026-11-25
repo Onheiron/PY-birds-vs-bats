@@ -244,8 +244,21 @@ def _back_item():
     return Item('< BACK', back=True)
 
 
+def _update_items():
+    """UPDATE / RESTART in the title menu, when a newer release of this build exists."""
+    from src.services import updater
+
+    updater.check_in_background()
+    label = updater.menu_label()
+    if label is None:
+        return []
+    name, value = label
+    return [Item(name, 'option' if value else 'plain', (lambda v=value: v) if value else None, on_enter=updater.choose)]
+
+
 def _title_items():
     return [
+        *_update_items(),
         Item('CONTINUE', on_enter=_continue),
         Item('NEW GAME', value=_difficulty_name, on_enter=_new_game, on_change=_change_new_game_difficulty),
         Item('LOAD', opens='load'),

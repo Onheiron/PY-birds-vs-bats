@@ -36,6 +36,14 @@ DATA_FILES = [
 ]
 FONTS = ['DejaVuSansMono.ttf', 'DejaVuSansMono-Bold.ttf', 'LICENSE-DejaVu.txt']
 
+# The kind of build, read by the in-game updater (src/services/updater.py) to pick its download
+
+KIND = {'darwin': 'macos-arm64', 'win32': 'windows-x86_64'}.get(sys.platform, 'linux-x86_64')
+BUILD_FILE = os.path.join(workpath, 'BUILD')
+os.makedirs(workpath, exist_ok=True)
+with open(BUILD_FILE, 'w', encoding='utf-8') as f:
+    f.write(KIND)
+
 a = Analysis(
     [os.path.join(SPECPATH, 'desktop', 'launch.py')],
     pathex=[ROOT],
@@ -43,13 +51,15 @@ a = Analysis(
     datas=[(os.path.join(ROOT, name), '.') for name in DATA_FILES]
     + [(os.path.join(ROOT, 'media', 'fonts', name), os.path.join('media', 'fonts')) for name in FONTS]
     + [(os.path.join(ROOT, 'media', 'music'), os.path.join('media', 'music'))]
-    + [(os.path.join(ROOT, 'media', 'icons', 'bvb_256.png'), os.path.join('media', 'icons'))],
+    + [(os.path.join(ROOT, 'media', 'icons', 'bvb_256.png'), os.path.join('media', 'icons'))]
+    + [(BUILD_FILE, '.')],
     # The loop, services and the window are imported lazily by game.py
     hiddenimports=[
         'game',
         'src.engine.loop',
         'src.services.audio',
         'src.services.firebase_client',
+        'src.services.updater',
         'src.services.music.arrangement',
         'src.services.music.boss',
         'src.services.music.effects',

@@ -28,6 +28,12 @@ DATA_FILES = [
 ]
 FONTS = ['DejaVuSansMono.ttf', 'DejaVuSansMono-Bold.ttf', 'LICENSE-DejaVu.txt']
 
+# The kind of build, read by the in-game updater (src/services/updater.py; off when Steam installed it)
+BUILD_FILE = os.path.join(workpath, 'BUILD')
+os.makedirs(workpath, exist_ok=True)
+with open(BUILD_FILE, 'w', encoding='utf-8') as f:
+    f.write('steam-linux')
+
 a = Analysis(
     [os.path.join(SPECPATH, 'launch.py')],
     pathex=[ROOT],
@@ -35,7 +41,8 @@ a = Analysis(
     datas=[(os.path.join(ROOT, name), '.') for name in DATA_FILES]
     + [(os.path.join(ROOT, 'media', 'fonts', name), os.path.join('media', 'fonts')) for name in FONTS]
     + [(os.path.join(ROOT, 'media', 'music'), os.path.join('media', 'music'))]
-    + [(os.path.join(ROOT, 'media', 'icons', 'bvb_256.png'), os.path.join('media', 'icons'))],
+    + [(os.path.join(ROOT, 'media', 'icons', 'bvb_256.png'), os.path.join('media', 'icons'))]
+    + [(BUILD_FILE, '.')],
     # The loop, services and the window are imported lazily by game.py
     hiddenimports=[
         'src.services.music.arrangement',
@@ -48,6 +55,7 @@ a = Analysis(
         'src.engine.loop',
         'src.services.audio',
         'src.services.firebase_client',
+        'src.services.updater',
         'src.ui.window',
         'pygame._sdl2.controller',
     ],
