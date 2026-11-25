@@ -54,10 +54,18 @@ def apply_music_setting():
     """Start or stop the music according to the music setting."""
     if _backend is None:
         return
-    if state.settings.music_enabled:
-        _backend.start_music()
-    else:
+    if not state.settings.music_enabled:
         _backend.stop_music()
+    elif state.ui.show_title:
+        _backend.play_screen('title')
+    else:
+        _backend.start_music()
+
+
+def play_screen_music(name):
+    """The music of a screen: 'title' (title and its menus) or 'game_over'."""
+    if _backend is not None and state.settings.music_enabled:
+        _backend.play_screen(name)
 
 
 def start_session_music():
@@ -134,6 +142,7 @@ _SOUND_FOR_EVENT = {
     'mini_bat_killed': 'bat_death',
     'bird_lost': 'bird_lost',
     'level_up': 'level_up',
+    'swap': 'swap',
 }
 
 
@@ -146,6 +155,21 @@ def _on_loot_collected(loot, bird):
     play_sfx('egg' if '_egg' in loot['type'] else 'powerup')
 
 
+def _on_choice_made(offer=None, card=None, **_fields):
+    skipped = card is not None and card.get('id') in ('skip', 'refuse')
+    play_sfx('menu_back' if skipped else 'card_take')
+
+
+def menu_key(key):
+    """The little sounds of menus and choices: moving, selecting, going back."""
+    if key in ('UP', 'DOWN', 'LEFT', 'RIGHT'):
+        play_sfx('menu_move')
+    elif key == 'ENTER':
+        play_sfx('menu_select')
+    elif key == 'ESC':
+        play_sfx('menu_back')
+
+
 def subscribe():
     """Play sound effects for game events."""
     from src.engine import events
@@ -153,3 +177,4 @@ def subscribe():
     for event in _SOUND_FOR_EVENT:
         events.on(event, _sound_for(event))
     events.on('loot_collected', _on_loot_collected)
+    events.on('choice_made', _on_choice_made)

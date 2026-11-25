@@ -52,6 +52,7 @@ _music = {
     'gear': 1,
     'playing_now': None,  # what the loop on the channel plays (see _signature)
     'paused': False,  # the game is paused: the music holds where it is
+    'screen': None,  # 'title' or 'game_over' while a screen's music plays instead of the game's
     'channel': 0,  # which of the two music channels plays now
     'version': 0,  # bumped by every change: an older background render is dropped
 }
@@ -74,6 +75,7 @@ def _open():
         pygame.mixer.set_num_channels(2 + SFX_CHANNELS)
         pygame.mixer.set_reserved(2)  # channels 0 and 1: the music
         _ready = True
+        _prepare_sfx()
     except Exception as error:
         _why = f'no audio device ({error})'
         _ready = False
@@ -99,6 +101,34 @@ def _sound(wave):
 # --------------------------------------------------------------------------- effects
 
 
+def _make_sfx(name):
+    """The Sound of an effect: played with the instruments (music/effects.py), or synthesized
+    (synth.py) when there is no sample bank. None for an unknown or silent one."""
+    from src.services.music import effects, sampler
+
+    try:
+        wave = effects.render(name) if sampler.available() else synth.sfx_wave(name)
+    except Exception:
+        wave = None
+    if wave is None:
+        return None
+    sound = _sfx_sounds[name] = _sound(wave)
+    sound.set_volume(SFX_VOLUME)
+    return sound
+
+
+def _prepare_sfx():
+    """Make every effect in the background once the mixer is open: the first play has no delay."""
+    from src.services.music import effects
+
+    def work():
+        for name in effects.EFFECTS:
+            if name not in _sfx_sounds:
+                _make_sfx(name)
+
+    threading.Thread(target=work, daemon=True).start()
+
+
 def play_sfx(name):
     """Play a named effect (bounce, hit, destroy, powerup, egg, level_up, ...)."""
     if not _enabled or not _open():
@@ -107,13 +137,9 @@ def play_sfx(name):
     if now - _sfx_last.get(name, 0.0) < SFX_COOLDOWN:
         return
     _sfx_last[name] = now
-    sound = _sfx_sounds.get(name)
+    sound = _sfx_sounds.get(name) or _make_sfx(name)
     if sound is None:
-        wave = synth.sfx_wave(name)
-        if wave is None:
-            return
-        sound = _sfx_sounds[name] = _sound(wave)
-        sound.set_volume(SFX_VOLUME)
+        return
     channel = pygame.mixer.find_channel()  # None when every effect channel is busy
     if channel is not None:
         channel.play(sound)
@@ -152,18 +178,23 @@ def _render_and_play(version, fade=True):
         if version != _music['version'] or not _music['playing']:
             return  # something changed meanwhile, or the music was stopped
         _music['playing_now'] = signature
-        old = pygame.mixer.Channel(_music['channel'])
-        _music['channel'] = 1 - _music['channel']
-        new = pygame.mixer.Channel(_music['channel'])
-        sound.set_volume(MUSIC_VOLUME)
-        if fade and old.get_busy() and not _music['paused']:
-            old.fadeout(CROSSFADE_MS)
-            new.play(sound, loops=-1, fade_ms=CROSSFADE_MS)
-        else:
-            old.stop()
-            new.play(sound, loops=-1)
-        if _music['paused']:
-            new.pause()  # ready for when the game resumes
+        _swap_in(sound, loops=-1, fade=fade)
+
+
+def _swap_in(sound, loops, fade):
+    """Play ``sound`` on the other music channel, cross-faded with the one playing (lock held)."""
+    old = pygame.mixer.Channel(_music['channel'])
+    _music['channel'] = 1 - _music['channel']
+    new = pygame.mixer.Channel(_music['channel'])
+    sound.set_volume(MUSIC_VOLUME)
+    if fade and old.get_busy() and not _music['paused']:
+        old.fadeout(CROSSFADE_MS)
+        new.play(sound, loops=loops, fade_ms=CROSSFADE_MS)
+    else:
+        old.stop()
+        new.play(sound, loops=loops)
+    if _music['paused']:
+        new.pause()  # ready for when the game resumes
 
 
 def _changed():
@@ -184,17 +215,75 @@ def start_music():
     if not _enabled or not _open():
         return
     with _lock:
+        fade = _music['screen'] is not None  # from the title's music into the game's
+        _music['screen'] = None
         _music['playing'] = True
         _music['playing_now'] = None
         _music['version'] += 1
         version = _music['version']
-    threading.Thread(target=_render_and_play, args=(version, False), daemon=True).start()
+    threading.Thread(target=_render_and_play, args=(version, fade), daemon=True).start()
+
+
+GAME_OVER_DELAY = 2.6  # seconds: the sad trombone first
+
+
+def play_screen(name):
+    """The music of a screen: 'title' (a loop), or 'game_over' (a phrase, then a loop)."""
+    if not _enabled or not _open():
+        return
+    from src.services.music import sampler
+
+    if not sampler.available():
+        return
+    with _lock:
+        if _music['screen'] == name:
+            return
+        _music['screen'] = name
+        _music['playing'] = False  # the game's music gives way
+        _music['playing_now'] = None
+        _music['paused'] = False
+        _music['version'] += 1
+        version = _music['version']
+    threading.Thread(target=_screen_music, args=(name, version), daemon=True).start()
+
+
+def _screen_music(name, version):
+    from src.services.music import screens
+
+    def still():
+        return version == _music['version']
+
+    try:
+        if name == 'title':
+            sound = _sound(screens.render('title'))
+            with _lock:
+                if still():
+                    _swap_in(sound, loops=-1, fade=True)
+            return
+        phrase = _sound(screens.render('game_over_phrase'))
+        with _lock:
+            if still():
+                for index in (0, 1):
+                    pygame.mixer.Channel(index).fadeout(400)
+        time.sleep(GAME_OVER_DELAY)
+        with _lock:
+            if not still():
+                return
+            _swap_in(phrase, loops=0, fade=False)
+        calm = _sound(screens.render('game_over_loop'))
+        time.sleep(max(0.0, phrase.get_length() - 1.0))
+        with _lock:
+            if still():
+                _swap_in(calm, loops=-1, fade=True)
+    except Exception:
+        return
 
 
 def stop_music():
     with _lock:
         _music['playing'] = False
         _music['playing_now'] = None
+        _music['screen'] = None
         _music['version'] += 1
     if _ready:
         for index in (0, 1):

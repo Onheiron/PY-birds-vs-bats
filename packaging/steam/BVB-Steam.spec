@@ -38,6 +38,8 @@ a = Analysis(
     # The loop, services and the window are imported lazily by game.py
     hiddenimports=[
         'src.services.music.arrangement',
+        'src.services.music.effects',
+        'src.services.music.screens',
         'src.services.music.sampler',
         'src.services.music.score',
         'game',

@@ -38,6 +38,8 @@ a = Analysis(
         'src.services.audio',
         'src.services.firebase_client',
         'src.services.music.arrangement',
+        'src.services.music.effects',
+        'src.services.music.screens',
         'src.services.music.sampler',
         'src.services.music.score',
     ],

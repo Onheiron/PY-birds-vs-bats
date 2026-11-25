@@ -100,3 +100,33 @@ def test_the_music_holds_while_the_game_is_paused(mixer):
     audio.pause_music(False)
     assert not audio._music['paused'] and channel.get_busy()
     audio.cleanup()
+
+
+def test_every_effect_and_screen_music_is_made(mixer):
+    from src.services.music import effects, screens
+
+    for name in effects.EFFECTS:
+        audio = effects.render(name)
+        assert audio.ndim == 2 and 0.05 < np.abs(audio).max() < 1.0, name
+    assert effects.render('bounce') is None  # the bounce stays silent: it would play all the time
+    for name in screens.SCREENS:
+        audio = screens.render(name)
+        assert audio.ndim == 2 and screens.seconds(audio) > 5, name
+
+
+def test_title_game_and_game_over_music_take_turns(mixer, monkeypatch):
+    from src.services import audio
+
+    monkeypatch.setattr(audio, 'GAME_OVER_DELAY', 0.0)
+    audio._ready = None
+    assert audio.is_audio_available()
+    audio.play_screen('title')
+    assert audio._music['screen'] == 'title' and not audio._music['playing']
+    audio.update_active_birds({'YELLOW': 1})
+    audio.start_music()
+    assert audio._music['screen'] is None and audio._music['playing']
+    audio.play_screen('game_over')
+    assert audio._music['screen'] == 'game_over' and not audio._music['playing']
+    audio.play_sfx('swap')
+    audio.play_sfx('card_take')
+    audio.cleanup()

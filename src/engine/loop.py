@@ -68,6 +68,7 @@ def run_title_screen():
     """Show the title screen until a game starts. Returns False if the user quit."""
     state.ui.show_title = True
     menus.open_title()
+    sound.play_screen_music('title')
 
     clock = FrameClock()
     try:
@@ -151,9 +152,11 @@ def run_game():
     # Stop the music but keep the mixer running for the game over jingle
     sound.stop_music()
     real_game_over = state.game.game_over and not state.game.quit_requested and not state.ui.show_title
-    if real_game_over and sound.get_audio() is not None and state.settings.sfx_enabled:
-        sound.play_sfx('game_over')
-        time.sleep(1.5)  # Let the jingle finish
+    if real_game_over and sound.get_audio() is not None:
+        if state.settings.sfx_enabled:
+            sound.play_sfx('game_over')  # the sad trombone...
+        sound.play_screen_music('game_over')  # ...then the game over phrase and its calm loop
+        time.sleep(1.5)
 
     if state.game.quit_requested:
         return 'quit'

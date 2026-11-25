@@ -142,3 +142,28 @@ def mix(parts, wet=0.18):
         channel += wet * np.fft.irfft(np.fft.rfft(channel) * room, n)
     stereo = np.stack([left, right], axis=1) * MASTER
     return np.tanh(stereo).astype(np.float32)  # gentle limiter: no clipping, no loudness jumps
+
+
+def glide(instrument, start_note, end_note, seconds, total, velocity=100, delay=0.0):
+    """Mono audio of one note sliding in pitch from ``start_note`` to ``end_note`` (squeaks, swoops)."""
+    base, sample = _nearest(bank()[instrument], start_note)
+    n = int(seconds * SAMPLE_RATE)
+    t = np.linspace(0, 1, n)
+    ratio = 2.0 ** ((start_note + (end_note - start_note) * t - base) / 12)
+    pos = np.minimum(np.cumsum(ratio), len(sample) - 2)
+    wave = np.interp(pos, np.arange(len(sample)), sample)
+    envelope = np.minimum(1, np.minimum(t * 60, (1 - t) * 8))
+    gain = (velocity / 127) ** 1.6 * INSTRUMENTS[instrument].get('gain', 1.0)
+    out = np.zeros(int(total * SAMPLE_RATE), dtype=np.float32)
+    first = int(delay * SAMPLE_RATE)
+    room = len(out) - first
+    out[first : first + min(n, room)] += (wave * envelope * gain).astype(np.float32)[:room]
+    return out
+
+
+def one_shot(parts, wet=0.12, tail=0.4):
+    """A short stereo sound (an effect, a jingle) from [(mono audio, gain, pan)]: silence added at
+    the end for the room to ring out, instead of wrapping round like a loop."""
+    n = max(len(audio) for audio, _gain, _pan in parts) + int(tail * SAMPLE_RATE)
+    padded = [(np.pad(audio, (0, n - len(audio))), gain, pan) for audio, gain, pan in parts]
+    return mix(padded, wet=wet)

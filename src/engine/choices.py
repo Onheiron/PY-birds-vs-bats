@@ -162,6 +162,10 @@ def pick(index=None):
 
 def handle_key(key):
     """Keys while a choice is on screen: UP / DOWN move, ENTER takes, R rerolls, S skips."""
+    if key in ('UP', 'DOWN'):
+        from src.services import sound
+
+        sound.menu_key(key)
     if key == 'UP':
         move(-1)
     elif key == 'DOWN':

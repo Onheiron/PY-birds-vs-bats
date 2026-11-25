@@ -627,6 +627,10 @@ def handle_key(key):
     if key == 'QUIT':
         _quit()
         return
+    if state.ui.rebinding_control is None:
+        from src.services import sound
+
+        sound.menu_key(key)
     if state.ui.rebinding_control is not None:
         _rebind(key)
         return
