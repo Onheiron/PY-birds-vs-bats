@@ -28,6 +28,7 @@ import time
 from pathlib import Path
 
 _FONT_DIR = Path(__file__).resolve().parents[2] / 'media' / 'fonts'
+ICON = Path(__file__).resolve().parents[2] / 'media' / 'icons' / 'bvb_256.png'
 FONT_FILES = ('DejaVuSansMono.ttf', 'DejaVuSansMono-Bold.ttf')
 
 DEFAULT_FG = (204, 204, 204)
@@ -210,6 +211,8 @@ class Window:
         controller.init()
         self.sdl_controller = controller
         pygame.display.set_caption(title)
+        with contextlib.suppress(pygame.error, FileNotFoundError):
+            pygame.display.set_icon(pygame.image.load(str(ICON)))  # the Dock, the taskbar
         self.screen = Screen(cols, rows)
         self.fullscreen = fullscreen
         self._open()

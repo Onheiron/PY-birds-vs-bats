@@ -42,7 +42,8 @@ a = Analysis(
     binaries=[],
     datas=[(os.path.join(ROOT, name), '.') for name in DATA_FILES]
     + [(os.path.join(ROOT, 'media', 'fonts', name), os.path.join('media', 'fonts')) for name in FONTS]
-    + [(os.path.join(ROOT, 'media', 'music'), os.path.join('media', 'music'))],
+    + [(os.path.join(ROOT, 'media', 'music'), os.path.join('media', 'music'))]
+    + [(os.path.join(ROOT, 'media', 'icons', 'bvb_256.png'), os.path.join('media', 'icons'))],
     # The loop, services and the window are imported lazily by game.py
     hiddenimports=[
         'game',
@@ -83,6 +84,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=os.path.join(ROOT, 'media', 'icons', 'bvb.ico'),
 )
 coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='BVB')
 
@@ -90,6 +92,7 @@ if sys.platform == 'darwin':
     app = BUNDLE(
         coll,
         name='BVB.app',
+        icon=os.path.join(ROOT, 'media', 'icons', 'bvb.icns'),
         bundle_identifier='io.github.onheiron.bvb',
         version=__version__,
         info_plist={

@@ -48,6 +48,7 @@ bypass-selection = true
 "src" = "birds_vs_bats/src"
 "media/music" = "birds_vs_bats/media/music"
 "media/fonts" = "birds_vs_bats/media/fonts"
+"media/icons/bvb_256.png" = "birds_vs_bats/media/icons/bvb_256.png"
 "config.yml" = "birds_vs_bats/config.yml"
 "config_easy.yml" = "birds_vs_bats/config_easy.yml"
 "config_hard.yml" = "birds_vs_bats/config_hard.yml"
@@ -60,7 +61,7 @@ bypass-selection = true
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/src", "/game.py", "/media/music", "/media/fonts", "/packaging/pip", "/README.md",
+    "/src", "/game.py", "/media/music", "/media/fonts", "/media/icons/bvb_256.png", "/packaging/pip", "/README.md",
     "/config*.yml", "/config.schema.json", "/hardmode.yml", "/theme*.yml", "/requirements*.txt",
 ]
 
