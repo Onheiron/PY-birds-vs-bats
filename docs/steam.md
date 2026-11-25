@@ -73,7 +73,6 @@ same container, and attaches the archive to the GitHub release.
 - Saves, settings and recordings live in `~/.bvb/`. To keep them in Steam
   Cloud, add that folder in Steamworks → Steam Cloud (Auto-Cloud, root
   "Linux Home", path `.bvb`).
-- Sound uses `sounddevice`, which needs the PortAudio library: where it is
-  missing the game simply plays without sound. (Moving the sound to SDL audio
-  through pygame would remove that dependency.)
+- Sound goes through SDL audio (pygame-ce's mixer), bundled with the game:
+  nothing else to install.
 - Menu hints still name keyboard keys (`↑↓ Navigate ⏎ Select`).

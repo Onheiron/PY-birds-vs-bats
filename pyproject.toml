@@ -27,7 +27,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Hand-laid note tables and achievement lists: long lines and music notation names (l = low octave)
-"src/services/audio.py" = ["E501", "E741"]
+"src/services/synth.py" = ["E501", "E741"]
 "src/services/achievements.py" = ["E501", "E741"]
 
 [tool.ruff.lint.isort]
@@ -36,7 +36,7 @@ known-first-party = ["src", "tests"]
 [tool.ruff.format]
 quote-style = "preserve"
 # Data-heavy modules (note tables, achievement lists) are laid out by hand
-exclude = ["src/services/audio.py", "src/services/achievements.py"]
+exclude = ["src/services/synth.py", "src/services/achievements.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -44,4 +44,4 @@ addopts = "-q"
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["src/services/audio.py", "src/services/music_engine.py", "src/services/firebase_client.py"]
+omit = ["src/services/audio.py", "src/services/synth.py", "src/services/music_engine.py", "src/services/firebase_client.py"]

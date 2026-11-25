@@ -1,7 +1,7 @@
 """Sound facade: every call is a safe no-op when the audio backend is missing.
 
-The real backend (src.services.audio) needs numpy and sounddevice, which are
-optional. Game code talks to this module only, so it never has to check
+The real backend (src.services.audio) needs numpy and pygame-ce (SDL audio),
+which are optional. Game code talks to this module only, so it never has to check
 whether audio is available.
 """
 

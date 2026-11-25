@@ -26,7 +26,7 @@ fi
 uv venv --python 3.12 /tmp/bvb-venv
 # shellcheck disable=SC1091
 . /tmp/bvb-venv/bin/activate
-uv pip install -r requirements.txt pygame-ce numpy sounddevice pyinstaller
+uv pip install -r requirements.txt pygame-ce numpy pyinstaller
 
 pyinstaller --noconfirm packaging/steam/BVB-Steam.spec
 version=$(dist/BVB/BVB --version | cut -d' ' -f2)

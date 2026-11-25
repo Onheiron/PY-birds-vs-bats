@@ -320,7 +320,7 @@ def handle_audio_toggle():
         return
 
     # Toggle audio state
-    current = getattr(audio, '_audio_enabled', True)
+    current = audio.is_enabled()
     new_state = not current
     audio.set_audio_enabled(new_state)
 
