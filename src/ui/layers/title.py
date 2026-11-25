@@ -128,6 +128,8 @@ def version_line():
         return f'v{__version__}  ·  {version} ready: RESTART', YELLOW
     if state_ == 'failed':
         return f'v{__version__}  ·  update failed: {status.get("error") or ""}', MENU_BORDER_COLOR
+    if state_ == 'check_failed':
+        return f'v{__version__}  ·  no update check ({status.get("error") or "offline"})', MENU_BORDER_COLOR
     return f'v{__version__}', MENU_BORDER_COLOR
 
 

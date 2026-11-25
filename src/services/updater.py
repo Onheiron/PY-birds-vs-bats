@@ -57,12 +57,19 @@ def build():
         return None
 
 
+def installed_by_steam():
+    """Is this the copy Steam installed (in a steamapps library)? Steam updates that one. A build
+    added to Steam as a non-Steam game lives anywhere else, and updates itself."""
+    try:
+        return 'steamapps' in (part.lower() for part in install_root().parts)
+    except OSError:
+        return False
+
+
 def enabled():
     if os.environ.get('BVB_NO_UPDATE'):
         return False
-    if os.environ.get('SteamAppId', '0') not in ('', '0'):  # noqa: SIM112 (Steam's own name)
-        return False  # installed by Steam: Steam updates it (a non-Steam shortcut has no app id)
-    return build() is not None
+    return build() is not None and not installed_by_steam()
 
 
 def version_tuple(text):
@@ -91,7 +98,9 @@ def install_root():
 
 def _get(url, accept='application/octet-stream'):
     request = urllib.request.Request(url, headers={'User-Agent': 'BVB-updater', 'Accept': accept})
-    return urllib.request.urlopen(request, timeout=TIMEOUT)  # noqa: S310 (https only, fixed host)
+    from src.services import net
+
+    return net.urlopen(request, timeout=TIMEOUT)
 
 
 # --------------------------------------------------------------------------- checking
@@ -111,7 +120,10 @@ def _check():
     try:
         with _get(LATEST, 'application/vnd.github+json') as response:
             release = json.load(response)
-    except Exception:
+    except Exception as error:
+        reason = getattr(error, 'reason', error)
+        with _lock:  # shown, dimmed, on the title: an update that never shows has a reason
+            status.update(state='check_failed', error=f'{type(error).__name__}: {reason}'[:50])
         return
     version = str(release.get('tag_name', '')).lstrip('vV')
     if not version or not newer(version):

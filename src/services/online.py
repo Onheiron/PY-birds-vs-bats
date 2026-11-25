@@ -97,7 +97,9 @@ def _request(url, body=None, token=None, form=False, method=None):
     if token:
         headers['Authorization'] = f'Bearer {token}'
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(request, timeout=TIMEOUT) as response:  # noqa: S310 (https, fixed hosts)
+    from src.services import net
+
+    with net.urlopen(request, timeout=TIMEOUT) as response:
         return json.loads(response.read() or b'{}')
 
 

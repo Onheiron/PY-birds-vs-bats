@@ -66,6 +66,8 @@ a = Analysis(
         'src.services.audio',
         'src.services.online',
         'src.services.updater',
+        'src.services.net',
+        'certifi',
         'src.services.music.arrangement',
         'src.services.music.boss',
         'src.services.music.effects',

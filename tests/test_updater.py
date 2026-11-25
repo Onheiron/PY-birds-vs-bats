@@ -17,14 +17,11 @@ def test_versions_and_assets():
     assert updater.asset_name('2.3.0', 'windows-x86_64') == 'BVB-2.3.0-windows-x86_64.zip'
 
 
-def test_off_outside_a_build_and_under_steam(monkeypatch):
+def test_off_outside_a_build(monkeypatch):
     assert updater.build() is None and not updater.enabled()  # from the sources
     monkeypatch.setattr(updater, 'build', lambda: 'steam-linux')
+    monkeypatch.setattr(updater, 'installed_by_steam', lambda: False)
     assert updater.enabled()
-    monkeypatch.setenv('SteamAppId', '480')
-    assert not updater.enabled()  # Steam updates what it installed
-    monkeypatch.setenv('SteamAppId', '0')
-    assert updater.enabled()  # a non-Steam shortcut
     monkeypatch.setenv('BVB_NO_UPDATE', '1')
     assert not updater.enabled()
 
@@ -97,3 +94,28 @@ def test_the_title_shows_the_version_and_the_update(monkeypatch):
     assert title.version_line()[0] == f'v{__version__}'
     updater.status.update(version='9.0.0', state='downloading', progress=0.5)
     assert title.version_line()[0] == f'v{__version__}  ·  downloading 9.0.0: 50%'
+
+
+def test_a_steam_install_does_not_update_itself_a_shortcut_does(monkeypatch, tmp_path):
+    from pathlib import Path
+
+    monkeypatch.setattr(updater, 'build', lambda: 'steam-linux')
+    monkeypatch.setattr(updater, 'install_root', lambda: Path('/home/deck/.local/share/Steam/steamapps/common/BVB'))
+    assert not updater.enabled()
+    monkeypatch.setattr(updater, 'install_root', lambda: Path('/home/deck/Games/BVB'))
+    monkeypatch.setenv('SteamAppId', '123')  # a non-Steam shortcut may carry ids: it still updates itself
+    assert updater.enabled()
+
+
+def test_a_failed_check_is_shown(monkeypatch):
+    from src.ui.layers import title
+
+    monkeypatch.setattr(updater, 'status', {'version': None, 'state': None, 'progress': 0.0, 'error': None})
+
+    def broken(*_args, **_kwargs):
+        raise OSError('certificate verify failed')
+
+    monkeypatch.setattr(updater, '_get', broken)
+    updater._check()
+    assert updater.status['state'] == 'check_failed'
+    assert 'no update check' in title.version_line()[0]

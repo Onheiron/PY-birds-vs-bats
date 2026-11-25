@@ -57,6 +57,8 @@ a = Analysis(
         'src.services.audio',
         'src.services.online',
         'src.services.updater',
+        'src.services.net',
+        'certifi',
         'src.ui.window',
         'pygame._sdl2.controller',
     ],

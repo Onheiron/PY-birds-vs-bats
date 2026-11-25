@@ -4,6 +4,13 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.4.1
+
+- The update check works on the Steam Deck (HTTPS certificates)
+- The leaderboards work there too
+- A failed update check says why, under the logo
+- Crashes are written to ~/.bvb/logs/crash.txt
+
 ## 2.4.0
 
 - A new home: news, the leaderboard and your flock at a glance

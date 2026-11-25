@@ -4,3 +4,5 @@ jsonschema>=4.0
 # Sound and music (SDL audio: macOS, Linux, Windows), and the window mode
 numpy>=1.24
 pygame-ce>=2.5
+# HTTPS certificates for the update check and the online leaderboards (bundled builds too)
+certifi

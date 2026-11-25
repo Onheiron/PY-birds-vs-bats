@@ -16,6 +16,7 @@ dependencies = [
     "jsonschema>=4.0",
     "numpy>=1.24",
     "pygame-ce>=2.5",
+    "certifi",
 ]
 keywords = ["game", "terminal", "roguelike", "arcade", "ascii"]
 classifiers = [
