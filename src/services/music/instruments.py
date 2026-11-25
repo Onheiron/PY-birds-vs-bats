@@ -57,6 +57,13 @@ INSTRUMENTS = {
     'strings': {'program': 48, 'low': 36, 'high': 96, 'hold': 4.0, 'sustain': True, 'gain': 0.5},  # Rainbow
     'bassoon': {'program': 70, 'low': 34, 'high': 70, 'hold': 3.0, 'sustain': True, 'gain': 0.65, 'pan': 0.3},  # Zombie
     'tremolo': {'program': 44, 'low': 36, 'high': 72, 'hold': 4.0, 'sustain': True, 'gain': 0.45},  # bats
+    # The bosses (src/services/music/boss.py)
+    'church_organ': {'program': 19, 'low': 36, 'high': 84, 'hold': 4.0, 'sustain': True, 'gain': 0.45},  # Bat King
+    'cello': {'program': 42, 'low': 36, 'high': 76, 'hold': 4.0, 'sustain': True, 'gain': 0.7},  # Tree, Wind
+    'piccolo': {'program': 72, 'low': 62, 'high': 98, 'hold': 3.0, 'sustain': True, 'gain': 0.55},  # Wind
+    'vibraphone': {'program': 11, 'low': 53, 'high': 89, 'hold': 2.5, 'gain': 0.75},  # Jelly
+    'synth_bass': {'program': 38, 'low': 28, 'high': 64, 'hold': 2.0, 'gain': 0.7},  # Jelly
+    'ocarina': {'program': 79, 'low': 60, 'high': 90, 'hold': 4.0, 'sustain': True, 'gain': 0.6},  # Owl
     # Drum kit (General MIDI channel 10): kick, snare, closed and open hat, crash, low tom, shaker
     'drums': {'drum': True, 'notes': [36, 38, 42, 46, 49, 45, 70], 'hold': 1.5, 'gain': 0.7},
 }

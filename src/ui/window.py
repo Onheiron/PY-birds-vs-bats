@@ -14,9 +14,8 @@ Gamepad layout (Xbox names; on the Steam Deck the same buttons):
   LB / RB                 move     A  select (ENTER)
   A, D-pad ↑, RT          bounce   B  back (ESC)
   B                       swap     X  reroll (cards)   Y  skip (cards)
-  X                       mute     Start  pause / resume
-  Y                       XP bars  Select  pause / resume
-  Start / Select          pause
+  Y                       XP bars  Start  pause / resume
+  Start / Select          pause    Select  pause / resume
 
 Typing a name (game over): A confirms, B deletes.
 F11 or Alt+Enter toggles full screen.
@@ -353,7 +352,7 @@ class Window:
             return {self.A: 'ENTER', self.B: 'BACKSPACE'}.get(button)
         if context == 'menu':
             return {self.A: 'ENTER', self.B: 'ESC', self.X: 'r', self.Y: 's'}.get(button)
-        return {self.A: 'UP', self.B: 'SPACE', self.X: 'm', self.Y: 'x'}.get(button)
+        return {self.A: 'UP', self.B: 'SPACE', self.Y: 'x'}.get(button)
 
     def _pad_profile(self, instance_id):
         """Control profile of a gamepad, from its name: playstation, steamdeck or xbox."""

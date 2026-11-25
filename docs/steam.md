@@ -19,7 +19,7 @@ with `pip install pygame-ce`.
 | A (✕ on PlayStation) | **bounce** (and fire powers) | **select** |
 | RT (R2) | bounce | — |
 | B (○) | **swap** (press on a lane, move, press again) | back |
-| X (□) | mute music | reroll the cards |
+| X (□) | — | reroll the cards |
 | Y (△) | show the XP bars | skip the cards |
 | Start / Select (☰ / ⧉) | pause | pause / resume |
 

@@ -214,8 +214,8 @@ def load_default_settings():
         # Apply settings
         if 'sfx_enabled' in data:
             state.settings.sfx_enabled = data['sfx_enabled']
-        if 'music_enabled' in data:
-            state.settings.music_enabled = data['music_enabled']
+        # The music always starts on: it is turned off for the session in SETTINGS > SOUND
+        state.settings.music_enabled = True
         if 'background_enabled' in data:
             state.settings.background_enabled = data['background_enabled']
         if 'parallax_enabled' in data:

@@ -70,7 +70,6 @@ with a boss.
 | SPACE | Select a lane, then SPACE on another lane to swap the two birds (costs momentum) |
 | P / ESC | Pause menu: resume, restart, save, load, Birdpedia, settings, FLOCK (every bird's stats: base, power-ups, total; the flock's stats and the cards taken) |
 | X | Toggle the XP overlay |
-| M | Mute / unmute audio |
 | Q / Ctrl+C | Quit |
 
 Movement, bounce and swap keys can be rebound in **Settings → Controls**.

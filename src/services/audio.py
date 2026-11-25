@@ -11,7 +11,11 @@ silent, see src/services/sound.py).
   bird type by how many there are, the bats, at the gear's speed, played with
   real instrument samples) loops on one of two channels. When what plays
   changes, the new loop is made in a background thread and cross-faded in on
-  the other channel, so there is never a gap or a click.
+  the other channel, so there is never a gap or a click. The new loop starts
+  where the old one was (the same bar and beat), so the music goes on.
+- When a boss arrives, its loop is preceded by the corruption of the world's
+  music (src/services/music/boss.py); as it loses health the world's melody
+  comes back over it.
 """
 
 import os
@@ -50,6 +54,11 @@ _music = {
     'birds': {},  # bird type -> how many
     'bats': 0,
     'gear': 1,
+    'boss': None,  # the boss type fought, or None
+    'health': 0,  # its health step (boss.health_step)
+    'bridge_until': 0.0,  # the corruption plays until then: the boss's loop waits for it
+    'loop_start': 0.0,  # when the loop playing now was at its start (monotonic seconds)
+    'loop_len': 0.0,  # its length in seconds (0: none)
     'playing_now': None,  # what the loop on the channel plays (see _signature)
     'paused': False,  # the game is paused: the music holds where it is
     'screen': None,  # 'title' or 'game_over' while a screen's music plays instead of the game's
@@ -158,27 +167,60 @@ def _signature():
         birds,
         arrangement.quantity_step(_music['bats'], 'BATS'),
         arrangement.speed_step(_music['gear']),
+        _music['boss'],
+        _music['health'] if _music['boss'] else 0,
     )
 
 
 def _render_and_play(version, fade=True):
-    """Make the music loop for the current state and cross-fade it in (any thread)."""
+    """Make the music loop for the current state and cross-fade it in (any thread).
+    A boss that has just arrived first corrupts the world's music (a bridge, played once)."""
     from src.services.music import arrangement, sampler
 
     if not sampler.available():
         return
     with _lock:
         biome, birds, bats, gear = _music['biome'], dict(_music['birds']), _music['bats'], _music['gear']
+        boss, health = _music['boss'], _music['health']
         signature = _signature()
+        before = _music['playing_now']
+    arriving = boss is not None and before is not None and before[4] is None
     try:
-        sound = _sound(arrangement.loop(biome, birds, bats, gear))
+        bridge = arrangement.bridge(biome, birds, bats, gear, boss) if arriving else None
+        wave = arrangement.loop(biome, birds, bats, gear, boss=boss, health=health)
     except Exception:
         return
+    if bridge is not None:
+        with _lock:
+            if version != _music['version'] or not _music['playing']:
+                return
+            _swap_in(_sound(bridge), loops=0, fade=True)
+            _music['loop_len'] = 0.0
+            _music['bridge_until'] = time.monotonic() + len(bridge) / synth.SAMPLE_RATE - CROSSFADE_MS / 1000
+            _music['playing_now'] = signature
+    wait = _music['bridge_until'] - time.monotonic()
+    if wait > 0:
+        time.sleep(wait)  # the corruption plays to its end (a newer render waits the same)
     with _lock:
         if version != _music['version'] or not _music['playing']:
             return  # something changed meanwhile, or the music was stopped
+        same_piece = before is not None and before[0] == signature[0] and before[4] == signature[4]
+        if bridge is None and same_piece and _music['loop_len'] > 0:
+            wave = _from_where_it_was(wave)
+        else:
+            _music['loop_start'] = time.monotonic()
+        _music['loop_len'] = len(wave) / synth.SAMPLE_RATE
         _music['playing_now'] = signature
-        _swap_in(sound, loops=-1, fade=fade)
+        _swap_in(_sound(wave), loops=-1, fade=fade)
+
+
+def _from_where_it_was(wave):
+    """``wave`` turned so that it starts at the bar and beat the playing loop is at (lock held)."""
+    played = (time.monotonic() - _music['loop_start']) % _music['loop_len']
+    fraction = played / _music['loop_len']
+    cut = int(fraction * len(wave)) % len(wave)
+    _music['loop_start'] = time.monotonic() - fraction * len(wave) / synth.SAMPLE_RATE
+    return np.concatenate([wave[cut:], wave[:cut]])
 
 
 def _swap_in(sound, loops, fade):
@@ -219,6 +261,8 @@ def start_music():
         _music['screen'] = None
         _music['playing'] = True
         _music['playing_now'] = None
+        _music['bridge_until'] = 0.0
+        _music['loop_len'] = 0.0
         _music['version'] += 1
         version = _music['version']
     threading.Thread(target=_render_and_play, args=(version, fade), daemon=True).start()
@@ -307,6 +351,13 @@ def pause_music(paused):
         if _music['paused'] == paused or (paused and _music['screen'] is not None):
             return
         _music['paused'] = paused
+        if paused:
+            _music['paused_at'] = time.monotonic()
+        else:  # the loop and the corruption were held: they are that much later
+            held = time.monotonic() - _music.get('paused_at', time.monotonic())
+            _music['loop_start'] += held
+            if _music['bridge_until']:
+                _music['bridge_until'] += held
         if not _ready:
             return
         for index in (0, 1):
@@ -330,6 +381,17 @@ def update_active_birds(birds):
 
 def update_bats(count):
     _music['bats'] = count
+    _changed()
+
+
+def update_boss(boss_type, health=0):
+    """The boss fought now (None when there is none) and its health step 0-3."""
+    if (_music['boss'], _music['health']) == (boss_type, health if boss_type else 0):
+        return
+    _music['boss'] = boss_type
+    _music['health'] = health if boss_type else 0
+    if boss_type is None:
+        _music['bridge_until'] = 0.0
     _changed()
 
 

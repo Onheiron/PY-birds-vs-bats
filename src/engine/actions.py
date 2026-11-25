@@ -16,7 +16,6 @@ from src.engine.powers import activate_bird_power
 from src.engine.progression import calculate_gear_threshold, compute_gear_from_momentum, deduct_momentum
 from src.entities import bird_types
 from src.entities.sprites import CLOCKWORK, DINOSAUR, GLITCH, ORANGE, PURPLE, RAINBOW
-from src.services.sound import get_audio
 
 
 def _find_all_birds_in_lane(lane):
@@ -310,25 +309,3 @@ def handle_xp_toggle():
     state.ui.show_xp_overlay = not state.ui.show_xp_overlay
     msg = 'XP overlay: ON' if state.ui.show_xp_overlay else 'XP overlay: OFF'
     notify(msg)
-
-
-def handle_audio_toggle():
-    """Toggle audio on/off (mute/unmute)."""
-    audio = get_audio()
-    if audio is None:
-        from src.services.sound import unavailable_reason
-
-        notify(f'No audio: {unavailable_reason()}')
-        return
-
-    # Toggle audio state
-    current = audio.is_enabled()
-    new_state = not current
-    audio.set_audio_enabled(new_state)
-
-    if new_state:
-        # Re-enable audio and restart music
-        audio.start_music()
-        notify('Audio: ON')
-    else:
-        notify('Audio: OFF')

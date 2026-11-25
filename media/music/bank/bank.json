@@ -45,6 +45,15 @@
   "90": "celesta_90.ogg",
   "96": "celesta_96.ogg"
  },
+ "cello": {
+  "36": "cello_36.ogg",
+  "42": "cello_42.ogg",
+  "48": "cello_48.ogg",
+  "54": "cello_54.ogg",
+  "60": "cello_60.ogg",
+  "66": "cello_66.ogg",
+  "72": "cello_72.ogg"
+ },
  "choir": {
   "48": "choir_48.ogg",
   "54": "choir_54.ogg",
@@ -52,6 +61,17 @@
   "66": "choir_66.ogg",
   "72": "choir_72.ogg",
   "78": "choir_78.ogg"
+ },
+ "church_organ": {
+  "36": "church_organ_36.ogg",
+  "42": "church_organ_42.ogg",
+  "48": "church_organ_48.ogg",
+  "54": "church_organ_54.ogg",
+  "60": "church_organ_60.ogg",
+  "66": "church_organ_66.ogg",
+  "72": "church_organ_72.ogg",
+  "78": "church_organ_78.ogg",
+  "84": "church_organ_84.ogg"
  },
  "clarinet": {
   "48": "clarinet_48.ogg",
@@ -155,6 +175,14 @@
   "82": "oboe_82.ogg",
   "88": "oboe_88.ogg"
  },
+ "ocarina": {
+  "60": "ocarina_60.ogg",
+  "66": "ocarina_66.ogg",
+  "72": "ocarina_72.ogg",
+  "78": "ocarina_78.ogg",
+  "84": "ocarina_84.ogg",
+  "90": "ocarina_90.ogg"
+ },
  "overdrive_guitar": {
   "40": "overdrive_guitar_40.ogg",
   "46": "overdrive_guitar_46.ogg",
@@ -173,6 +201,15 @@
   "78": "pan_flute_78.ogg",
   "84": "pan_flute_84.ogg",
   "90": "pan_flute_90.ogg"
+ },
+ "piccolo": {
+  "62": "piccolo_62.ogg",
+  "68": "piccolo_68.ogg",
+  "74": "piccolo_74.ogg",
+  "80": "piccolo_80.ogg",
+  "86": "piccolo_86.ogg",
+  "92": "piccolo_92.ogg",
+  "98": "piccolo_98.ogg"
  },
  "pizzicato": {
   "36": "pizzicato_36.ogg",
@@ -207,6 +244,15 @@
   "84": "strings_84.ogg",
   "90": "strings_90.ogg",
   "96": "strings_96.ogg"
+ },
+ "synth_bass": {
+  "28": "synth_bass_28.ogg",
+  "34": "synth_bass_34.ogg",
+  "40": "synth_bass_40.ogg",
+  "46": "synth_bass_46.ogg",
+  "52": "synth_bass_52.ogg",
+  "58": "synth_bass_58.ogg",
+  "64": "synth_bass_64.ogg"
  },
  "taiko": {
   "36": "taiko_36.ogg",
@@ -254,6 +300,15 @@
   "46": "tuba_46.ogg",
   "52": "tuba_52.ogg",
   "58": "tuba_58.ogg"
+ },
+ "vibraphone": {
+  "53": "vibraphone_53.ogg",
+  "59": "vibraphone_59.ogg",
+  "65": "vibraphone_65.ogg",
+  "71": "vibraphone_71.ogg",
+  "77": "vibraphone_77.ogg",
+  "83": "vibraphone_83.ogg",
+  "89": "vibraphone_89.ogg"
  },
  "violin": {
   "55": "violin_55.ogg",

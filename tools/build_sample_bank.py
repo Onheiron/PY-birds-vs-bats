@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the instrument sample bank of the music (media/music/bank/).
 
-    python3 tools/build_sample_bank.py [--soundfont FILE.sf2]
+    python3 tools/build_sample_bank.py [--soundfont FILE.sf2] [--only NAME ...]
 
 The music is played by the game itself (src/services/music/): it writes the
 notes of every part and plays them with these samples, pitched to each note.
@@ -102,22 +102,35 @@ def record(sf2, name, spec, note, work):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--soundfont', default=DEFAULT_SF2)
+    parser.add_argument('--only', nargs='+', metavar='NAME', help='record only these instruments (the rest is kept)')
     args = parser.parse_args()
     if not Path(args.soundfont).exists():
         raise SystemExit(f'SoundFont not found: {args.soundfont} (apt install fluid-soundfont-gm, or --soundfont)')
     BANK.mkdir(parents=True, exist_ok=True)
-    for old in BANK.glob('*.ogg'):
-        old.unlink()
-    index = {}
+    index_path = BANK / 'bank.json'
+    if args.only:
+        unknown = set(args.only) - set(INSTRUMENTS)
+        if unknown:
+            raise SystemExit(f'Unknown instruments: {", ".join(sorted(unknown))}')
+        index = json.loads(index_path.read_text()) if index_path.exists() else {}
+        for name in args.only:
+            for old in BANK.glob(f'{name}_*.ogg'):
+                old.unlink()
+    else:
+        for old in BANK.glob('*.ogg'):
+            old.unlink()
+        index = {}
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
         for name, spec in INSTRUMENTS.items():
+            if args.only and name not in args.only:
+                continue
             notes = (
                 spec['notes'] if 'notes' in spec else list(range(spec['low'], spec['high'] + 1, spec.get('step', 6)))
             )
             index[name] = {str(n): record(args.soundfont, name, spec, n, work) for n in notes}
             print(f'{name}: {len(notes)} samples')
-    (BANK / 'bank.json').write_text(json.dumps(index, indent=1, sort_keys=True))
+    index_path.write_text(json.dumps(index, indent=1, sort_keys=True))
     size = sum(f.stat().st_size for f in BANK.glob('*.ogg'))
     print(f'{sum(len(v) for v in index.values())} samples, {size / 1e6:.1f} MB in {BANK}')
 

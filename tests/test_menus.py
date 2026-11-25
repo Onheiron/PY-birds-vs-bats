@@ -261,3 +261,11 @@ def test_the_flock_menu_shows_base_power_ups_and_total(sim):
     assert current() == ('flock', 0)
     press_all(sim, ['ENTER'])
     assert current()[0].startswith('flock_bird_')
+
+
+def test_the_music_always_starts_on(sim):
+    state.settings.music_enabled = False
+    save_manager.save_default_settings()
+    assert defaults_file()['music_enabled'] is False
+    save_manager.load_default_settings()
+    assert state.settings.music_enabled is True  # off only for the session it was turned off in

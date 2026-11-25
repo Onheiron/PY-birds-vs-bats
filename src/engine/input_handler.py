@@ -3,7 +3,6 @@
 from src.core import state
 from src.engine import choices, menus
 from src.engine.actions import (
-    handle_audio_toggle,
     handle_bounce,
     handle_movement,
     handle_pause,
@@ -62,8 +61,6 @@ def process_input(key):
         handle_movement('RIGHT')
     elif key in ('X', 'x'):
         handle_xp_toggle()
-    elif key in ('M', 'm'):
-        handle_audio_toggle()
     elif key_upper == bindings.get('BOUNCE'):
         handle_bounce()
     elif key == 'QUIT':

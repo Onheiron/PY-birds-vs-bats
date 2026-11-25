@@ -98,7 +98,7 @@ def page(content_type):
                 "GAME:",
                 "  {pause} - Pause game",
                 "  {xp} - Toggle XP overlay",
-                "  {mute} - Mute/Unmute audio",
+                "Music and sounds: SETTINGS > SOUND.",
                 "",
                 "Keys can be rebound, and the",
                 "button labels chosen, in",

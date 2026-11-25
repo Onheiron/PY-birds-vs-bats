@@ -58,6 +58,36 @@ Each part has 3 x 3 versions:
 The loop (64 beats) is rendered in the background when what plays changes
 step, and cross-faded in (`arrangement.py`, `sampler.py`, `src/services/audio.py`);
 parts already rendered are kept. The level is steady whatever the flock.
+The new loop starts at the bar and beat the old one was at, so a change of
+flock or gear never restarts the piece.
+
+## Bosses
+
+Every kind of boss has its theme (`boss.py`), written in C and played on the
+world's tonic:
+
+| Boss | Character | Instruments |
+|---|---|---|
+| Bat King (normal) | a solemn march in minor | church organ, tuba, choir, timpani |
+| Tree | slow and heavy | cello, bassoon, strings, toms, timpani |
+| Wind | whirling runs | piccolo, cello, choir, driving drums |
+| Jelly | soft, chromatic, wobbling | vibraphone, synth bass, strings |
+| Owl | a night waltz in 3/4 | ocarina, bassoon, choir |
+
+- **Arrival**: the world's music is corrupted for 8 bars (`bridge`): for 4
+  the boss's bass creeps in while the world's music wobbles out of tune, for
+  4 more its lead takes over while the world's music is muffled, dirtied and
+  pushed away. Then the boss's loop plays alone.
+- **The flock** plays its parts on the boss's chords, in its style: marcato
+  (Bat King), staccato and an octave down (Tree), echoed an octave up (Wind),
+  wobbling (Jelly), sparser in 3/4 (Owl).
+- **Health**: at 66%, 33% and 10% of the boss's health the world's melody
+  comes back over the boss's loop, louder each time, in the boss's mode,
+  and the boss's lead steps back.
+- **Defeat**: the boss_death effect, then the world's music again.
+
+The music is always on when the game starts; SETTINGS > SOUND turns it off
+for the session.
 
 ## Screens
 

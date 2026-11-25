@@ -151,3 +151,96 @@ def test_leaving_a_paused_game_for_the_title_brings_the_title_music(mixer):
     audio.pause_music(True)  # a pause outside the game holds nothing
     assert not audio._music['paused']
     audio.cleanup()
+
+
+def test_boss_themes_and_dressed_parts_fit_their_loop():
+    from src.services.music import boss
+
+    for kind, spec in boss.BOSSES.items():
+        beats = boss.beats(kind)
+        end = max(st + du for st, du, _n, _v in score.melody(spec['melody']))
+        assert beats - spec['meter'] <= end <= beats, kind  # 16 bars (the last one may rest)
+        for world in range(1, 7):
+            for key, instrument, events, _gain, _post in boss.layers(
+                kind,
+                world,
+                {'YELLOW': 2, 'RED': 1, 'GOLD': 1},
+                3,
+                2,
+                arrangement.quantity_step,
+                arrangement._instrument_for,
+            ):
+                spec_i = INSTRUMENTS[instrument]
+                for start, length, notes, velocity in events:
+                    assert -0.01 <= start < beats + 1 and length > 0 and 0 < velocity <= 127, key
+                    if not spec_i.get('drum'):
+                        assert all(spec_i['low'] - 13 <= n <= spec_i['high'] + 13 for n in notes), (key, notes)
+    assert [boss.health_step(f) for f in (1.0, 0.7, 0.5, 0.2, 0.05)] == [0, 0, 1, 2, 3]
+    assert boss.kind('unknown') == 'normal'
+
+
+def test_boss_loops_and_the_corruption(mixer):
+    flock = {'YELLOW': 4, 'RED': 3, 'BLUE': 2}
+    world = arrangement.loop(1, flock, 2, 5)
+    for kind in ('normal', 'tree', 'wind', 'jelly', 'owl'):
+        loop = arrangement.loop(1, flock, 2, 5, boss=kind, health=2)
+        assert loop.ndim == 2 and np.abs(loop).max() < 1.0, kind
+        assert 0.5 < np.sqrt((loop**2).mean()) / np.sqrt((world**2).mean()) < 2.0, kind  # no loudness jump
+    bridge = arrangement.bridge(1, flock, 2, 5, 'normal')
+    quarter = len(bridge) // 4
+    first, last = bridge[:quarter], bridge[-quarter:]
+    assert np.abs(bridge).max() < 1.0 and np.sqrt((first**2).mean()) > 0.03 and np.sqrt((last**2).mean()) > 0.03
+
+
+def test_a_boss_arrives_with_its_corruption_and_leaves(mixer, monkeypatch):
+    from src.services import audio
+    from src.services.music import boss
+
+    monkeypatch.setattr(boss, 'BRIDGE_BARS', 1)
+    audio._ready = None
+    assert audio.is_audio_available()
+    audio.update_music_for_biome(1)
+    audio.update_active_birds({'YELLOW': 1})
+    audio.start_music()
+    deadline = time.time() + 20
+    while audio._music['playing_now'] is None and time.time() < deadline:
+        time.sleep(0.05)
+    audio.update_boss('owl', 0)
+    deadline = time.time() + 30
+    while audio._music['playing_now'][4] != 'owl' and time.time() < deadline:
+        time.sleep(0.05)
+    assert audio._music['bridge_until'] > 0  # the corruption came first
+    deadline = time.time() + 30
+    while audio._music['loop_len'] == 0 and time.time() < deadline:
+        time.sleep(0.05)
+    assert audio._music['loop_len'] > 0  # then the boss's loop
+    audio.update_boss('owl', 2)
+    deadline = time.time() + 30
+    while audio._music['playing_now'][5] != 2 and time.time() < deadline:
+        time.sleep(0.05)
+    assert audio._music['playing_now'][5] == 2
+    audio.update_boss(None)
+    deadline = time.time() + 30
+    while audio._music['playing_now'][4] is not None and time.time() < deadline:
+        time.sleep(0.05)
+    assert audio._music['playing_now'][4] is None and audio._music['bridge_until'] == 0
+    audio.cleanup()
+
+
+def test_a_new_loop_starts_where_the_old_one_was():
+    from src.services import audio
+
+    audio._music['loop_len'] = 10.0
+    audio._music['loop_start'] = time.monotonic() - 2.5  # a quarter in
+    wave = np.arange(400, dtype=np.float32)
+    turned = audio._from_where_it_was(wave)
+    assert 95 <= turned[0] <= 105 and len(turned) == 400
+    audio._music['loop_len'] = 0.0
+
+
+def test_boss_health_of_every_kind():
+    from src.services.sound import boss_health
+
+    assert boss_health({'hp': 50, 'max_hp': 200}) == 0.25
+    tree = {'boss_type': 'tree', 'branches': [{'hp': 10, 'max_hp': 10}, {'hp': 0, 'max_hp': 10, 'destroyed': True}]}
+    assert boss_health(tree) == 0.5

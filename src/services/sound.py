@@ -126,11 +126,35 @@ def sync_active_birds(force=False):
                 counts[bird_type] = counts.get(bird_type, 0) + 1
     bats = len(state.enemies.bats) + len(state.enemies.mini_bats)
 
+    boss = _boss_now()
+
     # Only update if something changed (or force)
-    if force or (counts, bats) != _last_bird_set:
-        _last_bird_set = (counts, bats)
+    if force or (counts, bats, boss) != _last_bird_set:
+        _last_bird_set = (counts, bats, boss)
         _backend.update_active_birds(counts)
         _backend.update_bats(bats)
+        _backend.update_boss(*boss)
+
+
+def boss_health(boss):
+    """How much of its health a boss has left, 0..1 (the Tree: its branches')."""
+    if boss.get('boss_type') == 'tree':
+        branches = boss.get('branches') or []
+        top = sum(b.get('max_hp', 0) for b in branches)
+        left = sum(max(0, b.get('hp', 0)) for b in branches if not b.get('destroyed'))
+        return left / top if top else 1.0
+    top = boss.get('max_hp') or 0
+    return max(0.0, boss.get('hp', 0)) / top if top else 1.0
+
+
+def _boss_now():
+    """(boss type, health step) of the boss fought now, or (None, 0)."""
+    from src.services.music import boss as boss_music
+
+    boss = state.enemies.boss
+    if boss is None or state.enemies.boss_defeated:
+        return None, 0
+    return boss.get('boss_type', 'normal'), boss_music.health_step(boss_health(boss))
 
 
 # =============================================================================
