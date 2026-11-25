@@ -19,6 +19,24 @@ def calculate_gear_threshold(gear):
     return int(base ** (factor ** (gear + 1)))
 
 
+def gear_cap():
+    """The highest gear now: speed.max_speed, lowered by the world's speed.max_gear_by_world."""
+    max_gear = getattr(constants.speed, 'max_speed', 10)
+    by_world = getattr(constants.speed, 'max_gear_by_world', None)
+    if by_world:
+        by_world = list(by_world)
+        max_gear = min(max_gear, int(by_world[min(max(1, state.game.level_group), len(by_world)) - 1]))
+    return max_gear
+
+
+def momentum_cap():
+    """The most momentum there can be now: just under the next gear past the cap."""
+    cap = gear_cap()
+    if cap >= getattr(constants.speed, 'max_speed', 10):
+        return float('inf')
+    return float(calculate_gear_threshold(cap + 1) - 1)
+
+
 def compute_gear_from_momentum(momentum):
     """Compute gear level (1-10) from momentum.
 
@@ -262,8 +280,9 @@ def update_momentum(momentum_factor):
     delta = momentum_factor * (gain_mult if momentum_factor >= 0 else loss_mult)
     state.game.momentum += delta
 
-    # Clamp to minimum
-    state.game.momentum = max(1.0, state.game.momentum)
+    # Clamp to minimum, and to the top of the highest gear this world allows: momentum
+    # gathered over the cap would make the gear jump when the next world lifts it
+    state.game.momentum = max(1.0, min(state.game.momentum, momentum_cap()))
 
     gear_changed = update_gear()
 

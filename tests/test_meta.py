@@ -133,3 +133,19 @@ def test_momentum_grows_and_falls_at_their_own_pace():
         assert state.game.momentum == 1180.0
         progression.update_momentum(-1.0)
         assert state.game.momentum == 1065.0
+
+
+def test_momentum_stops_at_the_worlds_gear_cap():
+    from src.core import constants
+    from src.engine import progression
+
+    with Simulation(seed=1, key_rate=0):
+        state.game.level_group = 1  # world 1: gear 5 at most
+        state.game.momentum = progression.calculate_gear_threshold(5)
+        for _ in range(2000):
+            progression.update_momentum(2.0)
+        assert state.game.momentum < progression.calculate_gear_threshold(6)
+        state.game.level_group = 2  # the next world: the gear climbs from 5, it does not jump
+        progression.update_momentum(0.0)
+        assert progression.compute_gear_from_momentum(state.game.momentum) == 5
+        assert constants.speed.max_gear_by_world[1] > 5

@@ -223,6 +223,7 @@ class Window:
         self.controllers = {}
         self._scan_controllers()
         self.held = {}  # direction -> (next repeat time)
+        self.keys_down = set()  # keyboard keys down now (to tell a press from its auto-repeat)
         self.last_device = 'keyboard'  # the control profile of the device used last (src/ui/controls.py)
         self.stick = {'x': 0, 'y': 0}
         self.trigger_down = False
@@ -385,6 +386,11 @@ class Window:
         pg = self.pg
         self._text = text
         keys = []
+        context = self._context()
+        if context != getattr(self, '_last_context', None):
+            # A choice opened, the game paused or resumed: what was held belongs to before
+            self.held.clear()
+            self._last_context = context
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 keys.append('QUIT')
@@ -393,7 +399,13 @@ class Window:
                 self._layout()
             elif event.type in (pg.KEYDOWN, pg.TEXTINPUT):
                 self.last_device = 'keyboard'
+            if event.type == pg.KEYUP:
+                self.keys_down.discard(event.key)
             if event.type == pg.KEYDOWN:
+                repeat = event.key in self.keys_down
+                self.keys_down.add(event.key)
+                if repeat and event.key == pg.K_UP and context == 'play':
+                    continue  # the bounce never repeats: one press, one bounce
                 if event.key == pg.K_F11 or (event.key == pg.K_RETURN and event.mod & pg.KMOD_ALT):
                     self.toggle_fullscreen()
                     continue
@@ -426,7 +438,8 @@ class Window:
             elif event.type == pg.CONTROLLERBUTTONDOWN:
                 self.last_device = self._pad_profile(event.instance_id)
                 key = self._button_key(event.button)
-                if key in ('LEFT', 'RIGHT', 'UP', 'DOWN'):
+                bounce = context == 'play' and key == 'UP'  # A or D-pad up: the bounce never repeats
+                if key in ('LEFT', 'RIGHT', 'UP', 'DOWN') and not bounce:
                     self._press_direction(key, keys)
                 elif key:
                     keys.append(key)
@@ -465,7 +478,11 @@ class Window:
             if old:
                 self.held.pop(pairs[0] if old < 0 else pairs[1], None)
             if step:
-                self._press_direction(pairs[0] if step < 0 else pairs[1], keys)
+                key = pairs[0] if step < 0 else pairs[1]
+                if key == 'UP' and self._context() == 'play':
+                    keys.append(key)  # the stick up bounces once
+                else:
+                    self._press_direction(key, keys)
         elif axis == self.AXIS_RIGHT_TRIGGER:
             down = value > 0.5
             if down and not self.trigger_down and self._context() == 'play':

@@ -72,3 +72,23 @@ def test_the_keyboard_works_in_the_window(win):
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_LEFT, mod=0))
         pygame.event.post(pygame.event.Event(pygame.TEXTINPUT, text=' '))
         assert win.read_keys() == ['LEFT', 'SPACE']
+
+
+def test_a_held_bounce_never_repeats_and_a_choice_drops_what_was_held(win, monkeypatch):
+    import time as real_time
+
+    with Simulation(seed=1, key_rate=0):
+        game_state.ui.show_title = False
+        game_state.choice.active = None
+        win.read_keys()
+        pygame.event.post(pygame.event.Event(pygame.CONTROLLERBUTTONDOWN, button=win.A, instance_id=0))
+        assert win.read_keys() == ['UP']  # one bounce
+        later = real_time.monotonic() + 5
+        monkeypatch.setattr(window.time, 'monotonic', lambda: later)
+        assert win.read_keys() == []  # held A: no more bounces
+        pygame.event.post(pygame.event.Event(pygame.CONTROLLERBUTTONDOWN, button=win.DPAD_LEFT, instance_id=0))
+        assert win.read_keys() == ['LEFT']
+        game_state.choice.active = {'kind': 'egg', 'cards': [], 'index': 0}  # cards appear while LEFT is held
+        monkeypatch.setattr(window.time, 'monotonic', lambda: later + 5)
+        assert win.read_keys() == []  # nothing held before the cards moves them
+        game_state.choice.active = None
