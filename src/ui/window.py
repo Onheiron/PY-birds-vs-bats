@@ -9,11 +9,14 @@ turned into the same key names the terminal input gives (src/ui/keyboard.py).
 
 Gamepad layout (Xbox names; on the Steam Deck the same buttons):
 
-  Playing                          Menus, cards, pacts, game over
+  Playing                          Menus, game over
   D-pad / left stick ← →  move     D-pad / left stick  move the selection
   LB / RB                 move     A  select (ENTER)
   A, D-pad ↑, RT          bounce   B  back (ESC)
-  B                       swap     X  reroll (cards)   Y  skip (cards)
+  B                       swap
+                                   Egg cards and pacts
+                                   X  take   Y  reroll   B  skip   (A does nothing:
+                                   it is the bounce, mashed while playing)
   Y                       XP bars  Start  pause / resume
   Start / Select          pause    Select  pause / resume
 
@@ -325,11 +328,13 @@ class Window:
                     self.controllers[pad.as_joystick().get_instance_id()] = pad
 
     def _context(self):
-        """'play', 'menu' or 'text': what the gamepad buttons mean now."""
+        """'play', 'choice', 'menu' or 'text': what the gamepad buttons mean now."""
         from src.core import state
 
         if self._text:
             return 'text'
+        if state.choice.active is not None and not state.game.paused:
+            return 'choice'
         if state.ui.show_title or state.game.paused or state.choice.active is not None or state.game.game_over:
             return 'menu'
         return 'play'
@@ -354,6 +359,9 @@ class Window:
             return 'p' if context != 'text' else 'ENTER'
         if context == 'text':
             return {self.A: 'PICK', self.B: 'BACKSPACE'}.get(button)  # A types the on-screen key
+        if context == 'choice':
+            # Egg cards and pacts: X takes (not A: A is the bounce, mashed while playing), Y rerolls, B skips
+            return {self.X: 'ENTER', self.Y: 'r', self.B: 's'}.get(button)
         if context == 'menu':
             return {self.A: 'ENTER', self.B: 'ESC', self.X: 'r', self.Y: 's'}.get(button)
         return {self.A: 'UP', self.B: 'SPACE', self.Y: 'x'}.get(button)

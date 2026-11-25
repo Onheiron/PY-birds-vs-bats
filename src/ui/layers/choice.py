@@ -144,9 +144,9 @@ def draw_choice_overlay(fb):
         row_y += 1
     fb.put_string(x, row_y, '╚' + '═' * (width - 2) + '╝', MENU_BORDER_COLOR)
     template = (
-        '{navigate} choose  {select} take  {reroll} reroll  {skip} skip'
+        '{navigate} choose  {take} take  {reroll} reroll  {skip} skip'
         if offer['kind'] == 'egg'
-        else '{navigate} choose  {select} confirm'
+        else '{navigate} choose  {take} confirm'
     )
     hint = controls.hint(template)
     fb.put_string(x + max(0, (width - len(hint)) // 2), row_y + 1, hint, MENU_BORDER_COLOR)

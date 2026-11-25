@@ -11,17 +11,20 @@ with `pip install pygame-ce`.
 
 ## Controller layout
 
-| Button | Playing | Menus, egg cards, pacts, game over |
-|---|---|---|
-| D-pad ← → / left stick | move the cursor | move the selection |
-| D-pad ↑ ↓ / left stick | ↑ bounce | move the selection |
-| LB / RB (L1 / R1) | move the cursor | move the selection |
-| A (✕ on PlayStation) | **bounce** (and fire powers) | **select** |
-| RT (R2) | bounce | — |
-| B (○) | **swap** (press on a lane, move, press again) | back |
-| X (□) | — | reroll the cards |
-| Y (△) | show the XP bars | skip the cards |
-| Start / Select (☰ / ⧉) | pause | pause / resume |
+| Button | Playing | Egg cards, pacts | Menus, game over |
+|---|---|---|---|
+| D-pad ← → / left stick | move the cursor | — | move the selection |
+| D-pad ↑ ↓ / left stick | ↑ bounce | move the selection | move the selection |
+| LB / RB (L1 / R1) | move the cursor | — | move the selection |
+| A (✕ on PlayStation) | **bounce** (and fire powers) | nothing (it is the bounce) | **select** |
+| X (□) | — | **take** | — |
+| Y (△) | show the XP bars | reroll | — |
+| B (○) | **swap** (press on a lane, move, press again) | skip | back |
+| RT (R2) | bounce | — | — |
+| Start / Select (☰ / ⧉) | pause | pause | pause / resume |
+
+Egg cards and pacts are taken with X, not A: A is the bounce, often mashed while
+playing, and would take a card before it is even seen.
 
 Typing a name at game over: the D-pad moves on the on-screen keyboard, A types
 the key under the cursor (OK confirms, aA switches case), B deletes, Start

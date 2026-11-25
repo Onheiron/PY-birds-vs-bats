@@ -59,8 +59,10 @@ def test_gamepad_buttons_in_menus_and_cards(win):
         assert press(win, win.DPAD_DOWN) == ['DOWN']
         game_state.ui.show_title = False
         game_state.choice.active = {'kind': 'egg', 'cards': [], 'index': 0}
-        assert press(win, win.X) == ['r']  # reroll
-        assert press(win, win.Y) == ['s']  # skip
+        assert press(win, win.A) == []  # A is the bounce: it never takes a card
+        assert press(win, win.X) == ['ENTER']  # take
+        assert press(win, win.Y) == ['r']  # reroll
+        assert press(win, win.B) == ['s']  # skip
         game_state.choice.active = None
 
 
