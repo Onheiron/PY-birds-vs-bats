@@ -17,7 +17,8 @@ Gamepad layout (Xbox names; on the Steam Deck the same buttons):
   Y                       XP bars  Start  pause / resume
   Start / Select          pause    Select  pause / resume
 
-Typing a name (game over): A confirms, B deletes.
+Typing a name (game over): the D-pad moves on the on-screen keyboard, A types the key,
+B deletes, Start confirms.
 F11 or Alt+Enter toggles full screen.
 """
 
@@ -352,7 +353,7 @@ class Window:
         if button in (self.START, self.BACK):
             return 'p' if context != 'text' else 'ENTER'
         if context == 'text':
-            return {self.A: 'ENTER', self.B: 'BACKSPACE'}.get(button)
+            return {self.A: 'PICK', self.B: 'BACKSPACE'}.get(button)  # A types the on-screen key
         if context == 'menu':
             return {self.A: 'ENTER', self.B: 'ESC', self.X: 'r', self.Y: 's'}.get(button)
         return {self.A: 'UP', self.B: 'SPACE', self.Y: 'x'}.get(button)

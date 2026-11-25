@@ -23,7 +23,9 @@ with `pip install pygame-ce`.
 | Y (△) | show the XP bars | skip the cards |
 | Start / Select (☰ / ⧉) | pause | pause / resume |
 
-Typing a name at game over: A confirms, B deletes. Held directions repeat.
+Typing a name at game over: the D-pad moves on the on-screen keyboard, A types
+the key under the cursor (OK confirms, aA switches case), B deletes, Start
+confirms. Held directions repeat.
 
 The hints on screen name the controls of the device used last
 (`src/ui/controls.py`): keys on the keyboard, [A] [B] [X] [Y] and LB/RB on an

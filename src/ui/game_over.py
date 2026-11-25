@@ -66,10 +66,39 @@ def _gold_line():
     return f"Gold Earned:    {reward} + {extra} ({count} achievement{'s' if count > 1 else ''})"
 
 
-def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_length=20):
+# The on-screen keyboard of the name entry: picked with the arrows (a gamepad's D-pad or stick)
+KEYBOARD_ROWS = (
+    tuple('ABCDEFGHIJKLM'),
+    tuple('NOPQRSTUVWXYZ'),
+    tuple('0123456789-_.'),
+    ('aA', 'SPACE', 'DEL', 'OK'),
+)
+
+
+def _keyboard_key(cursor, lower):
+    row, col = cursor
+    key = KEYBOARD_ROWS[row][col]
+    return key.lower() if lower and len(key) == 1 else key
+
+
+def _draw_keyboard(fb, center_x, y, cursor, lower):
+    for r, row in enumerate(KEYBOARD_ROWS):
+        cells = []
+        for c, key in enumerate(row):
+            label = key.lower() if lower and len(key) == 1 else key
+            cells.append((f'[{label}]' if (r, c) == cursor else f' {label} ', (r, c) == cursor))
+        width = sum(len(text) for text, _on in cells) + (len(cells) - 1) * (0 if r < 3 else 2)
+        x = center_x - width // 2
+        for text, on in cells:
+            fb.put_string(x, y + r, text, GREEN if on else '')
+            x += len(text) + (0 if r < 3 else 2)
+
+
+def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_length=20, cursor=(0, 0), lower=False):
     """Draw the game over screen into the framebuffer.
 
-    phase: 'name' for name input, 'menu' for the retry/exit menu.
+    phase: 'name' for name input (with the on-screen keyboard at ``cursor``), 'menu' for the
+    retry/exit menu.
     """
     fb.clear()
     width = constants.layout.width
@@ -114,8 +143,11 @@ def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_len
         centered(name_y, "Enter name for leaderboard:", YELLOW)
         padding = " " * (name_max_length - len(player_name))
         centered(name_y + 1, f"[ {player_name}_{padding} ]", GREEN)
-        centered(name_y + 3, controls.hint("({confirm} to confirm, ESC to skip)"))
-        footer = controls.hint("Type your name | {confirm} confirm | {delete} delete | ESC skip")
+        _draw_keyboard(fb, center_x, name_y + 3, cursor, lower)
+        if controls.active_profile() == 'keyboard':
+            footer = controls.hint("Type your name, or pick keys with the arrows | {confirm} confirm | ESC skip")
+        else:
+            footer = controls.hint("D-pad pick a key | {select} type | {delete} delete | {pause} done")
     else:
         menu_y = center_y + 4
         if selected == 0:
@@ -132,25 +164,52 @@ def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_len
     fb.put_string((TOTAL_WIDTH - len(footer)) // 2, floor_y + 1, footer)
 
 
+def name_entry_key(name, key, cursor, lower, max_length):
+    """One key of the name entry. Returns (name, cursor, lower, done): done is None while typing,
+    else the name ('' when skipped). The arrows move on the on-screen keyboard and PICK (a
+    gamepad's A) types the key under the cursor; typed keys go in directly."""
+    row, col = cursor
+    if key in ('QUIT', 'ESC'):
+        return name, cursor, lower, ''
+    if key == 'ENTER':
+        return name, cursor, lower, name
+    if key in ('UP', 'DOWN'):
+        row = (row + (1 if key == 'DOWN' else -1)) % len(KEYBOARD_ROWS)
+        col = min(col, len(KEYBOARD_ROWS[row]) - 1)
+        return name, (row, col), lower, None
+    if key in ('LEFT', 'RIGHT'):
+        col = (col + (1 if key == 'RIGHT' else -1)) % len(KEYBOARD_ROWS[row])
+        return name, (row, col), lower, None
+    if key == 'PICK':
+        picked = _keyboard_key(cursor, lower)
+        if picked == 'OK':
+            return name, cursor, lower, name
+        if picked == 'DEL':
+            return name[:-1], cursor, lower, None
+        if picked in ('aA', 'Aa'):
+            return name, cursor, not lower, None
+        key = 'SPACE' if picked == 'SPACE' else picked
+    if key == 'BACKSPACE':
+        return name[:-1], cursor, lower, None
+    if len(name) < max_length:
+        if key == 'SPACE':
+            name += " "
+        elif len(key) == 1 and key.isprintable():
+            name += key
+    return name, cursor, lower, None
+
+
 def _ask_player_name(fb, clock, elapsed_str, max_length):
     """Name entry phase. Returns the typed name ('' when skipped)."""
-    name = ""
+    name, cursor, lower = "", (0, 0), False
     while True:
-        draw(fb, elapsed_str, 0, name, "name", max_length)
+        draw(fb, elapsed_str, 0, name, "name", max_length, cursor, lower)
         terminal.write_frame(fb.render())
 
         for key in read_keys(text=True):
-            if key in ('QUIT', 'ESC'):
-                return ""
-            if key == 'ENTER':
-                return name
-            if key == 'BACKSPACE':
-                name = name[:-1]
-            elif len(name) < max_length:
-                if key == 'SPACE':
-                    name += " "
-                elif len(key) == 1 and key.isprintable():
-                    name += key
+            name, cursor, lower, done = name_entry_key(name, key, cursor, lower, max_length)
+            if done is not None:
+                return done
         clock.wait()
 
 
