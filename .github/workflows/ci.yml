@@ -77,4 +77,4 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: pyinstaller --noconfirm packaging/BVB.spec
       - name: Smoke test the binary
-        run: python tools/smoke_test_binary.py dist/BVB
+        run: python tools/smoke_test_binary.py dist/BVB/BVB --windowed
