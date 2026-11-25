@@ -1,5 +1,6 @@
 """Title screen."""
 
+from src import __version__
 from src.core import state
 from src.engine import menus
 from src.entities.sprites import YELLOW
@@ -31,6 +32,7 @@ def render_title_screen():
     logo_y = 3
     for i, line in enumerate(TITLE_LOGO):
         fb.put_string(logo_x, logo_y + i, line, YELLOW)
+    _draw_version(fb, logo_x + logo_width, logo_y + len(TITLE_LOGO))
 
     if menus.root() != menus.TITLE:
         menus.open_title()
@@ -43,6 +45,28 @@ def render_title_screen():
         draw_screen(fb, style, menus.current_screen(), menus.cursor())
 
     terminal.write_frame(fb.render())
+
+
+def version_line():
+    """The version running, and where its update is (src/services/updater.py)."""
+    from src.services import updater
+
+    status = updater.status
+    state_, version = status.get('state'), status.get('version')
+    if state_ == 'available':
+        return f'v{__version__}  ·  update {version} available', YELLOW
+    if state_ == 'downloading':
+        return f'v{__version__}  ·  downloading {version}: {int(status.get("progress", 0) * 100)}%', YELLOW
+    if state_ == 'ready':
+        return f'v{__version__}  ·  {version} ready: RESTART', YELLOW
+    if state_ == 'failed':
+        return f'v{__version__}  ·  update failed: {status.get("error") or ""}', MENU_BORDER_COLOR
+    return f'v{__version__}', MENU_BORDER_COLOR
+
+
+def _draw_version(fb, right, y):
+    text, color = version_line()
+    fb.put_string(max(0, right - len(text)), y, text, color)
 
 
 def _draw_main_menu(fb, menu_y, selected):

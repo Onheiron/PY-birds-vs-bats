@@ -87,3 +87,13 @@ def test_windows_script_and_menu_lines(monkeypatch):
     assert updater.menu_label() == ('UPDATING', '42%')
     updater.status.update(state='ready')
     assert updater.menu_label()[0] == 'RESTART (9.0.0)'
+
+
+def test_the_title_shows_the_version_and_the_update(monkeypatch):
+    from src import __version__
+    from src.ui.layers import title
+
+    monkeypatch.setattr(updater, 'status', {'version': None, 'state': None, 'progress': 0.0, 'error': None})
+    assert title.version_line()[0] == f'v{__version__}'
+    updater.status.update(version='9.0.0', state='downloading', progress=0.5)
+    assert title.version_line()[0] == f'v{__version__}  ·  downloading 9.0.0: 50%'
