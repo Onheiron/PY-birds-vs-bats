@@ -83,3 +83,4 @@ progression:
 speed:
   # Sky-high momentum threshold - need to be in top third of screen
   momentum_zero_height: 0.60  # ADVENTURE: 0.33 (much higher = much harder)
+  momentum_gain_multiplier: 115.0  # ADVENTURE: 90 (faster gears)

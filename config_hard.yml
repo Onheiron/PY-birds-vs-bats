@@ -9,5 +9,7 @@ game:
   difficulty_name: "SURVIVAL"
   life_recovery_on_spawn: false  # NO life recovery when new birds spawn!
 
+speed:
+  momentum_gain_multiplier: 115.0  # ADVENTURE: 90 (faster gears)
 # All other values are same as ADVENTURE (config.yml)
 # The only difference is life_recovery_on_spawn: false

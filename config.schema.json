@@ -5452,6 +5452,9 @@
         "momentum_gain_multiplier": {
           "type": "number"
         },
+        "momentum_loss_multiplier": {
+          "type": "number"
+        },
         "momentum_zero_height": {
           "type": "number"
         },

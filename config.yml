@@ -599,7 +599,10 @@ speed:
   max_gear_by_world: [5, 9, 9, 9, 10, 10]
   mph_per_level: 40               # Miles per hour per speed level (40 = 40mph at speed 1, 400mph at speed 10)
   starting_momentum: 100          # Initial momentum at game start
-  momentum_gain_multiplier: 115.0 # Multiplier for momentum gain (higher = faster speed progression)
+  # Momentum per frame = height factor (-1 at the start line, 0 at momentum_zero_height, +2 at the top)
+  # times a multiplier: the gain one while it grows, the loss one while it falls
+  momentum_gain_multiplier: 90.0  # higher = the gears come faster (ADVENTURE grows slower than the others)
+  momentum_loss_multiplier: 115.0 # higher = a low flock loses speed faster
   momentum_zero_height: 0.33      # Height fraction where momentum factor = 0 (0.0 = bottom, 1.0 = top)
 
 # Score calculation settings

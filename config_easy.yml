@@ -80,3 +80,4 @@ progression:
 speed:
   # Lower momentum threshold - easier to gain momentum
   momentum_zero_height: 0.25  # ADVENTURE: 0.33 (lower = easier)
+  momentum_gain_multiplier: 115.0  # ADVENTURE: 90 (faster gears)

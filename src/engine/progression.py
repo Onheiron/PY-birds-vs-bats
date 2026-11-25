@@ -256,9 +256,10 @@ def update_momentum(momentum_factor):
     NO prestige, NO other factors - ONLY center of mass affects momentum.
     """
     gain_mult = getattr(constants.speed, 'momentum_gain_multiplier', 1.0)
+    loss_mult = getattr(constants.speed, 'momentum_loss_multiplier', gain_mult)
 
-    # Apply momentum factor directly (already centered at 0)
-    delta = momentum_factor * gain_mult
+    # Apply momentum factor directly (already centered at 0): growing and falling have their own pace
+    delta = momentum_factor * (gain_mult if momentum_factor >= 0 else loss_mult)
     state.game.momentum += delta
 
     # Clamp to minimum

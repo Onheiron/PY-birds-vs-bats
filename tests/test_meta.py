@@ -119,3 +119,17 @@ def test_gold_digger_multiplies_run_gold():
         state.settings.difficulty = 1
         events.emit('level_up', level=10)
         assert meta.run_gold() == round(10 * 1.1)
+
+
+def test_momentum_grows_and_falls_at_their_own_pace():
+    from src.core import constants
+    from src.engine import progression
+
+    with Simulation(seed=1, key_rate=0):
+        constants.speed.momentum_gain_multiplier = 90.0
+        constants.speed.momentum_loss_multiplier = 115.0
+        state.game.momentum = 1000.0
+        progression.update_momentum(2.0)
+        assert state.game.momentum == 1180.0
+        progression.update_momentum(-1.0)
+        assert state.game.momentum == 1065.0
