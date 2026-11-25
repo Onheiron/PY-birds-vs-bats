@@ -536,6 +536,20 @@ def roll_offer(egg_rarity, rng=random):
     return cards
 
 
+def roll_birds(egg_rarity, rng=random):
+    """Only bird cards (the merchant's brood): as many as an egg offers, of ``egg_rarity`` or
+    commoner, while there are free slots and birds to hatch."""
+    cards, taken = [], set()
+    for _ in range(int(stats.flock('choices'))):
+        for r in RARITIES[RARITIES.index(egg_rarity) :: -1]:
+            bird = _roll_bird(r, taken, rng)
+            if bird:
+                cards.append(bird)
+                taken.add(bird['id'])
+                break
+    return cards
+
+
 def apply_card(card):
     """Do what the picked card says."""
     source = f"card:{card['id']}"

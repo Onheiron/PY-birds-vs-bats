@@ -4465,6 +4465,32 @@
         },
         "wares": {
           "properties": {
+            "brood": {
+              "properties": {
+                "birds_only": {
+                  "type": "boolean"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "egg": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "needs": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "price": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
             "common_egg": {
               "properties": {
                 "desc": {
@@ -4525,6 +4551,9 @@
                   "type": "number"
                 },
                 "name": {
+                  "type": "string"
+                },
+                "needs": {
                   "type": "string"
                 },
                 "price": {

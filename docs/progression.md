@@ -167,8 +167,10 @@ Gold Digger 5 is +50% gold).
 Between worlds, after the boss's pact (not after the last world), the
 merchant offers wares paid with the run's gold, which then comes off the
 gold the run pays at its end (`merchant` in config.yml): a common egg (4), a
-rare egg (8), a life (5); with Merchant Stock an epic egg (14) and a lucky
-feather (one more reroll, 3). Prices follow the difficulty like the reward
+rare egg (8); on PEACEFUL and ADVENTURE, where a hatched bird brings a life
+back, a brood (bird cards only, 5) when the flock has room; on SURVIVAL and
+LEGENDARY, where lives do not come back, a life (mend, 5); with Merchant
+Stock an epic egg (14) and a lucky feather (one more reroll, 3). Prices follow the difficulty like the reward
 does (x0.5 on PEACEFUL ... x2 on LEGENDARY), less 20% per Haggling level.
 One ware per visit, or leave.
 

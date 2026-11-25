@@ -39,7 +39,8 @@ def _open(offer):
         state.choice.queue.append(offer)
         return
     if offer['kind'] == 'egg' and offer.get('cards') is None:
-        offer['cards'] = cards.roll_offer(offer['rarity'], random)
+        roll = cards.roll_birds if offer.get('birds_only') else cards.roll_offer
+        offer['cards'] = roll(offer['rarity'], random)
     if not offer['cards']:
         _next()
         return
@@ -53,15 +54,18 @@ def _next():
         _open(state.choice.queue.pop(0))
 
 
-def offer_egg(rarity, rng=random):
-    """Stop the game and offer the cards of an egg of ``rarity``."""
+def offer_egg(rarity, rng=random, birds_only=False):
+    """Stop the game and offer the cards of an egg of ``rarity`` (``birds_only``: bird cards only,
+    the merchant's brood)."""
+    roll = cards.roll_birds if birds_only else cards.roll_offer
     _open(
         {
             'kind': 'egg',
-            'title': f'{rarity.upper()} EGG',
+            'title': 'BROOD' if birds_only else f'{rarity.upper()} EGG',
             'rarity': rarity,
+            'birds_only': birds_only,
             # Drawn now if shown now; a queued egg draws its cards when its turn comes
-            'cards': cards.roll_offer(rarity, rng) if state.choice.active is None else None,
+            'cards': roll(rarity, rng) if state.choice.active is None else None,
             'index': 0,
             'refusable': False,
         }
@@ -111,7 +115,7 @@ def reroll(rng=random):
     if offer is None or offer['kind'] != 'egg' or rerolls_left() <= 0:
         return False
     state.choice.rerolls -= 1
-    offer['cards'] = cards.roll_offer(offer['rarity'], rng)
+    offer['cards'] = (cards.roll_birds if offer.get('birds_only') else cards.roll_offer)(offer['rarity'], rng)
     offer['index'] = 0
     events.emit('choice_rerolled', offer=offer)
     return True

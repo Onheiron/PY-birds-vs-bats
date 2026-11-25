@@ -56,20 +56,39 @@ def test_the_merchant_sells_for_the_runs_gold():
         state.meta.run['level'] = 30  # 30 gold earned so far
         merchant.visit(1)
         offer = state.choice.active
-        names = [c['id'] for c in offer['cards']]
-        assert names == ['common_egg', 'rare_egg', 'mend', 'epic_egg', 'leave']
-        rare = offer['cards'][1]
-        assert rare['price'] == round(8 * 0.8)
-        lives = state.game.lives
-        choices.pick(2)  # mend
-        assert state.game.lives == lives + 1 and meta.run_gold() == 30 - offer['cards'][2]['price']
+        assert [c['id'] for c in offer['cards']] == ['common_egg', 'rare_egg', 'epic_egg', 'leave']
+        assert offer['cards'][1]['price'] == round(8 * 0.8)
+        choices.pick(1)  # a rare egg: paid, and its cards come next
+        assert meta.run_gold() == 30 - offer['cards'][1]['price']
+        assert state.choice.active['kind'] == 'egg' and state.choice.active['rarity'] == 'rare'
+        state.choice.active = None
         merchant.visit(1)
         state.meta.run['spent'] = 30  # nothing left to pay with
-        assert choices.pick(1) is None and state.choice.active is not None  # the merchant waits
+        assert choices.pick(0) is None and state.choice.active is not None  # the merchant waits
         choices.pick(len(state.choice.active['cards']) - 1)  # leave
         assert state.choice.active is None
         merchant.visit(6)  # never after the last world
         assert state.choice.active is None
+
+
+def test_brood_where_birds_bring_lives_back_mend_where_they_do_not(monkeypatch):
+    from src.core import constants
+
+    with Simulation(seed=1, key_rate=0):
+        new_run()
+        state.choice.active = None
+        state.meta.run['level'] = 30
+        ids = lambda: [w['id'] for w in merchant.wares()]  # noqa: E731
+        assert 'mend' not in ids() and 'brood' not in ids()  # ADVENTURE, a full flock
+        state.birds.lost[0] = True  # room in the flock
+        assert 'brood' in ids()
+        brood = next(w for w in merchant.wares() if w['id'] == 'brood')
+        merchant.buy(brood)
+        assert state.choice.active['title'] == 'BROOD'
+        assert all(c['kind'] == 'bird' for c in state.choice.active['cards'])
+        state.choice.active = None
+        monkeypatch.setattr(constants.game, 'life_recovery_on_spawn', False)  # SURVIVAL, LEGENDARY
+        assert 'mend' in ids() and 'brood' not in ids()
 
 
 def test_survival_and_legendary_must_be_earned():

@@ -1011,10 +1011,14 @@ merchant:
   wares:
     common_egg: {name: Common Egg,    desc: "Open a common egg now.",        price: 4,  egg: common}
     rare_egg:   {name: Rare Egg,      desc: "Open a rare egg now.",          price: 8,  egg: rare}
-    mend:       {name: Mend,          desc: "Get one life back.",            price: 5,  lives: 1}
+    # Only where lives are not won back by hatching birds (SURVIVAL, LEGENDARY)
+    mend:       {name: Mend,          desc: "Get one life back.",            price: 5,  lives: 1, needs: no_life_recovery}
+    # Only where hatching wins a life back (PEACEFUL, ADVENTURE), and with room in the flock
+    brood:      {name: Brood,         desc: "An egg of bird cards only: a new bird hatches.", price: 5, egg: uncommon,
+                 birds_only: true, needs: [life_recovery, flock_room]}
     epic_egg:   {name: Epic Egg,      desc: "Open an epic egg now.",         price: 14, egg: epic}
     feather:    {name: Lucky Feather, desc: "One more egg reroll this run.", price: 3,  rerolls: 1}
-  stock: [common_egg, rare_egg, mend]
+  stock: [common_egg, rare_egg, brood, mend]  # a ware whose ``needs`` is not met is not shown
   extra: [epic_egg, feather]
 
 # Online leaderboards (src/services/online.py): an anonymous Firebase account, finished
