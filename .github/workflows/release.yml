@@ -1,11 +1,18 @@
 name: Release
 
 # Push a tag like v2.1.0 (matching __version__ in src/__init__.py) to publish a
-# GitHub release with standalone binaries for Linux, macOS and Windows.
+# GitHub release with standalone binaries for Linux, macOS and Windows and the
+# Steam Linux build. Or run it by hand with "publish": it tags the commit
+# v<__version__> and publishes the release itself.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Tag this commit v<version> and publish the release"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -107,7 +114,7 @@ jobs:
   publish:
     name: Publish GitHub release
     needs: [verify, build, steam-linux]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || inputs.publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -122,5 +129,8 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           name: BVB ${{ needs.verify.outputs.version }}
+          # Run by hand: the tag is created on this commit
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', needs.verify.outputs.version) }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: artifacts/*
