@@ -52,7 +52,9 @@ pip install dist/birds_vs_bats-*.whl
    - secret `BUTLER_API_KEY`: the key;
    - variable `ITCH_GAME`: `<user>/<game>` (for example `onheiron/birds-vs-bats`).
 
-From the next release the builds are pushed to the channels `linux`, `mac`
+To push the builds of a release already published (the first time, or again),
+run the workflow **itch.io** (Actions → itch.io → Run workflow). From the next
+release on, the builds are pushed to the channels `linux`, `mac`
 and `windows`; itch.io tags them by platform from the channel name. The itch
 app installs them and updates them by itself; on the Steam Deck, add the
 installed `BVB` to Steam as a non-Steam game once.

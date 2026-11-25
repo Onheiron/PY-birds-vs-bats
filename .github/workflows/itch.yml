@@ -1,0 +1,53 @@
+name: itch.io
+
+# Push the builds of a published GitHub release to itch.io (channels linux,
+# mac, windows), e.g. after setting itch.io up, or to push one again. The
+# release workflow does the same for every new release. Needs the repository
+# variable ITCH_GAME ("user/game") and the secret BUTLER_API_KEY.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release to push, e.g. 2.2.0 (empty: the latest)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  itch:
+    name: Push to itch.io
+    runs-on: ubuntu-latest
+    env:
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check the settings
+        run: |
+          [ -n "${{ vars.ITCH_GAME }}" ] || { echo "::error::Set the repository variable ITCH_GAME (user/game)"; exit 1; }
+          [ -n "$BUTLER_API_KEY" ] || { echo "::error::Set the repository secret BUTLER_API_KEY"; exit 1; }
+      - name: Download the release's builds
+        run: |
+          tag="${{ inputs.version }}"
+          tag="${tag:+v${tag#v}}"
+          gh release download $tag --repo "${{ github.repository }}" --dir artifacts --pattern 'BVB-*'
+          ls artifacts
+          version=$(ls artifacts/BVB-*-windows-x86_64.zip | sed -E 's/.*BVB-(.*)-windows-x86_64.zip/\1/')
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Get butler
+        run: |
+          curl -sSfL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler && chmod +x butler/butler
+      - name: Unpack one folder per channel
+        run: |
+          mkdir -p itch/linux itch/mac itch/windows
+          tar -xzf artifacts/BVB-$VERSION-steam-linux.tar.gz -C itch/linux --strip-components=1
+          tar -xzf artifacts/BVB-$VERSION-macos-arm64.tar.gz -C itch/mac --strip-components=1
+          unzip -q artifacts/BVB-$VERSION-windows-x86_64.zip -d itch/windows-tmp
+          mv itch/windows-tmp/*/* itch/windows/
+      - name: Push
+        run: |
+          for channel in linux mac windows; do
+            butler/butler push "itch/$channel" "${{ vars.ITCH_GAME }}:$channel" --userversion "$VERSION"
+          done
