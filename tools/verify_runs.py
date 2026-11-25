@@ -164,17 +164,11 @@ def verify(db):
 
 
 def wipe(db):
-    """Delete every document of every collection (a fresh start)."""
-    count = 0
+    """Delete every document of every collection, subcollections included (a fresh start)."""
     for collection in db.collections():
-        for snap in collection.stream():
-            for sub in snap.reference.collections():
-                for child in sub.stream():
-                    child.reference.delete()
-                    count += 1
-            snap.reference.delete()
-            count += 1
-    print(f'deleted {count} document(s)')
+        print(f'deleting {collection.id}...', flush=True)
+        db.recursive_delete(collection)  # in batches (BulkWriter): no long reads
+    print('done')
 
 
 def main():
