@@ -13,28 +13,60 @@ def fresh(gold=0):
     meta.start_run()
 
 
-def test_run_achievements_pay_gold_each_run():
+def test_every_run_pays_a_reward_by_level_bosses_bats_and_difficulty():
     with Simulation(seed=1, key_rate=0):
+        state.settings.difficulty = 1  # ADVENTURE: x1
         fresh()
         events.emit('level_up', level=3)
-        # First Steps, Forest Edge and Untouched (no bird lost yet)
-        assert set(state.meta.run_achievements) == {'first_steps', 'forest_edge', 'untouched'}
-        assert meta.run_gold() == 2 + 3 + 6
+        for _ in range(50):
+            events.emit('bat_killed', bat={}, tier=1, killer=0)
+        state.meta.run['bosses'] = 1
+        assert meta.run_gold() == 3 * 1 + 1 * 4 + 50 // 25
         gold = meta.end_run(save=False)
-        assert gold == 11 and meta.profile()['gold'] >= 11
-        # Next run: the same achievements pay again
+        assert gold == 9 and meta.profile()['gold'] >= 9
+        # Next run: it pays again, x1.5 on SURVIVAL
+        state.settings.difficulty = 2
         state.game.meta_applied = False
         meta.start_run()
-        events.emit('level_up', level=3)
-        assert meta.run_gold() == 11
+        events.emit('level_up', level=2)
+        assert meta.run_gold() == 3  # 2 x 1.5
+        state.settings.difficulty = 1
 
 
-def test_limits_in_goals():
+def test_goals_within_one_run():
     with Simulation(seed=1, key_rate=0):
         fresh()
         events.emit('bird_lost', bird=0, color='', cause='floor')
-        events.emit('level_up', level=3)
-        assert 'untouched' not in state.meta.run_achievements, 'a bird was lost before level 1-3'
+        events.emit('level_up', level=6)
+        assert 'careful_flock' in meta.profile()['achievements'], 'reached 2-3 losing one bird'
+        fresh()
+        for _ in range(4):
+            events.emit('bird_lost', bird=0, color='', cause='floor')
+        state.meta.profile['achievements'] = []
+        events.emit('level_up', level=6)
+        assert 'careful_flock' not in meta.profile()['achievements'], '4 birds lost in this run'
+
+
+def test_world_goals_are_counted_when_its_boss_falls():
+    with Simulation(seed=1, key_rate=0):
+        fresh()
+        events.emit('boss_spawned', boss_type='normal')
+        events.emit('boss_defeated', boss_type='normal')
+        run = state.meta.run
+        assert run['bosses'] == 1 and run['clean_worlds'] == 1 and run['clean_bosses'] == 1
+        assert {'boss_down', 'clean_world', 'clean_boss'} <= set(meta.profile()['achievements'])
+        assert meta.profile()['boss_kinds'] == ['normal']
+        events.emit('bird_lost', bird=0, color='', cause='floor')
+        events.emit('boss_defeated', boss_type='wind')
+        assert run['clean_worlds'] == 1  # a bird was lost in the second world
+
+
+def test_evolutions_count():
+    with Simulation(seed=1, key_rate=0):
+        fresh()
+        events.emit('bird_evolved', bird=0, into='GOLD')
+        assert state.meta.run['evolved_gold'] == 1
+        assert 'golden_touch' in meta.profile()['achievements']
 
 
 def test_global_achievements_pay_once():
@@ -45,9 +77,9 @@ def test_global_achievements_pay_once():
         gold = meta.profile()['gold']
         state.game.meta_applied = False
         meta.start_run()
-        meta.end_run(save=False)
+        reward = meta.end_run(save=False)
         assert meta.profile()['achievements'].count('hatchling') == 1
-        assert meta.profile()['gold'] == gold
+        assert meta.profile()['gold'] == gold + reward  # only the run's reward
 
 
 def test_upgrades_need_gold_and_requirements_and_apply_to_new_runs():
@@ -84,5 +116,6 @@ def test_gold_digger_multiplies_run_gold():
         meta.buy('gold_digger', save=False)
         state.game.meta_applied = False
         meta.start_run()
-        events.emit('level_up', level=3)
-        assert meta.run_gold() == round(11 * 1.1)
+        state.settings.difficulty = 1
+        events.emit('level_up', level=10)
+        assert meta.run_gold() == round(10 * 1.1)

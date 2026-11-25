@@ -4,20 +4,17 @@ The **profile** (saved in the player's save folder, see save_manager) holds
 the gold, the upgrades bought, the global achievements unlocked and lifetime
 counters.
 
-**Achievements** (``achievements`` in config.yml) come in two kinds:
+**Gold** comes two ways:
 
-- ``run`` achievements are goals for one run ("reach level 6 losing at most
-  3 birds"). They can be met again every run, and pay their gold every time.
-- ``global`` achievements are goals over every run played ("kill 2,500 bats
-  in all"). Each pays once, the first time.
+- every run pays a **reward** when it ends (``run_reward`` in config.yml):
+  so much per level reached, per boss, per bats killed, × the difficulty and
+  × the Gold Digger upgrade;
+- **achievements** (``achievements.global``) pay once, the first time. A goal
+  is ``all: {counter: minimum, ...}`` and optionally ``most: {counter:
+  maximum, ...}``, over every run played (lifetime counters add up; ``level``,
+  ``score`` and ``max_gear`` keep the best), or within one run (``in_a_run``).
 
-A goal is ``all: {counter: minimum, ...}`` and optionally
-``most: {counter: maximum, ...}``. Run counters (``RUN_COUNTERS``) are
-counted from game events; lifetime counters add them up over the runs
-(``level`` and ``score`` keep the best value instead).
-
-The gold of a run (its achievements, × the Gold Digger upgrade) is added to
-the profile when the run ends. **Upgrades** (``upgrades`` in config.yml) are
+Run counters (``RUN_COUNTERS``) are counted from game events. **Upgrades** (``upgrades`` in config.yml) are
 bought with it from the title menu and apply from the start of every new
 run: they are a tree, each node needing some levels of others first.
 """
@@ -48,13 +45,34 @@ RUN_COUNTERS = (
     'battery_shots',
     'full_charges',
     'birds_lost',
+    'max_gear',
+    'won',
+    'won_survival',
+    'won_legendary',
+    'evolved_gold',
+    'evolved_white',
+    'evolved_orange',
+    'full_house_worlds',
+    'clean_worlds',
+    'swapless_worlds',
+    'clean_bosses',
 )
 # Lifetime counters that keep the best run instead of adding up
-BEST_COUNTERS = ('level', 'score')
+BEST_COUNTERS = ('level', 'score', 'max_gear')
+# Difficulty indexes (state.settings.difficulty): PEACEFUL, ADVENTURE, SURVIVAL, LEGENDARY
+SURVIVAL, LEGENDARY = 2, 3
 
 
 def new_profile():
-    return {'gold': 0, 'gold_earned': 0, 'runs': 0, 'upgrades': {}, 'achievements': [], 'lifetime': {}}
+    return {
+        'gold': 0,
+        'gold_earned': 0,
+        'runs': 0,
+        'upgrades': {},
+        'achievements': [],
+        'lifetime': {},
+        'boss_kinds': [],
+    }
 
 
 def _cfg(section):
@@ -83,6 +101,7 @@ def start_run():
     meta.run_gold = 0
     meta.run_achievements = []
     meta.finished = False
+    _start_world()
     if not getattr(state.game, 'meta_applied', False):
         apply_upgrades()
         state.game.meta_applied = True
@@ -102,8 +121,8 @@ def end_run(save=True):
         else:
             life[name] = life.get(name, 0) + value
     prof['runs'] = prof.get('runs', 0) + 1
-    _check_global()
-    gold = run_gold()
+    _check_global(run=dict(meta.run))
+    gold = meta.run_gold = run_gold()
     prof['gold'] = prof.get('gold', 0) + gold
     prof['gold_earned'] = prof.get('gold_earned', 0) + gold
     if save:
@@ -113,10 +132,24 @@ def end_run(save=True):
     return gold
 
 
+def run_reward_parts():
+    """(base gold of the run so far, difficulty multiplier, Gold Digger multiplier)."""
+    cfg = _as_dict(_cfg('run_reward'))
+    run = state.meta.run or {}
+    base = (
+        run.get('level', 0) * float(cfg.get('per_level', 1))
+        + run.get('bosses', 0) * float(cfg.get('per_boss', 4))
+        + run.get('bats', 0) // max(1, int(cfg.get('bats_per_gold', 25)))
+    )
+    table = list(cfg.get('difficulty') or [1.0])
+    difficulty = float(table[min(max(0, state.settings.difficulty), len(table) - 1)])
+    return base, difficulty, 1 + upgrade_value('gold_pct') / 100
+
+
 def run_gold():
-    """Gold this run has earned so far (achievements × gold multiplier)."""
-    meta = state.meta
-    return int(round(meta.run_gold * (1 + upgrade_value('gold_pct') / 100)))
+    """Gold this run pays when it ends (its reward × difficulty × Gold Digger)."""
+    base, difficulty, digger = run_reward_parts()
+    return int(round(base * difficulty * digger))
 
 
 def _count(name, amount=1):
@@ -144,24 +177,16 @@ def _met(goal, counters):
     return all(counters.get(name, 0) <= maximum for name, maximum in _as_dict(goal.get('most')).items())
 
 
-def run_achievements():
-    return _as_dict(_cfg('achievements').get('run'))
-
-
 def global_achievements():
     return _as_dict(_cfg('achievements').get('global'))
 
 
+def run_achievements():
+    """No achievement pays every run any more (the run reward does): kept for old callers."""
+    return {}
+
+
 def _check_run():
-    meta = state.meta
-    for aid, entry in run_achievements().items():
-        if aid in meta.run_achievements or not _met(entry, meta.run):
-            continue
-        entry = _as_dict(entry)
-        meta.run_achievements.append(aid)
-        meta.run_gold += entry.get('gold', 0)
-        notify(f"{entry.get('name', aid)}  +{entry.get('gold', 0)} gold", title='Achievement!')
-        events.emit('achievement', id=aid, kind='run', gold=entry.get('gold', 0))
     _check_global()
 
 
@@ -173,18 +198,33 @@ def lifetime_with_run():
         for name, value in run.items():
             life[name] = max(life.get(name, 0), value) if name in BEST_COUNTERS else life.get(name, 0) + value
     life['runs'] = profile().get('runs', 0) + (0 if state.meta.finished else 1)
+    life['boss_kinds'] = len(profile().get('boss_kinds', []))
+    life['birds_discovered'] = _birds_discovered()
     return life
 
 
-def _check_global():
+def _birds_discovered():
+    from src.entities.bird_types import BirdType
+
+    names = {getattr(BirdType, n) for n in dir(BirdType) if n.isupper()} - {BirdType.ZOMBIE}
+    return len(set(state.discovery.birds) & names)
+
+
+def _check_global(run=None):
+    """Pay the global achievements just reached; ``run``: the counters of the run (in_a_run goals)."""
     prof = profile()
     done = prof.setdefault('achievements', [])
     counters = lifetime_with_run()
+    if run is None:
+        run = dict(state.meta.run or {}) if not state.meta.finished else {}
     for aid, entry in global_achievements().items():
-        if aid in done or not _met(entry, counters):
+        if aid in done:
+            continue
+        if not _met(entry, run if _as_dict(entry).get('in_a_run') else counters):
             continue
         entry = _as_dict(entry)
         done.append(aid)
+        state.meta.run_achievements.append(aid)
         gold = entry.get('gold', 0)
         prof['gold'] = prof.get('gold', 0) + gold
         prof['gold_earned'] = prof.get('gold_earned', 0) + gold
@@ -201,6 +241,57 @@ def _on_level_up(level):
 
 def _on_score(score):
     _set_best('score', int(score))
+    _set_best('max_gear', int(state.game.speed))
+
+
+def _start_world():
+    """Remember where a world starts: birds lost and swaps so far (for the per-world goals)."""
+    run = state.meta.run or {}
+    state.meta.world_start = {'birds_lost': run.get('birds_lost', 0), 'swaps': run.get('swaps', 0)}
+    state.meta.boss_start_lost = None
+
+
+def _on_boss_spawned(boss_type):
+    state.meta.boss_start_lost = (state.meta.run or {}).get('birds_lost', 0)
+
+
+def _alive_birds():
+    from src.entities.sprites import ZOMBIE
+
+    birds = state.birds
+    return sum(1 for i in range(len(birds.colors)) if not birds.lost[i] and birds.colors[i] != ZOMBIE)
+
+
+def _on_boss_defeated(boss_type):
+    """A boss ends its world: count the boss, the world's goals, and the win after the last one."""
+    run = state.meta.run
+    if run is None:
+        return
+    lost = run.get('birds_lost', 0)
+    start = getattr(state.meta, 'world_start', None) or {'birds_lost': 0, 'swaps': 0}
+    if getattr(state.meta, 'boss_start_lost', None) is not None and lost == state.meta.boss_start_lost:
+        run['clean_bosses'] = run.get('clean_bosses', 0) + 1
+    if lost == start['birds_lost']:
+        run['clean_worlds'] = run.get('clean_worlds', 0) + 1
+    if run.get('swaps', 0) == start['swaps']:
+        run['swapless_worlds'] = run.get('swapless_worlds', 0) + 1
+    if _alive_birds() >= constants.layout.num_balls:
+        run['full_house_worlds'] = run.get('full_house_worlds', 0) + 1
+    kinds = profile().setdefault('boss_kinds', [])
+    if boss_type not in kinds:
+        kinds.append(boss_type)
+    if state.game.level_group >= 6:
+        run['won'] = 1
+        run['won_survival'] = int(state.settings.difficulty >= SURVIVAL)
+        run['won_legendary'] = int(state.settings.difficulty >= LEGENDARY)
+    _start_world()
+    _count('bosses')
+
+
+def _on_bird_evolved(bird, into):
+    name = f'evolved_{str(into).lower()}'
+    if name in RUN_COUNTERS:
+        _count(name)
 
 
 def _on_bat_killed(bat, tier, killer):
@@ -235,7 +326,9 @@ _HANDLERS = {
     'score_changed': _on_score,
     'bat_killed': _on_bat_killed,
     'mini_bat_killed': lambda bat, killer: _count('mini_bats'),
-    'boss_defeated': lambda boss_type: _count('bosses'),
+    'boss_spawned': _on_boss_spawned,
+    'boss_defeated': _on_boss_defeated,
+    'bird_evolved': _on_bird_evolved,
     'choice_offered': _on_choice_offered,
     'bird_hatched': lambda bird, egg, loot: _count('hatched'),
     'pact_made': lambda pact: _count('pacts'),

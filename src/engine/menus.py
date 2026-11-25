@@ -504,12 +504,12 @@ def _upgrades_items():
 
 
 def _achievements_items():
-    from src.ui.pages import achievement_pages
+    from src.ui.pages import achievement_page_label, achievement_pages
 
     items = []
     for content in achievement_pages():
-        _prefix, kind, number = content.split('_')
-        items.append(Item(f'{kind.upper()} {int(number) + 1}', opens=f'page_{content}'))
+        label, count = achievement_page_label(content)
+        items.append(Item(label, 'option', (lambda c=count: c), opens=f'page_{content}'))
     return items + [_back_item()]
 
 

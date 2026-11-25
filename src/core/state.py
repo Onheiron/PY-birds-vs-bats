@@ -353,7 +353,9 @@ game = _new_game()
 player = _new_player()
 stats = _new_stats()
 # Meta progression (src/engine/meta.py): the profile outlives games
-meta = SimpleNamespace(profile=None, run=None, run_gold=0, run_achievements=[], finished=True)
+meta = SimpleNamespace(
+    profile=None, run=None, run_gold=0, run_achievements=[], finished=True, world_start=None, boss_start_lost=None
+)
 choice = _new_choice()
 ui = _new_ui()
 settings = _new_settings()

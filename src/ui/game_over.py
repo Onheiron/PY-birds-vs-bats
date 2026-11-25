@@ -49,17 +49,21 @@ def session_stats():
     return elapsed, elapsed_str, avg_ppm
 
 
-def _achievement_gold(aid):
+def _gold_line():
+    """The gold of the run: its reward, and what the achievements reached in it paid."""
     from src.engine import meta
 
-    entry = meta.run_achievements().get(aid, {})
-    return (entry if isinstance(entry, dict) else vars(entry)).get('gold', 0)
-
-
-def _banked_gold():
-    from src.engine import meta
-
-    return meta.run_gold()
+    reward = state.meta.run_gold if state.meta.finished else meta.run_gold()
+    table = meta.global_achievements()
+    extra = sum(
+        vars(e).get('gold', 0) if not isinstance(e, dict) else e.get('gold', 0)
+        for e in (table.get(a) for a in state.meta.run_achievements)
+        if e is not None
+    )
+    count = len(state.meta.run_achievements)
+    if not count:
+        return f"Gold Earned:    {reward}"
+    return f"Gold Earned:    {reward} + {extra} ({count} achievement{'s' if count > 1 else ''})"
 
 
 def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_length=20):
@@ -96,12 +100,11 @@ def draw(fb, elapsed_str, selected=0, player_name="", phase="menu", name_max_len
     for i, line in enumerate(_BOX_LINES):
         centered(center_y - 6 + i, line, RED)
 
-    gold = sum(_achievement_gold(a) for a in state.meta.run_achievements)
     stats = (
         f"Final Score:    {int(state.game.score):,}",
         f"Level Reached:  {state.game.level}",
         f"Time Played:    {elapsed_str}",
-        f"Gold Earned:    {_banked_gold()} ({len(state.meta.run_achievements)} achievements, {gold} base)",
+        _gold_line(),
     )
     for i, line in enumerate(stats):
         centered(center_y - 2 + i, line, YELLOW if line.startswith('Gold') else '')

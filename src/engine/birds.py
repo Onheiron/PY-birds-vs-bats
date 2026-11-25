@@ -146,6 +146,14 @@ def transform_bird_to_s(bi):
         state.birds.speeds[bi] = target_speed
     state.birds.transformed[bi] = True
     state.birds.pending_transform[bi] = None
+    _evolved(bi, target_color)
+
+
+def _evolved(bird, color):
+    """A bird evolved (Gold, White, Phoenix): achievements count it."""
+    from src.engine import events
+
+    events.emit('bird_evolved', bird=bird, into=get_bird_type_by_color(color))
 
 
 def check_pending_transforms(dead_bird_color):
@@ -171,6 +179,7 @@ def check_pending_transforms(dead_bird_color):
                 state.birds.speeds[bi] = target_speed
             state.birds.transformed[bi] = True
             state.birds.pending_transform[bi] = None
+            _evolved(bi, dead_bird_color)
             return  # Only transform one
 
 

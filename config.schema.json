@@ -23,6 +23,9 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -46,362 +49,8 @@
                 "gold": {
                   "type": "number"
                 },
-                "name": {
+                "group": {
                   "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "boss_bane": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "bosses": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "champion": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "level": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "dealer": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "pacts": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "devoted": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "runs": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "egg_collector": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "eggs": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "elite_bane": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "elites": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "hatchling": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "runs": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "legend_hunter": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "legendary_eggs": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "nursery": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "hatched": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "regular": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "runs": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "world_four": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "level": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "world_six": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "level": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "world_three": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "level": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "world_two": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "level": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            }
-          },
-          "type": "object"
-        },
-        "run": {
-          "properties": {
-            "all_bosses": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "bosses": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "bat_plague": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "bats": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
                 },
                 "name": {
                   "type": "string"
@@ -425,17 +74,20 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
               },
               "type": "object"
             },
-            "border_keeper": {
+            "birdwatcher": {
               "properties": {
                 "all": {
                   "properties": {
-                    "level": {
+                    "birds_discovered": {
                       "type": "number"
                     }
                   },
@@ -446,6 +98,9 @@
                 },
                 "gold": {
                   "type": "number"
+                },
+                "group": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -469,6 +124,59 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "boss_bane": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "bosses": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "boss_down": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "bosses": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -490,6 +198,12 @@
                 },
                 "gold": {
                   "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "in_a_run": {
+                  "type": "boolean"
                 },
                 "most": {
                   "properties": {
@@ -521,6 +235,84 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "champion": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "won": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "clean_boss": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "clean_bosses": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "clean_world": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "clean_worlds": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -542,6 +334,12 @@
                 },
                 "gold": {
                   "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "in_a_run": {
+                  "type": "boolean"
                 },
                 "name": {
                   "type": "string"
@@ -565,13 +363,66 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
               },
               "type": "object"
             },
-            "elite_hunter": {
+            "devoted": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "runs": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "egg_collector": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "eggs": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "elite_bane": {
               "properties": {
                 "all": {
                   "properties": {
@@ -587,27 +438,8 @@
                 "gold": {
                   "type": "number"
                 },
-                "name": {
+                "group": {
                   "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "elite_slayer": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "elites": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
                 },
                 "name": {
                   "type": "string"
@@ -631,71 +463,11 @@
                 "gold": {
                   "type": "number"
                 },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "epic_find": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "epic_eggs": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
+                "group": {
                   "type": "string"
                 },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "exterminator": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "bats": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "first_boss": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "bosses": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
+                "in_a_run": {
+                  "type": "boolean"
                 },
                 "name": {
                   "type": "string"
@@ -719,49 +491,8 @@
                 "gold": {
                   "type": "number"
                 },
-                "name": {
+                "group": {
                   "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "forest_edge": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "level": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            },
-            "four_bosses": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "bosses": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
                 },
                 "name": {
                   "type": "string"
@@ -785,17 +516,20 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
               },
               "type": "object"
             },
-            "full_nest": {
+            "full_house": {
               "properties": {
                 "all": {
                   "properties": {
-                    "hatched": {
+                    "full_house_worlds": {
                       "type": "number"
                     }
                   },
@@ -807,13 +541,91 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
               },
               "type": "object"
             },
-            "legendary_find": {
+            "golden_touch": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "evolved_gold": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "hatchling": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "runs": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "legend": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "won_legendary": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "legend_hunter": {
               "properties": {
                 "all": {
                   "properties": {
@@ -828,6 +640,34 @@
                 },
                 "gold": {
                   "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "menagerie": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "boss_kinds": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -855,17 +695,20 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
               },
               "type": "object"
             },
-            "pest_control": {
+            "no_swaps": {
               "properties": {
                 "all": {
                   "properties": {
-                    "bats": {
+                    "swapless_worlds": {
                       "type": "number"
                     }
                   },
@@ -877,17 +720,20 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
               },
               "type": "object"
             },
-            "rare_find": {
+            "nursery": {
               "properties": {
                 "all": {
                   "properties": {
-                    "rare_eggs": {
+                    "hatched": {
                       "type": "number"
                     }
                   },
@@ -898,6 +744,34 @@
                 },
                 "gold": {
                   "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "rebirth": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "evolved_orange": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -921,18 +795,23 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
+                "in_a_run": {
+                  "type": "boolean"
+                },
                 "name": {
                   "type": "string"
                 }
               },
               "type": "object"
             },
-            "six_figures": {
+            "regular": {
               "properties": {
-                "000 in a run": {},
                 "all": {
                   "properties": {
-                    "score": {
+                    "runs": {
                       "type": "number"
                     }
                   },
@@ -943,6 +822,9 @@
                 },
                 "gold": {
                   "type": "number"
+                },
+                "group": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -966,6 +848,34 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "survivor": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "won_survival": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
@@ -988,17 +898,20 @@
                 "gold": {
                   "type": "number"
                 },
+                "group": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 }
               },
               "type": "object"
             },
-            "two_bosses": {
+            "templar": {
               "properties": {
                 "all": {
                   "properties": {
-                    "bosses": {
+                    "evolved_white": {
                       "type": "number"
                     }
                   },
@@ -1009,6 +922,34 @@
                 },
                 "gold": {
                   "type": "number"
+                },
+                "group": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "top_gear": {
+              "properties": {
+                "all": {
+                  "properties": {
+                    "max_gear": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "gold": {
+                  "type": "number"
+                },
+                "group": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -1018,36 +959,6 @@
             },
             "tycoon": {
               "additionalProperties": {},
-              "type": "object"
-            },
-            "untouched": {
-              "properties": {
-                "all": {
-                  "properties": {
-                    "level": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "desc": {
-                  "type": "string"
-                },
-                "gold": {
-                  "type": "number"
-                },
-                "most": {
-                  "properties": {
-                    "birds_lost": {
-                      "type": "number"
-                    }
-                  },
-                  "type": "object"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
               "type": "object"
             }
           },
@@ -5474,6 +5385,26 @@
           "type": "number"
         },
         "boosted_speed": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "run_reward": {
+      "properties": {
+        "bats_per_gold": {
+          "type": "number"
+        },
+        "difficulty": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "per_boss": {
+          "type": "number"
+        },
+        "per_level": {
           "type": "number"
         }
       },

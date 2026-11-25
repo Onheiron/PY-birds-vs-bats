@@ -21,6 +21,7 @@ SECTIONS = (
     'layout',
     'power_damage',
     'achievements',
+    'run_reward',
     'upgrades',
     'cards',
     'pacts',

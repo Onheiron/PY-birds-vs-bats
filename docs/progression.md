@@ -7,67 +7,99 @@ counters.
 
 ## Gold and achievements
 
-Gold comes from achievements. There are two kinds (`achievements` in
-`config.yml`):
+Gold comes from two places (`run_reward` and `achievements` in `config.yml`):
 
-- **Run achievements** are goals for a single run. They can be met again
-  every run, and pay their gold every time: they are a run's income.
-- **Global achievements** are goals over every run played. Each pays once,
-  the first time.
+- **The run's reward**, paid at the end of every run (game over, quit or back
+  to the title): 1 gold per level reached, 4 per boss defeated and 1 per 25
+  bats, multiplied by the difficulty (PEACEFUL x0.5, ADVENTURE x1,
+  SURVIVAL x1.5, LEGENDARY x2) and by the Gold Digger upgrade.
+- **Achievements**, each paid once, the first time it is reached. They are
+  grouped (Exploration, Bosses, Flock, Skill, Build, Collection, Totals) and
+  pay 2520 gold in all.
 
-The run's gold is banked when the run ends (game over, quit or back to the
-title), multiplied by the Gold Digger upgrade; the game over screen shows it.
-Achievements met during a run are announced on the right panel. The title
-menu's ACHIEVEMENTS pages list both kinds, with the global ones already
-unlocked ticked.
+The game over screen shows the run's reward and what the achievements
+reached in it paid. Achievements are announced on the right panel when they
+are reached; the title menu's ACHIEVEMENTS lists the groups with how many are
+done, and each page ticks the ones already reached.
 
 A goal is `all: {counter: minimum}` and optionally `most: {counter:
-maximum}` ("reach level 6 losing at most 3 birds"). Counters, counted from
-game events: level, score, bats, elites, mini_bats, bosses, eggs,
-rare/epic/legendary/mythical_eggs, hatched, pacts, swaps, powers,
-double_powers (second uses in an ascent), battery_shots (Red shots with two
-shooters beside), full_charges (Purple), birds_lost; global goals also have
-runs. Lifetime counters add the runs up, except level and score, which keep
-the best.
+maximum}` ("reach level 6 losing at most 3 birds"). Goals are over every run
+played (lifetime counters: they add the runs up, except level, score and
+max_gear, which keep the best), or, with `in_a_run: true`, within a single
+run. Counters, counted from game events: level, score, max_gear, bats,
+elites, mini_bats, bosses, eggs, rare/epic/legendary/mythical_eggs, hatched,
+pacts, swaps, powers, double_powers (second uses in an ascent),
+battery_shots (Red shots with two shooters beside), full_charges (Purple),
+birds_lost, evolved_gold/white/orange (evolutions), won, won_survival,
+won_legendary; per world, counted when its boss falls: clean_worlds (no bird
+lost), swapless_worlds, full_house_worlds (every lane with a living bird),
+clean_bosses (no bird lost during the boss); and runs, boss_kinds (kinds of
+boss defeated) and birds_discovered (Birdpedia).
 
-### Run achievements
+### Achievements
+
+**Exploration**
 
 | Achievement | Goal | Gold |
 |---|---|--:|
-| First Steps | Reach level 1-2 | 2 |
-| Forest Edge | Reach level 1-3 | 3 |
-| Borderlands | Reach the second world | 5 |
-| Border Keeper | Reach level 2-3 | 8 |
-| Beyond the Border | Reach the third world | 15 |
-| Deep Woods | Reach the fourth world | 20 |
-| Swamp Walker | Reach the fifth world | 25 |
-| Cave Diver | Reach the last world | 30 |
-| Summit | Reach level 6-3 | 40 |
-| Boss Down | Defeat a boss | 5 |
-| Double Trouble | Defeat two bosses in a run | 10 |
-| Boss Rush | Defeat four bosses in a run | 20 |
-| Lord of the Skies | Defeat six bosses in a run | 40 |
-| Pest Control | Kill 25 bats in a run | 4 |
-| Exterminator | Kill 75 bats in a run | 8 |
-| Plague Doctor | Kill 150 bats in a run | 15 |
-| Elite Hunter | Kill an elite bat | 4 |
-| Elite Slayer | Kill 5 elite bats in a run | 10 |
-| Rare Find | Open a rare egg | 2 |
-| Epic Find | Open an epic egg | 5 |
-| Legendary Find | Open a legendary egg | 12 |
-| Mythical Find | Open a mythical egg | 30 |
-| Full Nest | Hatch 3 birds in a run | 4 |
-| Deal Maker | Make a pact | 3 |
-| Red Battery | Fire 5 Red shots with two shooters beside | 5 |
-| Full Charge | Fire a fully charged Purple shot | 4 |
-| Encore | Fire 10 second powers in a run | 4 |
-| Untouched | Reach level 1-3 without losing a bird | 6 |
-| Careful Flock | Reach level 2-3 losing at most 3 birds | 12 |
-| Six Figures | Score 100 | 4 |
-| Millionaire | Score 1 | 10 |
-| Tycoon | Score 10 | 20 |
+| First Steps | Reach level 1-2 | 10 |
+| Borderlands | Reach the second world | 20 |
+| Beyond the Border | Reach the third world | 35 |
+| Deep Woods | Reach the fourth world | 50 |
+| Swamp Walker | Reach the fifth world | 70 |
+| Cave Diver | Reach the last world | 90 |
+| Summit | Reach level 6-3 | 120 |
+| Champion | Defeat the last boss | 200 |
+| Survivor | Win on SURVIVAL | 250 |
+| Legend | Win on LEGENDARY | 400 |
 
-### Global achievements
+**Bosses**
+
+| Achievement | Goal | Gold |
+|---|---|--:|
+| Boss Down | Defeat a boss | 15 |
+| Boss Bane | Defeat 10 bosses in all | 40 |
+| Menagerie | Defeat every kind of boss | 100 |
+
+**Flock**
+
+| Achievement | Goal | Gold |
+|---|---|--:|
+| Golden Touch | Evolve a Yellow into Gold | 40 |
+| Templar | Evolve a Blue into White | 40 |
+| Rebirth | Evolve a Red into Phoenix | 40 |
+| Birdwatcher | Discover every bird | 100 |
+| Full House | End a world with all 9 birds | 50 |
+| Nursery | Hatch 30 birds in all | 40 |
+
+**Skill**
+
+| Achievement | Goal | Gold |
+|---|---|--:|
+| Not a Feather | A world without losing a bird | 40 |
+| Flawless | A boss without losing a bird | 40 |
+| Top Gear | Reach gear 10 | 30 |
+| Steady Hands | A world without swapping | 30 |
+| Careful Flock | Reach 2-3 losing at most 3 birds (in one run) | 40 |
+
+**Build**
+
+| Achievement | Goal | Gold |
+|---|---|--:|
+| Red Battery | 5 Red battery shots in a run (in one run) | 25 |
+| Full Charge | Fire a fully charged Purple shot | 15 |
+| Deal Maker | Make 3 pacts in a run (in one run) | 40 |
+| Encore | 10 second powers in a run (in one run) | 20 |
+
+**Collection**
+
+| Achievement | Goal | Gold |
+|---|---|--:|
+| Egg Collector | Open 200 eggs in all | 30 |
+| Legend Hunter | Open 5 legendary eggs in all | 60 |
+| Mythical Find | Open a mythical egg | 100 |
+
+**Totals**
 
 | Achievement | Goal | Gold |
 |---|---|--:|
@@ -77,16 +109,8 @@ the best.
 | Bat Bane | Kill 500 bats in all | 30 |
 | Bat Doom | Kill 2 | 80 |
 | Elite Bane | Kill 25 elite bats in all | 40 |
-| Boss Bane | Defeat 10 bosses in all | 40 |
-| Second World | Reach level 2-3 for the first time | 25 |
-| Third World | Reach the third world for the first time | 40 |
-| Fourth World | Reach the fourth world for the first time | 60 |
-| Last World | Reach the last world for the first time | 100 |
-| Champion | Reach level 6-3 | 200 |
-| Egg Collector | Open 200 eggs in all | 30 |
-| Legend Hunter | Open 5 legendary eggs in all | 60 |
-| Nursery | Hatch 30 birds in all | 40 |
-| Dealer | Make 10 pacts in all | 30 |
+| Millionaire | Score 1 | 20 |
+| Tycoon | Score 10 | 50 |
 
 ## Upgrades
 
@@ -111,7 +135,7 @@ what it had).
 | Nest | **Extra Life** | Start with one more life | +1 starting lives per level (max 3: +1 starting lives) | 25, 60, 120 | — |
 | Nest | **Safety Net** | Birds may bounce back from the floor | +3% floor save per level (max 3: +9% floor save) | 40, 70, 110 | Extra Life 1 |
 | Nest | **Wide Nest** | Every egg offers one more card | +1 choice per egg per level (max 1: +1 choice per egg) | 180 | Safety Net 1 |
-| Fortune | **Gold Digger** | More gold from achievements | +10% gold per level (max 5: +10% gold) | 15, 25, 40, 60, 90 | — |
+| Fortune | **Gold Digger** | More gold at the end of every run | +10% gold per level (max 5: +10% gold) | 15, 25, 40, 60, 90 | — |
 | Fortune | **Lucky Eggs** | Enemies drop rarer eggs | +2% luck (rarer drops) per level (max 3: +6% luck (rarer drops)) | 30, 50, 80 | Gold Digger 1 |
 | Fortune | **Rerolls** | One more egg reroll per run | +1 egg reroll this run per level (max 3: +1 egg reroll this run) | 25, 45, 70 | Gold Digger 2 |
 | Fortune | **Skips** | One more egg skip per run | +1 egg skip this run per level (max 2: +1 egg skip this run) | 30, 55 | Rerolls 1 |
