@@ -1,0 +1,267 @@
+{
+ "accordion": {
+  "48": "accordion_48.ogg",
+  "54": "accordion_54.ogg",
+  "60": "accordion_60.ogg",
+  "66": "accordion_66.ogg",
+  "72": "accordion_72.ogg",
+  "78": "accordion_78.ogg",
+  "84": "accordion_84.ogg"
+ },
+ "alto_sax": {
+  "49": "alto_sax_49.ogg",
+  "55": "alto_sax_55.ogg",
+  "61": "alto_sax_61.ogg",
+  "67": "alto_sax_67.ogg",
+  "73": "alto_sax_73.ogg",
+  "79": "alto_sax_79.ogg",
+  "85": "alto_sax_85.ogg"
+ },
+ "bassoon": {
+  "34": "bassoon_34.ogg",
+  "40": "bassoon_40.ogg",
+  "46": "bassoon_46.ogg",
+  "52": "bassoon_52.ogg",
+  "58": "bassoon_58.ogg",
+  "64": "bassoon_64.ogg",
+  "70": "bassoon_70.ogg"
+ },
+ "brass": {
+  "46": "brass_46.ogg",
+  "52": "brass_52.ogg",
+  "58": "brass_58.ogg",
+  "64": "brass_64.ogg",
+  "70": "brass_70.ogg",
+  "76": "brass_76.ogg",
+  "82": "brass_82.ogg"
+ },
+ "celesta": {
+  "102": "celesta_102.ogg",
+  "60": "celesta_60.ogg",
+  "66": "celesta_66.ogg",
+  "72": "celesta_72.ogg",
+  "78": "celesta_78.ogg",
+  "84": "celesta_84.ogg",
+  "90": "celesta_90.ogg",
+  "96": "celesta_96.ogg"
+ },
+ "choir": {
+  "48": "choir_48.ogg",
+  "54": "choir_54.ogg",
+  "60": "choir_60.ogg",
+  "66": "choir_66.ogg",
+  "72": "choir_72.ogg",
+  "78": "choir_78.ogg"
+ },
+ "clarinet": {
+  "48": "clarinet_48.ogg",
+  "54": "clarinet_54.ogg",
+  "60": "clarinet_60.ogg",
+  "66": "clarinet_66.ogg",
+  "72": "clarinet_72.ogg",
+  "78": "clarinet_78.ogg",
+  "84": "clarinet_84.ogg"
+ },
+ "drums": {
+  "36": "drums_36.ogg",
+  "38": "drums_38.ogg",
+  "42": "drums_42.ogg",
+  "45": "drums_45.ogg",
+  "46": "drums_46.ogg",
+  "49": "drums_49.ogg",
+  "70": "drums_70.ogg"
+ },
+ "finger_bass": {
+  "28": "finger_bass_28.ogg",
+  "34": "finger_bass_34.ogg",
+  "40": "finger_bass_40.ogg",
+  "46": "finger_bass_46.ogg",
+  "52": "finger_bass_52.ogg",
+  "58": "finger_bass_58.ogg",
+  "64": "finger_bass_64.ogg"
+ },
+ "flute": {
+  "60": "flute_60.ogg",
+  "66": "flute_66.ogg",
+  "72": "flute_72.ogg",
+  "78": "flute_78.ogg",
+  "84": "flute_84.ogg",
+  "90": "flute_90.ogg",
+  "96": "flute_96.ogg"
+ },
+ "glockenspiel": {
+  "102": "glockenspiel_102.ogg",
+  "72": "glockenspiel_72.ogg",
+  "78": "glockenspiel_78.ogg",
+  "84": "glockenspiel_84.ogg",
+  "90": "glockenspiel_90.ogg",
+  "96": "glockenspiel_96.ogg"
+ },
+ "harp": {
+  "36": "harp_36.ogg",
+  "42": "harp_42.ogg",
+  "48": "harp_48.ogg",
+  "54": "harp_54.ogg",
+  "60": "harp_60.ogg",
+  "66": "harp_66.ogg",
+  "72": "harp_72.ogg",
+  "78": "harp_78.ogg",
+  "84": "harp_84.ogg",
+  "90": "harp_90.ogg",
+  "96": "harp_96.ogg"
+ },
+ "harpsichord": {
+  "43": "harpsichord_43.ogg",
+  "49": "harpsichord_49.ogg",
+  "55": "harpsichord_55.ogg",
+  "61": "harpsichord_61.ogg",
+  "67": "harpsichord_67.ogg",
+  "73": "harpsichord_73.ogg",
+  "79": "harpsichord_79.ogg",
+  "85": "harpsichord_85.ogg"
+ },
+ "horn": {
+  "36": "horn_36.ogg",
+  "42": "horn_42.ogg",
+  "48": "horn_48.ogg",
+  "54": "horn_54.ogg",
+  "60": "horn_60.ogg",
+  "66": "horn_66.ogg",
+  "72": "horn_72.ogg"
+ },
+ "marimba": {
+  "48": "marimba_48.ogg",
+  "54": "marimba_54.ogg",
+  "60": "marimba_60.ogg",
+  "66": "marimba_66.ogg",
+  "72": "marimba_72.ogg",
+  "78": "marimba_78.ogg",
+  "84": "marimba_84.ogg",
+  "90": "marimba_90.ogg"
+ },
+ "music_box": {
+  "102": "music_box_102.ogg",
+  "72": "music_box_72.ogg",
+  "78": "music_box_78.ogg",
+  "84": "music_box_84.ogg",
+  "90": "music_box_90.ogg",
+  "96": "music_box_96.ogg"
+ },
+ "oboe": {
+  "58": "oboe_58.ogg",
+  "64": "oboe_64.ogg",
+  "70": "oboe_70.ogg",
+  "76": "oboe_76.ogg",
+  "82": "oboe_82.ogg",
+  "88": "oboe_88.ogg"
+ },
+ "overdrive_guitar": {
+  "40": "overdrive_guitar_40.ogg",
+  "46": "overdrive_guitar_46.ogg",
+  "52": "overdrive_guitar_52.ogg",
+  "58": "overdrive_guitar_58.ogg",
+  "64": "overdrive_guitar_64.ogg",
+  "70": "overdrive_guitar_70.ogg",
+  "76": "overdrive_guitar_76.ogg",
+  "82": "overdrive_guitar_82.ogg",
+  "88": "overdrive_guitar_88.ogg"
+ },
+ "pan_flute": {
+  "60": "pan_flute_60.ogg",
+  "66": "pan_flute_66.ogg",
+  "72": "pan_flute_72.ogg",
+  "78": "pan_flute_78.ogg",
+  "84": "pan_flute_84.ogg",
+  "90": "pan_flute_90.ogg"
+ },
+ "pizzicato": {
+  "36": "pizzicato_36.ogg",
+  "42": "pizzicato_42.ogg",
+  "48": "pizzicato_48.ogg",
+  "54": "pizzicato_54.ogg",
+  "60": "pizzicato_60.ogg",
+  "66": "pizzicato_66.ogg",
+  "72": "pizzicato_72.ogg",
+  "78": "pizzicato_78.ogg",
+  "84": "pizzicato_84.ogg"
+ },
+ "square": {
+  "48": "square_48.ogg",
+  "54": "square_54.ogg",
+  "60": "square_60.ogg",
+  "66": "square_66.ogg",
+  "72": "square_72.ogg",
+  "78": "square_78.ogg",
+  "84": "square_84.ogg",
+  "90": "square_90.ogg"
+ },
+ "strings": {
+  "36": "strings_36.ogg",
+  "42": "strings_42.ogg",
+  "48": "strings_48.ogg",
+  "54": "strings_54.ogg",
+  "60": "strings_60.ogg",
+  "66": "strings_66.ogg",
+  "72": "strings_72.ogg",
+  "78": "strings_78.ogg",
+  "84": "strings_84.ogg",
+  "90": "strings_90.ogg",
+  "96": "strings_96.ogg"
+ },
+ "taiko": {
+  "36": "taiko_36.ogg",
+  "42": "taiko_42.ogg",
+  "48": "taiko_48.ogg",
+  "54": "taiko_54.ogg",
+  "60": "taiko_60.ogg"
+ },
+ "timpani": {
+  "36": "timpani_36.ogg",
+  "42": "timpani_42.ogg",
+  "48": "timpani_48.ogg",
+  "54": "timpani_54.ogg",
+  "60": "timpani_60.ogg"
+ },
+ "tremolo": {
+  "36": "tremolo_36.ogg",
+  "42": "tremolo_42.ogg",
+  "48": "tremolo_48.ogg",
+  "54": "tremolo_54.ogg",
+  "60": "tremolo_60.ogg",
+  "66": "tremolo_66.ogg",
+  "72": "tremolo_72.ogg"
+ },
+ "trombone": {
+  "40": "trombone_40.ogg",
+  "46": "trombone_46.ogg",
+  "52": "trombone_52.ogg",
+  "58": "trombone_58.ogg",
+  "64": "trombone_64.ogg",
+  "70": "trombone_70.ogg"
+ },
+ "trumpet": {
+  "52": "trumpet_52.ogg",
+  "58": "trumpet_58.ogg",
+  "64": "trumpet_64.ogg",
+  "70": "trumpet_70.ogg",
+  "76": "trumpet_76.ogg",
+  "82": "trumpet_82.ogg"
+ },
+ "tuba": {
+  "28": "tuba_28.ogg",
+  "34": "tuba_34.ogg",
+  "40": "tuba_40.ogg",
+  "46": "tuba_46.ogg",
+  "52": "tuba_52.ogg",
+  "58": "tuba_58.ogg"
+ },
+ "violin": {
+  "55": "violin_55.ogg",
+  "61": "violin_61.ogg",
+  "67": "violin_67.ogg",
+  "73": "violin_73.ogg",
+  "79": "violin_79.ogg",
+  "85": "violin_85.ogg",
+  "91": "violin_91.ogg"
+ }
+}

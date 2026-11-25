@@ -30,9 +30,17 @@ a = Analysis(
     [os.path.join(ROOT, 'game.py')],
     pathex=[ROOT],
     binaries=[],
-    datas=[(os.path.join(ROOT, name), '.') for name in DATA_FILES],
+    datas=[(os.path.join(ROOT, name), '.') for name in DATA_FILES]
+    + [(os.path.join(ROOT, 'media', 'music'), os.path.join('media', 'music'))],
     # The loop and services are imported lazily by game.py
-    hiddenimports=['src.engine.loop', 'src.services.audio', 'src.services.firebase_client'],
+    hiddenimports=[
+        'src.engine.loop',
+        'src.services.audio',
+        'src.services.firebase_client',
+        'src.services.music.arrangement',
+        'src.services.music.sampler',
+        'src.services.music.score',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

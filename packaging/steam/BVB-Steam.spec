@@ -33,9 +33,13 @@ a = Analysis(
     pathex=[ROOT],
     binaries=[],
     datas=[(os.path.join(ROOT, name), '.') for name in DATA_FILES]
-    + [(os.path.join(ROOT, 'media', 'fonts', name), os.path.join('media', 'fonts')) for name in FONTS],
+    + [(os.path.join(ROOT, 'media', 'fonts', name), os.path.join('media', 'fonts')) for name in FONTS]
+    + [(os.path.join(ROOT, 'media', 'music'), os.path.join('media', 'music'))],
     # The loop, services and the window are imported lazily by game.py
     hiddenimports=[
+        'src.services.music.arrangement',
+        'src.services.music.sampler',
+        'src.services.music.score',
         'game',
         'src.engine.loop',
         'src.services.audio',

@@ -32,7 +32,7 @@ Optional extras (the game runs fine without them):
 pip install -r requirements-optional.txt
 ```
 
-- `numpy` + `pygame-ce`: sound effects and dynamic 8-bit music (SDL audio: macOS, Linux, Windows), and the window mode
+- `numpy` + `pygame-ce`: sound effects and the music, played with real instrument samples and following the flock and the gear (`docs/music.md`; SDL audio: macOS, Linux, Windows), and the window mode
 - `firebase-admin` + a service account file: online leaderboard (not active yet:
   the client is never connected, see `docs/unused-mechanics.md`)
 

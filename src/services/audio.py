@@ -1,4 +1,4 @@
-"""Audio engine: plays the synthesized sounds (src/services/synth.py) through SDL.
+"""Audio engine: sound effects (src/services/synth.py) and music (src/services/music/) through SDL.
 
 Built on pygame-ce's mixer, i.e. SDL audio: CoreAudio on macOS, PipeWire /
 PulseAudio / ALSA on Linux and the Steam Deck, WASAPI on Windows. Nothing to
@@ -7,8 +7,10 @@ silent, see src/services/sound.py).
 
 - Sound effects play on their own channels, each one at most every
   SFX_COOLDOWN seconds, a few at a time.
-- The music loops on one of two channels. When it changes (biome, flock,
-  gear) the new loop is made in a background thread and cross-faded in on
+- The music (src/services/music/: the world's theme and drums, a part per
+  bird type by how many there are, the bats, at the gear's speed, played with
+  real instrument samples) loops on one of two channels. When what plays
+  changes, the new loop is made in a background thread and cross-faded in on
   the other channel, so there is never a gap or a click.
 """
 
@@ -42,8 +44,10 @@ _sfx_last = {}
 _music = {
     'playing': False,
     'biome': 1,
-    'birds': frozenset(),
-    'speed': 1.0,
+    'birds': {},  # bird type -> how many
+    'bats': 0,
+    'gear': 1,
+    'playing_now': None,  # what the loop on the channel plays (see _signature)
     'channel': 0,  # which of the two music channels plays now
     'version': 0,  # bumped by every change: an older background render is dropped
 }
@@ -69,11 +73,13 @@ def _open():
 
 
 def _sound(wave):
-    """A pygame Sound from a mono float wave, in the mixer's format (16-bit stereo)."""
+    """A pygame Sound from a float wave (mono, or stereo (n, 2)), in the mixer's format."""
     pcm = (np.clip(wave, -1.0, 1.0) * 32767).astype(np.int16)
     _frequency, _size, channels = pygame.mixer.get_init()
-    if channels > 1:
+    if pcm.ndim == 1 and channels > 1:
         pcm = np.repeat(pcm[:, None], channels, axis=1)
+    elif pcm.ndim == 2 and channels == 1:
+        pcm = pcm.mean(axis=1).astype(np.int16)
     return pygame.mixer.Sound(buffer=np.ascontiguousarray(pcm).tobytes())
 
 
@@ -103,17 +109,36 @@ def play_sfx(name):
 # --------------------------------------------------------------------------- music
 
 
+def _signature():
+    """What the music plays, in steps: a change below a step changes nothing."""
+    from src.services.music import arrangement
+
+    birds = tuple(sorted((k, arrangement.quantity_step(n)) for k, n in _music['birds'].items() if n > 0))
+    return (
+        _music['biome'],
+        birds,
+        arrangement.quantity_step(_music['bats'], 'BATS'),
+        arrangement.speed_step(_music['gear']),
+    )
+
+
 def _render_and_play(version, fade=True):
     """Make the music loop for the current state and cross-fade it in (any thread)."""
+    from src.services.music import arrangement, sampler
+
+    if not sampler.available():
+        return
     with _lock:
-        biome, birds, speed = _music['biome'], set(_music['birds']), _music['speed']
+        biome, birds, bats, gear = _music['biome'], dict(_music['birds']), _music['bats'], _music['gear']
+        signature = _signature()
     try:
-        sound = _sound(synth.create_game_music(biome, birds, speed))
+        sound = _sound(arrangement.loop(biome, birds, bats, gear))
     except Exception:
         return
     with _lock:
         if version != _music['version'] or not _music['playing']:
             return  # something changed meanwhile, or the music was stopped
+        _music['playing_now'] = signature
         old = pygame.mixer.Channel(_music['channel'])
         _music['channel'] = 1 - _music['channel']
         new = pygame.mixer.Channel(_music['channel'])
@@ -129,6 +154,9 @@ def _render_and_play(version, fade=True):
 def _changed():
     """The music must follow a change: render the new loop in the background."""
     with _lock:
+        if _signature() == _music['playing_now']:
+            _music['version'] += 1  # back to what already plays: drop any render on its way
+            return
         _music['version'] += 1
         version = _music['version']
         playing = _music['playing']
@@ -137,18 +165,21 @@ def _changed():
 
 
 def start_music():
+    """Start the music for the current state (it comes in as soon as its loop is ready)."""
     if not _enabled or not _open():
         return
     with _lock:
         _music['playing'] = True
+        _music['playing_now'] = None
         _music['version'] += 1
         version = _music['version']
-    _render_and_play(version, fade=False)  # the first loop at once
+    threading.Thread(target=_render_and_play, args=(version, False), daemon=True).start()
 
 
 def stop_music():
     with _lock:
         _music['playing'] = False
+        _music['playing_now'] = None
         _music['version'] += 1
     if _ready:
         for index in (0, 1):
@@ -156,24 +187,25 @@ def stop_music():
 
 
 def update_music_for_biome(biome):
-    if _music['biome'] != biome:
-        _music['biome'] = biome
-        _changed()
+    _music['biome'] = biome
+    _changed()
 
 
-def update_active_birds(bird_types):
-    birds = frozenset(bird_types)
-    if _music['birds'] != birds:
-        _music['birds'] = birds
-        _changed()
+def update_active_birds(birds):
+    """``birds``: bird type -> how many (a set or list counts one of each)."""
+    _music['birds'] = dict(birds) if isinstance(birds, dict) else dict.fromkeys(birds, 1)
+    _changed()
+
+
+def update_bats(count):
+    _music['bats'] = count
+    _changed()
 
 
 def update_tempo_for_gear(gear):
-    """Gear 1-10 plays the music 1.0x-1.6x as fast."""
-    speed = 1.0 + (max(1, min(10, gear)) - 1) / 9.0 * 0.6
-    if abs(speed - _music['speed']) > 0.02:
-        _music['speed'] = speed
-        _changed()
+    """The gear sets the speed step of the music: gears 1-3, 4-6, 7-10."""
+    _music['gear'] = gear
+    _changed()
 
 
 # --------------------------------------------------------------------------- the rest

@@ -83,17 +83,20 @@ def sync_active_birds(force=False):
         return
     _last_bird_sync_frame = state.game.frame_count
 
-    active_types = set()
+    # How many birds of each type, and the bats on screen: the music follows both
+    counts = {}
     for color, lost in zip(state.birds.colors, state.birds.lost):
         if not lost:
             bird_type = get_bird_type_by_color(color)
             if bird_type:
-                active_types.add(bird_type)
+                counts[bird_type] = counts.get(bird_type, 0) + 1
+    bats = len(state.enemies.bats) + len(state.enemies.mini_bats)
 
-    # Only update if birds actually changed (or force)
-    if force or active_types != _last_bird_set:
-        _last_bird_set = active_types
-        _backend.update_active_birds(active_types)
+    # Only update if something changed (or force)
+    if force or (counts, bats) != _last_bird_set:
+        _last_bird_set = (counts, bats)
+        _backend.update_active_birds(counts)
+        _backend.update_bats(bats)
 
 
 # =============================================================================
