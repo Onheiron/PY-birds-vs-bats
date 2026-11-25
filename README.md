@@ -27,9 +27,12 @@ bvb
 `bvb --window` plays it in a window of its own (keyboard and gamepad);
 `pip install -U birds-vs-bats` updates it.
 
-Standalone builds for Linux (and the Steam Deck), macOS and Windows are on
+Desktop builds for macOS (an app), Windows and Linux (and the Steam Deck) are on
 [itch.io](https://itch.io) (the itch app keeps them up to date) and attached to each
-[release](https://github.com/Onheiron/PY-birds-vs-bats/releases): unpack and run `BVB`.
+[release](https://github.com/Onheiron/PY-birds-vs-bats/releases): unpack and open
+`BVB` (`BVB.app` on macOS). They play in a window of their own (F11: full screen);
+`BVB --terminal` plays in the terminal instead. On macOS the app is not signed by
+Apple: the first time, right-click it and choose Open.
 
 From the sources:
 

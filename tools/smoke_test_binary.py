@@ -2,7 +2,11 @@
 """Smoke test for a standalone build: the binary must start outside the source
 tree, find its bundled data files and report the right version.
 
-Usage: python tools/smoke_test_binary.py dist/BVB
+Usage: python tools/smoke_test_binary.py dist/BVB [--windowed]
+
+--windowed: a desktop build (packaging/desktop/launch.py), with no console:
+what it prints is read from the file named by BVB_OUTPUT, and it is played
+with --terminal.
 """
 
 import os
@@ -14,8 +18,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
+WINDOWED = '--windowed' in sys.argv[2:]
+
+
 def run(binary, *args, cwd):
-    return subprocess.run([str(binary), *args], capture_output=True, text=True, cwd=cwd, timeout=120)
+    """Run the binary; with WINDOWED, its output is read from the BVB_OUTPUT file."""
+    if not WINDOWED:
+        return subprocess.run([str(binary), *args], capture_output=True, text=True, cwd=cwd, timeout=120)
+    out = Path(cwd) / 'output.txt'
+    done = subprocess.run(
+        [str(binary), *args],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+        timeout=120,
+        env=dict(os.environ, BVB_OUTPUT=str(out)),
+    )
+    printed = out.read_text(encoding='utf-8') if out.exists() else ''
+    return subprocess.CompletedProcess(done.args, done.returncode, done.stdout + printed, done.stderr + printed)
 
 
 def main():
@@ -52,7 +72,12 @@ def play_in_pty(binary, cwd):
 
     master, slave = pty.openpty()
     process = subprocess.Popen(
-        [str(binary)], stdin=slave, stdout=slave, stderr=subprocess.PIPE, cwd=cwd, env=dict(os.environ, HOME=cwd)
+        [str(binary), *(['--terminal'] if WINDOWED else [])],
+        stdin=slave,
+        stdout=slave,
+        stderr=subprocess.PIPE,
+        cwd=cwd,
+        env=dict(os.environ, HOME=cwd),
     )
     os.close(slave)
     output = b''

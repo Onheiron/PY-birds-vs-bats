@@ -1,8 +1,8 @@
 name: Release
 
 # Push a tag like v2.1.0 (matching __version__ in src/__init__.py) to publish a
-# GitHub release with standalone binaries for Linux, macOS and Windows and the
-# Steam Linux build. Or run it by hand with "publish": it tags the commit
+# GitHub release with the desktop builds (macOS app, Windows and Linux, each
+# opening its own window) and the Steam Linux build. Or run it by hand with "publish": it tags the commit
 # v<__version__> and publishes the release itself.
 #
 # Published with it (see docs/publishing.md):
@@ -61,13 +61,13 @@ jobs:
         include:
           - os: ubuntu-latest
             name: linux-x86_64
-            binary: BVB
+            smoke: dist/BVB/BVB
           - os: macos-latest
             name: macos-arm64
-            binary: BVB
+            smoke: dist/BVB.app/Contents/MacOS/BVB
           - os: windows-latest
             name: windows-x86_64
-            binary: BVB.exe
+            smoke: dist/BVB/BVB.exe
     env:
       PYTHONUTF8: "1"
     steps:
@@ -80,16 +80,21 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - name: Bundle sound support
         run: pip install numpy pygame-ce
-      - name: Build standalone binary
+      - name: Build the desktop app (it opens its own window)
         run: pyinstaller --noconfirm packaging/BVB.spec
-      - name: Smoke test the binary
-        run: python tools/smoke_test_binary.py dist/${{ matrix.binary }}
+      - name: Smoke test the build
+        run: python tools/smoke_test_binary.py ${{ matrix.smoke }} --windowed
       - name: Package
         shell: bash
         run: |
           name="BVB-${{ needs.verify.outputs.version }}-${{ matrix.name }}"
           mkdir "$name"
-          cp "dist/${{ matrix.binary }}" README.md config.sample.yml hardmode.yml "$name/"
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            cp -R dist/BVB.app "$name/"
+          else
+            cp -R dist/BVB/. "$name/"
+          fi
+          cp README.md config.sample.yml hardmode.yml "$name/"
           if [ "${{ runner.os }}" = "Windows" ]; then
             7z a "$name.zip" "$name" > /dev/null
           else
