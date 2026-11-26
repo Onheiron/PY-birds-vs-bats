@@ -48,6 +48,7 @@ _lock = threading.Lock()
 _token = {'id': None, 'expires': 0.0}
 _boards = {}  # board id -> (time read, entries or None)
 last_status = None  # what happened to the last game sent (shown at game over)
+_sending = []  # threads sending a game: the game waits for them before it closes
 
 
 def _cfg():
@@ -233,6 +234,20 @@ def send_game(recording_path, name):
     except (urllib.error.URLError, OSError, KeyError, ValueError) as error:
         last_status = f'not sent ({type(error).__name__}): offline?'
         return False
+
+
+def send_in_background(recording_path, name):
+    """send_game in a thread the game waits for when it closes (wait_for_sending)."""
+    thread = threading.Thread(target=send_game, args=(recording_path, name), daemon=True)
+    _sending.append(thread)
+    thread.start()
+
+
+def wait_for_sending(timeout=20.0):
+    """Let the games being sent arrive before the game closes (at most ``timeout`` seconds)."""
+    end = time.monotonic() + timeout
+    for thread in _sending:
+        thread.join(max(0.0, end - time.monotonic()))
 
 
 # --------------------------------------------------------------------------- leaderboards

@@ -5,7 +5,6 @@ import time
 from src.core import constants, state
 from src.engine.timing import FrameClock
 from src.entities.sprites import RED
-from src.services.background import background_call
 from src.ui import controls, terminal
 from src.ui.framebuffer import get_framebuffer
 from src.ui.keyboard import read_keys
@@ -236,7 +235,7 @@ def _submit_stats(player_name, elapsed, elapsed_str, avg_ppm):
 
     recording = getattr(state.ui, 'last_recording', None)
     if recording and online.enabled():
-        background_call(online.send_game, recording, player_name)
+        online.send_in_background(recording, player_name)
 
 
 def show():
@@ -250,7 +249,7 @@ def show():
     clock = FrameClock()
 
     player_name = _ask_player_name(fb, clock, elapsed_str, name_max_length)
+    _submit_stats(player_name, elapsed, elapsed_str, avg_ppm)  # sent while RETRY / EXIT is chosen
     selected = _ask_retry(fb, clock, elapsed_str, player_name)
-    _submit_stats(player_name, elapsed, elapsed_str, avg_ppm)
 
     return 'retry' if selected == 0 else 'exit'

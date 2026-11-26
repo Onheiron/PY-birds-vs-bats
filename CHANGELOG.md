@@ -4,6 +4,10 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.4.4
+
+- Fixed: a game ended with EXIT never reached the online leaderboards
+
 ## 2.4.3
 
 - Fixed: the music could fall silent for a while (Steam Deck)

@@ -75,6 +75,9 @@ def main():
             # Fresh framebuffer: the new game starts with a full redraw
             reset_framebuffer()
     finally:
+        from src.services import online
+
+        online.wait_for_sending()  # a game just sent must not be cut off by closing
         sound.cleanup()
         terminal.cleanup()
     from src.core import state
