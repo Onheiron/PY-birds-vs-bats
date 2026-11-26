@@ -64,6 +64,7 @@ _music = {
     'screen': None,  # 'title' or 'game_over' while a screen's music plays instead of the game's
     'channel': 0,  # which of the two music channels plays now
     'version': 0,  # bumped by every change: an older background render is dropped
+    'sounds': [None, None],  # the Sound on each music channel: kept alive while it plays
 }
 
 
@@ -228,6 +229,8 @@ def _swap_in(sound, loops, fade):
     old = pygame.mixer.Channel(_music['channel'])
     _music['channel'] = 1 - _music['channel']
     new = pygame.mixer.Channel(_music['channel'])
+    # Held here as well as by the mixer: a Sound freed while its channel plays it falls silent
+    _music['sounds'][_music['channel']] = sound
     sound.set_volume(MUSIC_VOLUME)
     if fade and old.get_busy() and not _music['paused']:
         old.fadeout(CROSSFADE_MS)
