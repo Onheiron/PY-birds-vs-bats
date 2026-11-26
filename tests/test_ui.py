@@ -62,7 +62,8 @@ def test_title_screen_navigation(sim):
     # CONTINUE only while there is a game to continue (the autosave)
     from src.services import save_manager
 
-    assert ('CONTINUE' in text) == save_manager.get_save_path(0).exists()
+    names = [item.name for item in menus.SCREENS[menus.TITLE].items()]  # the menu, not the news
+    assert ('CONTINUE' in names) == save_manager.get_save_path(0).exists()
     assert len(walk_menu(sim, title=True)) > 20
 
 
