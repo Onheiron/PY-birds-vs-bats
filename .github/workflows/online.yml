@@ -1,10 +1,10 @@
 name: Online
 
 # The leaderboards' backend (src/services/online.py): replay the games players sent and put
-# the true ones on the leaderboards (tools/verify_runs.py). A run watches for 5h30, checking
-# every minute, then starts the next one itself (GitHub's schedule alone is unreliable: it
-# can skip hours); the schedule only restarts the chain if it ever breaks. Only one run at a
-# time (concurrency). By hand: verify, deploy the Firestore rules (firestore.rules), or wipe.
+# the true ones on the leaderboards (tools/verify_runs.py), then stop. Started within two
+# minutes of a game by a Cloudflare Worker (cloudflare/verifier-worker.js) when one is
+# waiting; the hourly schedule is only a fallback. By hand: verify, deploy the Firestore
+# rules (firestore.rules), or wipe the database.
 # Needs the secret FIREBASE_SERVICE_ACCOUNT (the service account's JSON).
 on:
   schedule:
@@ -19,16 +19,15 @@ on:
 
 permissions:
   contents: write  # the verified games are archived as release assets (recordings-YYYY-Www)
-  actions: write  # a watch starts the next one
 
 concurrency:
   group: online
-  cancel-in-progress: false  # a new run waits for the watch running (one waits at most)
+  cancel-in-progress: false  # a new run waits for the one running (one waits at most)
 
 jobs:
   online:
     runs-on: ubuntu-latest
-    timeout-minutes: 355  # a watch is 330 minutes; GitHub stops jobs at 360
+    timeout-minutes: 30
     env:
       FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
       GH_TOKEN: ${{ github.token }}
@@ -44,10 +43,7 @@ jobs:
         run: pip install -r requirements.txt firebase-admin
       - name: Verify the games sent
         if: env.ACTION == 'verify'
-        run: SDL_AUDIODRIVER=dummy python tools/verify_runs.py verify --watch 330
-      - name: Start the next watch
-        if: env.ACTION == 'verify' && always()
-        run: gh workflow run online.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f action=verify
+        run: SDL_AUDIODRIVER=dummy python tools/verify_runs.py verify
       - name: Wipe the database
         if: env.ACTION == 'wipe'
         run: python tools/verify_runs.py wipe --yes

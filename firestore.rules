@@ -32,6 +32,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(
              ['uid', 'name', 'version', 'difficulty', 'score', 'level', 'parts', 'status'])
         && request.resource.data.parts is int && request.resource.data.parts <= 20;
+      // "Is a game waiting?" (cloudflare/verifier-worker.js): pending ones, one at a time
+      allow list: if resource.data.status == 'pending' && request.query.limit <= 1;
     }
     match /{document=**} {
       allow read, write: if false;

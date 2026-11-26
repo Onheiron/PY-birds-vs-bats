@@ -2,7 +2,6 @@
 """Verify the games players sent and keep the leaderboards (run by .github/workflows/online.yml).
 
     python3 tools/verify_runs.py verify          # every pending submission
-    python3 tools/verify_runs.py verify --watch 330   # again every minute for 330 minutes
     python3 tools/verify_runs.py wipe --yes       # delete every document (a fresh start)
 
 Needs firebase-admin and the service account of the Firebase project in the
@@ -66,7 +65,7 @@ def worktree(version, cache={}):  # noqa: B006 (a cache on purpose)
         path = Path(tempfile.mkdtemp(prefix=f'bvb-{version}-'))
         tag = f'v{version}'
         known = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '-q', '--verify', f'refs/tags/{tag}'], check=False)
-        if known.returncode != 0:  # released after this watch started
+        if known.returncode != 0:  # released after this checkout was made
             subprocess.run(['git', '-C', str(ROOT), 'fetch', '-q', 'origin', 'tag', tag], check=True)
         subprocess.run(['git', '-C', str(ROOT), 'worktree', 'add', '--detach', str(path), tag], check=True)
         cache[version] = path
@@ -222,7 +221,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('action', choices=('verify', 'wipe'))
     parser.add_argument('--yes', action='store_true', help='needed by wipe')
-    parser.add_argument('--watch', type=float, default=0, help='verify again every minute for so many minutes')
     args = parser.parse_args()
     db = client()
     if args.action == 'wipe':
@@ -230,17 +228,7 @@ def main():
             raise SystemExit('wipe deletes everything: add --yes')
         wipe(db)
     else:
-        import time
-
-        end = time.monotonic() + args.watch * 60
-        while True:
-            try:
-                verify(db)
-            except Exception as error:  # a bad moment of Firestore or GitHub: try again next minute
-                print(f'verify failed: {error}', flush=True)
-            if time.monotonic() + 60 > end:
-                break
-            time.sleep(60)
+        verify(db)
 
 
 if __name__ == '__main__':

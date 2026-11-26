@@ -14,7 +14,7 @@ no Cloud Functions) and a GitHub Actions workflow that verifies the games.
    *submission*, its bytes in `parts` of at most 700 KB, with the score and
    level the player reached and the name typed at game over.
 3. **Verification** (`tools/verify_runs.py`, `.github/workflows/online.yml`,
-   every minute, always on): each new submission is replayed with the code of its
+   within two minutes, started by a Cloudflare Worker): each new submission is replayed with the code of its
    version (the git tag `v<version>`) and the official configuration. Only
    when the replay ends with the same level and score does the game enter the
    leaderboards; the submission is marked verified or rejected (with why).
@@ -57,7 +57,7 @@ python3 tools/simulate.py --bot top
 Actions → Online → Run workflow (Actions → Community bot → Run workflow fits
 the top bot now):
 
-- `verify`: start a watch now (one is always running: it checks every minute and restarts itself);
+- `verify`: verify now (a Cloudflare Worker starts it when a game waits, see below; also hourly);
 - `rules`: deploy `firestore.rules`;
 - `wipe`: delete every document (a fresh start).
 
@@ -70,3 +70,13 @@ the top bot now):
 - Steam (when the game is on the store): its own leaderboards and
   achievements through the Steam API, and the Steam identity checked by the
   verifier with the Publisher Web API key.
+
+
+## The Cloudflare Worker (starts the verifier)
+
+`cloudflare/verifier-worker.js`, on Cloudflare's free plan, with a Cron Trigger every
+2 minutes. It asks Firestore whether a submission is pending (the only query the rules
+allow on `submissions`) and, if one is and no verifier run is queued or running, starts
+`online.yml`. Its one secret is `GITHUB_TOKEN`: a fine-grained GitHub token for this
+repository only, with *Actions: Read and write* (it expires: renew it on GitHub and paste
+it in the Worker again). Opening the Worker's URL only says whether a game is waiting.
