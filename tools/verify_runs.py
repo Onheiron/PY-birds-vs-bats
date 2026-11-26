@@ -64,7 +64,11 @@ def worktree(version, cache={}):  # noqa: B006 (a cache on purpose)
     """A checkout of the tag v<version> (made once per run)."""
     if version not in cache:
         path = Path(tempfile.mkdtemp(prefix=f'bvb-{version}-'))
-        subprocess.run(['git', '-C', str(ROOT), 'worktree', 'add', '--detach', str(path), f'v{version}'], check=True)
+        tag = f'v{version}'
+        known = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '-q', '--verify', f'refs/tags/{tag}'], check=False)
+        if known.returncode != 0:  # released after this watch started
+            subprocess.run(['git', '-C', str(ROOT), 'fetch', '-q', 'origin', 'tag', tag], check=True)
+        subprocess.run(['git', '-C', str(ROOT), 'worktree', 'add', '--detach', str(path), tag], check=True)
         cache[version] = path
     return cache[version]
 
