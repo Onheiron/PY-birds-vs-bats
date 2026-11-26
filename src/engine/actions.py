@@ -62,10 +62,10 @@ def handle_swap():
         _execute_swap()
 
 
-def _find_bird_by_home_lane(lane):
-    """Find bird whose home_lane is the given lane."""
-    for i, home_lane in enumerate(state.birds.home_lanes):
-        if home_lane == lane:
+def _find_bird_in_lane(lane):
+    """The slot in the given lane (where the player sees it), or -1."""
+    for i, bird_lane in enumerate(state.birds.random_lanes):
+        if bird_lane == lane:
             return i
     return -1
 
@@ -73,8 +73,8 @@ def _find_bird_by_home_lane(lane):
 def _execute_swap():
     """Execute a bird swap between selected lane and current lane.
 
-    Uses home_lanes to determine which birds to swap - this ensures correct
-    behavior when birds are temporarily in different lanes due to portals.
+    The two birds the player sees in the lanes swap lanes, and their homes (where portals
+    send them back) swap too.
     """
 
     gear = compute_gear_from_momentum(state.game.momentum)
@@ -89,9 +89,12 @@ def _execute_swap():
     current_lane = state.player.lane
     selected_lane = state.player.selected_lane
 
-    # Find birds by their HOME lane, not current physical lane
-    bird_in_selected = _find_bird_by_home_lane(selected_lane)
-    bird_in_current = _find_bird_by_home_lane(current_lane)
+    # The birds the player sees in the two lanes (each lane holds exactly one slot)
+    from src.engine.logic.helpers import repair_lanes
+
+    repair_lanes()
+    bird_in_selected = _find_bird_in_lane(selected_lane)
+    bird_in_current = _find_bird_in_lane(current_lane)
 
     if bird_in_selected < 0 or bird_in_current < 0:
         state.player.selected_lane = None
@@ -128,12 +131,9 @@ def _execute_swap():
     state.birds.cols[bird_in_selected] = constants.layout.lane_positions[state.birds.random_lanes[bird_in_selected]]
     state.birds.cols[bird_in_current] = constants.layout.lane_positions[state.birds.random_lanes[bird_in_current]]
 
-    # Reset non-orange-egg birds to starting line (in their new home lane)
+    # Reset non-orange-egg birds to the starting line (in the lane they were swapped into)
     for idx in [bird_in_selected, bird_in_current]:
         if not state.birds.lost[idx] and not is_orange_egg_state(idx):
-            # Reset to home lane and starting position
-            state.birds.random_lanes[idx] = state.birds.home_lanes[idx]
-            state.birds.cols[idx] = constants.layout.lane_positions[state.birds.home_lanes[idx]]
             state.birds.y[idx] = constants.layout.starting_line
             set_ball_vy(idx, -1)
 

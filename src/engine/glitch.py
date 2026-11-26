@@ -33,6 +33,10 @@ def update_glitch_chaos():
                 )
                 state.birds.cols[i] = constants.layout.lane_positions[state.birds.random_lanes[i]]
                 state.birds.cols[j] = constants.layout.lane_positions[state.birds.random_lanes[j]]
+                state.birds.home_lanes[i], state.birds.home_lanes[j] = (
+                    state.birds.home_lanes[j],
+                    state.birds.home_lanes[i],
+                )
 
         # 1% chance to nudge player cursor
         if random.random() < constants.glitch.nudge_chance:

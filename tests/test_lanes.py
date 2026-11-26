@@ -115,3 +115,29 @@ def test_a_beaten_boss_does_not_come_back_when_the_game_is_loaded():
         data = save_manager.snapshot()
         assert save_manager.apply_save_data(data)
         assert state.enemies.boss_defeated and not should_spawn_boss()
+
+
+def test_a_swap_takes_the_birds_the_player_sees_even_with_wrong_homes():
+    from src.engine import actions
+
+    with Simulation(seed=1, key_rate=0) as sim:
+        state = sim.state
+        n = constants.layout.num_balls
+        state.birds.home_lanes[:] = [(lane + 3) % n for lane in state.birds.random_lanes]  # a broken save
+        a, b = bird_in_lane(state, 2), bird_in_lane(state, 6)
+        state.game.momentum = 1e9
+        state.player.selected_lane, state.player.lane = 2, 6
+        actions._execute_swap()
+        assert state.birds.random_lanes[a] == 6 and state.birds.random_lanes[b] == 2
+        assert living_lanes(state) == list(range(constants.layout.num_lanes))
+        assert state.birds.home_lanes == state.birds.random_lanes
+
+
+def test_loading_a_broken_save_puts_one_bird_in_every_lane():
+    from src.services import save_manager
+
+    with Simulation(seed=1, key_rate=0) as sim:
+        state = sim.state
+        state.birds.random_lanes[bird_in_lane(state, 5)] = 2  # two birds in lane 2, none in 5
+        assert save_manager.apply_save_data(save_manager.snapshot())
+        assert living_lanes(state) == list(range(constants.layout.num_lanes))

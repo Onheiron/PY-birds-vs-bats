@@ -4,6 +4,13 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.4.5
+
+- Fixed: swaps took the wrong birds (they now swap the ones you see)
+- Fixed: two birds in one lane after an egg; old saves are repaired
+- Fixed: a beaten boss came back after loading the game
+- No on-screen keyboard at launch on Steam
+
 ## 2.4.4
 
 - Fixed: a game ended with EXIT never reached the online leaderboards

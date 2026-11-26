@@ -48,3 +48,28 @@ def claim_free_lane(idx):
     birds.random_lanes[idx] = birds.home_lanes[idx] = new
     birds.cols[idx] = constants.layout.lane_positions[new]
     return new
+
+
+def repair_lanes():
+    """Put the lanes right if anything left them wrong: every lane holds exactly one slot, no
+    two living birds share one, and (with no portal open) every bird's home is its lane."""
+    birds = state.birds
+    n = constants.layout.num_balls
+    lanes = list(range(constants.layout.num_lanes))
+    used = set()
+    homeless = []
+    for i in sorted(range(n), key=lambda i: birds.lost[i]):  # the living birds keep their lane first
+        lane = birds.random_lanes[i]
+        if lane in used or lane not in lanes:
+            homeless.append(i)
+        else:
+            used.add(lane)
+    free = [x for x in lanes if x not in used]
+    for i in homeless:
+        lane = min(free, key=lambda x: abs(x - birds.random_lanes[i]))
+        free.remove(lane)
+        birds.random_lanes[i] = lane
+    if not state.enemies.portals or sorted(birds.home_lanes) != lanes:
+        birds.home_lanes[:] = list(birds.random_lanes)
+    for i in range(n):
+        birds.cols[i] = constants.layout.lane_positions[birds.random_lanes[i]]

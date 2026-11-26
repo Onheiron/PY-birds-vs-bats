@@ -443,6 +443,11 @@ def apply_save_data(data):
         _restore_ui_state(data.get('ui', {}))
         _restore_settings(data.get('settings', {}))
 
+        # Saves made with the lane bugs of 2.4.1 and earlier: one bird per lane again
+        from src.engine.logic.helpers import repair_lanes
+
+        repair_lanes()
+
         # Reset transient state
         state.game.paused = False
         state.game.game_over = False
