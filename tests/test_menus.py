@@ -55,6 +55,7 @@ def test_every_submenu_is_reachable_from_a_root():
 
     game_state.meta.profile = meta.new_profile()
     game_state.meta.profile['upgrades'] = {'formation': 1}  # FORMATION shows once it is bought
+    game_state.ui.show_title = True  # WIPE SAVE is in the title's SETTINGS only
     reachable = set()
     todo = [menus.TITLE, menus.PAUSE]
     while todo:

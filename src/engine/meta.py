@@ -100,6 +100,8 @@ def start_run():
     meta = state.meta
     meta.run = dict.fromkeys(RUN_COUNTERS, 0)
     meta.run['level'] = state.game.level
+    # A continued game was already paid up to here when it was left: only new levels pay
+    meta.paid_level = state.game.level if getattr(state.game, 'meta_applied', False) else 0
     meta.run_gold = 0
     meta.run_achievements = []
     meta.finished = False
@@ -149,7 +151,7 @@ def run_reward_parts():
     cfg = _as_dict(_cfg('run_reward'))
     run = state.meta.run or {}
     base = (
-        run.get('level', 0) * float(cfg.get('per_level', 1))
+        max(0, run.get('level', 0) - getattr(state.meta, 'paid_level', 0)) * float(cfg.get('per_level', 1))
         + run.get('bosses', 0) * float(cfg.get('per_boss', 4))
         + run.get('bats', 0) // max(1, int(cfg.get('bats_per_gold', 25)))
     )

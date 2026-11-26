@@ -149,3 +149,33 @@ def test_momentum_stops_at_the_worlds_gear_cap():
         progression.update_momentum(0.0)
         assert progression.compute_gear_from_momentum(state.game.momentum) == 5
         assert constants.speed.max_gear_by_world[1] > 5
+
+
+def test_a_continued_game_pays_only_the_levels_won_since(monkeypatch):
+    from src.core import state
+    from src.engine import meta
+
+    state.init()
+    state.meta.profile = meta.new_profile()
+    state.game.level = 12
+    state.game.meta_applied = True  # a game loaded with CONTINUE
+    meta.start_run()
+    assert meta.run_reward_parts()[0] == 0
+    state.meta.run['level'] = 14
+    assert meta.run_reward_parts()[0] == 2
+
+
+def test_wipe_save_moves_the_progress_to_a_backup(tmp_path, monkeypatch):
+    from src.core import state
+    from src.services import save_manager
+
+    monkeypatch.setattr(save_manager.Path, 'home', lambda: tmp_path)
+    base = tmp_path / save_manager.SAVE_DIR_NAME
+    (base / 'saves').mkdir(parents=True)
+    (base / 'profile.json').write_text('{"gold": 512}')
+    (base / 'settings.json').write_text('{}')
+    state.discovery.birds.add('RED')
+    backup = save_manager.wipe_progress()
+    assert (backup / 'profile.json').exists() and not (base / 'profile.json').exists()
+    assert (base / 'settings.json').exists()
+    assert state.meta.profile.get('gold', 0) == 0 and not state.discovery.birds

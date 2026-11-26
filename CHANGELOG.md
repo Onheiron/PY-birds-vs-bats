@@ -4,6 +4,11 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.4.6
+
+- Fixed: leaving and continuing a game paid its levels again (too many feathers)
+- SETTINGS > WIPE SAVE starts the progression over (a backup is kept)
+
 ## 2.4.5
 
 - Fixed: swaps took the wrong birds (they now swap the ones you see)

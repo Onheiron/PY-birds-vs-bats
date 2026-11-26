@@ -120,6 +120,25 @@ def save_discovery():
         return False
 
 
+def wipe_progress():
+    """Start the meta-progression over (SETTINGS > WIPE SAVE): feathers, upgrades, achievements,
+    the save slots and the Birdpedia. Moved to ~/.bvb/backups/<date-time>/, never deleted;
+    settings and recordings stay. Returns the backup folder (None when there was nothing)."""
+    import shutil
+
+    base = get_profile_path().parent
+    found = [base / name for name in ('profile.json', 'saves', 'discovery.json') if (base / name).exists()]
+    if not found:
+        return None
+    backup = base / 'backups' / datetime.now().strftime('%Y%m%d-%H%M%S')
+    backup.mkdir(parents=True, exist_ok=True)
+    for path in found:
+        shutil.move(str(path), str(backup / path.name))
+    state.meta.profile = load_profile()
+    vars(state.discovery).update(vars(state._new_discovery()))  # in place: others hold it
+    return backup
+
+
 def load_discovery():
     """Load discovery data and apply to state.discovery."""
 

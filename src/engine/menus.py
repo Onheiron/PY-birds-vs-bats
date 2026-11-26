@@ -398,8 +398,26 @@ def _settings_items():
         Item('CONTROLS', opens='controls'),
         Item('DIFFICULTY', 'option', _difficulty_name, on_enter=_cycle_difficulty, on_change=_cycle_difficulty),
         _option('ONLINE', 'online_enabled'),
+        *([Item('WIPE SAVE', opens='wipe')] if state.ui.show_title else []),  # not during a game
         _back_item(),
     ]
+
+
+def _wipe_items():
+    return [
+        Item('NO, KEEP EVERYTHING', back=True),  # where the cursor starts
+        Item('YES, START OVER', on_enter=_wipe),
+        _back_item(),
+    ]
+
+
+def _wipe():
+    backup = save_manager.wipe_progress()
+    state.ui.menu_stack = [[TITLE, 0]]
+    notify(
+        'Feathers, upgrades, achievements, saves and Birdpedia start over' if backup else 'Nothing to wipe',
+        title='Wipe save:',
+    )
 
 
 def _option(name, setting, after=None):
@@ -646,6 +664,7 @@ SCREENS = {
         Screen(PAUSE, 'PAUSED', _pause_items),
         Screen('settings', 'SETTINGS', _settings_items),
         Screen('sound', 'SOUND', _sound_items),
+        Screen('wipe', 'WIPE SAVE?', _wipe_items, hint='select'),
         Screen('graphics', 'GRAPHICS', _graphics_items),
         Screen('controls', 'CONTROLS', _controls_items, hint='controls'),
         Screen('save', 'SAVE GAME', _save_items, hint='select'),
