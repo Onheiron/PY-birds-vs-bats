@@ -2,6 +2,7 @@
 """Verify the games players sent and keep the leaderboards (run by .github/workflows/online.yml).
 
     python3 tools/verify_runs.py verify          # every pending submission
+    python3 tools/verify_runs.py verify --watch 330   # again every minute for 330 minutes
     python3 tools/verify_runs.py wipe --yes       # delete every document (a fresh start)
 
 Needs firebase-admin and the service account of the Firebase project in the
@@ -217,6 +218,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('action', choices=('verify', 'wipe'))
     parser.add_argument('--yes', action='store_true', help='needed by wipe')
+    parser.add_argument('--watch', type=float, default=0, help='verify again every minute for so many minutes')
     args = parser.parse_args()
     db = client()
     if args.action == 'wipe':
@@ -224,7 +226,17 @@ def main():
             raise SystemExit('wipe deletes everything: add --yes')
         wipe(db)
     else:
-        verify(db)
+        import time
+
+        end = time.monotonic() + args.watch * 60
+        while True:
+            try:
+                verify(db)
+            except Exception as error:  # a bad moment of Firestore or GitHub: try again next minute
+                print(f'verify failed: {error}', flush=True)
+            if time.monotonic() + 60 > end:
+                break
+            time.sleep(60)
 
 
 if __name__ == '__main__':

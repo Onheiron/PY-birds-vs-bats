@@ -14,7 +14,7 @@ no Cloud Functions) and a GitHub Actions workflow that verifies the games.
    *submission*, its bytes in `parts` of at most 700 KB, with the score and
    level the player reached and the name typed at game over.
 3. **Verification** (`tools/verify_runs.py`, `.github/workflows/online.yml`,
-   every 15 minutes): each new submission is replayed with the code of its
+   every minute, always on): each new submission is replayed with the code of its
    version (the git tag `v<version>`) and the official configuration. Only
    when the replay ends with the same level and score does the game enter the
    leaderboards; the submission is marked verified or rejected (with why).
@@ -57,7 +57,7 @@ python3 tools/simulate.py --bot top
 Actions → Online → Run workflow (Actions → Community bot → Run workflow fits
 the top bot now):
 
-- `verify`: verify now (it also runs every 15 minutes);
+- `verify`: start a watch now (one is always running: it checks every minute and restarts itself);
 - `rules`: deploy `firestore.rules`;
 - `wipe`: delete every document (a fresh start).
 

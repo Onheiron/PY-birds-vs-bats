@@ -11,8 +11,8 @@ config.yml); nothing here can write a score. How it works:
   its bytes cut in ``parts`` of at most PART_BYTES. The rules
   (firestore.rules) let a player only add submissions and parts with their
   own uid, and set their own name in ``players``.
-- **Verification**: a GitHub Actions workflow (tools/verify_runs.py, every 15
-  minutes) replays every new submission with the code of its version; only
+- **Verification**: a GitHub Actions workflow (tools/verify_runs.py, every
+  minute) replays every new submission with the code of its version; only
   the games whose replay ends with the score sent enter the leaderboards.
 - **Leaderboards**: documents ``boards/<period>-<difficulty>`` (period: all,
   month-YYYY-MM, week-YYYY-Www) with the best runs, written by the verifier
