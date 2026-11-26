@@ -106,9 +106,7 @@ def test_play_a_session_and_quit_cleanly(game):
     assert '\033[?1049h' in game.raw  # alternate screen
     assert '\033[?25l' in game.raw  # cursor hidden
 
-    game.send('\x1b[B')  # DOWN: CONTINUE -> NEW GAME
-    game.pump(0.2)
-    game.send('\r')
+    game.send('\r')  # NEW GAME (a fresh home: no game to CONTINUE)
     game.wait_for('PRESTIGE')
     game.wait_for('MPH')
 

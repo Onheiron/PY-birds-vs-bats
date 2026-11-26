@@ -128,7 +128,10 @@ def run_session():
         state.game.quit_requested = True
     finally:
         time.time = real_time
-        if not (state.game.lives <= 0):
+        if state.game.lives <= 0:
+            if save_manager.checkpoints_enabled:  # never in headless runs (the bot, the tests)
+                save_manager.delete_save(0)  # a lost game cannot be continued
+        else:
             # Quit or back to the title: keep the game for CONTINUE
             was_title = state.ui.show_title
             state.ui.show_title = False

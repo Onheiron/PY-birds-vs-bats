@@ -57,16 +57,22 @@ def test_title_screen_navigation(sim):
     menus.open_title()
     sim.press(None, title=True)
     text = sim.screen.text()
-    for option in ('CONTINUE', 'NEW GAME', 'LOAD', 'BIRDPEDIA', 'SETTINGS', 'QUIT'):
+    for option in ('NEW GAME', 'LOAD', 'BIRDPEDIA', 'SETTINGS', 'QUIT'):
         assert option in text
+    # CONTINUE only while there is a game to continue (the autosave)
+    from src.services import save_manager
+
+    assert ('CONTINUE' in text) == save_manager.get_save_path(0).exists()
     assert len(walk_menu(sim, title=True)) > 20
 
 
 def test_new_game_from_title_applies_selected_difficulty(sim):
     state = sim.state
     state.ui.show_title = True
+    from src.services import save_manager
+
+    save_manager.delete_save(0)  # no game to continue: NEW GAME comes first
     menus.open_title()
-    sim.press('DOWN', title=True)  # CONTINUE -> NEW GAME
     state.settings.difficulty = 1
     from src.engine import meta
 

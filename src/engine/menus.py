@@ -124,6 +124,9 @@ def _accessibility_changed():
 
 
 def _cycle_difficulty(delta=1):
+    if not state.ui.show_title:
+        notify('A game keeps the difficulty it started with', title='Difficulty:')
+        return
     state.settings.difficulty = (state.settings.difficulty + delta) % len(DIFFICULTY_NAMES)
     _settings_changed()
 
@@ -366,7 +369,7 @@ def _leaderboard_items():
 def _title_items():
     return [
         *_update_items(),
-        Item('CONTINUE', on_enter=_continue),
+        *([Item('CONTINUE', on_enter=_continue)] if save_manager.get_save_path(0).exists() else []),
         Item('NEW GAME', value=_difficulty_name, on_enter=_new_game, on_change=_change_new_game_difficulty),
         Item('LOAD', opens='load'),
         Item('FLOCK', value=_gold_text, opens='flock_meta'),
