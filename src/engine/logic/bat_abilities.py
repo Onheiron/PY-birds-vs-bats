@@ -23,7 +23,7 @@ from src.core import constants, state
 from src.engine import clock, enemy_stats, events, fx, stats
 from src.engine.birds import reset_bird_power, scare_bird, set_ball_vy
 from src.entities.bird_types import BirdType, get_default_speed
-from src.entities.sprites import ZOMBIE
+from src.entities.sprites import CLOCKWORK, ZOMBIE
 
 
 def _per_tick(chance_per_second):
@@ -141,8 +141,8 @@ def stone_blast(stone, bird=None):
 def infect(bird, bat=None, source=None):
     """Infect ``bird`` with the plague of ``bat`` (or copy the infection ``source``)."""
     special = state.special
-    if state.birds.lost[bird] or bird in special.poisoned_birds:
-        return False
+    if state.birds.lost[bird] or bird in special.poisoned_birds or state.birds.colors[bird] == CLOCKWORK:
+        return False  # a machine catches no plague
     if source is None:
         source = {
             'time': enemy_stats.get(bat, 'plague_time'),

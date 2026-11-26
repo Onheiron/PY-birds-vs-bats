@@ -4,6 +4,12 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.4.8
+
+- Clockwork birds are machines: no poison, bleeding, frost or plague
+- Y on a gamepad no longer swaps the grade bars for the XP list
+- The game cannot open twice (a second launch closes at once)
+
 ## 2.4.7
 
 - The difficulty is chosen at NEW GAME only: a game keeps it to the end

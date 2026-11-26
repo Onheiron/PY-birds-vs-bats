@@ -37,6 +37,36 @@ def _window_options():
     return fullscreen
 
 
+_instance_lock = None  # held while the game runs
+
+
+def _only_instance():
+    """True if no other copy of the game is running (a lock in ~/.bvb). Where locks are not
+    available the game just starts."""
+    global _instance_lock
+    from pathlib import Path
+
+    from src.services.save_manager import SAVE_DIR_NAME
+
+    try:
+        folder = Path.home() / SAVE_DIR_NAME
+        folder.mkdir(parents=True, exist_ok=True)
+        _instance_lock = open(folder / 'running.lock', 'a+')  # noqa: SIM115 (kept open on purpose)
+        if sys.platform.startswith('win'):
+            import msvcrt
+
+            msvcrt.locking(_instance_lock.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(_instance_lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (BlockingIOError, PermissionError):
+        return False
+    except (OSError, ImportError):
+        return True
+    return True
+
+
 def main():
     """Set the terminal up, then run games until the player quits."""
     from src import __version__
@@ -58,6 +88,8 @@ def main():
     if '--help' in sys.argv[1:] or '-h' in sys.argv[1:]:
         print(USAGE, end='')
         return
+    if not _only_instance():
+        return  # already open (a launcher that starts the game twice): the first one plays
 
     # Imported here: loading the game reads the configuration, which may stop
     # with a message for the user, and must not happen for --help or --version.

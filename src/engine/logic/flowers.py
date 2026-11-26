@@ -5,7 +5,7 @@ import random
 from src.core import constants, state
 from src.engine import clock
 from src.engine.notifications import notify
-from src.entities.sprites import FLOWER_MATURE_FRAME, SWAMP_OBSTACLE_FLOWER_POSITIONS
+from src.entities.sprites import CLOCKWORK, FLOWER_MATURE_FRAME, SWAMP_OBSTACLE_FLOWER_POSITIONS
 
 
 def maybe_add_flower_to_obstacle(obstacle_data):
@@ -80,6 +80,8 @@ def apply_mature_flower_effect(branch, flower):
 
 def apply_flower_collision_effect(flower, bird_idx):
     """Apply flower effect when bird collides with branch that has mature flower."""
+    if state.birds.colors[bird_idx] == CLOCKWORK:
+        return  # a machine: no bleeding, frost or poison
     flower_type = flower.get('type')
     tree_boss_cfg = getattr(constants, 'tree_boss', None)
     flowers_cfg = getattr(tree_boss_cfg, 'flowers', None) if tree_boss_cfg else None
