@@ -78,6 +78,34 @@ def _palette():
 PALETTE = _palette()
 
 
+def under_steam():
+    """Started by Steam (a Steam game or a non-Steam shortcut, the Steam Deck included)."""
+    return os.environ.get('SteamDeck') == '1' or 'SteamGameId' in os.environ or 'SteamAppId' in os.environ  # noqa: SIM112
+
+
+def _key_char(pg, event):
+    """The character a key press types, without text input (letters, digits, space, symbols)."""
+    char = getattr(event, 'unicode', '') or ''
+    if not char and 32 <= event.key < 127:
+        char = chr(event.key)
+        if event.mod & pg.KMOD_SHIFT:
+            char = char.upper()
+    return char
+
+
+def _typed(chars, text):
+    """The keys of typed characters: space and q are SPACE and QUIT outside text fields."""
+    keys = []
+    for char in chars:
+        if char == ' ':
+            keys.append('SPACE' if not text else ' ')
+        elif char == 'q' and not text:
+            keys.append('QUIT')
+        elif char.isprintable():
+            keys.append(char)
+    return keys
+
+
 class Cell:
     __slots__ = ('char', 'fg', 'bg', 'bold', 'faint', 'hidden')
 
@@ -228,7 +256,14 @@ class Window:
         self.stick = {'x': 0, 'y': 0}
         self.trigger_down = False
         pygame.key.set_repeat(int(REPEAT_DELAY * 1000), int(REPEAT_EVERY * 1000))
-        pygame.key.start_text_input()
+        # Text input makes Steam (Steam Deck, Big Picture) open its on-screen keyboard: under
+        # Steam the typed characters come from the key presses instead (the game has its own
+        # keyboard for names)
+        self.text_input = not under_steam()
+        if self.text_input:
+            pygame.key.start_text_input()
+        else:
+            pygame.key.stop_text_input()
 
     # ------------------------------------------------------------------ display
 
@@ -423,14 +458,10 @@ class Window:
                     keys.append(name)
                 elif event.key == pg.K_c and event.mod & pg.KMOD_CTRL:
                     keys.append('QUIT')
+                elif not self.text_input:
+                    keys.extend(_typed(_key_char(pg, event), text))
             elif event.type == pg.TEXTINPUT:
-                for char in event.text:
-                    if char == ' ':
-                        keys.append('SPACE' if not text else ' ')
-                    elif char == 'q' and not text:
-                        keys.append('QUIT')
-                    elif char.isprintable():
-                        keys.append(char)
+                keys.extend(_typed(event.text, text))
             elif event.type == pg.CONTROLLERDEVICEADDED:
                 self._scan_controllers()
             elif event.type == pg.CONTROLLERDEVICEREMOVED:
