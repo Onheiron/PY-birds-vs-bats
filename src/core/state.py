@@ -309,6 +309,9 @@ def _new_settings():
         # birds (bounce_on_enter) or acts as UP on it, bounce or power (trigger_on_enter)
         bounce_on_enter=False,
         trigger_on_enter=False,
+        # Powers on their own button (X on a gamepad, DOWN on the keyboard) instead of UP on a
+        # rising bird: UP then only bounces
+        power_button=False,
         # Labels of the controls in the hints: auto (the device used last), keyboard,
         # xbox, playstation, steamdeck (src/ui/controls.py)
         controls_profile='auto',

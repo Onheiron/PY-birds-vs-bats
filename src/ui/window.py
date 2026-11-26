@@ -400,7 +400,7 @@ class Window:
             return {self.X: 'ENTER', self.Y: 'r', self.B: 's'}.get(button)
         if context == 'menu':
             return {self.A: 'ENTER', self.B: 'ESC', self.X: 'r', self.Y: 's'}.get(button)
-        return {self.A: 'UP', self.B: 'SPACE'}.get(button)  # Y: nothing (the XP list is the keyboard's X)
+        return {self.A: 'UP', self.B: 'SPACE', self.X: 'POWER'}.get(button)  # Y: nothing
 
     def _pad_profile(self, instance_id):
         """Control profile of a gamepad, from its name: playstation, steamdeck or xbox."""

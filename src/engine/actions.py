@@ -234,9 +234,26 @@ def handle_bounce(falling_only=False):
             # Bird moving down - bounce it up
             if state.birds.vy[bird_idx] == 1:
                 _bounce_bird_up(bird_idx)
-            # Bird moving up - activate power
-            elif state.birds.vy[bird_idx] == -1:
+            # Bird moving up - activate power (unless powers have their own button)
+            elif state.birds.vy[bird_idx] == -1 and not state.settings.power_button:
                 activate_bird_power(bird_idx)
+
+
+def handle_power():
+    """The power button (SETTINGS > CONTROLS > POWER BUTTON): the rising birds of the cursor's
+    lanes fire their power. Does nothing while powers are on UP."""
+    if not state.settings.power_button:
+        return
+    for lane in get_affected_lanes():
+        for bird_idx in _find_all_birds_in_lane(lane):
+            if state.birds.lost[bird_idx] or state.birds.vy[bird_idx] != -1:
+                continue
+            special = state.special
+            if bird_idx in special.scared_birds or bird_idx in special.stunned_birds:
+                continue
+            if bird_idx in special.frozen_birds:
+                continue
+            activate_bird_power(bird_idx)
 
 
 def _recover_orange_bird(bird_idx, lane):

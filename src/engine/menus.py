@@ -464,6 +464,16 @@ def _cycle_controls(delta=1):
     _settings_changed()
 
 
+def _power_button_name():
+    """Which button fires a rising bird's power."""
+    return 'X / DOWN' if state.settings.power_button else 'A / UP'
+
+
+def _toggle_power_button(_delta=1):
+    state.settings.power_button = not state.settings.power_button
+    _settings_changed()
+
+
 def _controls_items():
     items = [
         Item(name, 'binding', (lambda control=control: binding_display(control)), rebind=control)
@@ -472,6 +482,9 @@ def _controls_items():
     assists = [
         _option('BOUNCE ON ENTER', 'bounce_on_enter'),
         _option('TRIGGER ON ENTER', 'trigger_on_enter'),
+        Item(
+            'POWER BUTTON', 'option', _power_button_name, on_enter=_toggle_power_button, on_change=_toggle_power_button
+        ),
         Item('BUTTON LABELS', 'option', _controls_profile_name, on_enter=_cycle_controls, on_change=_cycle_controls),
     ]
     return items + assists + [_back_item()]

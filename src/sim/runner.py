@@ -81,6 +81,7 @@ def start_game(config, now):
     state.settings.difficulty = config.difficulty
     # Settings outlive a game: start every simulated game with the cursor assists off
     state.settings.bounce_on_enter = state.settings.trigger_on_enter = False
+    state.settings.power_button = False  # the bot fires powers with UP
     assist = getattr(config.skill, 'assist', 'none')
     state.settings.bounce_on_enter = assist == 'bounce'
     state.settings.trigger_on_enter = assist == 'trigger'
@@ -175,6 +176,7 @@ def replay(data):
         else:
             state.meta.profile = copy.deepcopy(data['profile'])  # before init: the lanes come from it
             state.init(data['seed'])
+        state.settings.power_button = False  # recordings older than the setting
         for key, value in data['settings'].items():
             setattr(state.settings, key, copy.deepcopy(value))
         state.meta.profile = copy.deepcopy(data['profile'])

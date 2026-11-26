@@ -1051,51 +1051,51 @@ unlocks:
 achievements:
   global:
     # Exploration
-    first_steps:    {name: First Steps,       group: Exploration, desc: Reach level 1-2,              gold: 10,  all: {level: 2}}
-    borderlands:    {name: Borderlands,       group: Exploration, desc: Reach the second world,       gold: 20,  all: {level: 4}}
-    beyond:         {name: Beyond the Border, group: Exploration, desc: Reach the third world,        gold: 35,  all: {level: 7}}
-    deep_woods:     {name: Deep Woods,        group: Exploration, desc: Reach the fourth world,       gold: 50,  all: {level: 10}}
-    swamp_walker:   {name: Swamp Walker,      group: Exploration, desc: Reach the fifth world,        gold: 70,  all: {level: 13}}
-    cave_diver:     {name: Cave Diver,        group: Exploration, desc: Reach the last world,         gold: 90,  all: {level: 16}}
-    summit:         {name: Summit,            group: Exploration, desc: Reach level 6-3,              gold: 120, all: {level: 18}}
-    champion:       {name: Champion,          group: Exploration, desc: Defeat the last boss,         gold: 200, all: {won: 1}}
-    survivor:       {name: Survivor,          group: Exploration, desc: Win on SURVIVAL,              gold: 250, all: {won_survival: 1}}
-    legend:         {name: Legend,            group: Exploration, desc: Win on LEGENDARY,             gold: 400, all: {won_legendary: 1}}
+    first_steps:    {name: First Steps,       group: Exploration, desc: Reach level 1-2,              gold: 2,   all: {level: 2}}
+    borderlands:    {name: Borderlands,       group: Exploration, desc: Reach the second world,       gold: 4,   all: {level: 4}}
+    beyond:         {name: Beyond the Border, group: Exploration, desc: Reach the third world,        gold: 7,   all: {level: 7}}
+    deep_woods:     {name: Deep Woods,        group: Exploration, desc: Reach the fourth world,       gold: 10,  all: {level: 10}}
+    swamp_walker:   {name: Swamp Walker,      group: Exploration, desc: Reach the fifth world,        gold: 14,  all: {level: 13}}
+    cave_diver:     {name: Cave Diver,        group: Exploration, desc: Reach the last world,         gold: 18,  all: {level: 16}}
+    summit:         {name: Summit,            group: Exploration, desc: Reach level 6-3,              gold: 24,  all: {level: 18}}
+    champion:       {name: Champion,          group: Exploration, desc: Defeat the last boss,         gold: 40,  all: {won: 1}}
+    survivor:       {name: Survivor,          group: Exploration, desc: Win on SURVIVAL,              gold: 50,  all: {won_survival: 1}}
+    legend:         {name: Legend,            group: Exploration, desc: Win on LEGENDARY,             gold: 80,  all: {won_legendary: 1}}
     # Bosses
-    boss_down:      {name: Boss Down,         group: Bosses,      desc: Defeat a boss,                gold: 15,  all: {bosses: 1}}
-    boss_bane:      {name: Boss Bane,         group: Bosses,      desc: Defeat 10 bosses in all,      gold: 40,  all: {bosses: 10}}
-    menagerie:      {name: Menagerie,         group: Bosses,      desc: Defeat every kind of boss,    gold: 100, all: {boss_kinds: 5}}
+    boss_down:      {name: Boss Down,         group: Bosses,      desc: Defeat a boss,                gold: 3,   all: {bosses: 1}}
+    boss_bane:      {name: Boss Bane,         group: Bosses,      desc: Defeat 10 bosses in all,      gold: 8,   all: {bosses: 10}}
+    menagerie:      {name: Menagerie,         group: Bosses,      desc: Defeat every kind of boss,    gold: 20,  all: {boss_kinds: 5}}
     # Flock
-    golden_touch:   {name: Golden Touch,      group: Flock,       desc: Evolve a Yellow into Gold,    gold: 40,  all: {evolved_gold: 1}}
-    templar:        {name: Templar,           group: Flock,       desc: Evolve a Blue into White,     gold: 40,  all: {evolved_white: 1}}
-    rebirth:        {name: Rebirth,           group: Flock,       desc: Evolve a Red into Phoenix,    gold: 40,  all: {evolved_orange: 1}}
-    birdwatcher:    {name: Birdwatcher,       group: Flock,       desc: Discover every bird,          gold: 100, all: {birds_discovered: 19}}
-    full_house:     {name: Full House,        group: Flock,       desc: End a world with all 9 birds, gold: 50,  all: {full_house_worlds: 1}}
-    nursery:        {name: Nursery,           group: Flock,       desc: Hatch 30 birds in all,        gold: 40,  all: {hatched: 30}}
+    golden_touch:   {name: Golden Touch,      group: Flock,       desc: Evolve a Yellow into Gold,    gold: 8,   all: {evolved_gold: 1}}
+    templar:        {name: Templar,           group: Flock,       desc: Evolve a Blue into White,     gold: 8,   all: {evolved_white: 1}}
+    rebirth:        {name: Rebirth,           group: Flock,       desc: Evolve a Red into Phoenix,    gold: 8,   all: {evolved_orange: 1}}
+    birdwatcher:    {name: Birdwatcher,       group: Flock,       desc: Discover every bird,          gold: 20,  all: {birds_discovered: 19}}
+    full_house:     {name: Full House,        group: Flock,       desc: End a world with all 9 birds, gold: 10,  all: {full_house_worlds: 1}}
+    nursery:        {name: Nursery,           group: Flock,       desc: Hatch 30 birds in all,        gold: 8,   all: {hatched: 30}}
     # Skill
-    clean_world:    {name: Not a Feather,     group: Skill,       desc: A world without losing a bird, gold: 40, all: {clean_worlds: 1}}
-    clean_boss:     {name: Flawless,          group: Skill,       desc: A boss without losing a bird, gold: 40,  all: {clean_bosses: 1}}
-    top_gear:       {name: Top Gear,          group: Skill,       desc: Reach gear 10,                gold: 30,  all: {max_gear: 10}}
-    no_swaps:       {name: Steady Hands,      group: Skill,       desc: A world without swapping,     gold: 30,  all: {swapless_worlds: 1}}
-    careful_flock:  {name: Careful Flock,     group: Skill,       desc: Reach 2-3 losing at most 3 birds, gold: 40, in_a_run: true, all: {level: 6}, most: {birds_lost: 3}}
+    clean_world:    {name: Not a Feather,     group: Skill,       desc: A world without losing a bird, gold: 8,  all: {clean_worlds: 1}}
+    clean_boss:     {name: Flawless,          group: Skill,       desc: A boss without losing a bird, gold: 8,   all: {clean_bosses: 1}}
+    top_gear:       {name: Top Gear,          group: Skill,       desc: Reach gear 10,                gold: 6,   all: {max_gear: 10}}
+    no_swaps:       {name: Steady Hands,      group: Skill,       desc: A world without swapping,     gold: 6,   all: {swapless_worlds: 1}}
+    careful_flock:  {name: Careful Flock,     group: Skill,       desc: Reach 2-3 losing at most 3 birds, gold: 8,  in_a_run: true, all: {level: 6}, most: {birds_lost: 3}}
     # Build
-    red_battery:    {name: Red Battery,       group: Build,       desc: 5 Red battery shots in a run, gold: 25,  in_a_run: true, all: {battery_shots: 5}}
-    full_charge:    {name: Full Charge,       group: Build,       desc: Fire a fully charged Purple shot, gold: 15, all: {full_charges: 1}}
-    deal_maker:     {name: Deal Maker,        group: Build,       desc: Make 3 pacts in a run,        gold: 40,  in_a_run: true, all: {pacts: 3}}
-    encore:         {name: Encore,            group: Build,       desc: 10 second powers in a run,    gold: 20,  in_a_run: true, all: {double_powers: 10}}
+    red_battery:    {name: Red Battery,       group: Build,       desc: 5 Red battery shots in a run, gold: 5,   in_a_run: true, all: {battery_shots: 5}}
+    full_charge:    {name: Full Charge,       group: Build,       desc: Fire a fully charged Purple shot, gold: 3,  all: {full_charges: 1}}
+    deal_maker:     {name: Deal Maker,        group: Build,       desc: Make 3 pacts in a run,        gold: 8,   in_a_run: true, all: {pacts: 3}}
+    encore:         {name: Encore,            group: Build,       desc: 10 second powers in a run,    gold: 4,   in_a_run: true, all: {double_powers: 10}}
     # Collection
-    egg_collector:  {name: Egg Collector,     group: Collection,  desc: Open 200 eggs in all,         gold: 30,  all: {eggs: 200}}
-    legend_hunter:  {name: Legend Hunter,     group: Collection,  desc: Open 5 legendary eggs in all, gold: 60,  all: {legendary_eggs: 5}}
-    mythical_find:  {name: Mythical Find,     group: Collection,  desc: Open a mythical egg,          gold: 100, all: {mythical_eggs: 1}}
+    egg_collector:  {name: Egg Collector,     group: Collection,  desc: Open 200 eggs in all,         gold: 6,   all: {eggs: 200}}
+    legend_hunter:  {name: Legend Hunter,     group: Collection,  desc: Open 5 legendary eggs in all, gold: 12,  all: {legendary_eggs: 5}}
+    mythical_find:  {name: Mythical Find,     group: Collection,  desc: Open a mythical egg,          gold: 20,  all: {mythical_eggs: 1}}
     # Totals
-    hatchling:      {name: Hatchling,         group: Totals,      desc: Play your first run,          gold: 10,  all: {runs: 1}}
-    regular:        {name: Regular,           group: Totals,      desc: Play 10 runs,                 gold: 30,  all: {runs: 10}}
-    devoted:        {name: Devoted,           group: Totals,      desc: Play 50 runs,                 gold: 80,  all: {runs: 50}}
-    bat_bane:       {name: Bat Bane,          group: Totals,      desc: Kill 500 bats in all,         gold: 30,  all: {bats: 500}}
-    bat_doom:       {name: Bat Doom,          group: Totals,      desc: Kill 2,500 bats in all,       gold: 80,  all: {bats: 2500}}
-    elite_bane:     {name: Elite Bane,        group: Totals,      desc: Kill 25 elite bats in all,    gold: 40,  all: {elites: 25}}
-    millionaire:    {name: Millionaire,       group: Totals,      desc: Score 1,000,000 in a run,     gold: 20,  all: {score: 1000000}}
-    tycoon:         {name: Tycoon,            group: Totals,      desc: Score 10,000,000 in a run,    gold: 50,  all: {score: 10000000}}
+    hatchling:      {name: Hatchling,         group: Totals,      desc: Play your first run,          gold: 2,   all: {runs: 1}}
+    regular:        {name: Regular,           group: Totals,      desc: Play 10 runs,                 gold: 6,   all: {runs: 10}}
+    devoted:        {name: Devoted,           group: Totals,      desc: Play 50 runs,                 gold: 16,  all: {runs: 50}}
+    bat_bane:       {name: Bat Bane,          group: Totals,      desc: Kill 500 bats in all,         gold: 6,   all: {bats: 500}}
+    bat_doom:       {name: Bat Doom,          group: Totals,      desc: Kill 2,500 bats in all,       gold: 16,  all: {bats: 2500}}
+    elite_bane:     {name: Elite Bane,        group: Totals,      desc: Kill 25 elite bats in all,    gold: 8,   all: {elites: 25}}
+    millionaire:    {name: Millionaire,       group: Totals,      desc: Score 1,000,000 in a run,     gold: 4,   all: {score: 1000000}}
+    tycoon:         {name: Tycoon,            group: Totals,      desc: Score 10,000,000 in a run,    gold: 10,  all: {score: 10000000}}
 
 # =============================================================================
 # UPGRADES: the tree bought with gold in the title menu (src/engine/meta.py)

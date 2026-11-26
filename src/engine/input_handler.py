@@ -6,6 +6,7 @@ from src.engine.actions import (
     handle_bounce,
     handle_movement,
     handle_pause,
+    handle_power,
     handle_swap,
     handle_xp_toggle,
 )
@@ -63,6 +64,8 @@ def process_input(key):
         handle_xp_toggle()
     elif key_upper == bindings.get('BOUNCE'):
         handle_bounce()
+    elif key in ('POWER', 'DOWN'):
+        handle_power()  # only with SETTINGS > CONTROLS > POWER BUTTON on X / DOWN
     elif key == 'QUIT':
         state.game.quit_requested = True
         state.game.game_over = True
