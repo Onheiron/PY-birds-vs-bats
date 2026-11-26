@@ -5,6 +5,7 @@ import random
 from src.core import constants, state
 from src.engine import bird_kinds, choices, clock, events, stats
 from src.engine.enemy_stats import upgrade_rarity
+from src.engine.logic.helpers import claim_free_lane
 from src.engine.progression import award_xp
 from src.entities.bird_types import get_bird_type_from_egg, get_color_for_bird_type, get_default_speed
 from src.entities.sprites import (
@@ -136,6 +137,8 @@ def _spawn_bird_from_egg(egg_type, loot=None):
 
     for idx in _hatch_slots():
         if state.birds.lost[idx]:
+            if claim_free_lane(idx) is None:
+                return
             state.birds.lost[idx] = False
             stats.clear_bird(idx)
             state.birds.colors[idx] = bird_color

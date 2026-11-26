@@ -118,9 +118,9 @@ def _check_bird_portal_teleport():
                     # Going DOWN: exit BELOW the other portal
                     new_y = other_py + other_ph
 
-                # One bird per lane: a bird living in the exit lane takes this one's lane
+                # One slot per lane: the slot in the exit lane (living or empty) takes this one's lane
                 for j in range(constants.layout.num_balls):
-                    if j != i and not state.birds.lost[j] and state.birds.random_lanes[j] == new_lane:
+                    if j != i and state.birds.random_lanes[j] == new_lane:
                         state.birds.random_lanes[j] = bird_lane
                         state.birds.cols[j] = constants.layout.lane_positions[bird_lane]
 

@@ -59,7 +59,12 @@ def _glitch_duplicate(source_idx):
 
     stats.clear_bird(target_idx)
     if state.birds.lost[target_idx]:
-        # Resurrect as GLITCH
+        # Resurrect as GLITCH, never in a lane a living bird holds
+        from src.engine.logic.helpers import claim_free_lane
+
+        target_lane = claim_free_lane(target_idx)
+        if target_lane is None:
+            return
         state.birds.lost[target_idx] = False
         state.birds.colors[target_idx] = GLITCH_COLOR
         state.birds.speeds[target_idx] = random.randint(constants.glitch.speed.min, constants.glitch.speed.max)

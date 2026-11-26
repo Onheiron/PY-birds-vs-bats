@@ -4,6 +4,11 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.4.2
+
+- Fixed: two birds in one lane after the Exile spell and a swap
+- An egg never hatches in a lane a bird already holds
+
 ## 2.4.1
 
 - The update check works on the Steam Deck (HTTPS certificates)

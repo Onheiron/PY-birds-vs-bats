@@ -72,3 +72,33 @@ def test_a_poisoned_bird_is_marked_outside_boss_fights():
         assert sim.state.enemies.boss is None
         assert '☠' in sim.screen.text()
         assert 'Poisoned!' in sim.screen.text()
+
+
+def living_lanes(state):
+    return sorted(state.birds.random_lanes[i] for i in range(constants.layout.num_balls) if not state.birds.lost[i])
+
+
+def test_exile_then_a_swap_keeps_one_bird_per_lane():
+    from src.engine import actions
+
+    with Simulation(seed=1, key_rate=0) as sim:
+        state = sim.state
+        a, b = bird_in_lane(state, 2), bird_in_lane(state, 5)
+        _execute_exile_swap({'bird_a_idx': a, 'bird_b_idx': b, 'empty_lane': None})
+        state.game.momentum = 1e9
+        state.player.selected_lane, state.player.lane = 2, 3
+        actions._execute_swap()
+        assert living_lanes(state) == list(range(constants.layout.num_lanes))
+
+
+def test_a_hatch_never_lands_on_a_living_bird():
+    from src.engine.logic.loot import _spawn_bird_from_egg
+
+    with Simulation(seed=1, key_rate=0) as sim:
+        state = sim.state
+        lost = bird_in_lane(state, 4)
+        state.birds.lost[lost] = True
+        state.birds.random_lanes[bird_in_lane(state, 3)] = 4  # a living bird moved into its lane
+        _spawn_bird_from_egg('yellow_egg')
+        assert not state.birds.lost[lost]
+        assert len(set(living_lanes(state))) == constants.layout.num_balls

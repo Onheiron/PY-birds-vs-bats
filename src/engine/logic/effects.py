@@ -253,6 +253,10 @@ def _execute_exile_swap(exile):
 
         state.birds.random_lanes[bird_a_idx] = lane_b
         state.birds.random_lanes[bird_b_idx] = lane_a
+        # Home lanes too: a later swap puts birds back in their home lane, and two
+        # birds would end up in one lane
+        home_a, home_b = state.birds.home_lanes[bird_a_idx], state.birds.home_lanes[bird_b_idx]
+        state.birds.home_lanes[bird_a_idx], state.birds.home_lanes[bird_b_idx] = home_b, home_a
         state.birds.cols[bird_a_idx] = constants.layout.lane_positions[lane_b]
         state.birds.cols[bird_b_idx] = constants.layout.lane_positions[lane_a]
 
