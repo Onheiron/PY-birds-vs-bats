@@ -102,3 +102,16 @@ def test_a_hatch_never_lands_on_a_living_bird():
         _spawn_bird_from_egg('yellow_egg')
         assert not state.birds.lost[lost]
         assert len(set(living_lanes(state))) == constants.layout.num_balls
+
+
+def test_a_beaten_boss_does_not_come_back_when_the_game_is_loaded():
+    from src.engine.logic.bosses.director import should_spawn_boss
+    from src.services import save_manager
+
+    with Simulation(seed=1, key_rate=0, level=9) as sim:
+        state = sim.state
+        state.enemies.boss_spawned = state.enemies.boss_defeated = True
+        state.enemies.boss = None
+        data = save_manager.snapshot()
+        assert save_manager.apply_save_data(data)
+        assert state.enemies.boss_defeated and not should_spawn_boss()

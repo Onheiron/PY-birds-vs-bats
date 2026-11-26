@@ -517,6 +517,9 @@ def _enemies_to_dict(enemies):
         'spawn_queue': list(enemies.spawn_queue),
         'right_panel_barriers': list(enemies.right_panel_barriers),
         'right_panel_barrier_timer': enemies.right_panel_barrier_timer,
+        # This level's boss already beaten: it must not come back when the game is loaded (a boss
+        # still being fought starts over instead)
+        'boss_done': bool(enemies.boss_defeated or (enemies.boss_spawned and enemies.boss is None)),
     }
 
 
@@ -654,6 +657,7 @@ def _restore_enemies(enemies, data, keep_ages=False):
     enemies.spawn_queue = data.get('spawn_queue', [])
     enemies.right_panel_barriers = data.get('right_panel_barriers', [])
     enemies.right_panel_barrier_timer = data.get('right_panel_barrier_timer', 0)
+    enemies.boss_spawned = enemies.boss_defeated = bool(data.get('boss_done', False))
 
     if keep_ages:
         return
