@@ -43,8 +43,14 @@ class Screen:
         self.x = 0
         self.y = 0
         self.style = ()
+        self._pending = ''  # an escape sequence cut in two by the reads: kept for the next feed
 
     def feed(self, data):
+        data = self._pending + data
+        self._pending = ''
+        cut = data.rfind('\x1b')
+        if cut != -1 and not re.match(r'\x1b(\[[0-9;?]*[ -/]*[@-~]|[^\[])', data[cut:]):
+            data, self._pending = data[:cut], data[cut:]
         data = _PRIVATE_MODE.sub('', data)
         pos = 0
         for match in _SGR_OR_CUP.finditer(data):

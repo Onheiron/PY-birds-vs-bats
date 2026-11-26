@@ -1,5 +1,6 @@
 """Runs the real program in a pseudo-terminal, driving it with key presses."""
 
+import codecs
 import os
 import re
 import select
@@ -41,6 +42,7 @@ class GameProcess:
         )
         os.close(slave)
         self.raw = ''
+        self._decoder = codecs.getincrementaldecoder('utf-8')(errors='replace')
         self.screen = Screen(COLUMNS, ROWS)
 
     def pump(self, seconds):
@@ -48,7 +50,7 @@ class GameProcess:
         while time.time() < deadline:
             if select.select([self.master], [], [], 0.05)[0]:
                 try:
-                    data = os.read(self.master, 65536).decode('utf-8', errors='replace')
+                    data = self._decoder.decode(os.read(self.master, 65536))  # characters cut in two wait
                 except OSError:
                     break
                 self.raw += data
