@@ -232,6 +232,9 @@ def _swap_in(sound, loops, fade):
     # Held here as well as by the mixer: a Sound freed while its channel plays it falls silent
     _music['sounds'][_music['channel']] = sound
     sound.set_volume(MUSIC_VOLUME)
+    # Full channel volume first: some SDL_mixer versions keep the volume a fade-out had
+    # reached when the channel is played again, and the new loop stays quiet
+    new.set_volume(1.0)
     if fade and old.get_busy() and not _music['paused']:
         old.fadeout(CROSSFADE_MS)
         new.play(sound, loops=loops, fade_ms=CROSSFADE_MS)

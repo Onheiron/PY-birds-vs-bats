@@ -4,6 +4,10 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.4.10
+
+- Fixed: the music of a new game could start too quiet
+
 ## 2.4.9
 
 - Achievements pay a fifth of the feathers: upgrades take playing for
