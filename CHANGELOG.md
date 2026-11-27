@@ -4,10 +4,13 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.4.11
+
+- Every music loop plays equally loud: no dips when the flock or the bats change
+
 ## 2.4.10
 
 - Fixed: the music of a new game could start too quiet
-- Every music loop plays equally loud: no dips when the flock or the bats change
 
 ## 2.4.9
 
