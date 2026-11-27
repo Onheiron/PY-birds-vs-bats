@@ -18,8 +18,21 @@ CACHE_SIZE = 48
 THEME_GAIN = 1.0
 DRUM_GAIN = 0.55
 PART_GAIN = 0.8
+LOUDNESS_DB = -15.5  # every loop plays this loud (RMS): a change of flock, bats or gear never dips
 
 _cache = OrderedDict()
+
+
+def _level(wave):
+    """``wave`` at LOUDNESS_DB (RMS), never past full scale."""
+    import numpy as np
+
+    rms = float(np.sqrt(np.mean(np.square(wave)))) if len(wave) else 0.0
+    peak = float(np.max(np.abs(wave))) if len(wave) else 0.0
+    if rms <= 1e-6:
+        return wave
+    gain = min(10 ** (LOUDNESS_DB / 20) / rms, 0.98 / max(peak, 1e-6))
+    return (wave * gain).astype(wave.dtype)
 
 
 def quantity_step(count, kind='BIRD'):
@@ -82,7 +95,7 @@ def loop(world, counts, bats=0, gear=1, boss=None, health=0):
     for key, instrument, events, gain in playing:
         audio = _rendered(key, lambda i=instrument, e=events: sampler.render_part(e, i, bpm, score.BEATS))
         parts.append((audio, gain * bus, INSTRUMENTS[instrument].get('pan', 0.0)))
-    return sampler.mix(parts)
+    return _level(sampler.mix(parts))
 
 
 def boss_loop(boss, world, counts, bats=0, gear=1, health=0):
@@ -106,7 +119,7 @@ def boss_loop(boss, world, counts, bats=0, gear=1, health=0):
         key, instrument, events = boss_music.hero_layer(boss, world, s)
         audio = _rendered(key, lambda: sampler.render_part(events, instrument, bpm, beats))
         parts.append((audio, boss_music.HERO_GAIN[health] * bus, 0.25))
-    return sampler.mix(parts)
+    return _level(sampler.mix(parts))
 
 
 def bridge(world, counts, bats, gear, boss):

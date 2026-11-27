@@ -7,6 +7,7 @@ GitHub uses it as its notes. Keep each line short: they are read in a small box.
 ## 2.4.10
 
 - Fixed: the music of a new game could start too quiet
+- Every music loop plays equally loud: no dips when the flock or the bats change
 
 ## 2.4.9
 
