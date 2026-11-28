@@ -40,6 +40,10 @@ STRATEGIES = {
     'few_birds': {'keep_birds': 5},
     'favorites': {'favorites': ('RED', 'PURPLE', 'WHITE', 'STEALTH'), 'cull_others': True},
     'adaptive': {'card_policy': 'adaptive', 'pact_policy': 'adaptive'},
+    # A build player: a few stats stacked from rare cards up, rerolls and timed cards otherwise
+    'builder': {'card_policy': 'builder'},
+    # No build at all: whatever card comes (the weak end the balance is measured against)
+    'no_build': {'card_policy': 'random'},
     'cautious': {
         'max_gear': 7,
         'keep_birds': 7,

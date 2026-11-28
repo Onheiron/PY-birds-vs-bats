@@ -93,3 +93,24 @@ def test_the_player_formation_follows_the_players_rules():
         moved = dict(white)
         moved[2], moved[1] = moved[1], moved[2]  # the White second from the edge
         assert strategy.player_formation_score(white) > strategy.player_formation_score(moved)
+
+
+def test_builder_skips_commons_of_its_build_and_rerolls_good_eggs():
+    from src.core import state
+    from src.sim.bot import Bot, Skill
+    from tests.harness import Simulation
+
+    with Simulation(seed=1, key_rate=0):
+        bot = Bot(Skill(card_policy='builder'))
+        state.choice.levels.clear()
+        state.choice.levels['sharp_beaks'] = 2
+        common = {'id': 'sharp_beaks', 'kind': 'stat', 'rarity': 'common'}
+        rare = {'id': 'sharp_beaks', 'kind': 'stat', 'rarity': 'rare'}
+        boost = {'id': 'frenzy', 'kind': 'boost', 'rarity': 'common'}
+        offer = {'kind': 'egg', 'rarity': 'common', 'index': 0, 'cards': [common, boost]}
+        assert bot._builder_choice(offer) == 1  # a timed card rather than a common level
+        offer['cards'] = [common, rare, boost]
+        assert bot._builder_choice(offer) == 1  # the rare version of a build stat
+        state.choice.rerolls = 1
+        offer = {'kind': 'egg', 'rarity': 'rare', 'index': 0, 'cards': [common, {**common, 'id': 'wide_wings'}]}
+        assert bot._builder_choice(offer) == 'r'  # a rare egg with nothing for the build: reroll

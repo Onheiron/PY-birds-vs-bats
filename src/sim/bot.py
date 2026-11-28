@@ -68,8 +68,15 @@ class Skill:
     # bounces lets birds fall too far; hitting enemies is how they die anyway)
     dodge: bool = False
     dodge_margin: int = 60  # frames of slack below which a blocked bird is bounced anyway
-    # Egg cards: 'smart' (rarity, then kind), 'adaptive' (what the flock needs now), 'first', 'random'
+    # Egg cards: 'smart' (rarity, then kind), 'adaptive' (what the flock needs now), 'builder'
+    # (a player's build: see the build_* fields), 'learned', 'first', 'random'
     card_policy: str = 'smart'
+    # 'builder' cards: lasting card types (those with levels) are taken only from build_rarity up,
+    # the types in build_stats first (any other lasting type: only to open a free type slot, from
+    # one rarity higher); a rare-or-better egg with nothing of the kind is rerolled; else a wanted
+    # bird, else a timed card (boost, power-up, training), else a skip
+    build_stats: tuple = ('sharp_beaks', 'piercing_talons', 'keen_eyes', 'heavy_blows', 'hollow_bones', 'lucky_feather')
+    build_rarity: str = 'rare'
     # Boss pacts: 'smart' (the one with the fewest drawbacks), 'adaptive', 'refuse', 'random'
     pact_policy: str = 'smart'
 
@@ -610,6 +617,8 @@ class Bot:
             return self.rng.randrange(len(options))
         if policy == 'adaptive':
             return strategy.choose_card(offer, self.skill)
+        if policy == 'builder' and offer['kind'] == 'egg':
+            return self._builder_choice(offer)
         if offer['kind'] == 'pact':
             if policy == 'refuse':
                 return len(options) - 1
@@ -627,6 +636,45 @@ class Bot:
             return (rank[card['rarity']] + 1) * value.get(card['kind'], 1)
 
         return max(range(len(options)), key=worth)
+
+    def _builder_choice(self, offer):
+        """A build player's choice: an index, or 'r' (reroll) / 's' (skip)."""
+        from src.engine import cards, choices
+
+        rank = {'common': 0, 'uncommon': 1, 'rare': 2, 'epic': 3, 'legendary': 4, 'mythical': 5}
+        floor = rank[self.skill.build_rarity]
+        options = offer['cards']
+        levels = state.choice.levels
+        wanted = list(self.skill.build_stats)
+
+        def build_worth(i):
+            card = options[i]
+            if not cards.limited(card) or card['kind'] == 'refuse':
+                return None
+            r = rank.get(card.get('rarity'), 0)
+            cid = card.get('id')
+            if cid in levels:
+                return (3, r) if r >= floor else None  # a type of the build: only a good version
+            if cid in wanted and r >= floor:
+                return (2, r - wanted.index(cid) * 0.01)  # open a wanted type
+            if r >= floor + 1:
+                return (1, r)  # another lasting type, only a strong version
+            return None
+
+        best = [(w, i) for i in range(len(options)) if (w := build_worth(i)) is not None]
+        if best:
+            return max(best)[1]
+        if rank.get(offer.get('rarity'), 0) >= floor and choices.rerolls_left() > 0:
+            return 'r'  # a good egg with nothing for the build: look again
+        birds = [i for i, c in enumerate(options) if c['kind'] == 'bird' and strategy.wants_bird(c['bird'], self.skill)]
+        if birds:
+            return max(birds, key=lambda i: rank.get(options[i].get('rarity'), 0))
+        timed = [i for i, c in enumerate(options) if c['kind'] in ('boost', 'powerup', 'training')]
+        if timed:
+            return max(timed, key=lambda i: rank.get(options[i].get('rarity'), 0))
+        if choices.skips_left() > 0:
+            return 's'
+        return min(range(len(options)), key=lambda i: rank.get(options[i].get('rarity'), 0))
 
     def _merchant_choice(self, options):
         """A life when few are left, else the rarest egg the run can pay for, else leave."""
@@ -660,6 +708,8 @@ class Bot:
 
     def _choice_key(self, offer):
         target = self._choose(offer)
+        if target in ('r', 's'):
+            return target
         if offer['index'] < target:
             return 'DOWN'
         if offer['index'] > target:
