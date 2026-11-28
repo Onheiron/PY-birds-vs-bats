@@ -42,6 +42,11 @@ STRATEGIES = {
     'adaptive': {'card_policy': 'adaptive', 'pact_policy': 'adaptive'},
     # A build player: a few stats stacked from rare cards up, rerolls and timed cards otherwise
     'builder': {'card_policy': 'builder'},
+    # ...the same, building against fear (resistance, shorter scares) and falls
+    'builder_fearless': {
+        'card_policy': 'builder',
+        'build_stats': ('brave_hearts', 'steady_nerves', 'fearless', 'feather_brake', 'hollow_bones', 'sharp_beaks'),
+    },
     # No build at all: whatever card comes (the weak end the balance is measured against)
     'no_build': {'card_policy': 'random'},
     'cautious': {

@@ -86,8 +86,9 @@ def skill_from(args):
         changes.update(STRATEGIES[strategy])
     for item in args.bot_set:
         changes.update(parse_assignments(item))
-    if 'favorites' in changes:
-        changes['favorites'] = tuple(changes['favorites'])
+    for name in ('favorites', 'build_stats'):
+        if name in changes:
+            changes[name] = tuple(changes[name])
     return profile(args.bot, **changes)
 
 
