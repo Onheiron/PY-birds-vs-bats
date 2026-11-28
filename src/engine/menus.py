@@ -401,9 +401,21 @@ def _settings_items():
         Item('CONTROLS', opens='controls'),
         Item('DIFFICULTY', 'option', _difficulty_name, on_enter=_cycle_difficulty, on_change=_cycle_difficulty),
         _option('ONLINE', 'online_enabled'),
+        _option('TUTORIAL', 'tutorial', _tutorial_toggled),
         *([Item('WIPE SAVE', opens='wipe')] if state.ui.show_title else []),  # not during a game
         _back_item(),
     ]
+
+
+def _tutorial_toggled():
+    """TUTORIAL on again: every tip once more."""
+    if state.settings.tutorial:
+        from src.engine import tutorial
+
+        if state.meta.profile is None:
+            state.meta.profile = save_manager.load_profile()
+        tutorial.reset()
+        save_manager.save_profile(state.meta.profile)
 
 
 def _wipe_items():

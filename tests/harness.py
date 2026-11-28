@@ -146,6 +146,7 @@ class Simulation:
 
         constants.reload_for_difficulty(1)
         state.init(seed)
+        state.settings.tutorial = False  # no tips holding the game (tests/test_tutorial.py turns them on)
         state.ui.show_title = False
         state.ui.menu_stack = []
         state.game.start_time = self.clock.now

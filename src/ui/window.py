@@ -369,7 +369,7 @@ class Window:
 
         if self._text:
             return 'text'
-        if state.choice.active is not None and not state.game.paused:
+        if (state.choice.active is not None or state.ui.tip is not None) and not state.game.paused:
             return 'choice'
         if state.ui.show_title or state.game.paused or state.choice.active is not None or state.game.game_over:
             return 'menu'

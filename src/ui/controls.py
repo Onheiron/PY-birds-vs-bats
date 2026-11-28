@@ -46,6 +46,8 @@ _PAD = {
     'xp': '[Y]',
     'rebind': '[A]',
     'quit': '[Menu]',
+    'power': '[X]',
+    'ok': '[X]',  # tutorial tips: not A, the bounce
 }
 
 LABELS = {
@@ -67,6 +69,8 @@ LABELS = {
         quit='[Options]',
         xp='△',
         rebind='✕',
+        power='□',
+        ok='□',
     ),
 }
 
@@ -96,6 +100,8 @@ def keyboard_labels():
         'xp': 'X',
         'rebind': '⏎',
         'quit': 'Q',
+        'power': '↓',
+        'ok': '⏎',
     }
 
 

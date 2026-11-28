@@ -37,6 +37,19 @@ def process_input(key):
         menus.handle_key(key)
         return
 
+    # A tutorial tip on screen: ENTER (X) goes on, S (B) skips the tutorial; P still pauses
+    if state.ui.tip is not None:
+        from src.engine import tutorial
+
+        if key in ('P', 'p'):
+            handle_pause()
+        elif key == 'QUIT':
+            state.game.quit_requested = True
+            state.game.game_over = True
+        else:
+            tutorial.handle_key(key)
+        return
+
     # While a choice is on screen (egg cards, pacts) keys pick an option; P still pauses
     if state.choice.active is not None:
         if key in ('P', 'p'):

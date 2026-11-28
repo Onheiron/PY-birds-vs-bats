@@ -88,6 +88,12 @@ class System:
     when: Callable[[], bool] | None = None
 
 
+def _tutorial_update():
+    from src.engine import tutorial
+
+    tutorial.update()
+
+
 def no_boss():
     return state.enemies.boss is None
 
@@ -168,6 +174,7 @@ SYSTEMS = (
     System('orange eggs', Phase.CLEANUP, restore_orange_eggs),
     System('boss outcome', Phase.CLEANUP, _BossWatch()),
     System('dynamic music', Phase.CLEANUP, sync_active_birds),
+    System('tutorial', Phase.CLEANUP, _tutorial_update),
 )
 
 assert list(SYSTEMS) == sorted(SYSTEMS, key=lambda s: s.phase), 'systems must be listed in phase order'

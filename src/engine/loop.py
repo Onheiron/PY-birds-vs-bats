@@ -8,7 +8,7 @@ import copy
 import time
 
 from src.core import state
-from src.engine import clock, events, input_handler, menus, meta, progression, recorder, systems
+from src.engine import clock, events, input_handler, menus, meta, progression, recorder, systems, tutorial
 from src.engine.timing import FrameClock, frames_per_update
 from src.entities.bird_types import get_bird_type_by_color
 from src.services import save_manager, sound
@@ -22,6 +22,7 @@ AUTOSAVE_INTERVAL = 60
 # Side effects that react to game events
 sound.subscribe()
 meta.subscribe()
+tutorial.subscribe()
 
 
 class Session:
@@ -36,7 +37,7 @@ class Session:
         now = time.time()
         sound.follow_pause(game.paused)  # the music holds while paused
 
-        if game.paused or state.choice.active is not None:
+        if game.paused or state.choice.active is not None or state.ui.tip is not None:
             # Neither miles nor game time advance while paused or choosing a card
             if game.last_mile_update is not None:
                 clock.hold(now - game.last_mile_update)
@@ -88,6 +89,8 @@ def run_session():
     if state.meta.profile is None:
         state.meta.profile = save_manager.load_profile()
     init_time = state.game.start_time  # when state.init dealt the flock
+    state.ui.tip = None
+    tutorial._started['frame'] = None  # the tips' clock starts with the session
     profile = copy.deepcopy(state.meta.profile)
     meta.start_run()
 

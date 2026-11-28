@@ -4,6 +4,11 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.5.1
+
+- A tutorial: a tip the first time each thing happens (X goes on, B skips)
+- SETTINGS > TUTORIAL turns it off, or on again to see every tip once more
+
 ## 2.5.0
 
 - Waves add up: every level has its waves, on a timer, dead or not

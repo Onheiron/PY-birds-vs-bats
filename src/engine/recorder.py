@@ -27,7 +27,7 @@ from src.core import constants, state
 FORMAT = 1
 
 # Settings that change how the game plays (sound and graphics do not)
-GAMEPLAY_SETTINGS = ('bounce_on_enter', 'trigger_on_enter', 'power_button', 'difficulty', 'key_bindings')
+GAMEPLAY_SETTINGS = ('bounce_on_enter', 'trigger_on_enter', 'power_button', 'tutorial', 'difficulty', 'key_bindings')
 
 
 def recordings_dir():

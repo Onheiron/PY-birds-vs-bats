@@ -30,6 +30,7 @@ from src.ui.layers.panels import (
     draw_right_panel_level_signs,
     draw_side_panels,
 )
+from src.ui.layers.tutorial import draw_tip
 
 # Extra layers drawn on top of everything, e.g. the watch-mode status bar.
 # Each is a callable taking the framebuffer.
@@ -65,6 +66,7 @@ def render_game():
     draw_floor_and_cursor(fb)
     draw_footer(fb)
     draw_choice_overlay(fb)
+    draw_tip(fb)  # over the cards: a tip may explain them
     draw_pause_overlay(fb)
     for overlay in OVERLAYS:
         overlay(fb)

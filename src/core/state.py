@@ -275,6 +275,7 @@ def _new_ui():
     return SimpleNamespace(
         show_xp_overlay=False,
         last_recording=None,  # path of the recording of the last game (src/engine/recorder.py)
+        tip=None,  # the tutorial tip on screen (src/engine/tutorial.py), or None
         page_scroll={},  # text page -> first line shown (long pages scroll with UP / DOWN)
         # Parallax background layers (3 layers with different speeds)
         bg_offset=0,  # Slowest layer (original tree pattern)
@@ -314,6 +315,8 @@ def _new_settings():
         # Powers on their own button (X on a gamepad, DOWN on the keyboard) instead of UP on a
         # rising bird: UP then only bounces
         power_button=False,
+        # Tutorial tips (src/engine/tutorial.py): shown once each, the first runs
+        tutorial=True,
         # Labels of the controls in the hints: auto (the device used last), keyboard,
         # xbox, playstation, steamdeck (src/ui/controls.py)
         controls_profile='auto',
