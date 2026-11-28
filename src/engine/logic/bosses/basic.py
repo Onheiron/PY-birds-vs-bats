@@ -48,6 +48,8 @@ def spawn_basic_boss():
         return
 
     hp = getattr(boss_cfg, 'hp', 300)
+    if state.game.level_group >= 6:
+        hp *= float(getattr(boss_cfg, 'final_hp_mult', 1.0))  # the last boss: the hardest of all
     hp = scaled_hp(hp)
 
     # Boss spawns at center of screen, above view

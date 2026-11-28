@@ -140,7 +140,13 @@ def update_miles(delta_time):
 
     # Convert mph to miles per second and add
     miles_per_second = mph / 3600.0
+    from src.engine.logic.bosses import director
+
+    point = director.boss_point()
+    before = state.game.miles
     state.game.miles += miles_per_second * delta_time
+    if point is not None and before <= point < state.game.miles and director.waiting_for_waves():
+        state.game.miles = point  # the boss waits for the level's waves: so do the miles
 
     # Check if level changed
     old_level = state.game.level

@@ -1155,13 +1155,19 @@
               },
               "type": "object"
             },
-            "first_pause": {
+            "countdown": {
               "type": "number"
+            },
+            "interval_by_world": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
             },
             "min_size": {
               "type": "number"
             },
-            "pause": {
+            "per_level_by_world": {
               "items": {
                 "type": "number"
               },
@@ -1931,6 +1937,9 @@
           "type": "object"
         },
         "descent_speed": {
+          "type": "number"
+        },
+        "final_hp_mult": {
           "type": "number"
         },
         "hp": {

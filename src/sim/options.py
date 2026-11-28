@@ -22,7 +22,8 @@ def parse_assignments(text):
             raise SystemExit(f'expected key=value, got {part!r}')
         key, value = part.split('=', 1)
         node = result
-        *parents, leaf = key.strip().split('.')
+        # Numbers are numbers, as in the YAML files (enemy_stats.bats.worlds.3: world 3)
+        *parents, leaf = (int(name) if name.isdigit() else name for name in key.strip().split('.'))
         for name in parents:
             node = node.setdefault(name, {})
         node[leaf] = yaml.safe_load(value)

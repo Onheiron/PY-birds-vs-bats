@@ -159,6 +159,12 @@ class Simulation:
         elif level > 1:
             state.game.miles = float(milestones[level - 2]) + 0.01
         progression.update_miles(1e-9)
+        if near_boss:
+            # ...with the level's waves all dead: the boss does not wait for them
+            from src.engine.logic import waves
+
+            state.enemies.waves.clear()
+            state.enemies.level_waves = {'level': state.game.level, 'planned': waves.per_level(), 'next_at': 1e18}
 
         framebuffer.reset_framebuffer()
         self.fb = framebuffer.get_framebuffer()

@@ -4,6 +4,13 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.5.0
+
+- Waves add up: every level has its waves, on a timer, dead or not
+- The boss of a world waits until every wave of its level is dead
+- From world 3 bats and obstacles get more HP and armor, world by world
+- Every boss is tougher than the one before; the last one is the hardest
+
 ## 2.4.11
 
 - Every music loop plays equally loud: no dips when the flock or the bats change

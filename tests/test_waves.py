@@ -17,6 +17,8 @@ def start_wave(sim, world=3):
     state.game.level_group, state.game.level_sub = world, 1
     state.enemies.bats.clear()
     state.enemies.bat_wave = None
+    state.enemies.waves.clear()
+    state.enemies.level_waves = None
     tick(state)
     wave = state.enemies.bat_wave
     wave['starts_at'] = clock.now()  # skip the countdown
@@ -39,15 +41,44 @@ def test_a_wave_never_has_more_than_max_bats_at_once_and_ends_when_all_are_dead(
     with Simulation(seed=2, key_rate=0) as sim:
         state = sim.state
         wave = start_wave(sim)
+        state.enemies.level_waves['next_at'] = 1e18  # no other wave meanwhile
         max_bats = enemy_stats.world_table()['max_bats']
         tick(state, 2000)
         assert len(waves.wave_bats()) == max_bats
         assert wave['spawned'] == max_bats < wave['size']
-        while wave['spawned'] < wave['size'] or waves.wave_bats():
+        while wave['spawned'] < wave['size'] or waves.wave_bats(wave):
             state.enemies.bats.clear()  # all killed
             tick(state, 200)
-        assert state.enemies.bat_wave['number'] == wave['number'] + 1  # the next one is coming
-        assert state.enemies.bat_wave['starts_at'] > clock.now()
+        tick(state)
+        assert wave not in state.enemies.waves  # over
+
+
+def test_the_waves_of_a_level_come_on_time_and_add_up():
+    with Simulation(seed=2, key_rate=0) as sim:
+        state = sim.state
+        start_wave(sim)
+        first = state.enemies.waves[0]
+        interval = waves._by_world('interval_by_world', [30])
+        clock.resume_at(clock.now() + interval + 0.1)
+        tick(state)
+        assert len(state.enemies.waves) == 2 and first in state.enemies.waves  # the first is not dead yet
+        for _ in range(waves.per_level() + 2):
+            clock.resume_at(clock.now() + interval + 0.1)
+            tick(state)
+        assert state.enemies.level_waves['planned'] == waves.per_level()  # no more than the level's
+
+
+def test_the_boss_waits_for_the_waves_of_its_level():
+    from src.engine.logic.bosses import director
+
+    with Simulation(seed=3, level=6, near_boss=True) as sim:
+        state = sim.state
+        state.game.miles = director.boss_point() + 0.01
+        state.enemies.level_waves = None  # the level's waves still to come
+        assert director.waiting_for_waves() and not director.should_spawn_boss()
+        state.enemies.level_waves = {'level': state.game.level, 'planned': waves.per_level(), 'next_at': 1e18}
+        state.enemies.waves.clear()
+        assert not director.waiting_for_waves() and director.should_spawn_boss()
 
 
 def test_no_waves_in_the_first_world():

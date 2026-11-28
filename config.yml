@@ -44,11 +44,11 @@ combat:
   hp_scale: 10
   # Every boss's HP is multiplied by this (one knob for all of them)
   boss_hp_mult: 1.0
-  # ...and grows by this share per world after the first (1.0: ×6 in the last world)
-  boss_hp_per_world: 1.0
+  # ...and grows by this share per world after the first (1.4: ×8 in the last world)
+  boss_hp_per_world: 1.4
   # Boss armor (its armor_reduction) grows by this much per world after the first.
   # Armor, defense and armor pierce against bats and bosses are base points: × hp_scale
-  boss_armor_per_world: 4
+  boss_armor_per_world: 6
   # Afflictions (freeze, poison, bleed) land this much less often on bosses
   boss_affliction_factor: 0.33
   # Score/XP multipliers for destroying enemies
@@ -143,11 +143,14 @@ bat_enemy:
        kinds: {armored: 0.20, diver: 0.14, spellcaster: 0.12, healer: 0.08, bomber: 0.10, plague: 0.10,
                necromancer: 0.08},
        height: [12, 23], dive_height: [0.18, 0.45], mini_bat: 0.60}
-  # Bat waves (logic/waves.py): a countdown card, then the wave's bats come in from the top,
-  # at most max_bats at once (one every spawn_interval ticks); the next wave after a pause
+  # Bat waves (logic/waves.py): every level has per_level waves, one every interval seconds
+  # whether the ones before are dead or not (they add up); each starts after a countdown card,
+  # then its bats come in from the top, at most max_bats wave bats on screen (one every
+  # spawn_interval ticks). A world's boss comes only once every wave of its level is dead
   waves:
-    first_pause: 5               # seconds before the first wave of a world
-    pause: [6, 10]               # seconds between a cleared wave and the next
+    per_level_by_world: [0, 3, 3, 4, 4, 5]
+    interval_by_world: [0, 30, 27, 24, 21, 18]   # seconds between two waves of a level
+    countdown: 5                 # seconds the card counts down before a wave starts
     size_by_world: [0, 6, 8, 10, 12, 14]   # bats in a wave of tier 1...
     size_per_level: 1            # ...+ this for each level of the world after the first...
     size_cut_per_tier: 1         # ...- this for each tier above 1
@@ -191,6 +194,7 @@ bat_enemy:
 boss:
   # HP for the boss (high HP, requires sustained effort)
   hp: 2000
+  final_hp_mult: 2.5                   # the last world's boss (the same one): × this, the hardest of all
   # Armor reduction (subtracted from each hit)
   armor_reduction: 10
   # Scream attack settings
@@ -249,8 +253,8 @@ wind_boss:
 jelly_boss:
   level: 9                            # Which level this boss appears (3-3 = level 9)
   spawn_miles_before_transition: 1    # Spawn 1 mile before level end (like wind boss)
-  hp: 4000                             # Higher HP
-  armor_reduction: -2                  # Less armor (takes more damage; × hp_scale)
+  hp: 6500                             # more than the Wind boss's (world 3 > world 2)
+  armor_reduction: 6                   # Soft, but no softer than the Wind boss (× hp_scale)
   # Position - settles at 1/4 from top
   target_y_fraction: 0.25             # Fraction of screen height from top
   # Animation timing (10 frames, 1 fps = 10 seconds per cycle)
@@ -773,11 +777,12 @@ enemy_stats:
     # Changes world by world: flat stats for every bat, or per tier / per kind
     worlds:
       # (flat defense: every bat is a little tougher world by world)
+      # (from world 3 armor, lowered by armor pierce, and more HP: a build must keep up)
       2: {defense: 1}
-      3: {defense: 2, kinds: {spellcaster: {spells: -2, ability_chance: 0.05}}}   # silence only
-      4: {defense: 3, kinds: {spellcaster: {ability_chance: 0.10}}}
-      5: {defense: 4, kinds: {spellcaster: {ability_chance: 0.15}}}
-      6: {defense: 5, kinds: {spellcaster: {ability_chance: 0.20}}}
+      3: {defense: 2, armor: 3, hp_mult: 1.3, kinds: {spellcaster: {spells: -2, ability_chance: 0.05}}}   # silence only
+      4: {defense: 3, armor: 6, hp_mult: 1.7, kinds: {spellcaster: {ability_chance: 0.10}}}
+      5: {defense: 4, armor: 9, hp_mult: 2.2, kinds: {spellcaster: {ability_chance: 0.15}}}
+      6: {defense: 5, armor: 12, hp_mult: 2.8, kinds: {spellcaster: {ability_chance: 0.20}}}
     # What an elite of a kind gets on top of the elite stats
     elite_kinds:
       # Knocks the bird that hits it down hard (+knock speed for knock_time s)
@@ -808,11 +813,12 @@ enemy_stats:
       peak:       {hp_mult: 2.0, armor: 15, knock: 2, knock_time: 1.0}   # knocks birds down hard
       stone:      {}                                  # dropped by bombers (their stone_* stats)
     worlds:
+      # (as the bats: tougher world by world)
       2: {defense: 1}
-      3: {defense: 2}
-      4: {defense: 3}
-      5: {defense: 4, tiers: {2: {hp_mult: 1.5, defense: 3}}}     # Void Cave: hard rocks
-      6: {defense: 5}
+      3: {defense: 2, armor: 3, hp_mult: 1.3}
+      4: {defense: 3, armor: 6, hp_mult: 1.7}
+      5: {defense: 4, armor: 9, hp_mult: 2.2, tiers: {2: {hp_mult: 1.5, defense: 3}}}   # Void Cave: hard rocks
+      6: {defense: 5, armor: 12, hp_mult: 2.8}
 
 # =============================================================================
 # ELITE BATS

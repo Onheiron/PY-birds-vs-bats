@@ -538,6 +538,8 @@ def _enemies_to_dict(enemies):
         'bats': list(enemies.bats),
         'bat_spawn_timer': enemies.bat_spawn_timer,
         'bat_wave': enemies.bat_wave,
+        'waves': list(enemies.waves),
+        'level_waves': enemies.level_waves,
         'wave_count': enemies.wave_count,
         'spawn_queue': list(enemies.spawn_queue),
         'right_panel_barriers': list(enemies.right_panel_barriers),
@@ -678,6 +680,10 @@ def _restore_enemies(enemies, data, keep_ages=False):
     enemies.bats = data.get('bats', [])
     enemies.bat_spawn_timer = data.get('bat_spawn_timer', 0)
     enemies.bat_wave = data.get('bat_wave')
+    enemies.waves = list(data.get('waves') or ([enemies.bat_wave] if enemies.bat_wave else []))
+    if enemies.bat_wave and enemies.waves and enemies.bat_wave['number'] == enemies.waves[-1]['number']:
+        enemies.bat_wave = enemies.waves[-1]  # one object, as in the game
+    enemies.level_waves = data.get('level_waves')
     enemies.wave_count = data.get('wave_count', 0)
     enemies.spawn_queue = data.get('spawn_queue', [])
     enemies.right_panel_barriers = data.get('right_panel_barriers', [])

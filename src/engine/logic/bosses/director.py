@@ -61,34 +61,50 @@ def special_boss_for_level(level):
     return None
 
 
-def should_spawn_boss():
-    """Check if boss should spawn (end of biome level, near transition)."""
-    # Already spawned or defeated this level?
-    if state.enemies.boss_spawned or state.enemies.boss is not None:
-        return False
-
-    level = state.game.level
+def boss_point(level=None):
+    """Miles at which the boss of ``level`` (default: the current one) comes, or None without one."""
+    level = state.game.level if level is None else level
     special = special_boss_for_level(level)
     boss_cfg = get_boss_config()
-
     if special is not None:
         spawn_miles_before = special.spawn_miles_before_transition
     else:
         # Basic boss: needs its config and a level listed in boss_levels
         if boss_cfg is None or level not in getattr(boss_cfg, 'boss_levels', [3, 6, 9, 12, 15, 18]):
-            return False
+            return None
         spawn_miles_before = getattr(boss_cfg, 'spawn_miles_before_transition', 1)
-
     milestones = get_level_milestones()
-    # Miles at which the current level starts and ends
-    level_start_miles = milestones[level - 2] if level >= 2 else 0
     level_end_miles = milestones[level - 1] if level <= len(milestones) else milestones[-1]
+    return level_end_miles - spawn_miles_before
 
+
+def waiting_for_waves():
+    """The boss is due but bats of the level's waves are still alive (or still to come):
+    the miles wait at the boss until they are all dead."""
+    from src.engine.logic import waves
+
+    if state.enemies.boss_spawned or state.enemies.boss is not None:
+        return False
+    point = boss_point()
+    return point is not None and state.game.miles >= point and waves.remaining() > 0
+
+
+def should_spawn_boss():
+    """Check if boss should spawn (end of biome level, near transition), once its waves are dead."""
+    # Already spawned or defeated this level?
+    if state.enemies.boss_spawned or state.enemies.boss is not None:
+        return False
+    point = boss_point()
+    if point is None:
+        return False
+    milestones = get_level_milestones()
+    level = state.game.level
+    level_start_miles = milestones[level - 2] if level >= 2 else 0
     miles_in_level = state.game.miles - level_start_miles
-    miles_remaining = level_end_miles - state.game.miles
+    # Spawn once we are inside the level, close enough to its end, and its waves are dead
+    from src.engine.logic import waves
 
-    # Spawn once we are inside the level and close enough to its end
-    return miles_in_level > 0 and miles_remaining <= spawn_miles_before
+    return miles_in_level > 0 and state.game.miles >= point and waves.remaining() == 0
 
 
 def spawn_boss():

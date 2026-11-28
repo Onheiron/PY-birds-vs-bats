@@ -121,8 +121,11 @@ Distance does not advance while a boss is alive.
   and jumpscare bats, swamp obstacles grow flowers, cave portals teleport birds.
 - **Bats** come in **waves** from the second biome: a card in the right panel
   counts down to the next wave and says how many bats it has and their tier;
-  then they come in from the top a few at a time, and the next wave starts
-  once all of them are dead. Each bat comes in above a spot it chose (by
+  then they come in from the top a few at a time. Every level has a few
+  waves, one every so many seconds whether the ones before are dead or not:
+  they add up, and a world's boss comes only once every wave of its level
+  is dead. From the third world bats and obstacles are tougher world by
+  world (more HP, and armor that armor pierce cuts). Each bat comes in above a spot it chose (by
   its kind: the strongest bird, birds with powers, full or empty lanes...),
   goes down to a row that depends on its tier, holds, moves a few lanes,
   and after a few spots flies out from the top, coming back a moment later

@@ -123,7 +123,9 @@ def _new_enemies():
         obstacle_id_counter=0,  # Unique ID counter for obstacles
         bats=[],
         bat_spawn_timer=0,
-        bat_wave=None,  # the coming or running bat wave (logic/waves.py)
+        bat_wave=None,  # the latest bat wave (logic/waves.py)
+        waves=[],  # every wave planned and not dead yet, oldest first
+        level_waves=None,  # {'level', 'planned', 'next_at'}: the waves of the current level
         wave_count=0,  # waves so far
         spawn_queue=[],
         # Mini bats that hide in tier 3+ obstacles
