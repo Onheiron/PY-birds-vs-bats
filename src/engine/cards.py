@@ -79,6 +79,7 @@ _LABELS = {
     'score_mult': 'score',
     'xp_gain': 'XP',
     'pickup_radius': 'pickup radius',
+    'egg_time': 'seconds an egg lasts',
     'luck': 'lucky finds (a collected egg turns rarer)',
     'choices': 'choice per egg',
     'egg_luck': 'luck (rarer drops)',

@@ -183,3 +183,19 @@ def test_emerging_obstacles_appear_above_the_birds():
         obstacle = {'id': 1, 'lane': 4, 'y_pos': -2, 'tier': 1, 'hp': 50, 'sprite': ['##'], 'sprite_width': 2}
         assert hazards.place_emerging(obstacle)
         assert obstacle['y_pos'] + 1 < 8
+
+
+def test_dropped_eggs_rise_and_are_gone_at_the_top():
+    from src.core import constants
+    from src.engine.logic.spawning import despawn_old_entities
+    from src.engine.physics import update_loot_positions
+
+    with Simulation(seed=3, key_rate=0) as sim:
+        egg = {'type': 'egg', 'rarity': 'rare', 'x_pos': 10, 'y_pos': 2, 'spawn_ts': 0}
+        sim.state.items.loot_items[:] = [egg]
+        ticks = int(round(constants.loot.egg_rise_seconds / constants.timing.base_sleep))
+        for _ in range(ticks * 3):
+            update_loot_positions()
+        assert egg['y_pos'] == -1
+        despawn_old_entities()
+        assert egg not in sim.state.items.loot_items

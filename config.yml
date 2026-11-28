@@ -73,6 +73,10 @@ loot:
   glitch_ignore_chance: 0.05         # Chance to ignore loot
   # Despawn times (seconds)
   loot_despawn_time: 30
+  # Rarity eggs from enemies: gone after this many seconds (+ the flock's egg_time), rising
+  # a row every egg_rise_seconds meanwhile (obstacles and bats come between them and the birds)
+  egg_despawn_time: 14
+  egg_rise_seconds: 0.9
   # Gold bird score per tick
   gold_bird_score_per_tick: 40
 notifications:
@@ -906,7 +910,7 @@ cards:
     bat_hunter:      {name: Bat Hunter, desc: "More damage against bats.",      kind: stat, effects: [{stat: vs_bats, add: 0.04}]}
     lumberjack:      {name: Lumberjack, desc: "More damage against obstacles.",      kind: stat, effects: [{stat: vs_obstacles, add: 0.08}]}
     giant_slayer:    {name: Giant Slayer, desc: "More damage against elites and bosses.",    kind: stat, effects: [{stat: vs_elites, add: 0.06}], min_rarity: uncommon}
-    wide_wings:      {name: Wide Wings, desc: "Birds collect eggs from farther away.",      kind: stat, effects: [{stat: pickup_radius, add: 0.5}]}
+    wide_wings:      {name: Wide Wings, desc: "Birds collect eggs from farther away.",      kind: stat, effects: [{stat: pickup_radius, add: 1.0}]}
     lucky_feather:   {name: Lucky Feather, desc: "An egg a bird collects may turn one rarity rarer.",   kind: stat, effects: [{stat: luck, add: 0.02}]}
     quick_study:     {name: Quick Study, desc: "Birds earn more XP from hits and kills.",     kind: stat, effects: [{stat: xp_gain, pct: 6}]}
     show_off:        {name: Show-off, desc: "More points.",        kind: stat, effects: [{stat: score_mult, pct: 5}]}
@@ -947,6 +951,7 @@ cards:
     more_choices:    {name: Wider Nest, desc: "Every egg offers one more card.",      kind: flock, min_rarity: epic,
                       effects: [{stat: choices, add: 1, scale: false}]}
     lucky_nest:      {name: Lucky Nest, desc: "Enemies drop rarer eggs.",      kind: flock, min_rarity: rare, effects: [{stat: egg_luck, add: 0.008}]}
+    patient_nest:    {name: Patient Nest, desc: "Dropped eggs last longer before they are gone.", kind: flock, effects: [{stat: egg_time, add: 2.0}]}
 
 # =============================================================================
 # PACTS
@@ -1146,6 +1151,8 @@ upgrades:
                     costs: [25, 45, 70, 100, 140], requires: {gold_digger: 2}, effects: [{rerolls: 1}]}
     skips:         {name: Skips,         branch: Fortune, desc: One more egg skip per run,
                     costs: [30, 55, 80, 110, 150], requires: {rerolls: 1}, effects: [{skips: 1}]}
+    long_shells:    {name: Long Shells, branch: Fortune, desc: Dropped eggs last longer,
+                    costs: [20, 35, 55], effects: [{stat: egg_time, add: 2}]}
     merchant_stock: {name: Merchant Stock, branch: Fortune, desc: The merchant brings one more ware,
                     costs: [50, 90], effects: [{merchant_stock: 1}]}
     haggling:      {name: Haggling,      branch: Fortune, desc: The merchant's prices fall,

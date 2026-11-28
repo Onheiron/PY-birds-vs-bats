@@ -2771,6 +2771,34 @@
               },
               "type": "object"
             },
+            "patient_nest": {
+              "properties": {
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
             "piercing_talons": {
               "properties": {
                 "desc": {
@@ -4446,6 +4474,12 @@
     },
     "loot": {
       "properties": {
+        "egg_despawn_time": {
+          "type": "number"
+        },
+        "egg_rise_seconds": {
+          "type": "number"
+        },
         "glitch_ignore_chance": {
           "type": "number"
         },
@@ -6351,6 +6385,40 @@
               "type": "object"
             },
             "light_bones": {
+              "properties": {
+                "branch": {
+                  "type": "string"
+                },
+                "costs": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "effects": {
+                  "items": {
+                    "properties": {
+                      "add": {
+                        "type": "number"
+                      },
+                      "stat": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "long_shells": {
               "properties": {
                 "branch": {
                   "type": "string"

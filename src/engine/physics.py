@@ -312,8 +312,18 @@ def update_right_panel_barriers():
 
 
 def update_loot_positions():
-    """Update positions of loot items (they don't move, but could in future)."""
-    # Currently loot items are stationary until collected or despawned
+    """Dropped eggs drift slowly up (loot.egg_rise_seconds a row): things come between them and the
+    birds, and one that reaches the top is gone. Other loot stays where it fell."""
+    seconds = float(getattr(constants.loot, 'egg_rise_seconds', 0) or 0)
+    if seconds <= 0:
+        return
+    ticks = max(1, int(round(seconds / constants.timing.base_sleep)))
+    for loot in state.items.loot_items:
+        if loot.get('type') == 'egg':
+            loot['rise'] = loot.get('rise', 0) + 1
+            if loot['rise'] >= ticks:
+                loot['rise'] = 0
+                loot['y_pos'] -= 1  # off the top (below 0): gone (logic/spawning.py)
 
 
 def update_mini_bat_positions():

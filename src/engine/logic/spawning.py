@@ -3,7 +3,7 @@
 import random
 
 from src.core import constants, state
-from src.engine import clock, enemy_stats, events, hazards
+from src.engine import clock, enemy_stats, events, hazards, stats
 from src.engine.birds import check_pending_transforms
 from src.engine.logic.flowers import maybe_add_flower_to_obstacle
 from src.engine.logic.helpers import get_obstacle_lanes
@@ -220,8 +220,10 @@ def despawn_old_entities():
 
     # Loot despawn after configured time
     loot_despawn = getattr(constants.loot, 'loot_despawn_time', 30)
+    egg_despawn = getattr(constants.loot, 'egg_despawn_time', loot_despawn) + stats.flock('egg_time')
     for loot in state.items.loot_items[:]:
-        if now - loot.get('spawn_ts', now) > loot_despawn:
+        lasts = egg_despawn if loot.get('type') == 'egg' else loot_despawn
+        if now - loot.get('spawn_ts', now) > lasts or loot.get('y_pos', 0) < 0:
             # Orange eggs kill their bird when they despawn
             if loot.get('type') == 'orange_egg' and loot.get('y_pos') == constants.layout.starting_line:
                 lane_x = loot.get('x_pos')

@@ -84,6 +84,7 @@ BIRD_STATS = {
 FLOCK_STATS = {
     'choices': StatDef(3, 1, 6, 'options offered by an egg'),
     'egg_luck': StatDef(0, 0, 0.25, 'luck: chance that an enemy drop is one rarity higher'),
+    'egg_time': StatDef(0, 0, 30, 'seconds more a dropped egg lasts (and rises) before it is gone'),
     'prestige_bonus': StatDef(0, 0, 999, 'prestige added to the flock (before prestige_mult)'),
     'prestige_mult': StatDef(1, 0.1, 100, 'multiplier on the whole prestige'),
     'elite_chance': StatDef(0, 0, 1, 'added to the chance that a bat spawns as an elite'),

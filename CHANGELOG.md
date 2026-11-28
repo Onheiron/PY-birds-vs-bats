@@ -4,6 +4,12 @@ Every release adds a section headed by its version: the game shows the one it
 runs (and the one an update brings) on the title screen, and the release on
 GitHub uses it as its notes. Keep each line short: they are read in a small box.
 
+## 2.5.2
+
+- Dropped eggs last 14 s and rise slowly: one that reaches the top is lost
+- Wide Wings reaches twice as far; new card Patient Nest: eggs last longer
+- New upgrade Long Shells (Fortune): eggs last longer
+
 ## 2.5.1
 
 - A tutorial: a tip the first time each thing happens (X goes on, B skips)
